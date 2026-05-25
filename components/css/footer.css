@@ -1,0 +1,26 @@
+footer{
+    padding-left: var(--main-menu-width);
+    background: #000;
+    padding-bottom: 50px;
+}
+
+.footer-content{
+    display: flex;
+    justify-content: space-around;
+    width: 80%;
+    margin: 0 auto;
+
+    >div>p{
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .content-list{
+        font-size: 0.88em;
+        color: var(--main-menu-color);
+        >li{
+            margin-bottom: 5px;
+        }
+    }
+}

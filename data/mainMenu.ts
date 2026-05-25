@@ -25,5 +25,11 @@ export const mainMenus:mainMenu[] = [
         title: "마이페이지",
         imgUrl: "/images/header/menu/mypage.svg",
         path: "/mypage"
+    },
+    {
+        title: "커스텀",
+        imgUrl: "/images/header/menu/custom.svg",
+        path: "/menu/custom"
     }
+    
 ]

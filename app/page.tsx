@@ -1,17 +1,21 @@
+"use client";
+import MovieList from "@/components/MovieList";
+import TvList from "@/components/TvList";
+import { useMovieStore } from "@/store/useMovieStore";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export default function Home() {
+  const {onFetchPopular, onFetchTvs} = useMovieStore();
+  useEffect(()=>{
+    onFetchPopular();
+    onFetchTvs();
+  }, []);
   return (
     <div className="inner">
-      <h2>여기는 첫번쨰 화면입니다.</h2>
 
-      <section>
-        <h2>영상</h2>
-        <div>
-          <ul className="grid grid-cols-4 gap-8">
-          </ul>
-        </div>
-      </section>
+      <MovieList />
+      <TvList />
     </div>
   );
 }

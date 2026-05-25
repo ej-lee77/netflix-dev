@@ -10,7 +10,7 @@ export default function HeaderMenu() {
                 {mainMenus.map((menu)=>(
                     <li key={menu.title}>
                         <Link href={menu.path}>
-                            <Image src={menu.imgUrl} alt={menu.title} width="80" height="80" />
+                            <Image src={menu.imgUrl} alt={menu.title} width="24" height="24" />
                             <span>{menu.title}</span>
                         </Link>
                     </li>
