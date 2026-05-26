@@ -1,12 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "image.tmdb.org",
+        pathname: "/t/p/**",
+      },
+    ],
+  },
+  allowedDevOrigins: ["172.16.54.18", '175.192.236.31'],
+  turbopack: {
+    root: process.cwd(),
+  },
 };
-
-// next.config.js
-module.exports = {
-  allowedDevOrigins: ['172.16.54.18'],
-}
 
 export default nextConfig;
