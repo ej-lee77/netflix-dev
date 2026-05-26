@@ -1,4 +1,5 @@
 "use client";
+import Hero from "@/components/Hero";
 import MovieCarousel from "@/components/main/MovieCarousel";
 import MovieList from "@/components/MovieList";
 import TvList from "@/components/TvList";
@@ -15,6 +16,7 @@ export default function Home() {
   }, []);
   return (
     <div className="inner">
+      <Hero />
       <MovieCarousel />
       {/* 메인 타이틀 컴포넌트 자리 (디자인 대기) */}
 
