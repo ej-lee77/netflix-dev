@@ -56,6 +56,8 @@ export interface MovieState {
     seasons: Season[],
     episodes: Episodes[],
 
+    upcomings: Movie[],
+
     onFetchPopular: () => Promise<void>,
     onFetchVideo: (id: string | number) => Promise<void>,
 
@@ -63,6 +65,8 @@ export interface MovieState {
     onFetchTvVideos: (id: string| number)=>Promise<void>,
 
     onFetchSeasons: (id: string | number)=>Promise<void>,
-    onFetchEpisodes: (id: number, season: number)=>Promise<void>
+    onFetchEpisodes: (id: number, season: number)=>Promise<void>,
+
+    onFetchUpcoming: ()=>Promise<void>
 }
 

@@ -73,5 +73,12 @@ export const useMovieStore = create<MovieState>((set,get) => ({
         const data = await res.json();
         console.log("에피소드", data.results);
         set({episodes: data.episodes});
+    },
+    upcomings: [],
+    onFetchUpcoming: async()=>{
+        const res = await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR`);
+        const data = await res.json();
+        console.log("공개예정", data.results);
+        set({upcomings: data.results});
     }
 }))

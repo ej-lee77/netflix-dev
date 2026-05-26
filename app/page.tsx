@@ -1,4 +1,6 @@
 "use client";
+import CategoryList from "@/components/main/CategoryList";
+import Release from "@/components/main/Release";
 import MovieList from "@/components/MovieList";
 import TvList from "@/components/TvList";
 import { useMovieStore } from "@/store/useMovieStore";
@@ -11,11 +13,13 @@ export default function Home() {
     onFetchPopular();
     onFetchTvs();
   }, []);
+
   return (
     <div className="inner">
 
-      <MovieList />
-      <TvList />
+
+      <Release />
+      <CategoryList category="movie" />
     </div>
   );
 }
