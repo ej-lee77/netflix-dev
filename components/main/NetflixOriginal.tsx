@@ -8,7 +8,7 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import OriginalBanner from './OriginalBanner';
-import './css/netflixOriginal.css';
+import './css/netflixOriginal.scss';
 
 /**
  * 넷플릭스 오리지널 시리즈 섹션

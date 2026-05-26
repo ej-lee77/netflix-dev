@@ -22,7 +22,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="inner">
+    <div>
       <Hero />
       <MovieCarousel />
       {/* 메인 타이틀 컴포넌트 자리 (디자인 대기) */}
