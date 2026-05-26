@@ -1,11 +1,13 @@
+@use "../../../app/globals.scss" as *;
+
 /* 시청중 섹션 */
 .watching-section {
   padding: 40px 0;
 
   .section-title {
-    font-size: 20px;
+    font-size: $text-20;
     font-weight: 700;
-    color: #fff;
+    color: $w-color;
     margin-bottom: 16px;
     padding-left: 4px;
   }
@@ -18,10 +20,10 @@
     /* Swiper navigation 화살표 색상 보정 */
     .swiper-button-next,
     .swiper-button-prev {
-      color: #fff;
+      color: $w-color;
 
       &::after {
-        font-size: 24px;
+        font-size: $text-24;
       }
     }
   }
@@ -29,7 +31,7 @@
   /* 카드 */
   .watching-card {
     display: block;
-    color: #fff;
+    color: $w-color;
     transition: transform 0.25s ease;
 
     &:hover {
@@ -66,14 +68,15 @@
     .progress-fill {
       display: block;
       height: 100%;
-      background-color: #e50914; /* 넷플릭스 레드 */
+      background-color: $main-color;
+      /* 넷플릭스 레드 */
     }
   }
 
   /* 카드 제목 */
   .watching-title {
     margin-top: 8px;
-    font-size: 14px;
+    font-size: $text-14;
     font-weight: 500;
     color: #e5e5e5;
     white-space: nowrap;

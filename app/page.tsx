@@ -12,6 +12,7 @@ import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
+import TopCast from "@/components/main/TopCast";
 import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
@@ -33,12 +34,9 @@ export default function Home() {
 
       {/* 시청중 */}
       <WatchingList />
-
-      {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
       <NetflixOriginal />
-
-      {/* 추천 + TOP CAST */}
       <RecommendList />
+      <TopCast />
 
       {/* <MovieList /> */}
       <TvList />
