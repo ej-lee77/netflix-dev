@@ -3,19 +3,18 @@ import NewMovieList from "@/components/main/NewMovieList";
 import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import Release from "@/components/main/Release";
-import MovieCarousel from "@/components/main/MovieCarousel";
-import MovieList from "@/components/MovieList";
-import TvList from "@/components/TvList";
 import WatchingList from "@/components/main/WatchingList";
 import NetflixOriginal from "@/components/main/NetflixOriginal";
 import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
+import TopCast from "@/components/main/TopCast";
+import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } =
-    useMovieStore();
+  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } = useMovieStore();
+  
   useEffect(() => {
     onFetchPopular();
     onFetchTvs();
@@ -26,25 +25,24 @@ export default function Home() {
   return (
     <div>
       <Hero />
-      <MovieCarousel />
-      {/* 메인 타이틀 컴포넌트 자리 (디자인 대기) */}
-
+      {/* 랭킹 */}
+      <RankingSection />
       {/* 시청중 */}
       <WatchingList />
-
       {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
       <NetflixOriginal />
-
+      {/* 신작 */}
+      <NewMovieList />
+      {/* 급상승 */}
+      <RisingMovieList />
       {/* 추천 + TOP CAST */}
       <RecommendList />
-
-      {/* <MovieList /> */}
-      <TvList />
-      <NewMovieList />
-      <RisingMovieList />
-
+      <TopCast />
+      {/* 공개예정 */}
       <Release />
+      {/* 카테고리 */}
       <CategoryList category="movie" />
+      <CategoryList category="tv" />
     </div>
   );
 }
