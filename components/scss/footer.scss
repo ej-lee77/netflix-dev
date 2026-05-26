@@ -2,7 +2,7 @@
 
 footer{
     padding-left: g.$main-menu-width;
-    background: #000;
+    background: g.$d-color;
     padding-bottom: 50px;
     padding-top: 30px;
     margin-top: 230px;
@@ -43,11 +43,11 @@ footer{
         >div>p{
             margin-bottom: 10px;
             font-weight: 600;
-            color: #fff;
+            color: g.$w-color;
         }
 
         .content-list{
-            font-size: 0.88em;
+            font-size: g.$text-14;
             color: g.$main-menu-color;
             >li{
                 margin-bottom: 5px;
