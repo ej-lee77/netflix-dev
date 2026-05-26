@@ -9,6 +9,7 @@ import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
+import TopCast from "@/components/main/TopCast";
 import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
