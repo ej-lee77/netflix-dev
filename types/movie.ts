@@ -51,6 +51,23 @@ export interface StillImage {
     height: number;
 }
 
+//추천작 통합 아이템 (영화/TV 섞어서 다루기 위함)
+export interface RecommendedItem extends MediaBase {
+    media_type: "movie" | "tv";
+    title: string;          //영화: title, TV: name 을 통일해서 담음
+    release_date?: string;  //영화 개봉일 or TV 첫방영일
+    genre_ids?: number[];   //장르 id 배열 (TMDB)
+}
+
+//출연자 (TMDB credits.cast)
+export interface CastMember {
+    id: number;
+    name: string;          //배우 이름
+    character: string;     //배역명
+    profile_path: string | null;
+    order: number;
+}
+
 //전역변수 타입정의
 export interface MovieState {
     popMovies: Movie[],
@@ -71,6 +88,11 @@ export interface MovieState {
     //각 TV별 스틸컷 백드롭 이미지 캐시
     tvImages: { [tvId: number]: StillImage[] },
 
+    //추천작 (인기 영화 + 인기 TV 섞어서 랜덤)
+    recommended: RecommendedItem[],
+    //작품별 출연진 캐시: "movie-123" or "tv-456" 키
+    casts: { [key: string]: CastMember[] },
+
     onFetchPopular: () => Promise<void>,
     onFetchNewest: () => Promise<void>,
     onFetchTrending: () => Promise<void>,
@@ -79,11 +101,14 @@ export interface MovieState {
     onFetchTvs: () => Promise<void>,
     onFetchTvVideos: (id: string | number) => Promise<void>,
 
-    onFetchSeasons: (id: string | number)=>Promise<void>,
-    onFetchEpisodes: (id: number, season: number)=>Promise<void>,
+    onFetchSeasons: (id: string | number) => Promise<void>,
+    onFetchEpisodes: (id: number, season: number) => Promise<void>,
 
-    onFetchUpcoming: ()=>Promise<void>
+    onFetchUpcoming: () => Promise<void>
 
     onFetchNetflixOriginals: () => Promise<void>,
-    onFetchTvImages: (id: string | number) => Promise<void>
+    onFetchTvImages: (id: string | number) => Promise<void>,
+
+    onFetchRecommended: () => Promise<void>,
+    onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>
 }
