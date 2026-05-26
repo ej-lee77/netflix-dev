@@ -63,8 +63,8 @@ i {
 body {
   overflow-x: hidden;
   color: #fff;
-  font-size: 16px;
-  background-color: var(--bg-color);
+  font-size: $main-text;
+  background-color: $bg-color;
 }
 
 .inner {
@@ -73,8 +73,8 @@ body {
 }
 
 main {
-  padding-top: var(--header-height);
-  padding-left: var(--main-menu-width);
+  padding-top: $header-height;
+  padding-left: $main-menu-width;
 }
 
 .flex-item {
