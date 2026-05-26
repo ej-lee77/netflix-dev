@@ -5,7 +5,7 @@ import Image from 'next/image'
 import HeaderMenu from './HeaderMenu'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Profile } from '@/types/auth';
-import "./css/header.scss"
+import "./scss/header.scss"
 
 export default function Header() {
     const {user, onLogout} = useAuthStore();
