@@ -65,6 +65,7 @@ export interface MovieState {
     seasons: Season[],
     episodes: Episodes[],
 
+    upcomings: Movie[],
     //넷플릭스 오리지널(provider id 213) TV 리스트
     netflixOriginals: TV[],
     //각 TV별 스틸컷 백드롭 이미지 캐시
@@ -78,8 +79,10 @@ export interface MovieState {
     onFetchTvs: () => Promise<void>,
     onFetchTvVideos: (id: string | number) => Promise<void>,
 
-    onFetchSeasons: (id: string | number) => Promise<void>,
-    onFetchEpisodes: (id: number, season: number) => Promise<void>,
+    onFetchSeasons: (id: string | number)=>Promise<void>,
+    onFetchEpisodes: (id: number, season: number)=>Promise<void>,
+
+    onFetchUpcoming: ()=>Promise<void>
 
     onFetchNetflixOriginals: () => Promise<void>,
     onFetchTvImages: (id: string | number) => Promise<void>

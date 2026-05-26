@@ -95,7 +95,14 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${TMDB_KEY}&language=ko-KR`);
         const data = await res.json();
         console.log("에피소드", data.results);
-        set({ episodes: data.episodes });
+        set({episodes: data.episodes});
+    },
+    upcomings: [],
+    onFetchUpcoming: async()=>{
+        const res = await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR`);
+        const data = await res.json();
+        console.log("공개예정", data.results);
+        set({upcomings: data.results});
     },
     //넷플릭스 오리지널: TMDB discover 사용, with_networks=213 (Netflix)
     netflixOriginals: [],

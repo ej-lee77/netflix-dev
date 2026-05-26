@@ -1,6 +1,8 @@
 "use client";
 import NewMovieList from "@/components/main/NewMovieList";
 import RisingMovieList from "@/components/main/RisingMovieList";
+import CategoryList from "@/components/main/CategoryList";
+import Release from "@/components/main/Release";
 import Hero from "@/components/Hero";
 import MovieCarousel from "@/components/main/MovieCarousel";
 import MovieList from "@/components/MovieList";
@@ -18,6 +20,7 @@ export default function Home() {
     onFetchNewest();
     onFetchTrending();
   }, []);
+
   return (
     <div className="inner">
       <Hero />
@@ -34,6 +37,9 @@ export default function Home() {
       <TvList />
       <NewMovieList />
       <RisingMovieList />
+
+      <Release />
+      <CategoryList category="movie" />
     </div>
   );
 }
