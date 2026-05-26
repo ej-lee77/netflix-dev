@@ -9,6 +9,7 @@ import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
+import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
   const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } =
@@ -24,6 +25,7 @@ export default function Home() {
     <div>
       <Hero />
       {/* 랭킹 */}
+      <RankingSection />
       {/* 시청중 */}
       <WatchingList />
       {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
