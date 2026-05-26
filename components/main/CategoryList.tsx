@@ -8,7 +8,7 @@ import { FreeMode, Scrollbar } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import 'swiper/css/scrollbar';
-import "./css/categoryList.scss"
+import "./scss/categoryList.scss"
 
 // 부모에게서 받을 props 타입 정의 ("movie" 또는 "tv")
 interface MediaListProps {
