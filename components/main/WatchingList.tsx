@@ -30,40 +30,42 @@ export default function WatchingList() {
 
     return (
         <section className="watching-section">
-            <h2 className="section-title">시청중</h2>
+            <div className="inner">
+                <h2 className="section-title">시청중</h2>
 
-            <Swiper
-                modules={[Navigation]}
-                navigation
-                slidesPerView={6}
-                spaceBetween={12}
-                slidesPerGroup={6}
-                className="watching-swiper"
-            >
-                {playList.map((item) => {
-                    const progress = getProgress(item.id);
-                    return (
-                        <SwiperSlide key={`${item.mediaType}-${item.id}`}>
-                            <Link href={`/detail/${item.mediaType}/${item.id}`} className="watching-card">
-                                <div className="watching-thumb">
-                                    <img
-                                        src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                                        alt={item.title}
-                                    />
-                                    {/* 시청률 진행바 */}
-                                    <div className="progress-bar">
-                                        <span
-                                            className="progress-fill"
-                                            style={{ width: `${progress}%` }}
+                <Swiper
+                    modules={[Navigation]}
+                    navigation
+                    slidesPerView={6}
+                    spaceBetween={12}
+                    slidesPerGroup={6}
+                    className="watching-swiper"
+                >
+                    {playList.map((item) => {
+                        const progress = getProgress(item.id);
+                        return (
+                            <SwiperSlide key={`${item.mediaType}-${item.id}`}>
+                                <Link href={`/detail/${item.mediaType}/${item.id}`} className="watching-card">
+                                    <div className="watching-thumb">
+                                        <img
+                                            src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                                            alt={item.title}
                                         />
+                                        {/* 시청률 진행바 */}
+                                        <div className="progress-bar">
+                                            <span
+                                                className="progress-fill"
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                                <h3 className="watching-title">{item.title}</h3>
-                            </Link>
-                        </SwiperSlide>
-                    );
-                })}
-            </Swiper>
+                                    <h3 className="watching-title">{item.title}</h3>
+                                </Link>
+                            </SwiperSlide>
+                        );
+                    })}
+                </Swiper>
+            </div>
         </section>
     );
 }
