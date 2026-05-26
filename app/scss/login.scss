@@ -67,64 +67,24 @@
   flex-shrink: 0;
   position: relative;
 
-  // 색상 팔레트 16종 — 실제 color 값으로 선언
-  $colors: (
-    (#1a1a2e, #e94560),
-    (#0f3460, #533483),
-    (#1b4332, #40916c),
-    (#7b2d8b, #e040fb),
-    (#1a237e, #3949ab),
-    (#b71c1c, #e53935),
-    (#e65100, #ff9800),
-    (#004d40, #00897b),
-    (#263238, #546e7a),
-    (#880e4f, #e91e63),
-    (#33691e, #8bc34a),
-    (#1a237e, #7986cb),
-    (#4a148c, #ce93d8),
-    (#bf360c, #ff7043),
-    (#006064, #26c6da),
-    (#37474f, #90a4ae),
-  );
+  background-color: #1a1a1a;
 
-@for $i from 1 through 16 {
-  &.pc-#{$i} {
-    background: linear-gradient(135deg, nth(nth($colors, $i), 1), nth(nth($colors, $i), 2));
+  .poster-img {
+    object-fit: cover;
+    transition: opacity 0.3s ease;
   }
 }
+
+
+
+
+.poster-skeleton {
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
 }
 
-.poster-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 17px;
-  height: 17px;
-  background-color: $main-color;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: 800;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-}
 
-.poster-title {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 1.3;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-  white-space: pre-line;
-}
 
 // ─── 오른쪽: 로그인 패널 ──────────────────────────────────────────────────────
 
@@ -477,6 +437,16 @@
 }
 
 // ─── 애니메이션 ───────────────────────────────────────────────────────────────
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
 
 @keyframes poster-up {
   from {
