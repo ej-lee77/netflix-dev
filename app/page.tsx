@@ -8,6 +8,7 @@ import MovieList from "@/components/MovieList";
 import TvList from "@/components/TvList";
 import WatchingList from "@/components/main/WatchingList";
 import NetflixOriginal from "@/components/main/NetflixOriginal";
+import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
@@ -35,6 +36,9 @@ export default function Home() {
 
       {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
       <NetflixOriginal />
+
+      {/* 추천 + TOP CAST */}
+      <RecommendList />
 
       {/* <MovieList /> */}
       <TvList />
