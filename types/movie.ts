@@ -68,6 +68,22 @@ export interface CastMember {
     order: number;
 }
 
+//인기 인물 (TMDB person/popular)
+export interface PopularPerson {
+    id: number;
+    name: string;
+    profile_path: string | null;
+    known_for_department: string;  // "Acting", "Directing" 등
+    popularity: number;
+    //가장 유명한 작품들 (첫 번째 작품의 제목을 배역 자리에 표시할 용도)
+    known_for: Array<{
+        id: number;
+        title?: string;       //영화면 title
+        name?: string;        //TV면 name
+        media_type: "movie" | "tv";
+    }>;
+}
+
 //전역변수 타입정의
 export interface MovieState {
     popMovies: Movie[],
@@ -92,6 +108,8 @@ export interface MovieState {
     recommended: RecommendedItem[],
     //작품별 출연진 캐시: "movie-123" or "tv-456" 키
     casts: { [key: string]: CastMember[] },
+    //전 세계 인기 인물 (배우/감독) 리스트
+    popularPeople: PopularPerson[],
 
     onFetchPopular: () => Promise<void>,
     onFetchNewest: () => Promise<void>,
@@ -110,5 +128,6 @@ export interface MovieState {
     onFetchTvImages: (id: string | number) => Promise<void>,
 
     onFetchRecommended: () => Promise<void>,
-    onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>
+    onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>,
+    onFetchPopularPeople: () => Promise<void>
 }
