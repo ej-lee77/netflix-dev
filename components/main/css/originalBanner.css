@@ -1,0 +1,85 @@
+/* 조각 배너 컨테이너 */
+.original-banner {
+  display: flex;
+  gap: 8px;
+  margin-top: 40px;
+  width: 100%;
+  /* 와이어프레임 기준 가로형 패널: 세로비 4:1 정도 */
+  aspect-ratio: 4 / 1;
+  background-color: #0a0a0a;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* 카드 한 조각 */
+.banner-piece {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: flex 0.4s ease;
+  background-color: #000;
+}
+
+/* 호버한 카드는 좀 더 넓어지면서 강조 (선택 효과) */
+.banner-piece.is-hover {
+  flex: 1.5;
+  z-index: 2;
+}
+
+/* 평상시: 메인 배너 일부분 */
+.banner-piece-bg {
+  position: absolute;
+  inset: 0;
+  /* 메인 배너 이미지를 매우 크게 깔아서, 각 카드가 그 일부분만 보이도록 */
+  background-size: 700% 100%;
+  background-repeat: no-repeat;
+  transition: opacity 0.3s ease;
+}
+
+/* 호버 시: 해당 작품의 스틸컷이 카드 전체에 풀로 표시 */
+.banner-piece-hover {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.banner-piece.is-hover .banner-piece-bg {
+  opacity: 0;
+}
+.banner-piece.is-hover .banner-piece-hover {
+  opacity: 1;
+}
+
+/* 작품명 라벨 (호버 시에만) */
+.banner-piece-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.banner-piece.is-hover .banner-piece-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+.banner-piece-label span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

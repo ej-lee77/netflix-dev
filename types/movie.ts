@@ -44,6 +44,13 @@ export interface Video {
     //Behind th Scenes(찰영스태프)
 }
 
+//스틸컷 (TMDB images 응답의 backdrops 배열의 한 항목)
+export interface StillImage {
+    file_path: string;
+    width: number;
+    height: number;
+}
+
 //전역변수 타입정의
 export interface MovieState {
     popMovies: Movie[],
@@ -58,6 +65,11 @@ export interface MovieState {
     seasons: Season[],
     episodes: Episodes[],
 
+    //넷플릭스 오리지널(provider id 213) TV 리스트
+    netflixOriginals: TV[],
+    //각 TV별 스틸컷 백드롭 이미지 캐시
+    tvImages: { [tvId: number]: StillImage[] },
+
     onFetchPopular: () => Promise<void>,
     onFetchNewest: () => Promise<void>,
     onFetchTrending: () => Promise<void>,
@@ -67,6 +79,8 @@ export interface MovieState {
     onFetchTvVideos: (id: string | number) => Promise<void>,
 
     onFetchSeasons: (id: string | number) => Promise<void>,
-    onFetchEpisodes: (id: number, season: number) => Promise<void>
-}
+    onFetchEpisodes: (id: number, season: number) => Promise<void>,
 
+    onFetchNetflixOriginals: () => Promise<void>,
+    onFetchTvImages: (id: string | number) => Promise<void>
+}
