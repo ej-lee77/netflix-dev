@@ -1,6 +1,7 @@
 "use-client";
 import { useMovieStore } from '@/store/useMovieStore';
 import React from 'react';
+import SectionTitle from '../common/SectionTitle';
 
 export default function RisingMovieList() {
     const { trendingMovies } = useMovieStore();
@@ -9,7 +10,9 @@ export default function RisingMovieList() {
     if (!mainMovie) return null;
     return (
         <div>
-            <h3 className='font-bold'>급상승</h3>
+            <SectionTitle
+                title='급상승'
+                subTitle='지금 떠오르는 작품들을 시청해보세요' />
             <div className="grid grid-cols-[1.1fr_1.6fr] gap-4">
                 {/* 왼쪽 큰 카드 */}
                 <div className="group relative h-[448px] overflow-hidden rounded-md bg-zinc-800">

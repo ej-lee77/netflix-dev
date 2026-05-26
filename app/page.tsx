@@ -39,7 +39,7 @@ export default function Home() {
       <RecommendList />
 
       {/* <MovieList /> */}
-      <TvList />
+      {/* <TvList /> */}
       <NewMovieList />
       <RisingMovieList />
 
