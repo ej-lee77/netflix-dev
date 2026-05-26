@@ -1,0 +1,131 @@
+/* TOP CAST: 양옆까지 꽉 차는 진한 남색 배경 */
+.top-cast-bg {
+  width: 100%;
+  background-color: #0d1c33; /* 참조이미지의 진한 남색 */
+  padding: 36px 0;
+  margin: 40px 0;
+}
+
+.top-cast-section {
+  /* 헤더 */
+  .cast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    padding: 0 4px;
+
+    .cast-title {
+      position: relative;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1.5px;
+      padding-bottom: 8px;
+
+      .title-underline {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 40px;
+        height: 3px;
+        background-color: #e50914;
+      }
+    }
+
+    .all-cast {
+      font-size: 13px;
+      color: #e50914;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+
+  /* Swiper */
+  .cast-swiper {
+    overflow: hidden;
+    padding: 0 4px;
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+
+      &::after {
+        font-size: 14px;
+        font-weight: 700;
+      }
+    }
+
+    /* 이전 버튼은 보통 첫 슬라이드에서 보일 일 없으니 숨겨도 됨 */
+    .swiper-button-prev {
+      display: none;
+    }
+  }
+
+  /* 카드 */
+  .cast-card {
+    text-align: center;
+    color: #fff;
+
+    .cast-photo {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      overflow: hidden;
+      background-color: #1a2840;
+      margin-bottom: 10px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .photo-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: #6c7a92;
+      }
+    }
+
+    .cast-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cast-character {
+      font-size: 12px;
+      color: #8c9aab;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .cast-empty {
+    font-size: 14px;
+    color: #8c9aab;
+    text-align: center;
+    padding: 30px 0;
+  }
+}
