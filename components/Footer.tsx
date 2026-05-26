@@ -1,18 +1,18 @@
 import React from 'react'
 import Image from 'next/image'
-import "./css/footer.css"
+import "./scss/footer.scss"
 
 export default function Footer() {
   return (
     <footer>
       <div className='w-full h-40 relative'>
-        <Image src="/images/footer/footer-logo.png" alt='netflix' fill/>
+        <Image src="/images/footer/footer-logo.png" alt='netflix' fill />
       </div>
       <div className='footer-sns'>
-        <div><a href="https://www.youtube.com/channel/UCiEEF51uRAeZeCo8CJFhGWw/featured"><Image src="/images/footer/sns-twitter.svg" alt='twitter' width="24" height="24"/></a></div>
-        <div><a href="https://www.facebook.com/NetflixKR"><Image src="/images/footer/sns-facebook.svg" alt='facebook' width="24" height="24"/></a></div>
-        <div><a href="https://www.youtube.com/channel/UCiEEF51uRAeZeCo8CJFhGWw/featured"><Image src="/images/footer/sns-youtube.svg" alt='youtube' width="24" height="24"/></a></div>
-        <div><a href="https://www.instagram.com/netflixkr/"><Image src="/images/footer/sns-instagram.svg" alt='instagram' width="24" height="24"/></a></div>
+        <div><a href="https://www.youtube.com/channel/UCiEEF51uRAeZeCo8CJFhGWw/featured"><Image src="/images/footer/sns-twitter.svg" alt='twitter' width="24" height="24" /></a></div>
+        <div><a href="https://www.facebook.com/NetflixKR"><Image src="/images/footer/sns-facebook.svg" alt='facebook' width="24" height="24" /></a></div>
+        <div><a href="https://www.youtube.com/channel/UCiEEF51uRAeZeCo8CJFhGWw/featured"><Image src="/images/footer/sns-youtube.svg" alt='youtube' width="24" height="24" /></a></div>
+        <div><a href="https://www.instagram.com/netflixkr/"><Image src="/images/footer/sns-instagram.svg" alt='instagram' width="24" height="24" /></a></div>
       </div>
       <div className='footer-content'>
         <div>
