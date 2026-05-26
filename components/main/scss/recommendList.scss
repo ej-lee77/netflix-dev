@@ -1,11 +1,50 @@
-/* 추천 섹션 */
+@use "../../../app/globals.scss" as *;
+
+/* 추천 섹션 - 풀폭 배경 영역 */
 .recommend-section {
-  padding: 40px 0;
+  position: relative;
+  padding: 60px 0;
+  overflow: hidden;
+  /* 기본 배경(폴백): 어두운 청록색 톤 (참조 이미지의 분위기) */
+  background-color: #0a1a26;
+
+  /* 배경 레이어: 현재 활성 작품 backdrop
+     - key 가 바뀌면 React가 새 요소로 만들어서 fade-in 애니메이션이 재실행됨
+     - blur 와 opacity 로 흐릿한 분위기 연출 */
+  .recommend-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.45;
+    filter: blur(12px);
+    transform: scale(1.1);
+    /* blur 가장자리 처리 */
+    animation: bgFadeIn 0.8s ease forwards;
+    z-index: 0;
+  }
+
+  /* 배경 위 어두운 오버레이 - 가독성 확보 */
+  .recommend-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+        rgba(10, 26, 38, 0.55) 0%,
+        rgba(10, 26, 38, 0.75) 100%);
+    z-index: 0;
+  }
+
+  /* 안쪽 컨텐츠는 배경 위로 */
+  .inner {
+    position: relative;
+    z-index: 1;
+  }
 
   .section-title {
-    font-size: 20px;
+    font-size: $text-20;
     font-weight: 700;
-    color: #fff;
+    color: $w-color;
     margin-bottom: 16px;
     padding-left: 4px;
   }
@@ -18,14 +57,14 @@
     /* Swiper 화살표 */
     .swiper-button-next,
     .swiper-button-prev {
-      color: #fff;
+      color: $w-color;
       width: 50px;
       height: 50px;
       background-color: rgba(0, 0, 0, 0.4);
       border-radius: 50%;
 
       &::after {
-        font-size: 20px;
+        font-size: $text-20;
         font-weight: 700;
       }
     }
@@ -39,7 +78,7 @@
     overflow: hidden;
     background-color: #111;
 
-    /* 배경 백드롭 이미지 */
+    /* 슬라이드 내부 백드롭 */
     .slide-backdrop {
       position: absolute;
       inset: 0;
@@ -52,12 +91,10 @@
     .slide-dim {
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        to right,
-        rgba(0, 0, 0, 0.85) 0%,
-        rgba(0, 0, 0, 0.55) 50%,
-        rgba(0, 0, 0, 0.2) 100%
-      );
+      background: linear-gradient(to right,
+          rgba(0, 0, 0, 0.85) 0%,
+          rgba(0, 0, 0, 0.55) 50%,
+          rgba(0, 0, 0, 0.2) 100%);
     }
 
     /* 컨텐츠 */
@@ -70,15 +107,15 @@
       justify-content: center;
       padding: 0 60px;
       max-width: 55%;
-      color: #fff;
+      color: $w-color;
     }
 
     .slide-badge {
       display: inline-block;
       width: fit-content;
-      background-color: #e50914;
-      color: #fff;
-      font-size: 12px;
+      background-color: $main-color;
+      color: $w-color;
+      font-size: $text-12;
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 4px;
@@ -87,7 +124,7 @@
     }
 
     .slide-title {
-      font-size: 36px;
+      font-size: $text-32;
       font-weight: 700;
       margin-bottom: 16px;
       letter-spacing: 1px;
@@ -99,7 +136,7 @@
       flex-wrap: wrap;
       gap: 18px;
       margin-bottom: 16px;
-      font-size: 14px;
+      font-size: $text-14;
       color: #d2d2d2;
 
       li {
@@ -112,7 +149,7 @@
         gap: 6px;
 
         strong {
-          color: #fff;
+          color: $w-color;
           font-weight: 600;
         }
 
@@ -123,7 +160,7 @@
     }
 
     .slide-overview {
-      font-size: 14px;
+      font-size: $text-14;
       line-height: 1.6;
       margin-bottom: 24px;
       color: #d8d8d8;
@@ -139,21 +176,21 @@
       align-items: center;
       gap: 10px;
       background-color: rgba(255, 255, 255, 0.95);
-      color: #000;
+      color: $d-color;
       padding: 12px 28px;
       border-radius: 4px;
-      font-size: 14px;
+      font-size: $text-14;
       font-weight: 700;
       letter-spacing: 1px;
       width: fit-content;
       transition: background-color 0.2s ease;
 
       &:hover {
-        background-color: #fff;
+        background-color: $w-color;
       }
 
       .play-icon {
-        font-size: 12px;
+        font-size: $text-12;
       }
     }
   }
@@ -163,8 +200,20 @@
     .slide-dim {
       background: rgba(0, 0, 0, 0.55);
     }
+
     .slide-content {
       opacity: 0;
     }
+  }
+}
+
+/* 배경 페이드 인 애니메이션 (슬라이드 바뀔 때마다 재실행) */
+@keyframes bgFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.45;
   }
 }
