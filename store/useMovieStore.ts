@@ -14,6 +14,29 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         console.log("인기영화?", data.results);
         set({ popMovies: data.results });
     },
+
+    //==============최신 영화 받아오기==============
+    //최신영화를 저장할 변수
+    newMovies: [],
+    //최신 영화 불러오기
+    onFetchNewest: async () => {
+        const res = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const data = await res.json();
+        console.log("최신영화?", data.results);
+        set({ newMovies: data.results });
+    },
+
+    //==============급상승 영화 받아오기==============
+    //급상승 영화를 저장할 변수
+    trendingMovies: [],
+    //최신 영화 불러오기 (day기준)
+    onFetchTrending: async () => {
+        const res = await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const data = await res.json();
+        console.log("급상승 영화?", data.results);
+        set({ trendingMovies: data.results });
+    },
+
     //티비
     //영화의 영상을 저장할 변수 popVideos
     popVideos: {},
@@ -72,7 +95,14 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${TMDB_KEY}&language=ko-KR`);
         const data = await res.json();
         console.log("에피소드", data.results);
-        set({ episodes: data.episodes });
+        set({episodes: data.episodes});
+    },
+    upcomings: [],
+    onFetchUpcoming: async()=>{
+        const res = await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR`);
+        const data = await res.json();
+        console.log("공개예정", data.results);
+        set({upcomings: data.results});
     },
     //넷플릭스 오리지널: TMDB discover 사용, with_networks=213 (Netflix)
     netflixOriginals: [],
