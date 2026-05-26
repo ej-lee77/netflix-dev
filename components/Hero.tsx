@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import "./css/hero.scss";
+import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
