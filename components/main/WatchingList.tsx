@@ -6,7 +6,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import './css/watchingList.css';
+import './css/watchingList.scss';
 
 /**
  * 시청중(Watching) 섹션

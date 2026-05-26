@@ -1,6 +1,6 @@
 import { useMovieStore } from '@/store/useMovieStore';
 import React, { useEffect } from 'react'
-import "./css/release.css"
+import "./css/release.scss"
 
 export default function Release() {
     const {onFetchUpcoming, upcomings} = useMovieStore();
