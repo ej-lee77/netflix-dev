@@ -4,6 +4,24 @@
 // COLOR
 $main-color: #e50914;
 $bg-color: #141414;
+$w-color: #ffffff; // 흰색
+$d-color: #000000; // 검정색
+$g-color: #454545; // 회색
+// TEXT-SIZE
+$text-12: 0.75rem; // 12px
+$text-13: 0.8125rem; // 13px
+$text-14: 0.875rem; // 14px
+$text-16: 1rem; // 16px
+$text-18: 1.125rem; // 18px
+$text-20: 1.25rem; // 20px
+$text-24: 1.5rem; // 24px
+$text-32: 2rem; // 32px
+// TEXT
+$main-text: $text-16;
+$title-text: $text-18;
+// RADIUS
+$radius-md: 8px;
+$radius-lg: 16px;
 
 /* header */
 $header-height: 60px;
@@ -45,8 +63,8 @@ i {
 body {
   overflow-x: hidden;
   color: #fff;
-  font-size: 16px;
-  background-color: var(--bg-color);
+  font-size: $main-text;
+  background-color: $bg-color;
 }
 
 .inner {
@@ -55,8 +73,8 @@ body {
 }
 
 main {
-  padding-top: var(--header-height);
-  padding-left: var(--main-menu-width);
+  padding-top: $header-height;
+  padding-left: $main-menu-width;
 }
 
 .flex-item {
