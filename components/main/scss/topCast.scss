@@ -1,12 +1,9 @@
 @use "../../../app/globals.scss" as *;
 
-/* TOP CAST: 양옆까지 꽉 차는 진한 남색 배경 */
-.top-cast-bg {
+/* TOP CAST: 페이지 기본 배경 그대로 (별도 배경 없음) */
+.top-cast-wrap {
   width: 100%;
-  background-color: #0d1c33;
-  /* 참조이미지의 진한 남색 */
-  padding: 36px 0;
-  margin: 40px 0;
+  padding: 40px 0;
 }
 
 .top-cast-section {
@@ -71,7 +68,8 @@
       aspect-ratio: 1 / 1;
       border-radius: 50%;
       overflow: hidden;
-      background-color: #1a2840;
+      /* 배경 없는 페이지에 어울리도록 톤 다운 */
+      background-color: #2a2a2a;
       margin-bottom: 10px;
 
       img {
@@ -89,7 +87,7 @@
         justify-content: center;
         font-size: $text-24;
         font-weight: 700;
-        color: #6c7a92;
+        color: #888;
       }
     }
 
@@ -105,7 +103,7 @@
 
     .cast-character {
       font-size: $text-12;
-      color: #8c9aab;
+      color: #999;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -114,7 +112,7 @@
 
   .cast-empty {
     font-size: $text-14;
-    color: #8c9aab;
+    color: #999;
     text-align: center;
     padding: 30px 0;
   }

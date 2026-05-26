@@ -12,6 +12,7 @@ import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
+import TopCast from "@/components/main/TopCast";
 
 export default function Home() {
   const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } =
@@ -30,6 +31,7 @@ export default function Home() {
       <WatchingList />
       <NetflixOriginal />
       <RecommendList />
+      <TopCast />
 
       {/* <MovieList /> */}
       <TvList />
