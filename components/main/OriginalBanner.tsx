@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useMovieStore } from '@/store/useMovieStore';
 import type { TV } from '@/types/movie';
-import './css/originalBanner.css';
+import './scss/originalBanner.scss';
 
 interface Props {
   //한 작품을 통째로 받음
