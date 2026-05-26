@@ -1,134 +1,138 @@
+@use "@/app/globals" as g;
+
 /* Release Section 전체 배경 및 레이아웃 */
 .release-section {
   padding: 2rem;
   min-height: 100vh;
   background-color: #171717;
-}
 
-@media (min-width: 768px) {
-  .release-section {
-    padding: 3rem;
+
+  @media (min-width: 768px) {
+    .release-section {
+      padding: 3rem;
+    }
   }
-}
 
-.release-container {
-  /* max-width: 1152px; */
-  margin-left: auto;
-  margin-right: auto;
-}
+  .release-container {
+    /* max-width: 1152px; */
+    margin-left: auto;
+    margin-right: auto;
+  }
 
-/* 🌟 아래 칸 영화가 빈 곳으로 쏙 올라오게 만드는 다단 레이아웃 */
-.release-masonry {
-  column-count: 1;
-  column-gap: 1.5rem; /* 카드 사이 가로 간격 */
-  column-fill: balance;
-}
-
-@media (min-width: 640px) {
+  /* 🌟 아래 칸 영화가 빈 곳으로 쏙 올라오게 만드는 다단 레이아웃 */
   .release-masonry {
-    column-count: 2;
+    column-count: 1;
+    column-gap: 1.5rem; /* 카드 사이 가로 간격 */
+    column-fill: balance;
   }
-}
 
-@media (min-width: 768px) {
-  .release-masonry {
-    column-count: 3; /* PC 화면에서 3열 배치 */
+  @media (min-width: 640px) {
+    .release-masonry {
+      column-count: 2;
+    }
   }
-}
 
-/* 개별 카드 구성 */
-.release-card {
-  break-inside: avoid; /* 카드가 다음 열로 쪼개져 넘어가는 현상 차단 */
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 1rem;
-  overflow: hidden;
-  position: relative;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-  margin-bottom: 1.5rem; /* 카드 사이의 세로 간격 */
-  display: block;
-}
+  @media (min-width: 768px) {
+    .release-masonry {
+      column-count: 3; /* PC 화면에서 3열 배치 */
+    }
+  }
 
-/* 이미지 Wrap 처리 및 고정 비율 */
-.card-image-wrap {
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-}
+  /* 개별 카드 구성 */
+  .release-card {
+    break-inside: avoid; /* 카드가 다음 열로 쪼개져 넘어가는 현상 차단 */
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 1rem;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    margin-bottom: 1.5rem; /* 카드 사이의 세로 간격 */
+    display: block;
+  }
 
-/* 작은 카드는 확실하게 가로형 비율 */
-.card-small .card-image-wrap {
-  aspect-ratio: 16 / 10;
-}
+  /* 이미지 Wrap 처리 및 고정 비율 */
+  .card-image-wrap {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
 
-/* 큰 카드는 확실하게 세로 포스터 비율 */
-.card-large .card-image-wrap {
-  aspect-ratio: 2.8 / 3; 
-}
+  /* 작은 카드는 확실하게 가로형 비율 */
+  .card-small .card-image-wrap {
+    aspect-ratio: 16 / 10;
+  }
 
-.card-image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  filter: brightness(0.75);
-  transition: transform 0.5s ease;
-}
+  /* 큰 카드는 확실하게 세로 포스터 비율 */
+  .card-large .card-image-wrap {
+    aspect-ratio: 2.8 / 3; 
+  }
 
-.release-card:hover .card-image {
-  transform: scale(1.05);
-}
+  .card-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    filter: brightness(0.75);
+    transition: transform 0.5s ease;
+  }
 
-/* 하단 그라데이션 오버레이 */
-.card-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
-  z-index: 1;
-}
+  .release-card:hover .card-image {
+    transform: scale(1.05);
+  }
 
-/* 텍스트 정보 처리 (Absolute) */
-.card-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 1.5rem;
-  color: #ffffff;
-  z-index: 2;
-  box-sizing: border-box;
-}
+  /* 하단 그라데이션 오버레이 */
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
+    z-index: 1;
+  }
 
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: -0.025em;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-  transition: color 0.2s ease;
-}
+  /* 텍스트 정보 처리 (Absolute) */
+  .card-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem;
+    color: #ffffff;
+    z-index: 2;
+    box-sizing: border-box;
+  }
 
-.release-card:hover .card-title {
-  color: #fde68a;
-}
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: color 0.2s ease;
+  }
 
-.card-overview {
-  font-size: 0.8rem;
-  color: #cccccc;
-  font-weight: 400;
-  line-height: 1.5;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+  .release-card:hover .card-title {
+    color: #fde68a;
+  }
 
-.card-small .card-overview {
-  -webkit-line-clamp: 2;
-}
+  .card-overview {
+    font-size: 0.8rem;
+    color: #cccccc;
+    font-weight: 400;
+    line-height: 1.5;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 
-.card-large .card-overview {
-  -webkit-line-clamp: 4;
+  .card-small .card-overview {
+    -webkit-line-clamp: 2;
+  }
+
+  .card-large .card-overview {
+    -webkit-line-clamp: 4;
+  }
+
 }

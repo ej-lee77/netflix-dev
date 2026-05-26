@@ -1,11 +1,13 @@
+@use "../../../app/globals.scss" as *;
+
 /* 넷플릭스 오리지널 섹션 */
 .netflix-original-section {
   padding: 40px 0;
 
   .section-title {
-    font-size: 20px;
+    font-size: $text-20;
     font-weight: 700;
-    color: #fff;
+    color: $w-color;
     margin-bottom: 16px;
     padding-left: 4px;
   }
@@ -31,7 +33,8 @@
   }
 
   .original-slider {
-    min-width: 0; /* grid 안에서 swiper가 넘치지 않도록 */
+    min-width: 0;
+    /* grid 안에서 swiper가 넘치지 않도록 */
   }
 
   .original-swiper {
@@ -41,10 +44,10 @@
     /* Swiper 화살표 */
     .swiper-button-next,
     .swiper-button-prev {
-      color: #fff;
+      color: $w-color;
 
       &::after {
-        font-size: 24px;
+        font-size: $text-24;
       }
     }
   }
@@ -52,7 +55,7 @@
   /* 카드 */
   .original-card {
     display: block;
-    color: #fff;
+    color: $w-color;
     transition: transform 0.25s ease;
 
     &:hover {
@@ -81,7 +84,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: $text-14;
       color: #888;
     }
   }
