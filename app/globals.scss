@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
-:root {
-  /* 공통 */
-  --bg-color: #141414;
+/* 공통 */
+// COLOR
+$main-color: #e50914;
+$bg-color: #141414;
 
-  /* header */
-  --header-height: 60px;
-  --main-menu-width: 60px;
-  --main-menu-color: #8A8A88;
-}
+/* header */
+$header-height: 60px;
+$main-menu-width: 60px;
+$main-menu-color: #8a8a88;
 
 * {
   margin: 0;
@@ -42,24 +42,24 @@ i {
   top: -9999px;
 }
 
-body{
+body {
   overflow-x: hidden;
   color: #fff;
   font-size: 16px;
   background-color: var(--bg-color);
 }
 
-.inner{
+.inner {
   width: 1600px;
   margin: 0 auto;
 }
 
-main{
+main {
   padding-top: var(--header-height);
   padding-left: var(--main-menu-width);
 }
 
-.flex-item{
+.flex-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
