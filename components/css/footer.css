@@ -4,10 +4,23 @@ footer{
     padding-bottom: 50px;
 }
 
+.footer-sns{
+    display: flex;
+    /* justify-content: space-around; */
+    gap: 15px;
+    width: 60%;
+    margin: 0 auto;
+    margin-bottom: 20px;
+
+    img{
+        filter: brightness(0) invert(1);
+    }
+}
+
 .footer-content{
     display: flex;
-    justify-content: space-around;
-    width: 80%;
+    justify-content: space-between;
+    width: 60%;
     margin: 0 auto;
 
     >div>p{
