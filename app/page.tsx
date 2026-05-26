@@ -26,16 +26,9 @@ export default function Home() {
   return (
     <div>
       <Hero />
-      <MovieCarousel />
-      {/* 메인 타이틀 컴포넌트 자리 (디자인 대기) */}
-
-      {/* 시청중 */}
+      {/* <MovieCarousel /> */}
       <WatchingList />
-
-      {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
       <NetflixOriginal />
-
-      {/* 추천 + TOP CAST */}
       <RecommendList />
 
       {/* <MovieList /> */}
