@@ -54,6 +54,8 @@ export interface StillImage {
 //전역변수 타입정의
 export interface MovieState {
     popMovies: Movie[],
+    newMovies: Movie[],
+    trendingMovies: Movie[],
     // #####수정됨
     popVideos: { [movieId: number]: Video[] },
 
@@ -69,6 +71,8 @@ export interface MovieState {
     tvImages: { [tvId: number]: StillImage[] },
 
     onFetchPopular: () => Promise<void>,
+    onFetchNewest: () => Promise<void>,
+    onFetchTrending: () => Promise<void>,
     onFetchVideo: (id: string | number) => Promise<void>,
 
     onFetchTvs: () => Promise<void>,
