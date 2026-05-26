@@ -1,6 +1,7 @@
 "use client";
 import { useMovieStore } from '@/store/useMovieStore';
 import React, { useState } from 'react';
+import SectionTitle from '../common/SectionTitle';
 
 export default function NewMovieList() {
     const { newMovies } = useMovieStore();
@@ -11,8 +12,10 @@ export default function NewMovieList() {
 
     return (
         <div>
-            <h3 className='font-bold'>신작</h3>
-            <div className='relative h-[560px] w-full overflow-hidden'>
+            <SectionTitle
+                title='신작'
+                subTitle='새로운 작품들을 시청해보세요' />
+            <div className='relative left-1/2 h-[680px] w-[calc(100vw-var(--main-menu-width))] -translate-x-1/2 overflow-hidden'>
 
                 <ul className="new-movie-list">
                     {
@@ -24,10 +27,13 @@ export default function NewMovieList() {
                             const abs = Math.abs(diff);
 
                             const scale =
-                                abs === 0 ? 1.35 :
-                                    abs === 1 ? 1.25 :
-                                        abs === 2 ? 1.15 :
-                                            abs === 3 ? 0.99 : 0.95;
+                                abs === 0 ? 1.4 :
+                                    abs === 1 ? 1.3 :
+                                        abs === 2 ? 1.2 :
+                                            abs === 3 ? 1.1 :
+                                                abs === 4 ? 1 :
+                                                    abs === 5 ? 0.95 :
+                                                        abs === 6 ? 0.85 : 0.8;
 
                             // const neonClass =
                             //     diff === 0
@@ -49,12 +55,12 @@ export default function NewMovieList() {
 
                             const activeClass =
                                 abs === 0
-                                    ? "border-1 border-white shadow-[0_0_35px_rgba(255,0,0,0.6)]"
+                                    ? "border-1 border-white-50 shadow-[0_0_45px_rgba(255,0,0,0.65)]"
                                     : "shadow-2xl";
 
-                            const translateX = diff * 250;
+                            const translateX = diff * 260;
                             const zIndex = 100 - abs;
-                            const opacity = abs > 3 ? 0 : 1;
+                            const opacity = abs > 5 ? 0 : 1;
 
                             return (
                                 <li key={movie.id}>
@@ -64,8 +70,8 @@ export default function NewMovieList() {
                                         absolute
                                         left-1/2
                                         top-1/2
-                                        h-[360px]
-                                        w-[240px]
+                                        h-[420px]
+                                        w-[280px]
                                         overflow-hidden
                                         rounded-lg
                                         bg-zinc-300

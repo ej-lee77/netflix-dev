@@ -1,6 +1,7 @@
 "use-client";
 import { useMovieStore } from '@/store/useMovieStore';
 import React from 'react';
+import SectionTitle from '../common/SectionTitle';
 
 export default function RisingMovieList() {
     const { trendingMovies } = useMovieStore();
@@ -9,10 +10,12 @@ export default function RisingMovieList() {
     if (!mainMovie) return null;
     return (
         <div>
-            <h3 className='font-bold'>급상승</h3>
+            <SectionTitle
+                title='급상승'
+                subTitle='지금 떠오르는 작품들을 시청해보세요' />
             <div className="grid grid-cols-[1.1fr_1.6fr] gap-4">
                 {/* 왼쪽 큰 카드 */}
-                <div className="group relative h-[290px] overflow-hidden rounded-md bg-zinc-800">
+                <div className="group relative h-[448px] overflow-hidden rounded-md bg-zinc-800">
                     <img
                         src={`https://image.tmdb.org/t/p/original${mainMovie.backdrop_path}`}
                         alt={mainMovie.title}
@@ -27,10 +30,10 @@ export default function RisingMovieList() {
                 </div>
 
                 {/* 오른쪽 6개 카드 */}
-                <ul className="grid grid-cols-3 gap-3">
+                <ul className="grid h-[448px] grid-cols-3 grid-rows-2 gap-3">
                     {subMovies.map((movie) => (
                         <li key={movie.id}>
-                            <button className="group relative h-[138px] w-full overflow-hidden rounded-md bg-zinc-800">
+                            <div className="group relative h-full w-full overflow-hidden rounded-md bg-zinc-800">
                                 <img
                                     src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
                                     alt={movie.title}
@@ -42,7 +45,7 @@ export default function RisingMovieList() {
                                 <p className="absolute bottom-2 left-3 right-3 line-clamp-1 text-left text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">
                                     {movie.title}
                                 </p>
-                            </button>
+                            </div>
                         </li>
                     ))}
                 </ul>
