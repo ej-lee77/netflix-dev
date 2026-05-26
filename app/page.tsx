@@ -11,6 +11,7 @@ import NetflixOriginal from "@/components/main/NetflixOriginal";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
 import Hero from "@/components/main/Hero";
+import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
   const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } =
@@ -25,6 +26,7 @@ export default function Home() {
   return (
     <div>
       <Hero />
+      <RankingSection />
       <MovieCarousel />
       {/* 메인 타이틀 컴포넌트 자리 (디자인 대기) */}
 
