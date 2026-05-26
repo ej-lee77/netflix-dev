@@ -3,9 +3,6 @@ import NewMovieList from "@/components/main/NewMovieList";
 import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import Release from "@/components/main/Release";
-import MovieCarousel from "@/components/main/MovieCarousel";
-import MovieList from "@/components/MovieList";
-import TvList from "@/components/TvList";
 import WatchingList from "@/components/main/WatchingList";
 import NetflixOriginal from "@/components/main/NetflixOriginal";
 import RecommendList from "@/components/main/RecommendList";
@@ -28,23 +25,23 @@ export default function Home() {
   return (
     <div>
       <Hero />
+      {/* 랭킹 */}
       <RankingSection />
-      <MovieCarousel />
-      {/* 메인 타이틀 컴포넌트 자리 (디자인 대기) */}
-
       {/* 시청중 */}
       <WatchingList />
+      {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
       <NetflixOriginal />
-      <RecommendList />
-      <TopCast />
-
-      {/* <MovieList /> */}
-      <TvList />
+      {/* 신작 */}
       <NewMovieList />
+      {/* 급상승 */}
       <RisingMovieList />
-
+      {/* 추천 + TOP CAST */}
+      <RecommendList />
+      {/* 공개예정 */}
       <Release />
+      {/* 카테고리 */}
       <CategoryList category="movie" />
+      <CategoryList category="tv" />
     </div>
   );
 }
