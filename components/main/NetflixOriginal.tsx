@@ -8,12 +8,11 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import OriginalBanner from './OriginalBanner';
-import './css/netflixOriginal.css';
+import './scss/netflixOriginal.scss';
 
 /**
  * 넷플릭스 오리지널 시리즈 섹션
  * - TMDB discover API + with_networks=213 (Netflix) 로 넷플릭스 자료만 필터링
- * - store의 onFetchNetflixOriginals 가 페이지 랜덤 + 결과 셔플 까지 처리
  * - 하단 조각 배너에는 그 중 한 작품만 골라서 넘김 (호버 시 그 작품의 여러 스틸컷)
  */
 export default function NetflixOriginal() {
@@ -28,7 +27,7 @@ export default function NetflixOriginal() {
 
   return (
     <section className="netflix-original-section">
-      {/* <h2 className="section-title">오리지널</h2> */}
+      <h2 className="section-title">오리지널</h2>
 
       <div className="original-wrap">
         {/* 좌측 고정 로고 영역 */}
