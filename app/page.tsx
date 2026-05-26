@@ -13,8 +13,8 @@ import TopCast from "@/components/main/TopCast";
 import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } =
-    useMovieStore();
+  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } = useMovieStore();
+  
   useEffect(() => {
     onFetchPopular();
     onFetchTvs();
@@ -37,6 +37,7 @@ export default function Home() {
       <RisingMovieList />
       {/* 추천 + TOP CAST */}
       <RecommendList />
+      <TopCast />
       {/* 공개예정 */}
       <Release />
       {/* 카테고리 */}
