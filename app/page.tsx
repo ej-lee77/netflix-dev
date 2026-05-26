@@ -3,7 +3,6 @@ import NewMovieList from "@/components/main/NewMovieList";
 import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import Release from "@/components/main/Release";
-import Hero from "@/components/Hero";
 import MovieCarousel from "@/components/main/MovieCarousel";
 import MovieList from "@/components/MovieList";
 import TvList from "@/components/TvList";
@@ -11,9 +10,11 @@ import WatchingList from "@/components/main/WatchingList";
 import NetflixOriginal from "@/components/main/NetflixOriginal";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect } from "react";
+import Hero from "@/components/main/Hero";
 
 export default function Home() {
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } = useMovieStore();
+  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } =
+    useMovieStore();
   useEffect(() => {
     onFetchPopular();
     onFetchTvs();
