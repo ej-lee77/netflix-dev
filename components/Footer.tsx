@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import "./css/footer.css"
+import "./scss/footer.scss"
 
 export default function Footer() {
   return (
