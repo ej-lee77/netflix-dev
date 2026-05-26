@@ -4,7 +4,7 @@ import type { MovieState } from "@/types/movie";
 //TMBD키
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
 
-export const useMovieStore = create<MovieState>((set,get) => ({
+export const useMovieStore = create<MovieState>((set, get) => ({
     //인기영화를 저장할 변수
     popMovies: [],
     //영화를 불러올 메서드
@@ -37,13 +37,13 @@ export const useMovieStore = create<MovieState>((set,get) => ({
     },
     tvs: [],
     tvVideos: {},
-    onFetchTvs: async()=>{
+    onFetchTvs: async () => {
         const res = await fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
         const data = await res.json();
         console.log("인기영화?", data.results);
         set({ tvs: data.results });
     },
-    onFetchTvVideos: async(id)=>{
+    onFetchTvVideos: async (id) => {
         const tvId = Number(id);
         const { tvVideos } = get();
 
@@ -61,14 +61,14 @@ export const useMovieStore = create<MovieState>((set,get) => ({
         }))
     },
     seasons: [],
-    onFetchSeasons: async(id)=>{
+    onFetchSeasons: async (id) => {
         const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=ko-KR`);
         const data = await res.json();
         console.log("시즌?", data.results);
-        set({seasons: data.seasons});
+        set({ seasons: data.seasons });
     },
     episodes: [],
-    onFetchEpisodes: async(id, season)=>{
+    onFetchEpisodes: async (id, season) => {
         const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${TMDB_KEY}&language=ko-KR`);
         const data = await res.json();
         console.log("에피소드", data.results);
@@ -80,5 +80,34 @@ export const useMovieStore = create<MovieState>((set,get) => ({
         const data = await res.json();
         console.log("공개예정", data.results);
         set({upcomings: data.results});
+    },
+    //넷플릭스 오리지널: TMDB discover 사용, with_networks=213 (Netflix)
+    netflixOriginals: [],
+    onFetchNetflixOriginals: async () => {
+        //페이지를 1~3 사이에서 랜덤으로 뽑아서 매번 다른 결과가 나오도록
+        const randomPage = Math.floor(Math.random() * 3) + 1;
+        const res = await fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_networks=213&sort_by=popularity.desc&page=${randomPage}`);
+        const data = await res.json();
+        //가져온 결과를 한 번 더 셔플 해서 랜덤성 강화
+        const shuffled = [...(data.results || [])].sort(() => Math.random() - 0.5);
+        console.log("넷플릭스 오리지널", shuffled);
+        set({ netflixOriginals: shuffled });
+    },
+    //스틸컷(백드롭) 가져오기
+    tvImages: {},
+    onFetchTvImages: async (id) => {
+        const tvId = Number(id);
+        const { tvImages } = get();
+        if (tvImages[tvId]) return;
+        //include_image_language=null,en,ko 로 다양한 이미지 확보
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/images?api_key=${TMDB_KEY}&include_image_language=null,en,ko`);
+        const data = await res.json();
+        console.log("스틸컷", tvId, data.backdrops);
+        set((state) => ({
+            tvImages: {
+                ...state.tvImages,
+                [tvId]: data.backdrops || []
+            }
+        }))
     }
 }))
