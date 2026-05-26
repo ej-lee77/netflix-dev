@@ -15,12 +15,18 @@ import './scss/recommendList.scss';
  * 추천작 섹션
  * - TMDB 인기 영화 + 인기 TV 섞어 랜덤
  * - Swiper coverflow effect 로 중앙 큰 카드 + 양옆 살짝 보이는 형태
- * - 슬라이드 변경 시 현재 가운데 작품의 id/mediaType 을 state로 잡아서
- *   하단 TopCast 컴포넌트에 전달 -> 출연진도 같이 바뀜
+ * - 슬라이드 변경 시:
+ *   1) 현재 가운데 작품의 backdrop 을 섹션 전체 배경으로 깔기 (참조 이미지의 포인트!)
+ *   2) 현재 작품 id/mediaType 을 TopCast 에 전달 → 출연진도 같이 갱신
  */
 export default function RecommendList() {
   const { recommended, onFetchRecommended } = useMovieStore();
-  const [activeItem, setActiveItem] = useState<{ id: number; mediaType: "movie" | "tv" } | null>(null);
+  //현재 활성 작품의 정보 (id, mediaType, 그리고 배경에 깔 backdrop_path 까지)
+  const [activeItem, setActiveItem] = useState<{
+    id: number;
+    mediaType: "movie" | "tv";
+    backdropPath: string;
+  } | null>(null);
 
   useEffect(() => {
     onFetchRecommended();
@@ -29,7 +35,12 @@ export default function RecommendList() {
   //데이터 로드되면 첫 번째 작품을 active 로 세팅
   useEffect(() => {
     if (recommended.length > 0 && !activeItem) {
-      setActiveItem({ id: recommended[0].id, mediaType: recommended[0].media_type });
+      const first = recommended[0];
+      setActiveItem({
+        id: first.id,
+        mediaType: first.media_type,
+        backdropPath: first.backdrop_path
+      });
     }
   }, [recommended]);
 
@@ -38,17 +49,38 @@ export default function RecommendList() {
     const idx = swiper.realIndex;
     const item = recommended[idx];
     if (item) {
-      setActiveItem({ id: item.id, mediaType: item.media_type });
+      setActiveItem({
+        id: item.id,
+        mediaType: item.media_type,
+        backdropPath: item.backdrop_path
+      });
     }
   };
 
   if (recommended.length === 0) return null;
 
+  //섹션 전체 배경에 깔 이미지 URL
+  const sectionBg = activeItem?.backdropPath
+    ? `https://image.tmdb.org/t/p/original${activeItem.backdropPath}`
+    : '';
+
   return (
     <>
-      {/* 추천 슬라이더: 1600px inner 안 */}
-      <div className="inner">
-        <section className="recommend-section">
+      {/* 추천 섹션: 풀폭 배경 영역 (활성 작품 backdrop 이 깔림) */}
+      <section className="recommend-section">
+        {/* 배경 레이어: 활성 작품 백드롭 - 슬라이드 바뀔 때 페이드 전환 */}
+        <div
+          key={activeItem?.id}
+          className="recommend-bg"
+          style={{
+            backgroundImage: sectionBg ? `url(${sectionBg})` : 'none'
+          }}
+        />
+        {/* 어두운 오버레이 (가독성 + 분위기) */}
+        <div className="recommend-bg-overlay" />
+
+        {/* 컨텐츠: 1600px inner 안 */}
+        <div className="inner">
           <h2 className="section-title">추천</h2>
 
           <Swiper
@@ -72,7 +104,7 @@ export default function RecommendList() {
           >
             {recommended.map((item) => (
               <SwiperSlide key={`${item.media_type}-${item.id}`} className="recommend-slide">
-                {/* 배경 백드롭 */}
+                {/* 카드 내부 백드롭 (작은 미리보기 느낌) */}
                 <div
                   className="slide-backdrop"
                   style={{
@@ -118,10 +150,10 @@ export default function RecommendList() {
               </SwiperSlide>
             ))}
           </Swiper>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      {/* TOP CAST: 풀폭 배경이라 .inner 밖에 */}
+      {/* TOP CAST: 풀폭 배경이라 inner 밖에 */}
       {activeItem && (
         <TopCast id={activeItem.id} mediaType={activeItem.mediaType} />
       )}
