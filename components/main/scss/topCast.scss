@@ -1,12 +1,16 @@
+@use "../../../app/globals.scss" as *;
+
 /* TOP CAST: 양옆까지 꽉 차는 진한 남색 배경 */
 .top-cast-bg {
   width: 100%;
-  background-color: #0d1c33; /* 참조이미지의 진한 남색 */
+  background-color: #0d1c33;
+  /* 참조이미지의 진한 남색 */
   padding: 36px 0;
   margin: 40px 0;
 }
 
 .top-cast-section {
+
   /* 헤더 */
   .cast-header {
     display: flex;
@@ -17,9 +21,9 @@
 
     .cast-title {
       position: relative;
-      font-size: 16px;
+      font-size: $text-16;
       font-weight: 700;
-      color: #fff;
+      color: $w-color;
       letter-spacing: 1.5px;
       padding-bottom: 8px;
 
@@ -29,13 +33,13 @@
         bottom: 0;
         width: 40px;
         height: 3px;
-        background-color: #e50914;
+        background-color: $main-color;
       }
     }
 
     .all-cast {
-      font-size: 13px;
-      color: #e50914;
+      font-size: $text-13;
+      color: $main-color;
       font-weight: 500;
       transition: opacity 0.2s ease;
 
@@ -45,35 +49,21 @@
     }
   }
 
-  /* Swiper */
-  .cast-swiper {
-    overflow: hidden;
+  /* 10명 카드 한 줄에 꽉 차게: grid 10등분 */
+  .cast-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 16px;
     padding: 0 4px;
-
-    .swiper-button-next,
-    .swiper-button-prev {
-      color: #fff;
-      width: 36px;
-      height: 36px;
-      background-color: rgba(0, 0, 0, 0.5);
-      border-radius: 50%;
-
-      &::after {
-        font-size: 14px;
-        font-weight: 700;
-      }
-    }
-
-    /* 이전 버튼은 보통 첫 슬라이드에서 보일 일 없으니 숨겨도 됨 */
-    .swiper-button-prev {
-      display: none;
-    }
+    list-style: none;
   }
 
   /* 카드 */
   .cast-card {
     text-align: center;
-    color: #fff;
+    color: $w-color;
+    min-width: 0;
+    /* grid 안에서 텍스트 ellipsis 동작하도록 */
 
     .cast-photo {
       position: relative;
@@ -97,16 +87,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 28px;
+        font-size: $text-24;
         font-weight: 700;
         color: #6c7a92;
       }
     }
 
     .cast-name {
-      font-size: 13px;
+      font-size: $text-13;
       font-weight: 600;
-      color: #fff;
+      color: $w-color;
       margin-bottom: 4px;
       white-space: nowrap;
       overflow: hidden;
@@ -114,7 +104,7 @@
     }
 
     .cast-character {
-      font-size: 12px;
+      font-size: $text-12;
       color: #8c9aab;
       white-space: nowrap;
       overflow: hidden;
@@ -123,7 +113,7 @@
   }
 
   .cast-empty {
-    font-size: 14px;
+    font-size: $text-14;
     color: #8c9aab;
     text-align: center;
     padding: 30px 0;
