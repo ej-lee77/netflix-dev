@@ -16,7 +16,7 @@ export interface TV extends MediaBase {
     name: string;
 }
 //시즌
-export interface Season{
+export interface Season {
     id: number;
     name: string;
     overview: string;
@@ -24,7 +24,7 @@ export interface Season{
     poster_path: string;
 }
 //에피소드
-export interface Episodes{
+export interface Episodes {
     id: number;
     name: string;
     overview: string;
@@ -47,22 +47,26 @@ export interface Video {
 //전역변수 타입정의
 export interface MovieState {
     popMovies: Movie[],
+    newMovies: Movie[],
+    trendingMovies: Movie[],
     // #####수정됨
     popVideos: { [movieId: number]: Video[] },
 
     tvs: TV[],
-    tvVideos: {[tvId: number]: Video[]},
+    tvVideos: { [tvId: number]: Video[] },
 
     seasons: Season[],
     episodes: Episodes[],
 
     onFetchPopular: () => Promise<void>,
+    onFetchNewest: () => Promise<void>,
+    onFetchTrending: () => Promise<void>,
     onFetchVideo: (id: string | number) => Promise<void>,
 
-    onFetchTvs: ()=>Promise<void>,
-    onFetchTvVideos: (id: string| number)=>Promise<void>,
+    onFetchTvs: () => Promise<void>,
+    onFetchTvVideos: (id: string | number) => Promise<void>,
 
-    onFetchSeasons: (id: string | number)=>Promise<void>,
-    onFetchEpisodes: (id: number, season: number)=>Promise<void>
+    onFetchSeasons: (id: string | number) => Promise<void>,
+    onFetchEpisodes: (id: number, season: number) => Promise<void>
 }
 
