@@ -1,80 +1,83 @@
 /* 시청중 섹션 */
 .watching-section {
   padding: 40px 0;
-}
 
-.section-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 16px;
-  padding-left: 4px;
-}
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }
 
-/* Swiper 영역 */
-.watching-swiper {
-  width: 100%;
-  overflow: hidden;
-}
+  /* Swiper 영역 */
+  .watching-swiper {
+    width: 100%;
+    overflow: hidden;
 
-/* 카드 */
-.watching-card {
-  display: block;
-  color: #fff;
-  transition: transform 0.25s ease;
-}
-.watching-card:hover {
-  transform: scale(1.04);
-}
+    /* Swiper navigation 화살표 색상 보정 */
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #fff;
 
-/* 썸네일 박스 */
-.watching-thumb {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  border-radius: 4px;
-  overflow: hidden;
-  background-color: #222;
-}
-.watching-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+      &::after {
+        font-size: 24px;
+      }
+    }
+  }
 
-/* 시청률 진행바 (와이어프레임의 빨간 하단 바) */
-.progress-bar {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 4px;
-  background-color: rgba(255, 255, 255, 0.25);
-}
-.progress-fill {
-  display: block;
-  height: 100%;
-  background-color: #e50914; /* 넷플릭스 레드 */
-}
+  /* 카드 */
+  .watching-card {
+    display: block;
+    color: #fff;
+    transition: transform 0.25s ease;
 
-/* 카드 제목 */
-.watching-title {
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #e5e5e5;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    &:hover {
+      transform: scale(1.04);
+    }
+  }
 
-/* Swiper navigation 화살표 색상 보정 */
-.watching-swiper .swiper-button-next,
-.watching-swiper .swiper-button-prev {
-  color: #fff;
-}
-.watching-swiper .swiper-button-next::after,
-.watching-swiper .swiper-button-prev::after {
-  font-size: 24px;
+  /* 썸네일 박스 */
+  .watching-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #222;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  /* 시청률 진행바 (와이어프레임의 빨간 하단 바) */
+  .progress-bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.25);
+
+    .progress-fill {
+      display: block;
+      height: 100%;
+      background-color: #e50914; /* 넷플릭스 레드 */
+    }
+  }
+
+  /* 카드 제목 */
+  .watching-title {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e5e5e5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

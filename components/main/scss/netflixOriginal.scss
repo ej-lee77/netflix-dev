@@ -1,89 +1,88 @@
 /* 넷플릭스 오리지널 섹션 */
 .netflix-original-section {
   padding: 40px 0;
-}
 
-.netflix-original-section .section-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 16px;
-  padding-left: 4px;
-}
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }
 
-/* 와이어프레임처럼: 왼쪽 로고 + 오른쪽 슬라이더 */
-.original-wrap {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 24px;
-  align-items: center;
-}
+  /* 와이어프레임처럼: 왼쪽 로고 + 오른쪽 슬라이더 */
+  .original-wrap {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+    align-items: center;
+  }
 
-/* 로고 영역: 배경 투명, 페이지 배경이 그대로 비치도록 */
-.original-logo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: transparent;
-}
+  /* 로고 영역: 배경 투명, 페이지 배경이 그대로 비치도록 */
+  .original-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
 
-.original-logo img {
-  background-color: transparent;
-}
+    img {
+      background-color: transparent;
+    }
+  }
 
-.original-slider {
-  min-width: 0;
-}
+  .original-slider {
+    min-width: 0; /* grid 안에서 swiper가 넘치지 않도록 */
+  }
 
-.original-swiper {
-  width: 100%;
-  overflow: hidden;
-}
+  .original-swiper {
+    width: 100%;
+    overflow: hidden;
 
-/* 카드 */
-.original-card {
-  display: block;
-  color: #fff;
-  transition: transform 0.25s ease;
-}
+    /* Swiper 화살표 */
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #fff;
 
-.original-card:hover {
-  transform: scale(1.04);
-}
+      &::after {
+        font-size: 24px;
+      }
+    }
+  }
 
-.original-thumb {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  border-radius: 4px;
-  overflow: hidden;
-  background-color: #222;
-}
+  /* 카드 */
+  .original-card {
+    display: block;
+    color: #fff;
+    transition: transform 0.25s ease;
 
-.original-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+    &:hover {
+      transform: scale(1.04);
+    }
+  }
 
-.thumb-empty {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: #888;
-}
+  .original-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #222;
 
-/* Swiper 화살표 */
-.original-swiper .swiper-button-next,
-.original-swiper .swiper-button-prev {
-  color: #fff;
-}
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
-.original-swiper .swiper-button-next::after,
-.original-swiper .swiper-button-prev::after {
-  font-size: 24px;
+    .thumb-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #888;
+    }
+  }
 }
