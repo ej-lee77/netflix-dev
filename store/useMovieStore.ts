@@ -198,5 +198,13 @@ export const useMovieStore = create<MovieState>((set, get) => ({
                 [key]: data.cast || []
             }
         }));
+    },
+    //전 세계 인기 인물 (배우/감독)
+    popularPeople: [],
+    onFetchPopularPeople: async () => {
+        const res = await fetch(`https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const data = await res.json();
+        console.log("인기 인물", data.results);
+        set({ popularPeople: data.results || [] });
     }
 }))

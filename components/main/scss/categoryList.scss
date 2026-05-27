@@ -1,30 +1,34 @@
-/* Swiper 전체 레이아웃 패딩 커스텀 */
-.media-swiper {
-  overflow: visible !important; /* 호버 시 카드가 살짝 커질 때 잘림 방지 */
-}
+.category-list-wrap{
 
-/* Swiper 하단 스크롤바 가시성 및 디자인 커스텀 */
-/* .media-swiper .swiper-scrollbar {
-  background: rgba(255, 255, 255, 0.1) !important;
-  height: 4px !important;
-  bottom: 0px !important;
-}
+  /* Swiper 전체 레이아웃 패딩 커스텀 */
+  .media-swiper {
+    overflow: visible !important; /* 호버 시 카드가 살짝 커질 때 잘림 방지 */
+  }
 
-.media-swiper .swiper-scrollbar-drag {
-  background: rgba(255, 255, 255, 0.4) !important;
-  cursor: pointer;
-}
+  /* Swiper 하단 스크롤바 가시성 및 디자인 커스텀 */
+  /* .media-swiper .swiper-scrollbar {
+    background: rgba(255, 255, 255, 0.1) !important;
+    height: 4px !important;
+    bottom: 0px !important;
+  }
 
-.media-swiper .swiper-scrollbar-drag:hover {
-  background: #fde68a !important; /* amber-200 컬러로 포인트 */
-/* } */ 
+  .media-swiper .swiper-scrollbar-drag {
+    background: rgba(255, 255, 255, 0.4) !important;
+    cursor: pointer;
+  }
 
-/* 호버 동영상 부드럽게 등장하는 애니메이션 */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
+  .media-swiper .swiper-scrollbar-drag:hover {
+    background: #fde68a !important; /* amber-200 컬러로 포인트 */
+  /* } */ 
 
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+  /* 호버 동영상 부드럽게 등장하는 애니메이션 */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.25s ease-out forwards;
+  }
+
 }
