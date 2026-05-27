@@ -1,0 +1,93 @@
+@use "../../../app/globals.scss" as g;
+
+.connect-following-users {
+  margin: 50px 0 0;
+
+  &__list {
+    width: 100%;
+    padding: 8px 0 10px;
+    cursor: default;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__slide {
+    width: 100px;
+  }
+
+  &__item {
+    width: 100px;
+    border: 0;
+    color: rgba(255, 255, 255, 0.72);
+    text-align: center;
+    background: transparent;
+    cursor: default;
+
+    strong {
+      display: block;
+      margin-top: 12px;
+      overflow: hidden;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+    }
+
+    &:hover {
+      strong {
+        color: #fff;
+      }
+
+      .connect-following-users__avatar {
+        border-color: g.$main-color;
+        transform: translateY(-4px);
+      }
+    }
+  }
+
+  &__avatar {
+    position: relative;
+    display: grid;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+    place-items: center;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    background: #2b2b2b;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease;
+
+    span {
+      position: relative;
+      z-index: 1;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .connect-following-users {
+    margin: -6px 0 52px;
+
+    &__slide,
+    &__item {
+      width: 82px;
+    }
+
+    &__avatar {
+      width: 82px;
+      height: 82px;
+    }
+  }
+}
