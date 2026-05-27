@@ -3,8 +3,9 @@
 .hero {
   position: relative;
   width: 100%;
-  height: calc(100svh - g.$header-height);
-  min-height: 620px;
+  height: 50vw;
+  max-height: 800px;
+  min-height: 300px;
   margin-top: 0 !important;
   overflow: hidden;
   background: #141414;
@@ -55,13 +56,11 @@
     z-index: 2;
     width: 100%;
     height: 56.25vw;
-    // height: 100%;
     min-width: 177.78vh;
-    // min-height: 100vh;
     border: 0;
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%, -50%);
+    transform: scale(1.1) translate(-50%, -45%);
     transition: opacity 0.8s ease;
   }
 
@@ -382,6 +381,7 @@
     line-height: 1.72;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .hero-btns {
