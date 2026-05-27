@@ -36,12 +36,14 @@ export default function NewMovieList() {
                             abs === 6 ? 0.7 : 0.6;
 
                         const translateX = 
-                            abs > 4 ? 700 : 
-                            abs > 6 ? diff * 260 : diff * 260;
+                            abs === 0 ? diff * 260 :
+                            abs === 1 ? diff * 250 :
+                            abs === 2 ? diff * 250 :
+                            abs === 3 ? diff * 230 : diff * 260;
                         const zIndex = 100 - abs;
                         const opacity = 
                             abs === 0 ? 1 :
-                            abs > 4 ? 0 : 0.7;
+                            abs > 5 ? 0 : 0.7;
 
                         return (
                             <li key={movie.id}>
