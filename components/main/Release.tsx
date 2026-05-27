@@ -1,3 +1,4 @@
+"use client";
 import { useMovieStore } from '@/store/useMovieStore';
 import React, { useEffect } from 'react'
 import "./scss/release.scss"

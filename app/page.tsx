@@ -23,7 +23,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
+    <div className="main-page-wrap">
       <Hero />
       {/* 랭킹 */}
       <RankingSection />

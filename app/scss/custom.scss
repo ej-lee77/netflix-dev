@@ -1,0 +1,327 @@
+@use "@/app/globals" as g;
+
+.custom-page {
+  min-height: 100vh;
+  padding: 40px 0 80px;
+
+  .inner {
+    width: 1000px;
+    max-width: 95%;
+  }
+
+  .page-head {
+    margin-bottom: 40px;
+
+    h1 {
+      font-size: g.$text-32;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: g.$g-color;
+      font-size: g.$text-14;
+    }
+  }
+
+  /* 섹션 박스 */
+  .custom-section {
+    padding: 28px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-lg;
+    margin-bottom: 24px;
+
+    > h2 {
+      font-size: g.$text-18;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    > .desc {
+      font-size: g.$text-13;
+      color: g.$g-color;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+  }
+
+  /* 토글 리스트 */
+  .toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+
+    .order-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      button {
+        width: 24px;
+        height: 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid #3a3a3a;
+        border-radius: 4px;
+        color: g.$g-color;
+        font-size: 9px;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover:not(:disabled) {
+          background: rgba(255, 255, 255, 0.1);
+          color: g.$w-color;
+        }
+
+        &:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .info {
+      flex: 1;
+      min-width: 0;
+
+      h3 {
+        font-size: g.$text-14;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      p {
+        font-size: g.$text-12;
+        color: g.$g-color;
+      }
+    }
+  }
+
+  /* 토글 스위치 */
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: #3a3a3a;
+    border-radius: 100px;
+    position: relative;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+
+    .thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: g.$w-color;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    &.on {
+      background: g.$main-color;
+
+      .thumb {
+        transform: translateX(20px);
+      }
+    }
+  }
+
+  /* 슬라이더 */
+  .slider-block {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+    margin-bottom: 12px;
+
+    .head {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+
+      .name {
+        font-size: g.$text-14;
+        font-weight: 600;
+      }
+
+      .value {
+        font-size: g.$text-13;
+        color: g.$main-color;
+        font-weight: 600;
+      }
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #3a3a3a;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+      margin-bottom: 8px;
+
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        background: g.$w-color;
+        border: 2px solid g.$main-color;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      &::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: g.$w-color;
+        border: 2px solid g.$main-color;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+    }
+
+    .labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: g.$text-12;
+      color: g.$g-color;
+      opacity: 0.7;
+    }
+  }
+
+  /* 탭 바 */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 20px;
+
+    button {
+      padding: 10px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      color: g.$g-color;
+      font-size: g.$text-13;
+      cursor: pointer;
+
+      &.active {
+        color: g.$w-color;
+        border-bottom-color: g.$main-color;
+        font-weight: 600;
+      }
+    }
+  }
+
+  /* 선호 칩 그리드 */
+  .chip-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+
+    @media (max-width: 700px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .pref-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+    color: g.$g-color;
+    font-size: g.$text-13;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    img {
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: g.$w-color;
+    }
+
+    &.selected {
+      background: g.$main-color;
+      border-color: g.$main-color;
+      color: g.$w-color;
+      font-weight: 600;
+
+      img {
+        opacity: 1;
+        filter: brightness(0) invert(1);
+      }
+    }
+
+    &.other {
+      opacity: 0.3;
+    }
+  }
+
+  /* 액션 바 */
+  .action-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 32px;
+    padding: 20px 0;
+
+    @media (max-width: 600px) {
+      flex-direction: column-reverse;
+    }
+
+    button {
+      padding: 14px 28px;
+      border-radius: g.$radius-md;
+      font-size: g.$text-14;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid #3a3a3a;
+      color: g.$g-color;
+
+      &:hover {
+        border-color: g.$w-color;
+        color: g.$w-color;
+      }
+    }
+
+    .btn-save {
+      background: g.$main-color;
+      border: 1px solid g.$main-color;
+      color: g.$w-color;
+      min-width: 200px;
+
+      &:hover {
+        background: #b81017;
+      }
+    }
+  }
+}
