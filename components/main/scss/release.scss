@@ -2,8 +2,6 @@
 
 /* Release Section 전체 배경 및 레이아웃 */
 .release-section {
-  padding: 2rem;
-  min-height: 100vh;
 
   @media (min-width: 768px) {
     .release-section {
@@ -59,12 +57,12 @@
 
   /* 작은 카드는 확실하게 가로형 비율 */
   .card-small .card-image-wrap {
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 4 / 1.8;
   }
 
   /* 큰 카드는 확실하게 세로 포스터 비율 */
   .card-large .card-image-wrap {
-    aspect-ratio: 2.8 / 3;
+    aspect-ratio: 2 / 1.3;
   }
 
   .card-image {
@@ -128,15 +126,8 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .card-small .card-overview {
     -webkit-line-clamp: 2;
     line-clamp: 2;
   }
 
-  .card-large .card-overview {
-    -webkit-line-clamp: 4;
-    line-clamp: 4;
-  }
 }
