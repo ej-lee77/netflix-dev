@@ -1,27 +1,29 @@
+@use "@/app/globals" as g;
+
 .connect-review-spotlight {
   position: relative;
   width: 100%;
   margin: 70px 0 90px;
-  color: #fff;
+  color: g.$w-color;
   overflow: hidden;
 
   &__panel {
     position: relative;
     min-height: 520px;
-    border-radius: 8px;
+    border-radius: g.$radius-md;
     overflow: hidden;
     background-color: transparent;
     background-size: cover;
     background-position: center;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 24px 70px rgba(g.$d-color, 0.55);
 
     &::before {
       content: "";
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(90deg, rgba(0, 0, 0, 0.92) 0%, rgba(19, 25, 46, 0.78) 36%, rgba(9, 10, 13, 0.92) 100%),
-        rgba(20, 20, 20, 0.45);
+        linear-gradient(90deg, rgba(g.$d-color, 0.92) 0%, rgba(19, 25, 46, 0.78) 36%, rgba(9, 10, 13, 0.92) 100%),
+        rgba(g.$bg-color, 0.45);
       backdrop-filter: blur(16px);
     }
 
@@ -29,7 +31,7 @@
       content: "";
       position: absolute;
       inset: 48px 64px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(g.$w-color, 0.05);
       pointer-events: none;
     }
   }
@@ -52,9 +54,9 @@
     span {
       padding: 8px 12px;
       border-radius: 4px;
-      background: rgba(255, 255, 255, 0.08);
-      color: rgba(255, 255, 255, 0.76);
-      font-size: 14px;
+      background: rgba(g.$w-color, 0.08);
+      color: rgba(g.$w-color, 0.76);
+      font-size: g.$text-14;
       font-weight: 800;
 
       &:first-of-type {
@@ -82,9 +84,9 @@
     width: 350px;
     aspect-ratio: 2 / 3;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: g.$radius-md;
     background: #24242d;
-    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.65);
+    box-shadow: 0 22px 60px rgba(g.$d-color, 0.65);
 
     img {
       width: 100%;
@@ -103,12 +105,12 @@
   &__quote {
     width: min(430px, 100%);
     padding: 20px 24px 22px;
-    border: 2px solid rgba(255, 255, 255, 0.45);
+    border: 2px solid rgba(g.$w-color, 0.45);
     background: rgba(18, 24, 43, 0.38);
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(g.$w-color, 0.88);
 
     blockquote {
-      font-size: 16px;
+      font-size: g.$text-16;
       font-weight: 800;
       line-height: 1.65;
       word-break: keep-all;
@@ -117,8 +119,8 @@
     figcaption {
       margin-top: 10px;
       text-align: right;
-      color: rgba(255, 255, 255, 0.58);
-      font-size: 12px;
+      color: rgba(g.$w-color, 0.58);
+      font-size: g.$text-12;
       font-weight: 700;
     }
   }
@@ -129,15 +131,15 @@
     h3 {
       margin-bottom: 22px;
       padding-bottom: 12px;
-      border-bottom: 2px solid rgba(255, 255, 255, 0.28);
-      font-size: 24px;
+      border-bottom: 2px solid rgba(g.$w-color, 0.28);
+      font-size: g.$text-24;
       font-weight: 900;
     }
 
     li {
       margin-top: 13px;
-      color: rgba(255, 255, 255, 0.72);
-      font-size: 15px;
+      color: rgba(g.$w-color, 0.72);
+      font-size: g.$text-14;
       font-weight: 700;
       line-height: 1.6;
       word-break: keep-all;
@@ -152,7 +154,7 @@
     height: 58px;
     border: 0;
     background: transparent;
-    color: rgba(255, 255, 255, 0.86);
+    color: rgba(g.$w-color, 0.86);
     font-size: 68px;
     line-height: 1;
     cursor: pointer;
@@ -160,7 +162,7 @@
     transition: color 0.2s ease, transform 0.2s ease;
 
     &:hover {
-      color: #e50914;
+      color: g.$main-color;
       transform: translateY(-50%) scale(1.08);
     }
 
@@ -183,8 +185,8 @@
     align-items: center;
     justify-content: center;
     writing-mode: vertical-rl;
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 13px;
+    color: rgba(g.$w-color, 0.2);
+    font-size: g.$text-13;
     font-weight: 900;
     letter-spacing: 0.08em;
     border-radius: 6px;
@@ -205,9 +207,9 @@
     right: 72px;
     bottom: 18px;
     padding-left: 32px;
-    border-left: 1px solid rgba(255, 255, 255, 0.25);
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 18px;
+    border-left: 1px solid rgba(g.$w-color, 0.25);
+    color: rgba(g.$w-color, 0.7);
+    font-size: g.$text-18;
     font-weight: 800;
     line-height: 1.6;
   }

@@ -260,7 +260,7 @@
       top: 1px;
       width: 4px;
       height: 8px;
-      border: 2px solid #fff;
+      border: 2px solid g.$w-color;
       border-top: none;
       border-left: none;
       transform: rotate(45deg);
@@ -322,7 +322,7 @@
       width: 20px;
       height: 20px;
       border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: #fff;
+      border-top-color: g.$w-color;
       border-radius: 50%;
       animation: spin .6s linear infinite;
     }
@@ -397,7 +397,7 @@
 
   &.icon-google {
     background: linear-gradient(135deg, #ea4335 0%, #fbbc04 40%, #34a853 70%, #4285f4 100%);
-    color: #fff;
+    color: g.$w-color;
   }
 
   &.icon-apple {
@@ -407,7 +407,7 @@
 
   &.icon-naver {
     background-color: #03c75a;
-    color: #fff;
+    color: g.$w-color;
   }
 
   &.icon-kakao {

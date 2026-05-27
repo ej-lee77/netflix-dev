@@ -1,0 +1,220 @@
+@use "@/app/globals" as g;
+
+.mood-main-page {
+  min-height: 100vh;
+  padding-bottom: 80px;
+
+  .inner {
+    width: 1200px;
+    max-width: 95%;
+  }
+
+  /* Hero */
+  .mood-hero {
+    padding: 80px 0 60px;
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.15),
+      rgba(229, 9, 20, 0.1),
+      rgba(245, 158, 11, 0.1)
+    );
+    margin-bottom: 48px;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.2), transparent 60%);
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      font-size: g.$text-12;
+      color: #a78bfa;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 16px;
+
+      .accent {
+        background: linear-gradient(135deg, #a78bfa, #f472b6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      @media (max-width: 700px) {
+        font-size: g.$text-32;
+      }
+    }
+
+    p {
+      font-size: g.$text-16;
+      color: g.$g-color;
+      max-width: 600px;
+      line-height: 1.6;
+    }
+  }
+
+  /* 무드 그리드 */
+  .mood-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 60px;
+
+    @media (max-width: 1000px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 500px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .mood-card {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    padding: 28px 22px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-lg;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s;
+
+    .mood-card-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.6;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    &:hover {
+      transform: translateY(-6px);
+      border-color: #3a3a3a;
+
+      .mood-card-bg {
+        opacity: 1;
+      }
+
+      .mood-icon-wrap {
+        transform: scale(1.1);
+      }
+
+      .mood-cta {
+        transform: translateX(4px);
+      }
+    }
+
+    .mood-icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+      transition: transform 0.3s;
+    }
+
+    .mood-emoji {
+      position: absolute;
+      top: 24px;
+      right: 22px;
+      font-size: g.$text-24;
+      opacity: 0.4;
+    }
+
+    h3 {
+      font-size: g.$text-20;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+      position: relative;
+      z-index: 1;
+    }
+
+    p {
+      font-size: g.$text-13;
+      color: g.$g-color;
+      line-height: 1.6;
+      margin-bottom: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .mood-cta {
+      font-size: g.$text-13;
+      font-weight: 600;
+      margin-top: 16px;
+      transition: transform 0.2s;
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  /* 안내 섹션 */
+  .mood-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+
+    @media (max-width: 700px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .info-card {
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+
+    h3 {
+      font-size: g.$text-16;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: g.$text-13;
+      color: g.$g-color;
+      line-height: 1.7;
+
+      strong {
+        color: g.$w-color;
+        font-weight: 600;
+      }
+
+      a {
+        color: g.$main-color;
+        font-weight: 600;
+        text-decoration: underline;
+
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+}
