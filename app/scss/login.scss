@@ -17,13 +17,14 @@
   perspective: 1000px;
   perspective-origin: right center;
 
+  // 전체적으로 흐려지는 오버레이 + 오른쪽 페이드 + 비네팅
   &::after {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(to right, transparent 40%, g.$bg-color 95%),
-      linear-gradient(to bottom, rgba(g.$d-color, 0.4) 0%, transparent 20%, transparent 80%, rgba(g.$d-color, 0.4) 100%);
+      linear-gradient(to right, rgba(g.$bg-color, 0.4) 0%, rgba(g.$bg-color, 0.6) 50%, g.$bg-color 95%),
+      linear-gradient(to bottom, rgba(g.$d-color, 0.5) 0%, transparent 25%, transparent 75%, rgba(g.$d-color, 0.5) 100%);
     z-index: 2;
     pointer-events: none;
   }
@@ -370,7 +371,7 @@
   }
 }
 
-// ─── 소셜 버튼 ────────────────────────────────────────────────────────────────
+// ─── 소셜 버튼 (브랜드 가이드라인: 아이콘 왼쪽 + 텍스트 중앙) ────────────────
 
 .social-list {
   display: flex;
@@ -380,17 +381,17 @@
 }
 
 .social-btn {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
-  aspect-ratio: 6 / 1; // 가로:세로 비율 강제로 통일
-  background: transparent;
+  height: 50px;
+  padding: 0 18px;
   border: none;
-  padding: 0;
   border-radius: g.$radius-md;
-  overflow: hidden;
+  font-size: g.$text-14;
+  font-weight: 600;
   cursor: pointer;
   position: relative;
-  line-height: 0;
   transition: filter .15s, transform .15s, box-shadow .15s;
 
   &:hover {
@@ -404,11 +405,48 @@
     filter: brightness(0.9);
   }
 
-  .social-img {
+  // 구글: 흰 배경 + 검정 텍스트 + 회색 테두리
+  &.social-google {
+    background-color: g.$w-color;
+    color: #1f1f1f;
+    border: 1px solid #dadce0;
+  }
+
+  // 네이버: 초록 배경 + 흰 텍스트
+  &.social-naver {
+    background-color: #03c75a;
+    color: g.$w-color;
+  }
+
+  // 카카오: 노랑 배경 + 검정 텍스트
+  &.social-kakao {
+    background-color: #fee500;
+    color: #181600;
+  }
+}
+
+// 아이콘 영역 (왼쪽 고정)
+.social-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+
+  img {
     width: 100%;
     height: 100%;
-    object-fit: contain; // 이미지 잘리지 않고 들어가게
+    object-fit: contain;
   }
+}
+
+// 텍스트 (가운데 정렬: flex: 1로 남은 공간 차지하고 가운데로)
+.social-label {
+  flex: 1;
+  text-align: center;
+  // 아이콘 너비만큼 오른쪽에서 빼서 시각적 균형 (가운데 정렬을 위해)
+  padding-right: 24px;
 }
 
 // ─── 회원가입 링크 ────────────────────────────────────────────────────────────

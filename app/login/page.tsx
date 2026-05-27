@@ -16,7 +16,7 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const IMG_BASE = "https://image.tmdb.org/t/p/w342";
 
 const ROW_COUNT = 8;
-const ITEMS_PER_ROW = 14; // 한 줄당 타일 수 (스크롤 루프용 x2)
+const ITEMS_PER_ROW = 14;
 
 // ─── 아이콘 ────────────────────────────────────────────────────────────────────
 
@@ -62,7 +62,6 @@ function PosterGrid() {
     fetchPosters();
   }, []);
 
-  // 포스터가 아직 없으면 빈 줄 스켈레톤 표시
   if (posters.length === 0) {
     return (
       <div className="poster-grid">
@@ -77,7 +76,6 @@ function PosterGrid() {
     );
   }
 
-  // 포스터를 줄별로 분배 (각 줄에 ITEMS_PER_ROW개씩, 루프용으로 2배 복제)
   const rows: string[][] = Array.from({ length: ROW_COUNT }, (_, ri) => {
     const slice = Array.from(
       { length: ITEMS_PER_ROW },
@@ -125,7 +123,6 @@ export default function LoginPage() {
 
   const defaultProfiles = [{ id: 1, name: "나", imgUrl: "images/profile/1.png" }];
 
-  // ── 이메일/비밀번호 로그인 ──────────────────────────────────────────────────
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -146,7 +143,6 @@ export default function LoginPage() {
     }
   };
 
-  // ── 구글 로그인 ─────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     setError("");
     try {
@@ -240,47 +236,29 @@ export default function LoginPage() {
             <li>
               <button
                 type="button"
-                className="social-btn"
+                className="social-btn social-google"
                 onClick={handleGoogleLogin}
-                aria-label="Google로 로그인"
               >
-                <Image
-                  src="/images/social_login/google_login.png"
-                  alt="Google 로그인"
-                  width={300}
-                  height={45}
-                  className="social-img"
-                />
+                <span className="social-icon-wrap">
+                  <Image src="/images/social/google_login.svg" alt="Google" width={24} height={24} />
+                </span>
+                <span className="social-label">Google로 로그인</span>
               </button>
             </li>
             <li>
-              <button
-                type="button"
-                className="social-btn"
-                aria-label="네이버로 로그인"
-              >
-                <Image
-                  src="/images/social_login/naver_login.png"
-                  alt="네이버 로그인"
-                  width={300}
-                  height={45}
-                  className="social-img"
-                />
+              <button type="button" className="social-btn social-naver">
+                <span className="social-icon-wrap">
+                  <Image src="/images/social/naver_login.svg" alt="Naver" width={24} height={24} />
+                </span>
+                <span className="social-label">네이버로 로그인</span>
               </button>
             </li>
             <li>
-              <button
-                type="button"
-                className="social-btn"
-                aria-label="카카오로 로그인"
-              >
-                <Image
-                  src="/images/social_login/kakao_login.png"
-                  alt="카카오 로그인"
-                  width={300}
-                  height={45}
-                  className="social-img"
-                />
+              <button type="button" className="social-btn social-kakao">
+                <span className="social-icon-wrap">
+                  <Image src="/images/social/kakao_login.svg" alt="Kakao" width={24} height={24} />
+                </span>
+                <span className="social-label">카카오로 로그인</span>
               </button>
             </li>
           </ul>
