@@ -23,7 +23,9 @@ function getStars(rating: number) {
 
 export default function RankingSection() {
   const { trendingMovies, onFetchTrending } = useMovieStore();
+
   const [activeId, setActiveId] = useState<number | null>(null);
+
   const swiperRef = useRef<SwiperClass | null>(null);
 
   useEffect(() => {
@@ -50,22 +52,23 @@ export default function RankingSection() {
 
   const selectRankingItem = (id: number, index: number) => {
     setActiveId(id);
-    window.requestAnimationFrame(() => {
+
+    setTimeout(() => {
       const swiper = swiperRef.current;
 
       if (!swiper) return;
 
       swiper.update();
-      swiper.slideTo(index, 480);
-    });
-  };
 
-  const handleNextRanking = () => undefined;
+      swiper.slideTo(Math.max(index - 1, 0), 500);
+    }, 0);
+  };
 
   if (!rankingItems.length) {
     return (
-      <section className="ranking-section" aria-label="랭킹 로딩 중">
+      <section className="ranking-section">
         <h2 className="ranking-title">랭킹</h2>
+
         <div className="ranking-skeleton-row">
           {Array.from({ length: 4 }).map((_, index) => (
             <div className="ranking-skeleton-card" key={index} />
@@ -76,85 +79,99 @@ export default function RankingSection() {
   }
 
   return (
-    <section className="ranking-section" aria-label="랭킹">
+    <section className="ranking-section">
       <h2 className="ranking-title">랭킹</h2>
 
       <div className="ranking-swiper-wrap">
-      <Swiper
-        modules={[FreeMode]}
-        freeMode
-        slidesPerView="auto"
-        spaceBetween={18}
-        className="ranking-swiper"
-        onSwiper={(swiper) => {
-          swiperRef.current = swiper;
-        }}
-      >
-        {rankingItems.map((movie, index) => {
-          const isActive = movie.id === activeId;
+        <Swiper
+          modules={[FreeMode]}
+          freeMode={false}
+          slidesPerView="auto"
+          spaceBetween={18}
+          watchSlidesProgress
+          observer
+          observeParents
+          className="ranking-swiper"
+          onSwiper={(swiper) => {
+            swiperRef.current = swiper;
+          }}
+        >
+          {rankingItems.map((movie, index) => {
+            const isActive = movie.id === activeId;
 
-          return (
-            <SwiperSlide
-              className={`ranking-slide${isActive ? " expanded" : ""}`}
-              key={movie.id}
-            >
-              <button
-                className={`ranking-card${isActive ? " active" : ""}`}
-                onClick={() => selectRankingItem(movie.id, index)}
-                type="button"
+            return (
+              <SwiperSlide
+                className={`ranking-slide ${isActive ? "expanded" : ""}`}
+                key={movie.id}
               >
-                <span className="ranking-card-poster">
-                  <img
-                    src={imageUrl(movie.poster_path, "w500")}
-                    alt={movie.title}
-                  />
-                </span>
-                <span className="ranking-card-gradient" />
-                <span className="ranking-card-rank">{index + 1}</span>
-
-                <span
-                  className="ranking-card-detail"
-                  style={{
-                    backgroundImage: `linear-gradient(90deg, rgba(25, 23, 38, 0.95), rgba(25, 23, 38, 0.78)), url(${imageUrl(movie.backdrop_path, "w780")})`,
-                  }}
+                <button
+                  type="button"
+                  className={`ranking-card ${isActive ? "active" : ""}`}
+                  onClick={() => selectRankingItem(movie.id, index)}
                 >
-                  <span className="ranking-detail-rank">#{index + 1}위</span>
-                  <strong className="ranking-detail-title">
-                    {movie.title}
-                  </strong>
-                  <span className="ranking-detail-score">
-                    <em>{movie.vote_average.toFixed(1)}</em>
-                    <span>{getStars(movie.vote_average)}</span>
+                  <span className="ranking-card-poster">
+                    <img
+                      src={imageUrl(movie.poster_path, "w500")}
+                      alt={movie.title}
+                    />
                   </span>
-                  <span className="ranking-detail-overview">
-                    {movie.overview || "줄거리 정보가 없습니다."}
-                  </span>
-                  <span className="ranking-detail-actions">
-                    <span>상세보기</span>
-                    <span>재생</span>
-                  </span>
-                </span>
 
-                <span className="ranking-card-compact">
-                  <span className="ranking-card-score">{index + 1}위</span>
-                  <span className="ranking-card-title">{movie.title}</span>
-                </span>
-              </button>
-            </SwiperSlide>
-          );
-        })}
-      </Swiper>
-      <button
-        className="swiper-button-next ranking-next"
-        onClick={handleNextRanking}
-        type="button"
-        aria-label="??궧 ?ㅼ쓬 肄섑뀗痢?"
-      />
+                  <span className="ranking-card-gradient" />
+
+                  <span className="ranking-card-rank">{index + 1}</span>
+
+                  <span
+                    className="ranking-card-detail"
+                    style={{
+                      backgroundImage: `linear-gradient(
+                        90deg,
+                        rgba(25, 23, 38, 0.95),
+                        rgba(25, 23, 38, 0.78)
+                      ),
+                      url(${imageUrl(movie.backdrop_path, "w780")})`,
+                    }}
+                  >
+                    <span className="ranking-detail-rank">#{index + 1}위</span>
+
+                    <strong className="ranking-detail-title">
+                      {movie.title}
+                    </strong>
+
+                    <span className="ranking-detail-score">
+                      <em>{movie.vote_average.toFixed(1)}</em>
+
+                      <span>{getStars(movie.vote_average)}</span>
+                    </span>
+
+                    <span className="ranking-detail-overview">
+                      {movie.overview || "줄거리 정보가 없습니다."}
+                    </span>
+
+                    <span className="ranking-detail-actions">
+                      <span>상세보기</span>
+                      <span>재생</span>
+                    </span>
+                  </span>
+
+                  <span className="ranking-card-compact">
+                    <span className="ranking-card-score">{index + 1}위</span>
+
+                    <span className="ranking-card-title">{movie.title}</span>
+                  </span>
+                </button>
+              </SwiperSlide>
+            );
+          })}
+        </Swiper>
       </div>
-      <div className="ranking-progress" aria-hidden="true">
+
+      <div className="ranking-progress">
         <span
           style={{
-            width: `${((activeIndex >= 0 ? activeIndex + 1 : 1) / rankingItems.length) * 100}%`,
+            width: `${
+              ((activeIndex >= 0 ? activeIndex + 1 : 1) / rankingItems.length) *
+              100
+            }%`,
           }}
         />
       </div>

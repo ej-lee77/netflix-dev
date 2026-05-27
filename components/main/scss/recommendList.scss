@@ -29,9 +29,11 @@
   .recommend-bg-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg,
-        rgba(10, 26, 38, 0.55) 0%,
-        rgba(10, 26, 38, 0.75) 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(10, 26, 38, 0.55) 0%,
+      rgba(10, 26, 38, 0.75) 100%
+    );
     z-index: 0;
   }
 
@@ -91,10 +93,12 @@
     .slide-dim {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to right,
-          rgba(0, 0, 0, 0.85) 0%,
-          rgba(0, 0, 0, 0.55) 50%,
-          rgba(0, 0, 0, 0.2) 100%);
+      background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.85) 0%,
+        rgba(0, 0, 0, 0.55) 50%,
+        rgba(0, 0, 0, 0.2) 100%
+      );
     }
 
     /* 컨텐츠 */
