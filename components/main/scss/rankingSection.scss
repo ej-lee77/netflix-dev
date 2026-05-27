@@ -8,7 +8,7 @@
 .ranking-title {
   width: min(1600px, calc(100vw - 96px));
   margin: 0 auto 14px;
-  color: #fff;
+  color: g.$w-color;
   font-size: g.$title-text;
   font-weight: 700;
   line-height: 1.2;
@@ -63,7 +63,7 @@
   height: 430px;
   grid-template-columns: 280px 0;
   overflow: hidden;
-  color: #fff;
+  color: g.$w-color;
   text-align: left;
   background: #222;
   border-radius: 4px;
@@ -137,7 +137,7 @@
   z-index: 4;
   top: 14px;
   left: 14px;
-  color: #fff;
+  color: g.$w-color;
   font-size: 3.4rem;
   font-weight: 900;
   line-height: 1;
@@ -187,7 +187,7 @@
 
 .ranking-detail-rank {
   margin-bottom: 8px;
-  color: #ffffff;
+  color: g.$w-color;
   font-size: 1rem;
   font-weight: 800;
 }
@@ -196,7 +196,7 @@
   max-width: 360px;
   margin-bottom: 14px;
   overflow: hidden;
-  color: #ffffff;
+  color: g.$w-color;
   font-size: 1.45rem;
   font-weight: 900;
   line-height: 1.25;
@@ -245,7 +245,7 @@
 .ranking-detail-actions span {
   min-width: 100px;
   padding: 11px 18px;
-  color: #ffffff;
+  color: g.$w-color;
   font-size: 0.875rem;
   font-weight: 700;
   text-align: center;
@@ -254,7 +254,7 @@
 }
 
 .ranking-detail-actions span:first-child {
-  background: #e50914;
+  background: g.$main-color;
 }
 
 .ranking-card-compact {
@@ -276,7 +276,7 @@
 }
 
 .ranking-card-score {
-  color: #ffffff;
+  color: g.$w-color;
   font-size: 2.35rem;
   font-weight: 900;
   line-height: 1;

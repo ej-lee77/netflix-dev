@@ -1,4 +1,4 @@
-@use "../../../app/globals.scss" as *;
+@use "@/app/globals" as g;
 
 /* TOP CAST: 페이지 기본 배경 그대로 (별도 배경 없음) */
 .top-cast-wrap {
@@ -18,9 +18,9 @@
 
     .cast-title {
       position: relative;
-      font-size: $text-16;
+      font-size: g.$text-16;
       font-weight: 700;
-      color: $w-color;
+      color: g.$w-color;
       letter-spacing: 1.5px;
       padding-bottom: 8px;
 
@@ -30,13 +30,13 @@
         bottom: 0;
         width: 40px;
         height: 3px;
-        background-color: $main-color;
+        background-color: g.$main-color;
       }
     }
 
     .all-cast {
-      font-size: $text-13;
-      color: $main-color;
+      font-size: g.$text-13;
+      color: g.$main-color;
       font-weight: 500;
       transition: opacity 0.2s ease;
 
@@ -58,7 +58,7 @@
   /* 카드 */
   .cast-card {
     text-align: center;
-    color: $w-color;
+    color: g.$w-color;
     min-width: 0;
     /* grid 안에서 텍스트 ellipsis 동작하도록 */
 
@@ -85,16 +85,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: $text-24;
+        font-size: g.$text-24;
         font-weight: 700;
-        color: #888;
+        color: g.$g-color;
       }
     }
 
     .cast-name {
-      font-size: $text-13;
+      font-size: g.$text-13;
       font-weight: 600;
-      color: $w-color;
+      color: g.$w-color;
       margin-bottom: 4px;
       white-space: nowrap;
       overflow: hidden;
@@ -102,8 +102,8 @@
     }
 
     .cast-character {
-      font-size: $text-12;
-      color: #999;
+      font-size: g.$text-12;
+      color: g.$g-color;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -111,8 +111,8 @@
   }
 
   .cast-empty {
-    font-size: $text-14;
-    color: #999;
+    font-size: g.$text-14;
+    color: g.$g-color;
     text-align: center;
     padding: 30px 0;
   }

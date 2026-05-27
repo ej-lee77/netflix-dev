@@ -1,13 +1,13 @@
-@use "../../../app/globals.scss" as *;
+@use "@/app/globals" as g;
 
 /* 넷플릭스 오리지널 섹션 */
 .netflix-original-section {
   padding: 40px 0;
 
   .section-title {
-    font-size: $text-20;
+    font-size: g.$text-20;
     font-weight: 700;
-    color: $w-color;
+    color: g.$w-color;
     margin-bottom: 16px;
     padding-left: 4px;
   }
@@ -44,10 +44,10 @@
     /* Swiper 화살표 */
     .swiper-button-next,
     .swiper-button-prev {
-      color: $w-color;
+      color: g.$w-color;
 
       &::after {
-        font-size: $text-24;
+        font-size: g.$text-24;
       }
     }
   }
@@ -55,7 +55,7 @@
   /* 카드 */
   .original-card {
     display: block;
-    color: $w-color;
+    color: g.$w-color;
     transition: transform 0.25s ease;
 
     &:hover {
@@ -84,8 +84,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: $text-14;
-      color: #888;
+      font-size: g.$text-14;
+      color: g.$g-color;
     }
   }
 }

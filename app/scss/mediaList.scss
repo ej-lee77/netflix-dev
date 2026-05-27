@@ -1,0 +1,275 @@
+@use "@/app/globals" as g;
+
+.media-list-page {
+  min-height: 100vh;
+  padding: 40px 0 80px;
+
+  .inner {
+    width: 1400px;
+    max-width: 95%;
+  }
+
+  .page-head {
+    margin-bottom: 32px;
+
+    h1 {
+      font-size: g.$text-32;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: g.$g-color;
+      font-size: g.$text-14;
+    }
+  }
+
+  /* 필터 행 */
+  .filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .chip {
+      padding: 8px 18px;
+      background: transparent;
+      border: 1px solid #3a3a3a;
+      color: g.$g-color;
+      border-radius: 100px;
+      font-size: g.$text-13;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &.active {
+        background: g.$main-color;
+        border-color: g.$main-color;
+        color: g.$w-color;
+        font-weight: 600;
+      }
+
+      &:hover:not(.active) {
+        border-color: g.$w-color;
+        color: g.$w-color;
+      }
+    }
+  }
+
+  .sort-select {
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #3a3a3a;
+    color: g.$w-color;
+    border-radius: g.$radius-md;
+    font-size: g.$text-13;
+    cursor: pointer;
+
+    option {
+      background: g.$bg-color;
+    }
+  }
+
+  /* 포스터 그리드 (위시리스트) */
+  .poster-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    @media (max-width: 700px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .poster-card {
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: translateY(-4px);
+    }
+
+    .poster {
+      position: relative;
+      aspect-ratio: 2 / 3;
+      background: #1a1a1a;
+      border-radius: g.$radius-md;
+      overflow: hidden;
+      margin-bottom: 10px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .type-tag {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 2px 8px;
+        background: rgba(0, 0, 0, 0.7);
+        color: g.$w-color;
+        border-radius: 4px;
+        font-size: g.$text-12;
+        font-weight: 600;
+      }
+    }
+
+    h3 {
+      font-size: g.$text-14;
+      font-weight: 600;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rating {
+      font-size: g.$text-12;
+      color: #fbbf24;
+    }
+  }
+
+  /* 시청기록 리스트 (재생목록) */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .history-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+    overflow: hidden;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: #3a3a3a;
+    }
+  }
+
+  .history-link {
+    display: flex;
+    gap: 16px;
+    padding: 14px;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .thumb {
+    width: 120px;
+    aspect-ratio: 16 / 9;
+    background: #1a1a1a;
+    border-radius: g.$radius-md;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 65%;
+      height: 4px;
+      background: g.$main-color;
+    }
+  }
+
+  .info {
+    flex: 1;
+    min-width: 0;
+
+    .type-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(229, 9, 20, 0.15);
+      color: g.$main-color;
+      border: 1px solid g.$main-color;
+      border-radius: 4px;
+      font-size: g.$text-12;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    h3 {
+      font-size: g.$text-16;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .watched-at {
+      font-size: g.$text-12;
+      color: g.$g-color;
+      margin-bottom: 4px;
+    }
+
+    .progress-text {
+      font-size: g.$text-12;
+      color: g.$main-color;
+    }
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    color: g.$g-color;
+    font-size: g.$text-18;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: g.$w-color;
+    }
+  }
+
+  /* 빈 상태 */
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+
+    p {
+      color: g.$g-color;
+      margin-bottom: 20px;
+      font-size: g.$text-14;
+    }
+  }
+
+  .btn-primary {
+    display: inline-block;
+    padding: 12px 28px;
+    background: g.$main-color;
+    color: g.$w-color;
+    border-radius: g.$radius-md;
+    font-size: g.$text-14;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #b81017;
+    }
+  }
+}

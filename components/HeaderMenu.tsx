@@ -1,4 +1,4 @@
-'use cilent';
+"use client";
 
 import { mainMenus, customMenus } from '@/data/mainMenu'
 import React, { useState, useEffect } from 'react';
