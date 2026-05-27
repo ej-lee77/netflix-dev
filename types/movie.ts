@@ -90,6 +90,7 @@ export interface MovieState {
 
     //추천작 (인기 영화 + 인기 TV 섞어서 랜덤)
     recommended: RecommendedItem[],
+    mediaDetails: { [key: string]: Movie | TV },
     //작품별 출연진 캐시: "movie-123" or "tv-456" 키
     casts: { [key: string]: CastMember[] },
 
@@ -110,5 +111,6 @@ export interface MovieState {
     onFetchTvImages: (id: string | number) => Promise<void>,
 
     onFetchRecommended: () => Promise<void>,
+    onFetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>
 }
