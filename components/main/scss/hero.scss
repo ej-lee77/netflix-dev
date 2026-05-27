@@ -3,7 +3,7 @@
 .hero {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: calc(100svh - g.$header-height);
   min-height: 620px;
   margin-top: 0 !important;
   overflow: hidden;
@@ -267,7 +267,11 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, transparent 100%);
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.88) 0%,
+      transparent 100%
+    );
   }
 
   .hero-nav {
@@ -403,11 +407,11 @@
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.3px;
-    background: var(--hero-red);
+    background: g.$main-color;
   }
 
   .btn-play:hover {
-    background: var(--hero-red-dark);
+    background: #b80710;
     transform: scale(1.02);
   }
 
@@ -464,7 +468,7 @@
 
   .hero-dot.active {
     width: 32px;
-    background: var(--hero-red);
+    background: g.$main-color;
   }
 
   .hero-skeleton {
@@ -529,7 +533,8 @@
   }
 
   @media (max-width: 900px) {
-    .hero {
+    & {
+      height: calc(100svh - g.$header-height);
       min-height: 560px;
     }
 
@@ -606,8 +611,8 @@
   }
 
   @media (max-width: 560px) {
-    .hero {
-      height: 560px;
+    & {
+      height: calc(100svh - g.$header-height);
       min-height: 560px;
     }
 
