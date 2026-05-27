@@ -1,6 +1,7 @@
 import { useMovieStore } from '@/store/useMovieStore';
 import React, { useEffect } from 'react'
 import "./scss/release.scss"
+import SectionTitle from '../common/SectionTitle';
 
 export default function Release() {
     const {onFetchUpcoming, upcomings} = useMovieStore();
@@ -22,7 +23,8 @@ export default function Release() {
 
     return (
         <section className="release-section">
-            <div className="release-container">
+            <div className="release-container inner">
+                <SectionTitle title='공개예정 미리보기' subTitle='새로운 작품들을 시청해보세요' />
                 <div className="release-masonry">
                 {reorderedUpcomings.map((movie) => {
                     const originalIndex = upcomings.findIndex(item => item.id === movie.id);
