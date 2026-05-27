@@ -1,0 +1,409 @@
+@use "@/app/globals" as g;
+
+.contact-page {
+  min-height: 100vh;
+  padding: 40px 0 80px;
+
+  .inner {
+    width: 1000px;
+    max-width: 95%;
+  }
+
+  .page-head {
+    margin-bottom: 32px;
+
+    h1 {
+      font-size: g.$text-32;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: g.$g-color;
+      font-size: g.$text-14;
+    }
+  }
+
+  .contact-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 32px;
+
+    button {
+      padding: 14px 22px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      color: g.$g-color;
+      font-size: g.$text-14;
+      cursor: pointer;
+
+      &.active {
+        color: g.$w-color;
+        border-bottom-color: g.$main-color;
+        font-weight: 600;
+      }
+    }
+  }
+
+  /* FAQ 검색 */
+  .faq-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    padding: 0 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #3a3a3a;
+    border-radius: g.$radius-md;
+    margin-bottom: 24px;
+
+    .icon {
+      color: g.$g-color;
+      font-size: g.$text-16;
+    }
+
+    input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: g.$w-color;
+      font-size: g.$text-14;
+
+      &::placeholder {
+        color: g.$g-color;
+      }
+    }
+  }
+
+  /* FAQ 카테고리 */
+  .faq-categories {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+
+    @media (max-width: 700px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .faq-category {
+    padding: 18px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &.active {
+      background: rgba(229, 9, 20, 0.08);
+      border-color: g.$main-color;
+    }
+
+    &:hover:not(.active) {
+      border-color: #3a3a3a;
+    }
+
+    .cat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: g.$radius-md;
+      background: rgba(229, 9, 20, 0.15);
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: g.$text-18;
+    }
+
+    h3 {
+      font-size: g.$text-13;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    p {
+      font-size: g.$text-12;
+      color: g.$g-color;
+    }
+  }
+
+  .section-h {
+    font-size: g.$text-16;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  /* FAQ 리스트 */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .faq-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+    overflow: hidden;
+
+    &.open {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .faq-q {
+      width: 100%;
+      padding: 16px 20px;
+      background: transparent;
+      border: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: g.$w-color;
+      font-size: g.$text-14;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+
+      .arrow {
+        color: g.$g-color;
+        font-size: g.$text-12;
+        flex-shrink: 0;
+        margin-left: 12px;
+      }
+    }
+
+    .faq-a {
+      padding: 0 20px 18px;
+      font-size: g.$text-13;
+      color: g.$g-color;
+      line-height: 1.7;
+    }
+  }
+
+  /* 1:1 문의 폼 */
+  .inquiry-form-wrap {
+    max-width: 700px;
+  }
+
+  .form-info {
+    padding: 14px 18px;
+    background: rgba(229, 9, 20, 0.05);
+    border: 1px solid rgba(229, 9, 20, 0.2);
+    border-radius: g.$radius-md;
+    margin-bottom: 24px;
+    font-size: g.$text-13;
+    color: g.$g-color;
+    line-height: 1.6;
+  }
+
+  .inquiry-form {
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+
+    .form-field {
+      margin-bottom: 18px;
+
+      label {
+        display: block;
+        font-size: g.$text-13;
+        color: g.$g-color;
+        margin-bottom: 8px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid #3a3a3a;
+        border-radius: g.$radius-md;
+        color: g.$w-color;
+        font-size: g.$text-14;
+        outline: none;
+        font-family: inherit;
+
+        &:focus { border-color: g.$main-color; }
+        &::placeholder { color: #555; }
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+        line-height: 1.6;
+      }
+    }
+  }
+
+  .form-attach {
+    padding: 24px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed #3a3a3a;
+    border-radius: g.$radius-md;
+    color: g.$g-color;
+    font-size: g.$text-13;
+    cursor: pointer;
+
+    &:hover {
+      border-color: g.$main-color;
+      color: g.$main-color;
+    }
+  }
+
+  .btn-submit {
+    width: 100%;
+    height: 52px;
+    background: g.$main-color;
+    border: none;
+    border-radius: g.$radius-md;
+    color: g.$w-color;
+    font-size: g.$text-14;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+
+    &:hover { background: #b81017; }
+  }
+
+  /* 상태 필터 */
+  .status-filter {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .status-chip {
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid #3a3a3a;
+    color: g.$g-color;
+    border-radius: 100px;
+    font-size: g.$text-12;
+    cursor: pointer;
+
+    &.active {
+      background: rgba(229, 9, 20, 0.15);
+      border-color: g.$main-color;
+      color: g.$main-color;
+      font-weight: 600;
+    }
+  }
+
+  /* 문의 내역 리스트 */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .history-item {
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #3a3a3a;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .category-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      font-size: g.$text-12;
+      color: g.$g-color;
+    }
+
+    .head-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status {
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: g.$text-12;
+      font-weight: 600;
+      border: 1px solid;
+
+      &.answered {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border-color: #22c55e;
+      }
+
+      &.processing {
+        background: rgba(251, 191, 36, 0.15);
+        color: #fbbf24;
+        border-color: #fbbf24;
+      }
+
+      &.pending {
+        background: rgba(229, 9, 20, 0.15);
+        color: g.$main-color;
+        border-color: g.$main-color;
+      }
+    }
+
+    .date {
+      font-size: g.$text-12;
+      color: g.$g-color;
+    }
+
+    h3 {
+      font-size: g.$text-14;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: g.$text-13;
+      color: g.$g-color;
+      line-height: 1.5;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+    }
+  }
+
+  .new-inquiry-cta {
+    text-align: center;
+    margin-top: 24px;
+
+    button {
+      padding: 12px 24px;
+      background: g.$main-color;
+      color: g.$w-color;
+      border: none;
+      border-radius: 100px;
+      font-size: g.$text-13;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover { background: #b81017; }
+    }
+  }
+}

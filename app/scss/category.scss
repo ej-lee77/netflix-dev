@@ -1,0 +1,239 @@
+@use "@/app/globals" as g;
+
+.category-page {
+  min-height: 100vh;
+  padding-bottom: 80px;
+
+  .inner {
+    width: 1400px;
+    max-width: 95%;
+  }
+
+  /* 히어로 영역 */
+  .category-hero {
+    position: relative;
+    height: 480px;
+    margin-bottom: 40px;
+    overflow: hidden;
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.6);
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to right,
+        rgba(20, 20, 20, 0.95) 0%,
+        rgba(20, 20, 20, 0.7) 40%,
+        rgba(20, 20, 20, 0.3) 100%
+      );
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 40px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 16px 6px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border-radius: 100px;
+      font-size: g.$text-13;
+      color: g.$w-color;
+      margin-bottom: 16px;
+      width: fit-content;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: g.$w-color;
+
+      @media (max-width: 700px) {
+        font-size: g.$text-32;
+      }
+    }
+
+    .hero-desc {
+      font-size: g.$text-18;
+      color: rgba(255, 255, 255, 0.85);
+      max-width: 600px;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+
+    .btn-play {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      background: g.$w-color;
+      color: g.$d-color;
+      border-radius: g.$radius-md;
+      font-size: g.$text-14;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+
+      &:hover { opacity: 0.85; }
+    }
+  }
+
+  /* 무드 페이지 변형 (액센트 컬러로) */
+  &.mood-variant {
+    .category-hero {
+      .hero-overlay {
+        background: linear-gradient(
+          to right,
+          rgba(20, 20, 20, 0.95) 0%,
+          rgba(20, 20, 20, 0.7) 40%,
+          rgba(229, 9, 20, 0.15) 100%
+        );
+      }
+    }
+  }
+
+  /* 타입 필터 */
+  .type-filter {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 32px;
+
+    button {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      color: g.$g-color;
+      font-size: g.$text-14;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+
+      &.active {
+        color: g.$w-color;
+        border-bottom-color: g.$main-color;
+        font-weight: 700;
+      }
+
+      &:hover:not(.active) {
+        color: g.$w-color;
+      }
+    }
+  }
+
+  /* 포스터 그리드 */
+  .poster-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 24px 16px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    @media (max-width: 700px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .poster-card {
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: translateY(-6px);
+
+      .poster img {
+        transform: scale(1.05);
+      }
+    }
+
+    .poster {
+      position: relative;
+      aspect-ratio: 2 / 3;
+      background: #1a1a1a;
+      border-radius: g.$radius-md;
+      overflow: hidden;
+      margin-bottom: 10px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s;
+      }
+
+      .no-image {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: g.$g-color;
+        font-size: g.$text-13;
+      }
+
+      .rating {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 3px 8px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fbbf24;
+        border-radius: 4px;
+        font-size: g.$text-12;
+        font-weight: 600;
+      }
+    }
+
+    h3 {
+      font-size: g.$text-14;
+      font-weight: 600;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .year {
+      font-size: g.$text-12;
+      color: g.$g-color;
+    }
+  }
+
+  .loading,
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: g.$g-color;
+    font-size: g.$text-14;
+  }
+}

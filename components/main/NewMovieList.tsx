@@ -11,11 +11,11 @@ export default function NewMovieList() {
 
 
     return (
-        <div>
-            <SectionTitle
-                title='신작'
-                subTitle='새로운 작품들을 시청해보세요' />
-            <div className='relative left-1/2 h-[680px] w-[calc(100vw-var(--main-menu-width))] -translate-x-1/2 overflow-hidden'>
+        <section>
+            <div className="inner">
+                <SectionTitle title='신작' subTitle='새로운 작품들을 시청해보세요' />
+            </div>
+            <div className='relative left-1/2 h-[600px] w-[calc(100vw-var(--main-menu-width))] -translate-x-1/2 overflow-hidden'>
 
                 <ul className="new-movie-list">
                     {
@@ -106,7 +106,7 @@ export default function NewMovieList() {
                     }
                 </ul>
             </div>
-        </div>
+        </section>
 
     )
 }

@@ -9,6 +9,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import OriginalBanner from './OriginalBanner';
 import './scss/netflixOriginal.scss';
+import SectionTitle from '../common/SectionTitle';
 
 /**
  * 넷플릭스 오리지널 시리즈 섹션
@@ -28,7 +29,7 @@ export default function NetflixOriginal() {
   return (
     <section className="netflix-original-section">
       <div className="inner">
-        <h2 className="section-title">오리지널</h2>
+        <SectionTitle title='오리지널' subTitle='새로운 작품들을 시청해보세요' />
 
         <div className="original-wrap">
           {/* 좌측 고정 로고 영역 */}
