@@ -4,6 +4,7 @@ import "./globals.scss";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LoginBanner from "@/components/LoginBanner";
 
 const netflixSans = localFont({
   src: [
@@ -33,6 +34,8 @@ export default function RootLayout({
         <Header />
         <main>{children}</main>
         <Footer />
+        {/* 비로그인 사용자에게 표시되는 하단 고정 배너 */}
+        <LoginBanner />
       </body>
     </html>
   );
