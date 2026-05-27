@@ -52,7 +52,7 @@ export default function CategoryList({ category }: MediaListProps) {
     };
 
     return (
-        <div className="swiper-container-wrap w-full py-6 bg-[#171717]">
+        <div className="category-list-wrap swiper-container-wrap w-full py-6 bg-[#171717]">
         <Swiper
             modules={[FreeMode, Scrollbar]}
             spaceBetween={24}            // 카드 사이 간격 (gap-6과 동일)

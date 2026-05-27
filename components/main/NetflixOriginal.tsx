@@ -34,7 +34,7 @@ export default function NetflixOriginal() {
           {/* 좌측 고정 로고 영역 */}
           <div className="original-logo">
             <Image
-              src="/images/netflix-original-logo.png"
+              src="/images/main/netflix-original-logo.png"
               alt="NETFLIX ORIGINAL SERIES"
               width={220}
               height={180}
