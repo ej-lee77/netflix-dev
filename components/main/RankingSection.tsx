@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import type { KeyboardEvent, PointerEvent } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
@@ -25,8 +27,12 @@ export default function RankingSection() {
   const { trendingMovies, onFetchTrending } = useMovieStore();
 
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [slideProgress, setSlideProgress] = useState(0);
 
   const swiperRef = useRef<SwiperClass | null>(null);
+  const pointerStartRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const isSwiperDraggingRef = useRef(false);
 
   useEffect(() => {
     if (!trendingMovies.length) {
@@ -48,20 +54,56 @@ export default function RankingSection() {
     }
   }, [activeId, rankingItems]);
 
-  const activeIndex = rankingItems.findIndex((movie) => movie.id === activeId);
-
   const selectRankingItem = (id: number, index: number) => {
-    setActiveId(id);
+    const swiper = swiperRef.current;
+    const canClick = (swiper as (SwiperClass & { allowClick?: boolean }) | null)
+      ?.allowClick;
 
-    setTimeout(() => {
+    if (isDraggingRef.current || isSwiperDraggingRef.current || canClick === false) {
+      isDraggingRef.current = false;
+      return;
+    }
+
+    flushSync(() => {
+      setActiveId(id);
+    });
+
+    window.requestAnimationFrame(() => {
       const swiper = swiperRef.current;
 
       if (!swiper) return;
 
       swiper.update();
+      swiper.slideTo(Math.max(index - 1, 0), 420);
+    });
+  };
 
-      swiper.slideTo(Math.max(index - 1, 0), 500);
-    }, 0);
+  const handleCardKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    id: number,
+    index: number,
+  ) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    selectRankingItem(id, index);
+  };
+
+  const handlePointerDown = (event: PointerEvent) => {
+    pointerStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+    };
+    isDraggingRef.current = false;
+  };
+
+  const handlePointerMove = (event: PointerEvent) => {
+    const deltaX = Math.abs(event.clientX - pointerStartRef.current.x);
+    const deltaY = Math.abs(event.clientY - pointerStartRef.current.y);
+
+    if (deltaX > 6 || deltaY > 6) {
+      isDraggingRef.current = true;
+    }
   };
 
   if (!rankingItems.length) {
@@ -86,6 +128,10 @@ export default function RankingSection() {
         <Swiper
           modules={[FreeMode]}
           freeMode={false}
+          grabCursor
+          simulateTouch
+          threshold={6}
+          touchStartPreventDefault={false}
           slidesPerView="auto"
           spaceBetween={18}
           watchSlidesProgress
@@ -95,24 +141,52 @@ export default function RankingSection() {
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
           }}
+          onSliderMove={() => {
+            isSwiperDraggingRef.current = true;
+          }}
+          onTouchMove={() => {
+            isSwiperDraggingRef.current = true;
+          }}
+          onTouchEnd={() => {
+            window.setTimeout(() => {
+              isSwiperDraggingRef.current = false;
+            }, 0);
+          }}
+          onProgress={(_, progress) => {
+            setSlideProgress(progress);
+          }}
+          onSetTranslate={(swiper) => {
+            setSlideProgress(swiper.progress);
+          }}
         >
           {rankingItems.map((movie, index) => {
             const isActive = movie.id === activeId;
+            const cardRoleProps = isActive
+              ? {}
+              : {
+                  role: "button",
+                  tabIndex: 0,
+                  onClick: () => selectRankingItem(movie.id, index),
+                  onKeyDown: (event: KeyboardEvent<HTMLDivElement>) =>
+                    handleCardKeyDown(event, movie.id, index),
+                };
 
             return (
               <SwiperSlide
                 className={`ranking-slide ${isActive ? "expanded" : ""}`}
                 key={movie.id}
               >
-                <button
-                  type="button"
+                <div
                   className={`ranking-card ${isActive ? "active" : ""}`}
-                  onClick={() => selectRankingItem(movie.id, index)}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  {...cardRoleProps}
                 >
                   <span className="ranking-card-poster">
                     <img
                       src={imageUrl(movie.poster_path, "w500")}
                       alt={movie.title}
+                      draggable={false}
                     />
                   </span>
 
@@ -148,8 +222,8 @@ export default function RankingSection() {
                     </span>
 
                     <span className="ranking-detail-actions">
-                      <span>상세보기</span>
-                      <span>재생</span>
+                      <button type="button">상세보기</button>
+                      <button type="button">재생</button>
                     </span>
                   </span>
 
@@ -158,7 +232,7 @@ export default function RankingSection() {
 
                     <span className="ranking-card-title">{movie.title}</span>
                   </span>
-                </button>
+                </div>
               </SwiperSlide>
             );
           })}
@@ -168,10 +242,7 @@ export default function RankingSection() {
       <div className="ranking-progress">
         <span
           style={{
-            width: `${
-              ((activeIndex >= 0 ? activeIndex + 1 : 1) / rankingItems.length) *
-              100
-            }%`,
+            transform: `translateX(${slideProgress * 900}%)`,
           }}
         />
       </div>
