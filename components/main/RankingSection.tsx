@@ -11,6 +11,7 @@ import { useMovieStore } from "@/store/useMovieStore";
 import "swiper/css";
 import "swiper/css/free-mode";
 import "./scss/rankingSection.scss";
+import SectionTitle from "../common/SectionTitle";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/";
 
@@ -109,7 +110,7 @@ export default function RankingSection() {
   if (!rankingItems.length) {
     return (
       <section className="ranking-section">
-        <h2 className="ranking-title">랭킹</h2>
+        <SectionTitle title='랭킹' subTitle='새로운 작품들을 시청해보세요' />
 
         <div className="ranking-skeleton-row">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -122,7 +123,9 @@ export default function RankingSection() {
 
   return (
     <section className="ranking-section">
-      <h2 className="ranking-title">랭킹</h2>
+      <div className="inner">
+        <SectionTitle title='랭킹' subTitle='새로운 작품들을 시청해보세요' />
+      </div>
 
       <div className="ranking-swiper-wrap">
         <Swiper
@@ -239,7 +242,7 @@ export default function RankingSection() {
         </Swiper>
       </div>
 
-      <div className="ranking-progress">
+      <div className="ranking-progress inner">
         <span
           style={{
             transform: `translateX(${slideProgress * 900}%)`,
