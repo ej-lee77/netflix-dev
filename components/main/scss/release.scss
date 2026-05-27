@@ -132,9 +132,11 @@
 
   .card-small .card-overview {
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .card-large .card-overview {
     -webkit-line-clamp: 4;
+    line-clamp: 4;
   }
 }
