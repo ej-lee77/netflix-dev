@@ -3,24 +3,48 @@
 .ranking-section {
   padding: 44px 0 56px;
   overflow: hidden;
-  background: #141414;
 }
 
 .ranking-title {
   width: min(1600px, calc(100vw - 96px));
-  margin: 0 auto 28px;
-  padding-bottom: 10px;
-  color: #f3f3f3;
-  font-size: 1.25rem;
+  margin: 0 auto 14px;
+  color: #fff;
+  font-size: g.$title-text;
   font-weight: 700;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  line-height: 1.2;
+}
+
+.ranking-swiper-wrap {
+  position: relative;
+  width: min(1600px, calc(100vw - 96px));
+  margin: 0 auto;
 }
 
 .ranking-swiper {
   overflow: visible;
-  width: min(1600px, calc(100vw - 96px));
-  margin: 0 auto;
+  width: 100%;
   padding: 20px 0 18px;
+}
+
+.ranking-next {
+  display: none;
+}
+
+.ranking-progress {
+  width: min(1600px, calc(100vw - 96px));
+  height: 3px;
+  margin: 8px auto 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+}
+
+.ranking-progress span {
+  display: block;
+  height: 100%;
+  background: g.$main-color;
+  border-radius: inherit;
+  transition: width 0.34s ease;
 }
 
 .ranking-slide {
@@ -331,7 +355,8 @@
 
 @media (max-width: 760px) {
   .ranking-title,
-  .ranking-swiper,
+  .ranking-swiper-wrap,
+  .ranking-progress,
   .ranking-skeleton-row {
     width: calc(100vw - 40px);
   }
