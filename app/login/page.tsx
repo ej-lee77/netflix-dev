@@ -13,10 +13,10 @@ import "../scss/login.scss";
 // ─── 상수 ──────────────────────────────────────────────────────────────────────
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-const IMG_BASE = "https://image.tmdb.org/t/p/w342"; // 포스터 사이즈 w342
+const IMG_BASE = "https://image.tmdb.org/t/p/w342";
 
-const COL_COUNT = 4;
-const ITEMS_PER_COL = 8; // 컬럼당 타일 수 (스크롤 루프용 x2 = 16)
+const ROW_COUNT = 8;
+const ITEMS_PER_ROW = 14;
 
 // ─── 아이콘 ────────────────────────────────────────────────────────────────────
 
@@ -36,12 +36,11 @@ const EyeOffIcon = () => (
 // ─── 포스터 그리드 컴포넌트 ────────────────────────────────────────────────────
 
 function PosterGrid() {
-  const [posters, setPosters] = useState<string[]>([]); // poster_path 배열
+  const [posters, setPosters] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchPosters = async () => {
       try {
-        // 인기영화 3페이지를 병렬로 받아서 충분한 포스터 확보
         const pages = [1, 2, 3];
         const results = await Promise.all(
           pages.map((p) =>
@@ -51,7 +50,6 @@ function PosterGrid() {
           )
         );
         const allMovies: Movie[] = results.flatMap((r) => r.results ?? []);
-        // poster_path 있는 것만 필터 후 셔플
         const paths = allMovies
           .filter((m) => m.poster_path)
           .map((m) => m.poster_path)
@@ -64,13 +62,12 @@ function PosterGrid() {
     fetchPosters();
   }, []);
 
-  // 포스터가 아직 없으면 빈 컬럼 스켈레톤 표시
   if (posters.length === 0) {
     return (
       <div className="poster-grid">
-        {Array.from({ length: COL_COUNT }).map((_, ci) => (
-          <div key={ci} className="poster-col">
-            {Array.from({ length: ITEMS_PER_COL * 2 }).map((_, ti) => (
+        {Array.from({ length: ROW_COUNT }).map((_, ri) => (
+          <div key={ri} className="poster-row">
+            {Array.from({ length: ITEMS_PER_ROW * 2 }).map((_, ti) => (
               <div key={ti} className="poster-item poster-skeleton" />
             ))}
           </div>
@@ -79,29 +76,26 @@ function PosterGrid() {
     );
   }
 
-  // 포스터를 컬럼별로 분배
-  // 각 컬럼에 ITEMS_PER_COL개씩, 루프용으로 2배 복제
-  const columns: string[][] = Array.from({ length: COL_COUNT }, (_, ci) => {
+  const rows: string[][] = Array.from({ length: ROW_COUNT }, (_, ri) => {
     const slice = Array.from(
-      { length: ITEMS_PER_COL },
-      (_, ti) => posters[(ci * ITEMS_PER_COL + ti) % posters.length]
+      { length: ITEMS_PER_ROW },
+      (_, ti) => posters[(ri * ITEMS_PER_ROW + ti) % posters.length]
     );
-    return [...slice, ...slice]; // 무한 스크롤을 위해 2배
+    return [...slice, ...slice];
   });
 
   return (
     <div className="poster-grid">
-      {columns.map((col, ci) => (
-        <div key={ci} className="poster-col">
-          {col.map((path, ti) => (
-            <div key={`${ci}-${ti}`} className="poster-item">
+      {rows.map((row, ri) => (
+        <div key={ri} className="poster-row">
+          {row.map((path, ti) => (
+            <div key={`${ri}-${ti}`} className="poster-item">
               <Image
                 src={`${IMG_BASE}${path}`}
                 alt=""
                 fill
                 sizes="(max-width: 1024px) 25vw, 15vw"
                 className="poster-img"
-                // 이미지 로드 실패 시 어둡게 처리 (fallback)
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.opacity = "0";
                 }}
@@ -129,7 +123,6 @@ export default function LoginPage() {
 
   const defaultProfiles = [{ id: 1, name: "나", imgUrl: "images/profile/1.png" }];
 
-  // ── 이메일/비밀번호 로그인 ──────────────────────────────────────────────────
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -150,7 +143,6 @@ export default function LoginPage() {
     }
   };
 
-  // ── 구글 로그인 ─────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     setError("");
     try {
@@ -242,27 +234,31 @@ export default function LoginPage() {
 
           <ul className="social-list">
             <li>
-              <button type="button" className="social-btn" onClick={handleGoogleLogin}>
-                <span className="social-icon icon-google">G</span>
-                Google로 계속하기
+              <button
+                type="button"
+                className="social-btn social-google"
+                onClick={handleGoogleLogin}
+              >
+                <span className="social-icon-wrap">
+                  <Image src="/images/social/google_login.svg" alt="Google" width={24} height={24} />
+                </span>
+                <span className="social-label">Google로 로그인</span>
               </button>
             </li>
             <li>
-              <button type="button" className="social-btn">
-                <span className="social-icon icon-apple"></span>
-                Apple로 계속하기
+              <button type="button" className="social-btn social-naver">
+                <span className="social-icon-wrap">
+                  <Image src="/images/social/naver_login.svg" alt="Naver" width={24} height={24} />
+                </span>
+                <span className="social-label">네이버로 로그인</span>
               </button>
             </li>
             <li>
-              <button type="button" className="social-btn">
-                <span className="social-icon icon-naver">N</span>
-                N 네이버로 계속하기
-              </button>
-            </li>
-            <li>
-              <button type="button" className="social-btn">
-                <span className="social-icon icon-kakao">K</span>
-                K 카카오로 계속하기
+              <button type="button" className="social-btn social-kakao">
+                <span className="social-icon-wrap">
+                  <Image src="/images/social/kakao_login.svg" alt="Kakao" width={24} height={24} />
+                </span>
+                <span className="social-label">카카오로 로그인</span>
               </button>
             </li>
           </ul>

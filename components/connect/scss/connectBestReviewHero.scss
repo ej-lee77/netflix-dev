@@ -1,0 +1,415 @@
+.connect-best-review-hero {
+  position: relative;
+  min-height: 640px;
+  overflow: hidden;
+  color: #fff;
+
+  &__backdrop {
+    position: absolute;
+    top: 96px;
+    right: 0;
+    left: 0;
+    height: 470px;
+    background-position: center;
+    background-size: cover;
+    opacity: 0.44;
+    transform: skewY(-1.7deg) scale(1.04);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0.42),
+          rgba(229, 9, 20, 0.16) 42%,
+          rgba(0, 0, 0, 0.22)
+        ),
+        linear-gradient(180deg, rgba(229, 9, 20, 0.1), rgba(22, 8, 15, 0.52));
+      backdrop-filter: blur(3px);
+    }
+  }
+
+  &__inner {
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 390px minmax(0, 1fr);
+    gap: 58px;
+    padding-top: 20px;
+  }
+
+  &__featured {
+    min-width: 0;
+    animation: connectHeroMainIn 0.34s ease both;
+  }
+
+  &__heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 2px;
+
+    span {
+      color: #e50914;
+      font-size: 7.5rem;
+      font-weight: 900;
+      line-height: 0.86;
+    }
+
+    h1 {
+      overflow: hidden;
+      font-size: 1.45rem;
+      font-weight: 900;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    em {
+      padding: 9px 12px;
+      border-radius: 4px;
+      color: #e50914;
+      font-size: 0.9rem;
+      font-style: normal;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.09);
+
+      b {
+        color: inherit;
+      }
+    }
+  }
+
+  &__poster {
+    width: 355px;
+    margin-left: 40px;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: 3px;
+    background: #191919;
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.62);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__content {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 96px 0 34px;
+  }
+
+  &__top {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) 260px;
+    align-items: start;
+    gap: 80px;
+    margin-bottom: 74px;
+  }
+
+  &__review-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    strong {
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    div {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    i {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+
+      &.active {
+        width: 20px;
+        height: 7px;
+        background: rgba(255, 255, 255, 0.78);
+      }
+    }
+  }
+
+  &__quote {
+    position: relative;
+    width: 100%;
+    height: 156px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  &__comment-track {
+    display: flex;
+    height: 100%;
+  }
+
+  &__comment {
+    flex: 0 0 100%;
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 24px 22px;
+    overflow: hidden;
+  }
+
+  &__stats {
+    display: grid;
+    height: 160px;
+    align-content: space-between;
+    padding-top: 36px;
+
+    div {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    dt,
+    dd {
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 0.95rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    dt {
+      color: rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  &__ranking {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 26px;
+    align-items: end;
+    animation: connectHeroCardsIn 0.34s ease both;
+  }
+
+  &__card {
+    position: relative;
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    color: #fff;
+    text-align: left;
+    background: transparent;
+    cursor: pointer;
+
+    span {
+      position: absolute;
+      z-index: 2;
+      top: -45px;
+      left: 0;
+      min-width: 64px;
+      font-size: 3.25rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
+      text-shadow: 0 5px 16px rgba(0, 0, 0, 0.72);
+    }
+
+    strong {
+      position: absolute;
+      z-index: 3;
+      top: -28px;
+      left: 74px;
+      max-width: calc(100% - 74px);
+      overflow: hidden;
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    img {
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      border-radius: 3px;
+      object-fit: cover;
+      filter: brightness(0.78);
+      transition:
+        filter 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    &:hover,
+    &.active {
+      img {
+        filter: brightness(1);
+        transform: translateY(-6px);
+      }
+    }
+  }
+
+  &__arrow {
+    position: absolute;
+    z-index: 2;
+    top: 51%;
+    width: 54px;
+    height: 74px;
+    border: 0;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 5rem;
+    line-height: 1;
+    background: transparent;
+    cursor: pointer;
+    transform: translateY(-50%);
+
+    &:hover {
+      color: #fff;
+    }
+
+    &--prev {
+      left: max(24px, calc((100vw - 1320px) / 2 - 76px));
+    }
+
+    &--next {
+      right: max(24px, calc((100vw - 1320px) / 2 - 76px));
+    }
+  }
+}
+
+@keyframes connectHeroMainIn {
+  from {
+    opacity: 0.35;
+    transform: translateX(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes connectHeroCardsIn {
+  from {
+    opacity: 0.25;
+    transform: translateX(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 1280px) {
+  .connect-best-review-hero {
+    &__inner {
+      grid-template-columns: 330px minmax(0, 1fr);
+      gap: 44px;
+    }
+
+    &__poster {
+      width: 300px;
+      margin-left: 28px;
+    }
+
+    &__content {
+      padding-top: 120px;
+    }
+
+    &__top {
+      grid-template-columns: minmax(280px, 1fr);
+      gap: 24px;
+    }
+
+    &__stats {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+
+      div {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+
+    &__ranking {
+      gap: 18px;
+    }
+
+    &__arrow--prev {
+      left: 28px;
+    }
+  }
+}
+
+@media (max-width: 860px) {
+  .connect-best-review-hero {
+    min-height: auto;
+    margin-top: 12px;
+    padding-bottom: 44px;
+
+    &__backdrop {
+      inset: 70px 0 0;
+      transform: none;
+    }
+
+    &__arrow {
+      display: none;
+    }
+
+    &__inner {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      padding-top: 22px;
+    }
+
+    &__heading {
+      grid-template-columns: auto 1fr;
+
+      span {
+        font-size: 5.2rem;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+      }
+
+      em {
+        grid-column: 2;
+        width: fit-content;
+      }
+    }
+
+    &__poster {
+      width: min(320px, 100%);
+      margin: 0 auto;
+    }
+
+    &__content {
+      padding: 0;
+    }
+
+    &__stats {
+      grid-template-columns: 1fr;
+    }
+
+    &__ranking {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 58px;
+      padding-top: 34px;
+    }
+  }
+}
