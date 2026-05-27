@@ -1,0 +1,451 @@
+@use "@/app/globals" as g;
+
+.feed-page {
+  min-height: 100vh;
+  padding: 40px 0 80px;
+
+  .inner {
+    width: 1400px;
+    max-width: 95%;
+  }
+
+  .page-head {
+    margin-bottom: 24px;
+
+    h1 {
+      font-size: g.$text-32;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: g.$g-color;
+      font-size: g.$text-14;
+    }
+  }
+
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    overflow-x: auto;
+
+    .chip {
+      padding: 8px 18px;
+      background: transparent;
+      border: 1px solid #3a3a3a;
+      color: g.$g-color;
+      border-radius: 100px;
+      font-size: g.$text-13;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+
+      &.active {
+        background: g.$main-color;
+        border-color: g.$main-color;
+        color: g.$w-color;
+        font-weight: 600;
+      }
+
+      &:hover:not(.active) {
+        border-color: g.$w-color;
+        color: g.$w-color;
+      }
+    }
+  }
+
+  .feed-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 32px;
+
+    @media (max-width: 1100px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 메인 피드 */
+  .feed-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .feed-post {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-lg;
+    overflow: hidden;
+  }
+
+  .post-head {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .post-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      flex-shrink: 0;
+    }
+
+    .post-meta {
+      flex: 1;
+      min-width: 0;
+
+      h3 {
+        font-size: g.$text-13;
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+
+      .post-info {
+        display: flex;
+        gap: 6px;
+        font-size: g.$text-12;
+        color: g.$g-color;
+
+        .action-tag {
+          color: g.$main-color;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .post-more {
+      background: transparent;
+      border: none;
+      color: g.$g-color;
+      font-size: g.$text-18;
+      cursor: pointer;
+      padding: 0 8px;
+
+      &:hover {
+        color: g.$w-color;
+      }
+    }
+  }
+
+  .post-body {
+    padding: 0 20px 16px;
+  }
+
+  /* 리뷰 본문 */
+  .review-body {
+    display: flex;
+    gap: 14px;
+
+    .thumb {
+      width: 90px;
+      flex-shrink: 0;
+
+      img {
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        object-fit: cover;
+        border-radius: g.$radius-md;
+      }
+    }
+
+    .review-info {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        font-size: g.$text-14;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .meta {
+        font-size: g.$text-12;
+        color: g.$g-color;
+        margin-bottom: 8px;
+      }
+
+      .stars {
+        color: g.$main-color;
+        font-size: g.$text-13;
+        letter-spacing: 2px;
+        margin-bottom: 8px;
+      }
+
+      .review-text {
+        font-size: g.$text-13;
+        line-height: 1.6;
+        color: g.$w-color;
+      }
+    }
+  }
+
+  /* 플레이리스트 본문 */
+  .playlist-body {
+    .playlist-mosaic {
+      aspect-ratio: 21 / 9;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 4px;
+      margin-bottom: 12px;
+      border-radius: g.$radius-md;
+      overflow: hidden;
+
+      > div {
+        background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+      }
+    }
+
+    h4 {
+      font-size: g.$text-14;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .meta {
+      font-size: g.$text-12;
+      color: g.$g-color;
+    }
+  }
+
+  /* 시청 본문 */
+  .watch-body {
+    display: flex;
+    gap: 14px;
+
+    .watch-thumb {
+      width: 140px;
+      flex-shrink: 0;
+      position: relative;
+      border-radius: g.$radius-md;
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+      }
+
+      .play-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: g.$w-color;
+        font-size: g.$text-20;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    .watch-info {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        font-size: g.$text-14;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .meta {
+        font-size: g.$text-12;
+        color: g.$g-color;
+      }
+    }
+  }
+
+  /* 액션 바 */
+  .post-actions {
+    border-top: 1px solid #2a2a2a;
+    padding: 10px 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .action {
+      padding: 6px 12px;
+      background: transparent;
+      border: none;
+      color: g.$g-color;
+      font-size: g.$text-12;
+      cursor: pointer;
+      border-radius: g.$radius-md;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: g.$w-color;
+      }
+
+      &.liked {
+        color: g.$main-color;
+        font-weight: 600;
+      }
+    }
+  }
+
+  /* 댓글 영역 */
+  .post-comments {
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid #2a2a2a;
+    padding: 12px 20px;
+
+    .comment-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+
+      .comment-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #1a1a1a;
+        flex-shrink: 0;
+      }
+
+      p {
+        font-size: g.$text-12;
+        line-height: 1.5;
+
+        strong {
+          font-weight: 700;
+          margin-right: 4px;
+        }
+      }
+    }
+
+    .comment-input {
+      width: 100%;
+      height: 36px;
+      border: 1px solid #3a3a3a;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: g.$radius-md;
+      padding: 0 12px;
+      color: g.$w-color;
+      font-size: g.$text-12;
+      outline: none;
+
+      &::placeholder {
+        color: g.$g-color;
+      }
+
+      &:focus {
+        border-color: g.$main-color;
+      }
+    }
+  }
+
+  /* 사이드바 */
+  .feed-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-self: start;
+    position: sticky;
+    top: 80px;
+
+    @media (max-width: 1100px) {
+      position: static;
+    }
+  }
+
+  .side-block {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #2a2a2a;
+    border-radius: g.$radius-md;
+
+    .side-h {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+
+      h3 {
+        font-size: g.$text-13;
+        font-weight: 700;
+      }
+
+      .more {
+        color: g.$g-color;
+        font-size: g.$text-12;
+        &:hover { color: g.$w-color; }
+      }
+    }
+  }
+
+  .side-friend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      flex-shrink: 0;
+    }
+
+    .info {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        font-size: g.$text-12;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      p {
+        font-size: g.$text-12;
+        color: g.$g-color;
+        opacity: 0.7;
+      }
+    }
+
+    .follow-btn {
+      padding: 4px 12px;
+      background: g.$main-color;
+      border: none;
+      color: g.$w-color;
+      border-radius: 100px;
+      font-size: g.$text-12;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  .trend-item {
+    display: block;
+    padding: 8px 0;
+    border-bottom: 1px solid #2a2a2a;
+    cursor: pointer;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    h4 {
+      font-size: g.$text-12;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    p {
+      font-size: g.$text-12;
+      color: g.$g-color;
+      opacity: 0.7;
+    }
+
+    &:hover h4 {
+      color: g.$main-color;
+    }
+  }
+}

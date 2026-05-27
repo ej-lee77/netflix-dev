@@ -1,4 +1,4 @@
-"use-client";
+"use client";
 import { useMovieStore } from '@/store/useMovieStore';
 import React from 'react';
 import SectionTitle from '../common/SectionTitle';

@@ -1,14 +1,13 @@
+@use "@/app/globals" as g;
+
 .hero {
-  --hero-red: #e50914;
-  --hero-red-dark: #b00710;
-  --hero-muted: #999;
   position: relative;
   width: 100%;
   height: 100vh;
   min-height: 620px;
   margin-top: -60px;
   overflow: hidden;
-  background: #141414;
+  background: g.$bg-color;
 }
 
 .hero-backdrop {
@@ -43,7 +42,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(g.$d-color, 0.08);
 }
 
 .hero-video-poster.visible {
@@ -162,11 +161,11 @@
   width: 148px;
   height: 210px;
   overflow: hidden;
-  color: #fff;
+  color: g.$w-color;
   background: rgba(224, 224, 224, 0.5);
   border: 0;
-  border-radius: 8px;
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
+  border-radius: g.$radius-md;
+  box-shadow: 0 16px 34px rgba(g.$d-color, 0.34);
   opacity: 0.72;
   pointer-events: auto;
   transform: translateX(-50%);
@@ -212,7 +211,7 @@
   height: 250px;
   opacity: 1;
   transform: translateX(-50%);
-  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.48);
+  box-shadow: 0 22px 46px rgba(g.$d-color, 0.48);
 }
 
 .hero-poster.after-1 {
@@ -238,7 +237,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.42);
+  background: rgba(g.$d-color, 0.42);
 }
 
 .hero-poster img,
@@ -261,14 +260,14 @@
   z-index: 2;
   overflow: hidden;
   padding: 42px 10px 10px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 11px;
+  color: rgba(g.$w-color, 0.86);
+  font-size: g.$text-12;
   font-weight: 700;
   line-height: 1.3;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(g.$d-color, 0.88) 0%, transparent 100%);
 }
 
 .hero-nav {
@@ -289,10 +288,10 @@
   height: 34px;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 16px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: g.$w-color;
+  font-size: g.$text-16;
+  background: rgba(g.$d-color, 0.45);
+  border: 1.5px solid rgba(g.$w-color, 0.4);
   border-radius: 50%;
   backdrop-filter: blur(4px);
   pointer-events: auto;
@@ -302,8 +301,8 @@
 }
 
 .hero-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(g.$w-color, 0.14);
+  border-color: rgba(g.$w-color, 0.8);
 }
 
 .hero-content {
@@ -320,7 +319,7 @@
   gap: 5px;
   margin-bottom: 13px;
   padding: 3px 9px;
-  color: #000;
+  color: g.$d-color;
   font-size: 9.5px;
   font-weight: 900;
   letter-spacing: 1.2px;
@@ -334,7 +333,7 @@
   font-size: 54px;
   line-height: 1.05;
   letter-spacing: 1px;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.85);
+  text-shadow: 0 2px 24px rgba(g.$d-color, 0.85);
 }
 
 .hero-meta {
@@ -343,8 +342,8 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 11.5px;
+  color: rgba(g.$w-color, 0.65);
+  font-size: g.$text-12;
 }
 
 .hero-meta-sep {
@@ -353,19 +352,19 @@
 
 .hero-rating-stars {
   color: #f5c518;
-  font-size: 13px;
+  font-size: g.$text-13;
 }
 
 .hero-rating-val {
-  color: #fff;
-  font-size: 13px;
+  color: g.$w-color;
+  font-size: g.$text-13;
   font-weight: 700;
 }
 
 .hero-age-badge {
   padding: 1px 6px;
-  font-size: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: g.$text-12;
+  border: 1px solid rgba(g.$w-color, 0.3);
   border-radius: 2px;
 }
 
@@ -374,8 +373,8 @@
   max-width: 430px;
   margin-bottom: 20px;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
+  color: rgba(g.$w-color, 0.72);
+  font-size: g.$text-13;
   line-height: 1.72;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -400,44 +399,44 @@
 .btn-play {
   gap: 8px;
   padding: 11px 28px;
-  color: #fff;
-  font-size: 14px;
+  color: g.$w-color;
+  font-size: g.$text-14;
   font-weight: 700;
   letter-spacing: 0.3px;
-  background: var(--hero-red);
+  background: g.$main-color;
 }
 
 .btn-play:hover {
-  background: var(--hero-red-dark);
+  background: #b00710;
   transform: scale(1.02);
 }
 
 .btn-play svg {
   width: 15px;
   height: 15px;
-  fill: #fff;
+  fill: g.$w-color;
 }
 
 .btn-info {
   gap: 7px;
   padding: 11px 22px;
-  color: #fff;
-  font-size: 14px;
+  color: g.$w-color;
+  font-size: g.$text-14;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.11);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(g.$w-color, 0.11);
+  border: 1px solid rgba(g.$w-color, 0.28);
   backdrop-filter: blur(4px);
 }
 
 .btn-info:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(g.$w-color, 0.2);
 }
 
 .btn-info svg {
   width: 16px;
   height: 16px;
   fill: none;
-  stroke: #fff;
+  stroke: g.$w-color;
   stroke-linecap: round;
   stroke-width: 2;
 }
@@ -456,7 +455,7 @@
 .hero-dot {
   width: 24px;
   height: 3px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(g.$w-color, 0.25);
   border-radius: 2px;
   transition:
     width 0.2s ease,
@@ -465,7 +464,7 @@
 
 .hero-dot.active {
   width: 32px;
-  background: var(--hero-red);
+  background: g.$main-color;
 }
 
 .hero-skeleton {
