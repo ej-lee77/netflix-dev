@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
+import type { Swiper as SwiperClass } from "swiper";
 import { useMovieStore } from "@/store/useMovieStore";
 
 import "swiper/css";
@@ -23,6 +24,7 @@ function getStars(rating: number) {
 export default function RankingSection() {
   const { trendingMovies, onFetchTrending } = useMovieStore();
   const [activeId, setActiveId] = useState<number | null>(null);
+  const swiperRef = useRef<SwiperClass | null>(null);
 
   useEffect(() => {
     if (!trendingMovies.length) {
@@ -44,6 +46,22 @@ export default function RankingSection() {
     }
   }, [activeId, rankingItems]);
 
+  const activeIndex = rankingItems.findIndex((movie) => movie.id === activeId);
+
+  const selectRankingItem = (id: number, index: number) => {
+    setActiveId(id);
+    window.requestAnimationFrame(() => {
+      const swiper = swiperRef.current;
+
+      if (!swiper) return;
+
+      swiper.update();
+      swiper.slideTo(index, 480);
+    });
+  };
+
+  const handleNextRanking = () => undefined;
+
   if (!rankingItems.length) {
     return (
       <section className="ranking-section" aria-label="랭킹 로딩 중">
@@ -61,12 +79,16 @@ export default function RankingSection() {
     <section className="ranking-section" aria-label="랭킹">
       <h2 className="ranking-title">랭킹</h2>
 
+      <div className="ranking-swiper-wrap">
       <Swiper
         modules={[FreeMode]}
         freeMode
         slidesPerView="auto"
         spaceBetween={18}
         className="ranking-swiper"
+        onSwiper={(swiper) => {
+          swiperRef.current = swiper;
+        }}
       >
         {rankingItems.map((movie, index) => {
           const isActive = movie.id === activeId;
@@ -78,7 +100,7 @@ export default function RankingSection() {
             >
               <button
                 className={`ranking-card${isActive ? " active" : ""}`}
-                onClick={() => setActiveId(movie.id)}
+                onClick={() => selectRankingItem(movie.id, index)}
                 type="button"
               >
                 <span className="ranking-card-poster">
@@ -122,6 +144,20 @@ export default function RankingSection() {
           );
         })}
       </Swiper>
+      <button
+        className="swiper-button-next ranking-next"
+        onClick={handleNextRanking}
+        type="button"
+        aria-label="??궧 ?ㅼ쓬 肄섑뀗痢?"
+      />
+      </div>
+      <div className="ranking-progress" aria-hidden="true">
+        <span
+          style={{
+            width: `${((activeIndex >= 0 ? activeIndex + 1 : 1) / rankingItems.length) * 100}%`,
+          }}
+        />
+      </div>
     </section>
   );
 }

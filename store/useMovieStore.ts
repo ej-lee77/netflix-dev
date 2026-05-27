@@ -135,6 +135,23 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     },
     //추천작: 인기 영화 + 인기 TV 를 합쳐서 셔플
     recommended: [],
+    mediaDetails: {},
+    onFetchMediaDetail: async (id, mediaType) => {
+        const mediaId = Number(id);
+        const key = `${mediaType}-${mediaId}`;
+        const { mediaDetails } = get();
+        if (mediaDetails[key]) return;
+
+        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=ko-KR`);
+        const data = await res.json();
+
+        set((state) => ({
+            mediaDetails: {
+                ...state.mediaDetails,
+                [key]: data
+            }
+        }));
+    },
     onFetchRecommended: async () => {
         //영화/TV 인기 페이지를 랜덤으로 한 페이지씩 받아오기 (1~3)
         const moviePage = Math.floor(Math.random() * 3) + 1;

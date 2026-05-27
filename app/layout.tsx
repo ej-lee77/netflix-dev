@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.scss";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+const netflixSans = localFont({
+  src: [
+    { path: "./fonts/NetflixSansThin.ttf", weight: "100" },
+    { path: "./fonts/NetflixSansLight.ttf", weight: "300" },
+    { path: "./fonts/NetflixSansRegular.ttf", weight: "400" },
+    { path: "./fonts/NetflixSansMedium.ttf", weight: "500" },
+    { path: "./fonts/NetflixSansBold.ttf", weight: "700" },
+    { path: "./fonts/NetflixSansBlack.ttf", weight: "900" },
+  ],
+  variable: "--font-netflix",
+});
 
 export const metadata: Metadata = {
   title: "Netflix",
@@ -11,12 +24,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="ko">
-      <body>
+      <body className={netflixSans.variable}>
         <Header />
         <main>{children}</main>
         <Footer />
