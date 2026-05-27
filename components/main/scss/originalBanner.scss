@@ -1,4 +1,4 @@
-@use "../../../app/globals.scss" as *;
+@use "@/app/globals" as g;
 
 /* 조각 배너 컨테이너 */
 .original-banner {
@@ -21,7 +21,7 @@
     overflow: hidden;
     cursor: pointer;
     transition: flex 0.4s ease;
-    background-color: $d-color;
+    background-color: g.$d-color;
 
     /* 평상시: 메인 배너 일부분 */
     .banner-piece-bg {

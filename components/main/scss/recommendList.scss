@@ -1,4 +1,4 @@
-@use "../../../app/globals.scss" as *;
+@use "@/app/globals" as g;
 
 /* 추천 섹션 - 풀폭 배경 영역 */
 .recommend-section {
@@ -42,9 +42,9 @@
   }
 
   .section-title {
-    font-size: $text-20;
+    font-size: g.$text-20;
     font-weight: 700;
-    color: $w-color;
+    color: g.$w-color;
     margin-bottom: 16px;
     padding-left: 4px;
   }
@@ -57,14 +57,14 @@
     /* Swiper 화살표 */
     .swiper-button-next,
     .swiper-button-prev {
-      color: $w-color;
+      color: g.$w-color;
       width: 50px;
       height: 50px;
       background-color: rgba(0, 0, 0, 0.4);
       border-radius: 50%;
 
       &::after {
-        font-size: $text-20;
+        font-size: g.$text-20;
         font-weight: 700;
       }
     }
@@ -107,15 +107,15 @@
       justify-content: center;
       padding: 0 60px;
       max-width: 55%;
-      color: $w-color;
+      color: g.$w-color;
     }
 
     .slide-badge {
       display: inline-block;
       width: fit-content;
-      background-color: $main-color;
-      color: $w-color;
-      font-size: $text-12;
+      background-color: g.$main-color;
+      color: g.$w-color;
+      font-size: g.$text-12;
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 4px;
@@ -124,7 +124,7 @@
     }
 
     .slide-title {
-      font-size: $text-32;
+      font-size: g.$text-32;
       font-weight: 700;
       margin-bottom: 16px;
       letter-spacing: 1px;
@@ -136,7 +136,7 @@
       flex-wrap: wrap;
       gap: 18px;
       margin-bottom: 16px;
-      font-size: $text-14;
+      font-size: g.$text-14;
       color: #d2d2d2;
 
       li {
@@ -149,7 +149,7 @@
         gap: 6px;
 
         strong {
-          color: $w-color;
+          color: g.$w-color;
           font-weight: 600;
         }
 
@@ -160,7 +160,7 @@
     }
 
     .slide-overview {
-      font-size: $text-14;
+      font-size: g.$text-14;
       line-height: 1.6;
       margin-bottom: 24px;
       color: #d8d8d8;
@@ -176,21 +176,21 @@
       align-items: center;
       gap: 10px;
       background-color: rgba(255, 255, 255, 0.95);
-      color: $d-color;
+      color: g.$d-color;
       padding: 12px 28px;
       border-radius: 4px;
-      font-size: $text-14;
+      font-size: g.$text-14;
       font-weight: 700;
       letter-spacing: 1px;
       width: fit-content;
       transition: background-color 0.2s ease;
 
       &:hover {
-        background-color: $w-color;
+        background-color: g.$w-color;
       }
 
       .play-icon {
-        font-size: $text-12;
+        font-size: g.$text-12;
       }
     }
   }

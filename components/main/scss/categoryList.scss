@@ -1,25 +1,93 @@
-.category-list-wrap{
+@use "@/app/globals" as g;
 
-  /* Swiper 전체 레이아웃 패딩 커스텀 */
+.category-list-wrap {
+  width: 100%;
+  padding: 24px 0;
+
   .media-swiper {
-    overflow: visible !important; /* 호버 시 카드가 살짝 커질 때 잘림 방지 */
+    overflow: visible !important;
+    padding: 0 32px 40px !important;
   }
 
-  /* Swiper 하단 스크롤바 가시성 및 디자인 커스텀 */
-  /* .media-swiper .swiper-scrollbar {
-    background: rgba(255, 255, 255, 0.1) !important;
-    height: 4px !important;
-    bottom: 0px !important;
+  .category-slide {
+    width: 260px !important;
+
+    @media (min-width: 768px) {
+      width: 300px !important;
+    }
   }
 
-  .media-swiper .swiper-scrollbar-drag {
-    background: rgba(255, 255, 255, 0.4) !important;
-    cursor: pointer;
+  .category-item {
+    list-style: none;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    &:hover {
+      .poster-img {
+        transform: scale(1.05);
+      }
+
+      .item-title {
+        color: #fbbf24;
+      }
+    }
   }
 
-  .media-swiper .swiper-scrollbar-drag:hover {
-    background: #fde68a !important; /* amber-200 컬러로 포인트 */
-  /* } */ 
+  .img-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    background: #18181b;
+    border-radius: g.$radius-lg;
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(g.$w-color, 0.05);
+
+    .poster-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.85);
+      transition: transform 0.5s;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(g.$d-color, 0.9), rgba(g.$d-color, 0.4) 50%, transparent);
+      pointer-events: none;
+    }
+  }
+
+  .text-box {
+    margin-top: 12px;
+    padding: 0 4px;
+
+    .item-title {
+      font-size: g.$text-18;
+      font-weight: 600;
+      color: #e4e4e7;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: color 0.2s;
+    }
+
+    .item-rating {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+
+      span {
+        color: #fbbf24;
+        font-size: g.$text-13;
+        font-weight: 600;
+      }
+    }
+  }
 
   /* 호버 동영상 부드럽게 등장하는 애니메이션 */
   @keyframes fadeIn {
@@ -30,5 +98,4 @@
   .animate-fade-in {
     animation: fadeIn 0.25s ease-out forwards;
   }
-
 }

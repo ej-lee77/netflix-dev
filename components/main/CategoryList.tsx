@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
 import Link from "next/link";
@@ -36,7 +37,7 @@ export default function CategoryList({ category }: MediaListProps) {
         }))
       : tvs.slice(0, 18).map((tv) => ({
           id: tv.id,
-          title: tv.name, // tv.name을 title로 통일해서 구조 일치화
+          title: tv.name,
           backdrop_path: tv.backdrop_path,
           vote_average: tv.vote_average,
           videos: tvVideos[tv.id],
@@ -58,85 +59,39 @@ export default function CategoryList({ category }: MediaListProps) {
   };
 
   return (
-    <div className="swiper-container-wrap w-full py-6">
+    <section className="swiper-container-wrap w-full py-6">
       <div className="inner">
-      <SectionTitle title='카테고리' subTitle='새로운 작품들을 시청해보세요' />
+      <SectionTitle title='카테고리' subTitle='' />
       <Swiper
         modules={[FreeMode, Scrollbar]}
-        spaceBetween={24} // 카드 사이 간격 (gap-6과 동일)
-        slidesPerView={"auto"} // CSS에서 카드 너비를 자유롭게 조절하도록 설정
-        className="media-swiper !px-8 !pb-10"
+        spaceBetween={24}
+        slidesPerView={"auto"}
+        className="media-swiper"
       >
         {currentList.map((item) => {
-          const trailer = item.videos?.find(
-            (v) => v.type === "Trailer" || v.type === "Teaser",
-          );
-          const trailerKey = trailer?.key || null;
-
           return (
-            <SwiperSlide key={item.id} className="!w-[260px] md:!w-[300px]">
+            <SwiperSlide key={item.id} className="category-slide">
               <li
-                className="list-none w-full flex flex-col group relative"
+                className="category-item"
                 onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo)}
                 onMouseLeave={handleMouseLeave}
               >
-                {/* 🌟 세로 포스터 느낌을 내기 위해 aspect-video(16:9) 대신 aspect-[2/3] 고정 */}
-                <div className="img-box relative w-full aspect-[2/3] bg-zinc-900 rounded-xl overflow-hidden shadow-xl border border-white/5">
+                <div className="img-box">
                   <img
-                    className="w-full h-full object-cover filter brightness-[0.85] transition-transform duration-500 group-hover:scale-105"
-                    src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`} // 원본 포스터 두꺼운 느낌 유지
+                    className="poster-img"
+                    src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`}
                     alt={item.title}
                   />
-
-                  {/* 그라데이션 오버레이 */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
-
-                  {/* 호버 시 유튜브 트레일러 플레이어 박스 */}
-                  {/* {hover === item.id && trailerKey && (
-                        <div className="absolute inset-0 w-full h-full bg-black z-50 flex flex-col rounded-xl overflow-hidden animate-fade-in"> */}
-                  {/* 카드 안에서 동영상이 세로로 꽉 차도록 설정 */}
-                  {/* <iframe 
-                            className='w-full flex-1'
-                            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1`}
-                            title='트레일러'
-                        />
-
-                        <div className="text-box bg-black p-4">
-                            <h3 className='text-white text-lg font-bold mb-2 truncate'>{item.title}</h3>
-                            <p className='text-xs text-zinc-400 mb-3'>
-                            {category === 'movie' ? '영화 트레일러' : 'TV 프로그램'}
-                            </p>
-                            <div className='flex gap-3'>
-                            <button>
-                                <img className="w-10 h-10" src="/images/icons/icon-play-sm.svg" alt="재생" />
-                            </button>
-                            <Link href={`/detail/${category}/${item.id}`}>
-                                <img className="w-10 h-10 bg-zinc-700 hover:bg-zinc-600 p-2 rounded-full transition-colors" src="/images/icons/arrow-circle.svg" alt="상세" />
-                            </Link>
-                            </div>
-                        </div>
-                        </div>
-                    )} */}
-
-                  {/* 이미지 내부 하단 텍스트 (기본 상태 노출) */}
-                  {/* <div className="absolute bottom-0 left-0 w-full p-5 z-10 pointer-events-none">
-                        <h3 className='text-xl font-bold text-white mb-1 drop-shadow-md line-clamp-1'>{item.title}</h3>
-                        <div className="flex items-center gap-2">
-                        <span className="text-amber-400 text-sm font-semibold">★ {item.vote_average.toFixed(1)}</span>
-                        </div>
-                    </div> */}
+                  <div className="overlay" />
                 </div>
 
-                {/* 이미지 박스 바깥 아래 텍스트 영역 (선택 사항) */}
-                <div className="text-box mt-3 px-1">
+                <div className="text-box">
                   <Link href={`/detail/${category}/${item.id}`}>
-                    <h3 className="text-lg font-semibold text-zinc-200 group-hover:text-amber-200 transition-colors truncate">
+                    <h3 className="item-title">
                       {item.title}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-amber-400 text-sm font-semibold">
-                        ★ {item.vote_average.toFixed(1)}
-                      </span>
+                    <div className="item-rating">
+                      <span>★ {item.vote_average.toFixed(1)}</span>
                     </div>
                   </Link>
                 </div>
@@ -146,6 +101,6 @@ export default function CategoryList({ category }: MediaListProps) {
         })}
       </Swiper>
       </div>
-    </div>
+    </section>
   );
 }
