@@ -1,405 +1,405 @@
 @use "@/app/globals" as g;
 
 .ranking-section {
-  padding: 44px 0 56px;
+  // padding: 44px 0 56px;
   overflow: hidden;
-}
 
-.ranking-title {
-  width: min(1600px, calc(100vw - 96px));
-  margin: 0 auto 14px;
-  color: g.$w-color;
-  font-size: g.$title-text;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.ranking-swiper-wrap {
-  position: relative;
-  width: min(1600px, calc(100vw - 96px));
-  margin: 0 auto;
-}
-
-.ranking-swiper {
-  overflow: visible;
-  width: 100%;
-  padding: 20px 0 18px;
-}
-
-.ranking-next {
-  display: none;
-}
-
-.ranking-progress {
-  width: min(1600px, calc(100vw - 96px));
-  height: 3px;
-  margin: 8px auto 0;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-}
-
-.ranking-progress span {
-  display: block;
-  height: 100%;
-  background: g.$main-color;
-  border-radius: inherit;
-  transition: width 0.34s ease;
-}
-
-.ranking-slide {
-  width: 280px;
-  transition: width 0.36s ease;
-}
-
-.ranking-slide.expanded {
-  width: 760px;
-}
-
-.ranking-card {
-  position: relative;
-  display: grid;
-  width: 100%;
-  height: 430px;
-  grid-template-columns: 280px 0;
-  overflow: hidden;
-  color: g.$w-color;
-  text-align: left;
-  background: #222;
-  border-radius: 4px;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.32);
-  transition:
-    grid-template-columns 0.36s ease,
-    transform 0.22s ease,
-    box-shadow 0.22s ease;
-}
-
-.ranking-card:hover {
-  transform: translateY(-8px);
-}
-
-.ranking-card.active {
-  grid-template-columns: 310px minmax(0, 1fr);
-  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
-}
-
-.ranking-card-poster {
-  position: relative;
-  z-index: 2;
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #222;
-}
-
-.ranking-card-poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition:
-    filter 0.22s ease,
-    transform 0.3s ease;
-}
-
-.ranking-card:not(.active) .ranking-card-poster img {
-  filter: grayscale(1) brightness(0.58);
-}
-
-.ranking-card:hover .ranking-card-poster img {
-  transform: scale(1.04);
-}
-
-.ranking-card-gradient {
-  position: absolute;
-  z-index: 3;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 62%;
-  background: linear-gradient(
-    to top,
-    rgba(21, 20, 38, 1) 0%,
-    rgba(31, 29, 52, 0.98) 34%,
-    rgba(31, 29, 52, 0.66) 66%,
-    transparent
-  );
-  pointer-events: none;
-  transition: opacity 0.22s ease;
-}
-
-.ranking-card.active .ranking-card-gradient {
-  opacity: 0;
-}
-
-.ranking-card-rank {
-  position: absolute;
-  z-index: 4;
-  top: 14px;
-  left: 14px;
-  color: g.$w-color;
-  font-size: 3.4rem;
-  font-weight: 900;
-  line-height: 1;
-  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
-}
-
-.ranking-card:not(.active) .ranking-card-rank {
-  opacity: 0;
-}
-
-.ranking-card-detail {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  height: 100%;
-  flex-direction: column;
-  justify-content: center;
-  padding: 42px 42px 42px 50px;
-  overflow: hidden;
-  opacity: 0;
-  background-position: center;
-  background-size: cover;
-  transform: translateX(-20px);
-  transition:
-    opacity 0.24s ease 0.12s,
-    transform 0.3s ease 0.08s;
-  pointer-events: none;
-}
-
-.ranking-card-detail::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 54%;
-  background: linear-gradient(to top, rgba(20, 20, 20, 0.86), transparent);
-}
-
-.ranking-card.active .ranking-card-detail {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.ranking-card-detail > * {
-  position: relative;
-  z-index: 1;
-}
-
-.ranking-detail-rank {
-  margin-bottom: 8px;
-  color: g.$w-color;
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-.ranking-detail-title {
-  max-width: 360px;
-  margin-bottom: 14px;
-  overflow: hidden;
-  color: g.$w-color;
-  font-size: 1.45rem;
-  font-weight: 900;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ranking-detail-score {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.ranking-detail-score em {
-  color: g.$main-color;
-  font-size: 3rem;
-  font-style: normal;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.ranking-detail-score span {
-  color: g.$main-color;
-  font-size: 1rem;
-  letter-spacing: 2px;
-}
-
-.ranking-detail-overview {
-  display: -webkit-box;
-  max-width: 380px;
-  margin-bottom: 24px;
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 0.9rem;
-  line-height: 1.7;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.ranking-detail-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.ranking-detail-actions span {
-  min-width: 100px;
-  padding: 11px 18px;
-  color: g.$w-color;
-  font-size: 0.875rem;
-  font-weight: 700;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-}
-
-.ranking-detail-actions span:first-child {
-  background: g.$main-color;
-}
-
-.ranking-card-compact {
-  position: absolute;
-  z-index: 4;
-  right: 18px;
-  bottom: 24px;
-  left: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  opacity: 1;
-  transition: opacity 0.18s ease;
-}
-
-.ranking-card.active .ranking-card-compact {
-  opacity: 0;
-}
-
-.ranking-card-score {
-  color: g.$w-color;
-  font-size: 2.35rem;
-  font-weight: 900;
-  line-height: 1;
-  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
-}
-
-.ranking-card-title {
-  width: 86%;
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.98rem;
-  font-weight: 700;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ranking-card-title::after {
-  content: "상세보기";
-  display: block;
-  width: fit-content;
-  margin: 18px auto 0;
-  padding: 10px 18px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 0.78rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 3px;
-}
-
-.ranking-skeleton-row {
-  display: grid;
-  width: min(1600px, calc(100vw - 96px));
-  margin: 0 auto;
-  grid-template-columns: 2fr repeat(3, 1fr);
-  gap: 18px;
-}
-
-.ranking-skeleton-card {
-  height: 430px;
-  overflow: hidden;
-  background: linear-gradient(90deg, #202020 25%, #2c2c2c 50%, #202020 75%);
-  background-size: 800px 100%;
-  border-radius: 4px;
-  animation: ranking-shimmer 1.4s infinite linear;
-}
-
-@keyframes ranking-shimmer {
-  0% {
-    background-position: -400px 0;
+  .ranking-title {
+    width: min(1600px, calc(100vw - 96px));
+    margin: 0 auto 14px;
+    color: #fff;
+    font-size: g.$title-text;
+    font-weight: 700;
+    line-height: 1.2;
   }
 
-  100% {
-    background-position: 400px 0;
+  .ranking-swiper-wrap {
+    position: relative;
+    width: min(1600px, calc(100vw - 96px));
+    margin: 0 auto;
   }
-}
 
-@media (max-width: 1200px) {
+  .ranking-swiper {
+    overflow: visible;
+    width: 100%;
+    padding: 20px 0 18px;
+  }
+
+  .ranking-next {
+    display: none;
+  }
+
+  .ranking-progress {
+    width: min(1600px, calc(100vw - 96px));
+    height: 3px;
+    margin: 8px auto 0;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+  }
+
+  .ranking-progress span {
+    display: block;
+    height: 100%;
+    background: g.$main-color;
+    border-radius: inherit;
+    transition: width 0.34s ease;
+  }
+
   .ranking-slide {
-    width: 230px;
+    width: 280px;
+    transition: width 0.36s ease;
   }
 
   .ranking-slide.expanded {
-    width: 630px;
+    width: 760px;
   }
 
   .ranking-card {
-    height: 380px;
-    grid-template-columns: 230px 0;
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: 430px;
+    grid-template-columns: 280px 0;
+    overflow: hidden;
+    color: #fff;
+    text-align: left;
+    background: #222;
+    border-radius: 4px;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.32);
+    transition:
+      grid-template-columns 0.36s ease,
+      transform 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+
+  .ranking-card:hover {
+    transform: translateY(-8px);
   }
 
   .ranking-card.active {
-    grid-template-columns: 260px minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 760px) {
-  .ranking-title,
-  .ranking-swiper-wrap,
-  .ranking-progress,
-  .ranking-skeleton-row {
-    width: calc(100vw - 40px);
+    grid-template-columns: 310px minmax(0, 1fr);
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
   }
 
-  .ranking-slide,
-  .ranking-slide.expanded {
-    width: 260px;
-  }
-
-  .ranking-card,
-  .ranking-card.active {
+  .ranking-card-poster {
+    position: relative;
+    z-index: 2;
     display: block;
-    height: 390px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #222;
+  }
+
+  .ranking-card-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition:
+      filter 0.22s ease,
+      transform 0.3s ease;
+  }
+
+  .ranking-card:not(.active) .ranking-card-poster img {
+    filter: grayscale(1) brightness(0.58);
+  }
+
+  .ranking-card:hover .ranking-card-poster img {
+    transform: scale(1.04);
+  }
+
+  .ranking-card-gradient {
+    position: absolute;
+    z-index: 3;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 62%;
+    background: linear-gradient(
+      to top,
+      rgba(21, 20, 38, 1) 0%,
+      rgba(31, 29, 52, 0.98) 34%,
+      rgba(31, 29, 52, 0.66) 66%,
+      transparent
+    );
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+
+  .ranking-card.active .ranking-card-gradient {
+    opacity: 0;
+  }
+
+  .ranking-card-rank {
+    position: absolute;
+    z-index: 4;
+    top: 14px;
+    left: 14px;
+    color: #fff;
+    font-size: 3.4rem;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+  }
+
+  .ranking-card:not(.active) .ranking-card-rank {
+    opacity: 0;
   }
 
   .ranking-card-detail {
-    position: absolute;
-    inset: auto 0 0;
-    height: auto;
-    padding: 92px 18px 22px;
-    background-image: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.95),
-      transparent
-    ) !important;
-    opacity: 1;
-    transform: none;
+    position: relative;
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    padding: 42px 42px 42px 50px;
+    overflow: hidden;
+    opacity: 0;
+    background-position: center;
+    background-size: cover;
+    transform: translateX(-20px);
+    transition:
+      opacity 0.24s ease 0.12s,
+      transform 0.3s ease 0.08s;
+    pointer-events: none;
   }
 
-  .ranking-card:not(.active) .ranking-card-detail {
-    display: none;
+  .ranking-card-detail::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 54%;
+    background: linear-gradient(to top, rgba(20, 20, 20, 0.86), transparent);
+  }
+
+  .ranking-card.active .ranking-card-detail {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .ranking-card-detail > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .ranking-detail-rank {
+    margin-bottom: 8px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 800;
   }
 
   .ranking-detail-title {
-    font-size: 1.1rem;
+    max-width: 360px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    color: #ffffff;
+    font-size: 1.45rem;
+    font-weight: 900;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ranking-detail-score {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
   }
 
   .ranking-detail-score em {
-    font-size: 2rem;
+    color: g.$main-color;
+    font-size: 3rem;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1;
   }
 
-  .ranking-detail-overview,
+  .ranking-detail-score span {
+    color: g.$main-color;
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+
+  .ranking-detail-overview {
+    display: -webkit-box;
+    max-width: 380px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
   .ranking-detail-actions {
-    display: none;
+    display: flex;
+    gap: 12px;
+  }
+
+  .ranking-detail-actions span {
+    min-width: 100px;
+    padding: 11px 18px;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+  }
+
+  .ranking-detail-actions span:first-child {
+    background: #e50914;
+  }
+
+  .ranking-card-compact {
+    position: absolute;
+    z-index: 4;
+    right: 18px;
+    bottom: 24px;
+    left: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    opacity: 1;
+    transition: opacity 0.18s ease;
+  }
+
+  .ranking-card.active .ranking-card-compact {
+    opacity: 0;
+  }
+
+  .ranking-card-score {
+    color: #ffffff;
+    font-size: 2.35rem;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+  }
+
+  .ranking-card-title {
+    width: 86%;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.98rem;
+    font-weight: 700;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ranking-card-title::after {
+    content: "상세보기";
+    display: block;
+    width: fit-content;
+    margin: 18px auto 0;
+    padding: 10px 18px;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 3px;
+  }
+
+  .ranking-skeleton-row {
+    display: grid;
+    width: min(1600px, calc(100vw - 96px));
+    margin: 0 auto;
+    grid-template-columns: 2fr repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .ranking-skeleton-card {
+    height: 430px;
+    overflow: hidden;
+    background: linear-gradient(90deg, #202020 25%, #2c2c2c 50%, #202020 75%);
+    background-size: 800px 100%;
+    border-radius: 4px;
+    animation: ranking-shimmer 1.4s infinite linear;
+  }
+
+  @keyframes ranking-shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+
+    100% {
+      background-position: 400px 0;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .ranking-slide {
+      width: 230px;
+    }
+
+    .ranking-slide.expanded {
+      width: 630px;
+    }
+
+    .ranking-card {
+      height: 380px;
+      grid-template-columns: 230px 0;
+    }
+
+    .ranking-card.active {
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .ranking-title,
+    .ranking-swiper-wrap,
+    .ranking-progress,
+    .ranking-skeleton-row {
+      width: calc(100vw - 40px);
+    }
+
+    .ranking-slide,
+    .ranking-slide.expanded {
+      width: 260px;
+    }
+
+    .ranking-card,
+    .ranking-card.active {
+      display: block;
+      height: 390px;
+    }
+
+    .ranking-card-detail {
+      position: absolute;
+      inset: auto 0 0;
+      height: auto;
+      padding: 92px 18px 22px;
+      background-image: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.95),
+        transparent
+      ) !important;
+      opacity: 1;
+      transform: none;
+    }
+
+    .ranking-card:not(.active) .ranking-card-detail {
+      display: none;
+    }
+
+    .ranking-detail-title {
+      font-size: 1.1rem;
+    }
+
+    .ranking-detail-score em {
+      font-size: 2rem;
+    }
+
+    .ranking-detail-overview,
+    .ranking-detail-actions {
+      display: none;
+    }
   }
 }
