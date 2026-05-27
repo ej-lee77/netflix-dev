@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
 import Link from "next/link";
