@@ -1,31 +1,30 @@
 @use "@/app/globals" as g;
 
-// globals.scss 의 main { padding-top: 60px; padding-left: 60px; } 가 이미 적용됨
-// 로그인 페이지는 그 영역 안에서 전체를 채움
-
 // ─── 전체 레이아웃 ────────────────────────────────────────────────────────────
 
 .login-page {
   display: flex;
-  // 헤더(60px) + 사이드nav(60px) 패딩은 main 태그가 이미 처리
-  // min-height: 뷰포트 전체 - 헤더 높이
   min-height: calc(100vh - g.$header-height);
   background-color: g.$bg-color;
 }
 
-// ─── 왼쪽: 포스터 그리드 ──────────────────────────────────────────────────────
+// ─── 왼쪽: 포스터 그리드 (가로 줄, 3D 원근감) ─────────────────────────────────
 
 .login-poster {
   flex: 1;
   position: relative;
   overflow: hidden;
+  perspective: 1000px;
+  perspective-origin: right center;
 
-  // 오른쪽 경계를 배경색으로 자연스럽게 페이드
+  // 전체적으로 흐려지는 오버레이 + 오른쪽 페이드 + 비네팅
   &::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, transparent 55%, g.$bg-color 92%);
+    background:
+      linear-gradient(to right, rgba(g.$bg-color, 0.4) 0%, rgba(g.$bg-color, 0.6) 50%, g.$bg-color 95%),
+      linear-gradient(to bottom, rgba(g.$d-color, 0.5) 0%, transparent 25%, transparent 75%, rgba(g.$d-color, 0.5) 100%);
     z-index: 2;
     pointer-events: none;
   }
@@ -37,37 +36,68 @@
 
 .poster-grid {
   position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
-  padding: 5px;
-  transform: skewY(-3deg) scale(1.12);
-  transform-origin: top left;
-}
-
-.poster-col {
+  top: -10%;
+  left: -10%;
+  right: -10%;
+  bottom: -10%;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px;
+  transform: rotateY(-15deg) rotateX(2deg);
+  transform-style: preserve-3d;
+}
 
-  &:nth-child(odd) {
-    animation: poster-up 38s linear infinite;
+.poster-row {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-shrink: 0;
+  flex: 1;
+
+  &:nth-child(1) {
+    animation: poster-right 50s linear infinite;
   }
 
-  &:nth-child(even) {
-    animation: poster-down 44s linear infinite;
+  &:nth-child(2) {
+    animation: poster-left 45s linear infinite;
+  }
+
+  &:nth-child(3) {
+    animation: poster-right 55s linear infinite;
+  }
+
+  &:nth-child(4) {
+    animation: poster-left 40s linear infinite;
+  }
+
+  &:nth-child(5) {
+    animation: poster-right 48s linear infinite;
+  }
+
+  &:nth-child(6) {
+    animation: poster-left 52s linear infinite;
+  }
+
+  &:nth-child(7) {
+    animation: poster-right 44s linear infinite;
+  }
+
+  &:nth-child(8) {
+    animation: poster-left 56s linear infinite;
   }
 }
 
 .poster-item {
   border-radius: g.$radius-md;
   overflow: hidden;
-  aspect-ratio: 2 / 3;
+  height: 100%;
+  aspect-ratio: 16 / 9;
   flex-shrink: 0;
   position: relative;
-
   background-color: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(g.$d-color, 0.5);
 
   .poster-img {
     object-fit: cover;
@@ -75,22 +105,16 @@
   }
 }
 
-
-
-
 .poster-skeleton {
   background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
 }
 
-
-
 // ─── 오른쪽: 로그인 패널 ──────────────────────────────────────────────────────
 
 .login-panel {
-  width: 500px;
-  min-width: 500px;
+  flex: 0 0 40%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,15 +123,14 @@
   z-index: 5;
 
   @media (max-width: 768px) {
-    width: 100%;
-    min-width: unset;
+    flex: 1;
     padding: 32px 24px;
   }
 }
 
 .login-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   animation: fade-up 0.45s ease both;
 }
 
@@ -348,7 +371,7 @@
   }
 }
 
-// ─── 소셜 버튼 ────────────────────────────────────────────────────────────────
+// ─── 소셜 버튼 (브랜드 가이드라인: 아이콘 왼쪽 + 텍스트 중앙) ────────────────
 
 .social-list {
   display: flex;
@@ -360,60 +383,70 @@
 .social-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
   width: 100%;
-  padding: 13px 16px;
-  background-color: #1e1e1e;
-  border: 1px solid #3a3a3a;
+  height: 50px;
+  padding: 0 18px;
+  border: none;
   border-radius: g.$radius-md;
-  color: g.$w-color;
   font-size: g.$text-14;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color .15s, border-color .15s, transform .15s;
+  position: relative;
+  transition: filter .15s, transform .15s, box-shadow .15s;
 
   &:hover {
-    background-color: #272727;
-    border-color: #555;
+    filter: brightness(0.95);
     transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(g.$d-color, 0.3);
   }
 
   &:active {
     transform: translateY(0);
-  }
-}
-
-.social-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  &.icon-google {
-    background: linear-gradient(135deg, #ea4335 0%, #fbbc04 40%, #34a853 70%, #4285f4 100%);
-    color: g.$w-color;
+    filter: brightness(0.9);
   }
 
-  &.icon-apple {
-    color: g.$w-color;
-    font-size: 15px;
+  // 구글: 흰 배경 + 검정 텍스트 + 회색 테두리
+  &.social-google {
+    background-color: g.$w-color;
+    color: #1f1f1f;
+    border: 1px solid #dadce0;
   }
 
-  &.icon-naver {
+  // 네이버: 초록 배경 + 흰 텍스트
+  &.social-naver {
     background-color: #03c75a;
     color: g.$w-color;
   }
 
-  &.icon-kakao {
+  // 카카오: 노랑 배경 + 검정 텍스트
+  &.social-kakao {
     background-color: #fee500;
-    color: #3a1d1d;
+    color: #181600;
   }
+}
+
+// 아이콘 영역 (왼쪽 고정)
+.social-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+// 텍스트 (가운데 정렬: flex: 1로 남은 공간 차지하고 가운데로)
+.social-label {
+  flex: 1;
+  text-align: center;
+  // 아이콘 너비만큼 오른쪽에서 빼서 시각적 균형 (가운데 정렬을 위해)
+  padding-right: 24px;
 }
 
 // ─── 회원가입 링크 ────────────────────────────────────────────────────────────
@@ -448,23 +481,23 @@
   }
 }
 
-@keyframes poster-up {
+@keyframes poster-right {
   from {
-    transform: translateY(0);
+    transform: translateX(0);
   }
 
   to {
-    transform: translateY(-50%);
+    transform: translateX(-50%);
   }
 }
 
-@keyframes poster-down {
+@keyframes poster-left {
   from {
-    transform: translateY(-50%);
+    transform: translateX(-50%);
   }
 
   to {
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 

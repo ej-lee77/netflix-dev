@@ -1,0 +1,164 @@
+@use "@/app/globals" as g;
+
+.login-banner {
+  position: fixed;
+  // 헤더(60px) + 사이드nav(60px) 고려해서 왼쪽 패딩 처리
+  left: g.$main-menu-width;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background-color: g.$main-color;
+  border-top: 1px solid rgba(g.$w-color, 0.15);
+  box-shadow: 0 -4px 20px rgba(g.$d-color, 0.4);
+  animation: banner-slide-up 0.4s ease both;
+
+  @media (max-width: 768px) {
+    left: 0;
+  }
+}
+
+.banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 32px;
+  position: relative;
+
+  @media (max-width: 900px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px 16px 20px;
+  }
+}
+
+// ─── 텍스트 영역 ──────────────────────────────────────────────────────────────
+
+.banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-title {
+  font-size: g.$text-16;
+  font-weight: 700;
+  color: g.$w-color;
+  margin-bottom: 4px;
+  line-height: 1.3;
+
+  // 좌측 아이콘 느낌 (선택)
+  &::before {
+    content: "🎬";
+    margin-right: 8px;
+  }
+}
+
+.banner-desc {
+  font-size: g.$text-13;
+  color: rgba(g.$w-color, 0.85);
+  line-height: 1.4;
+}
+
+// ─── 버튼 영역 ────────────────────────────────────────────────────────────────
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+
+  @media (max-width: 900px) {
+    width: 100%;
+  }
+}
+
+.banner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 22px;
+  border-radius: g.$radius-md;
+  font-size: g.$text-13;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  border: 1.5px solid transparent;
+
+  @media (max-width: 900px) {
+    flex: 1;
+  }
+}
+
+// 흰 외곽선만 (보조 버튼)
+.banner-btn-ghost {
+  background-color: transparent;
+  color: g.$w-color;
+  border-color: rgba(g.$w-color, 0.6);
+
+  &:hover {
+    background-color: rgba(g.$w-color, 0.15);
+    border-color: g.$w-color;
+  }
+}
+
+// 흰색 배경 + 빨간 텍스트 (메인 CTA)
+.banner-btn-primary {
+  background-color: g.$w-color;
+  color: g.$main-color;
+
+  &:hover {
+    background-color: rgba(g.$w-color, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(g.$d-color, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ─── 닫기 버튼 ────────────────────────────────────────────────────────────────
+
+.banner-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: rgba(g.$w-color, 0.8);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: rgba(g.$w-color, 0.15);
+    color: g.$w-color;
+  }
+
+  @media (max-width: 900px) {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+}
+
+// ─── 애니메이션 ───────────────────────────────────────────────────────────────
+
+@keyframes banner-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
