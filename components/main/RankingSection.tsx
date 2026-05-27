@@ -11,6 +11,7 @@ import { useMovieStore } from "@/store/useMovieStore";
 import "swiper/css";
 import "swiper/css/free-mode";
 import "./scss/rankingSection.scss";
+import SectionTitle from "../common/SectionTitle";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/";
 
@@ -245,6 +246,14 @@ export default function RankingSection() {
             transform: `translateX(${slideProgress * 900}%)`,
           }}
         />
+        </div>
+        {/* <div className="ranking-progress" aria-hidden="true">
+          <span
+            style={{
+              width: `${((activeIndex >= 0 ? activeIndex + 1 : 1) / rankingItems.length) * 100}%`,
+            }}
+          />
+        </div> */}
       </div>
     </section>
   );

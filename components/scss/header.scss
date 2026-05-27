@@ -24,7 +24,7 @@ header{
 
             &:hover,
             &.active {
-                color: #fff;
+                color: g.$w-color;
             }
 
             &.active {
@@ -145,7 +145,7 @@ nav{
     }
 
     .sb-icon.active svg,
-    .sb-icon:hover svg { stroke: #fff; }
+    .sb-icon:hover svg { stroke: g.$w-color; }
 
     .sb-label {
         font-size: 9px;
@@ -157,7 +157,7 @@ nav{
     }
 
     .sb-icon.active .sb-label,
-    .sb-icon:hover .sb-label { color: #fff; }
+    .sb-icon:hover .sb-label { color: g.$w-color; }
 
     .sb-divider {
         width: 30px;
