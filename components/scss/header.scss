@@ -40,6 +40,10 @@ nav{
     color: g.$main-menu-color;
     background-color: #11110F;
     z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 14px 0;
 
     .main-menu{
         >li{
