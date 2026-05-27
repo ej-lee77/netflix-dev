@@ -9,6 +9,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/effect-coverflow';
 import './scss/recommendList.scss';
+import SectionTitle from '../common/SectionTitle';
 
 /**
  * 추천작 섹션 (TopCast 와 무관한 독립 섹션)
@@ -64,7 +65,7 @@ export default function RecommendList() {
 
       {/* 컨텐츠: 1600px inner 안 */}
       <div className="inner">
-        <h2 className="section-title">추천</h2>
+        <SectionTitle title='추천' subTitle='새로운 작품들을 시청해보세요' />
 
         <Swiper
           modules={[Navigation, EffectCoverflow, Autoplay]}

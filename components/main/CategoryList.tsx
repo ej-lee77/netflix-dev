@@ -58,9 +58,9 @@ export default function CategoryList({ category }: MediaListProps) {
   };
 
   return (
-    <div className="swiper-container-wrap w-full py-6">
+    <section className="swiper-container-wrap w-full py-6">
       <div className="inner">
-      <SectionTitle title='카테고리' subTitle='새로운 작품들을 시청해보세요' />
+      <SectionTitle title='카테고리' subTitle='' />
       <Swiper
         modules={[FreeMode, Scrollbar]}
         spaceBetween={24} // 카드 사이 간격 (gap-6과 동일)
@@ -146,6 +146,6 @@ export default function CategoryList({ category }: MediaListProps) {
         })}
       </Swiper>
       </div>
-    </div>
+    </section>
   );
 }
