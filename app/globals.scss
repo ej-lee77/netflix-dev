@@ -27,6 +27,8 @@ $radius-lg: 16px;
 $header-height: 60px;
 $main-menu-width: 60px;
 $main-menu-color: #8a8a88;
+// GAP
+$section-gap: 50px;
 
 * {
   margin: 0;
@@ -82,4 +84,10 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.main-page-wrap{
+  section{
+    margin-top: $section-gap;
+  }
 }
