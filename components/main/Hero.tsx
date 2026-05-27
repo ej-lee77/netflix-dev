@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -25,6 +25,17 @@ type HeroItem = {
 
 type TrendingResponse = {
   results?: HeroItem[];
+};
+
+type VideoItem = {
+  key: string;
+  site: string;
+  type: string;
+  official?: boolean;
+};
+
+type VideosResponse = {
+  results?: VideoItem[];
 };
 
 type LoadState = "loading" | "ready" | "error";
@@ -113,10 +124,44 @@ async function fetchHeroItems() {
   );
 }
 
+async function fetchHeroVideo(item: HeroItem) {
+  if (!TMDB_KEY || !item.media_type) return "";
+  const apiKey = TMDB_KEY;
+
+  async function requestVideo(language: string) {
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      language,
+    });
+
+    const res = await fetch(
+      `${TMDB_BASE}/${item.media_type}/${item.id}/videos?${params.toString()}`,
+    );
+
+    if (!res.ok) return "";
+
+    const data = (await res.json()) as VideosResponse;
+    const video = data.results?.find(
+      (result) =>
+        result.site === "YouTube" &&
+        (result.type === "Trailer" || result.type === "Teaser"),
+    );
+
+    return video?.key ?? "";
+  }
+
+  return (await requestVideo("ko-KR")) || (await requestVideo("en-US"));
+}
+
 export default function Hero() {
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeVideoKey, setActiveVideoKey] = useState("");
+  const [currentVideoKey, setCurrentVideoKey] = useState("");
+  const [previousVideoKey, setPreviousVideoKey] = useState("");
+  const [isVideoVisible, setIsVideoVisible] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>("loading");
+  const currentVideoKeyRef = useRef("");
 
   useEffect(() => {
     let ignore = false;
@@ -147,17 +192,86 @@ export default function Hero() {
     };
   }, []);
 
-  useEffect(() => {
-    if (items.length <= 1) return;
-
-    const timer = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % items.length);
-    }, 6000);
-
-    return () => window.clearInterval(timer);
-  }, [items.length]);
-
   const activeItem = items[activeIndex];
+
+  useEffect(() => {
+    if (!activeItem) {
+      setActiveVideoKey("");
+      setIsVideoVisible(false);
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadVideo() {
+      const videoKey = await fetchHeroVideo(activeItem);
+
+      if (!ignore) {
+        if (videoKey && videoKey === currentVideoKeyRef.current) {
+          window.setTimeout(() => {
+            if (!ignore) {
+              setIsVideoVisible(true);
+            }
+          }, 120);
+        } else {
+          setActiveVideoKey(videoKey);
+        }
+      }
+    }
+
+    setIsVideoVisible(false);
+    loadVideo();
+
+    return () => {
+      ignore = true;
+    };
+  }, [activeItem]);
+
+  useEffect(() => {
+    const currentKey = currentVideoKeyRef.current;
+
+    if (!activeVideoKey) {
+      if (currentKey) {
+        setPreviousVideoKey(currentKey);
+      }
+
+      currentVideoKeyRef.current = "";
+      setCurrentVideoKey("");
+      setIsVideoVisible(false);
+
+      const cleanupTimer = window.setTimeout(() => {
+        setPreviousVideoKey("");
+      }, 900);
+
+      return () => window.clearTimeout(cleanupTimer);
+    }
+
+    if (currentKey === activeVideoKey) {
+      setIsVideoVisible(true);
+      return;
+    }
+
+    if (currentKey) {
+      setPreviousVideoKey(currentKey);
+    }
+
+    currentVideoKeyRef.current = activeVideoKey;
+    setCurrentVideoKey(activeVideoKey);
+    setIsVideoVisible(false);
+
+    const timer = window.setTimeout(() => {
+      setIsVideoVisible(true);
+    }, 1000);
+
+    const cleanupTimer = window.setTimeout(() => {
+      setPreviousVideoKey("");
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(cleanupTimer);
+    };
+  }, [activeVideoKey]);
 
   const meta = useMemo(() => {
     if (!activeItem) return null;
@@ -171,6 +285,10 @@ export default function Hero() {
       year: getYear(activeItem),
     };
   }, [activeItem]);
+
+  const selectHeroIndex = (index: number) => {
+    setActiveIndex(index);
+  };
 
   const handlePrev = () => {
     if (!items.length) return;
@@ -212,28 +330,78 @@ export default function Hero() {
   }
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
+  const getVideoSrc = (videoKey: string) =>
+    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1`;
+  const visiblePosters = [-2, -1, 0, 1, 2]
+    .map((offset) => {
+      const index = (activeIndex + offset + items.length) % items.length;
+
+      return {
+        item: items[index],
+        index,
+        offset,
+      };
+    })
+    .filter(
+      (poster, position, posters) =>
+        posters.findIndex(
+          (currentPoster) => currentPoster.index === poster.index,
+        ) === position,
+    );
 
   return (
     <section className="hero" aria-label="추천 콘텐츠">
       <div
-        className="hero-backdrop"
+        className={`hero-backdrop${previousVideoKey || currentVideoKey ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
+      <div
+        className={`hero-video-poster${isVideoVisible ? "" : " visible"}`}
+        style={{ backgroundImage: `url(${activeBackdrop})` }}
+      />
+      {(previousVideoKey || currentVideoKey) && (
+        <>
+          {previousVideoKey && (
+            <iframe
+              className="hero-video previous"
+              src={getVideoSrc(previousVideoKey)}
+              title={`${getTitle(activeItem)} previous trailer`}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              tabIndex={-1}
+            />
+          )}
+          {currentVideoKey && (
+            <iframe
+              className={`hero-video${isVideoVisible ? " visible" : ""}`}
+              src={getVideoSrc(currentVideoKey)}
+              title={`${getTitle(activeItem)} trailer`}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              tabIndex={-1}
+            />
+          )}
+          <div className="hero-video-shield" aria-hidden="true" />
+        </>
+      )}
 
       <div className="hero-posters" aria-label="히어로 콘텐츠 목록">
-        {items.slice(0, 7).map((item, index) => {
+        {visiblePosters.map(({ item, index, offset }) => {
           const title = getTitle(item);
           const image = posterUrl(item.poster_path);
+          const offsetClass =
+            offset === 0
+              ? "active"
+              : offset < 0
+                ? `before-${Math.abs(offset)}`
+                : `after-${offset}`;
 
           return (
             <button
-              className={`hero-poster${index === activeIndex ? " active" : ""}`}
+              className={`hero-poster ${offsetClass}`}
               key={`${item.media_type}-${item.id}`}
-              onClick={() => setActiveIndex(index)}
+              onClick={() => selectHeroIndex(index)}
               type="button"
             >
               <img src={image} alt={title} loading="lazy" />
-              <span className="hero-poster-grad">{title}</span>
             </button>
           );
         })}
@@ -305,7 +473,7 @@ export default function Hero() {
             aria-label={`${index + 1}번째 콘텐츠 보기`}
             className={`hero-dot${index === activeIndex ? " active" : ""}`}
             key={`${item.media_type}-${item.id}-dot`}
-            onClick={() => setActiveIndex(index)}
+            onClick={() => selectHeroIndex(index)}
             type="button"
           />
         ))}
