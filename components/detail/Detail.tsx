@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
@@ -20,12 +20,10 @@ type DetailMedia = (Movie | TV) & {
   runtime?: number;
   status?: string;
   tagline?: string;
+  vote_count?: number;
 };
 
 type DetailTab = "episodes" | "info" | "cast" | "director" | "review" | "related";
-
-const MAIN_COLOR = "#e50914";
-const PAGE_BG = "#141414";
 
 function getTitle(item?: DetailMedia) {
   if (!item) return "";
@@ -46,7 +44,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     popMovies, popVideos, onFetchPopular, onFetchVideo,
     mediaDetails, onFetchMediaDetail,
     casts, onFetchCredits,
-    recommended, onFetchRecommended
+    recommended, onFetchRecommended,
+    movieImages, onFetchMovieImages,
   } = useMovieStore();
 
   const { onAddPlayList } = usePlayListStore();
@@ -55,7 +54,26 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
   const [selectSeason, setSelectSeason] = useState(1);
   const [selectEpisodeId, setSelectEpisodeId] = useState<number | null>(null);
+  const [episodePage, setEpisodePage] = useState(1);
   const [activeTab, setActiveTab] = useState<DetailTab>(isTv ? "episodes" : "info");
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+  const [hoverStar, setHoverStar] = useState(0);
+  const [ratedStar, setRatedStar] = useState(0);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [hoveredRelatedId, setHoveredRelatedId] = useState<number | null>(null);
+
+  const stillsRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+
+  const onStillsMouseDown = () => { isDragging.current = true; };
+  const onStillsMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !stillsRef.current) return;
+    stillsRef.current.scrollLeft -= e.movementX;
+  };
+  const onStillsMouseUp = () => { isDragging.current = false; };
+  const onStillClick = (src: string) => {
+    if (!isDragging.current) setLightboxSrc(src);
+  };
 
   useEffect(() => {
     setActiveTab(isTv ? "episodes" : "info");
@@ -81,22 +99,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   }, [type, isTv, mediaId, onFetchMediaDetail, onFetchCredits, onFetchTvVideos, onFetchVideo]);
 
   useEffect(() => {
-    if (recommended.length === 0) {
-      onFetchRecommended();
-    }
+    if (recommended.length === 0) onFetchRecommended();
   }, [recommended.length, onFetchRecommended]);
 
   useEffect(() => {
-    if (isTv && mediaId) {
-      onFetchSeasons(mediaId);
-    }
+    if (isTv && mediaId) onFetchSeasons(mediaId);
   }, [isTv, mediaId, onFetchSeasons]);
 
   useEffect(() => {
-    if (isTv && mediaId) {
-      onFetchEpisodes(mediaId, selectSeason);
-    }
+    if (isTv && mediaId) onFetchEpisodes(mediaId, selectSeason);
   }, [isTv, mediaId, selectSeason, onFetchEpisodes]);
+
+  useEffect(() => {
+    if (!isTv && mediaId) onFetchMovieImages(mediaId);
+  }, [isTv, mediaId, onFetchMovieImages]);
 
   const mediaItem = (mediaDetails[`${type}-${mediaId}`] ?? (
     isTv
@@ -107,25 +123,24 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const title = getTitle(mediaItem);
   const releaseDate = isTv ? mediaItem?.first_air_date : (mediaItem as Movie | undefined)?.release_date;
   const releaseYear = releaseDate?.split("-")[0] ?? "";
-  const genreText = mediaItem?.genres?.slice(0, 3).map((genre) => genre.name).join(", ") ?? "";
-  const countryText = mediaItem?.production_countries?.slice(0, 2).map((country) => country.name).join(", ") ?? "";
+const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
   const castKey = `${type}-${mediaId}`;
-  const castList = casts[castKey] ?? [];
+  const castList: CastMember[] = casts[castKey] ?? [];
   const directorList = isTv
     ? mediaItem?.created_by ?? []
-    : castList.filter((member: CastMember) => member.order <= 2).slice(0, 3);
+    : castList.filter((m) => m.order <= 2).slice(0, 3);
   const videos = isTv
     ? (mediaItem ? tvVideos[mediaItem.id] : undefined)
     : (mediaItem ? popVideos[mediaItem.id] : undefined);
-  const trailer = videos?.find((video) => video.type === "Trailer" || video.type === "Teaser");
+  const trailer = videos?.find((v: Video) => v.type === "Trailer" || v.type === "Teaser");
   const selectedEpisode = isTv
     ? (episodes.find((ep) => ep.id === selectEpisodeId) ?? episodes[0] ?? null)
     : null;
   const activeEpisodeId = selectedEpisode?.id ?? null;
-  const selectedEpisodeImage = selectedEpisode?.still_path
-    ? imageUrl(selectedEpisode.still_path, "original")
-    : imageUrl(mediaItem?.backdrop_path, "original") || imageUrl(mediaItem?.poster_path, "original");
-  const detailBackdrop = imageUrl(mediaItem?.backdrop_path, "original") || selectedEpisodeImage;
+  const detailBackdrop =
+    imageUrl(mediaItem?.backdrop_path, "original") ||
+    imageUrl(selectedEpisode?.still_path, "original") ||
+    imageUrl(mediaItem?.poster_path, "original");
   const posterUrl = imageUrl(mediaItem?.poster_path, "w500");
   const relatedItems = recommended
     .filter((item: RecommendedItem) => item.id !== mediaId)
@@ -143,15 +158,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const handleSeasonSelect = (seasonNumber: number) => {
     setSelectSeason(seasonNumber);
     setSelectEpisodeId(null);
+    setEpisodePage(1);
   };
 
   const openVideo = async (key?: string | null) => {
     if (!mediaItem) return;
-    if (isTv) {
-      await onFetchTvVideos(mediaId);
-    } else {
-      await onFetchVideo(mediaId);
-    }
+    if (isTv) await onFetchTvVideos(mediaId);
+    else await onFetchVideo(mediaId);
     setPopupVideoKey(key ?? trailer?.key ?? null);
     setShowPopup(true);
   };
@@ -162,328 +175,586 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     await openVideo();
   };
 
-  const renderRelatedGrid = () => (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-      {relatedItems.map((item) => (
-        <a
-          className="group overflow-hidden rounded-lg border border-white/5 bg-white/6 transition hover:-translate-y-1 hover:border-[#e50914]/45"
-          href={`/detail/${item.media_type}/${item.id}`}
-          key={`${item.media_type}-${item.id}`}
-        >
-          <div className="aspect-[2/3] bg-zinc-900">
-            {item.poster_path && (
-              <img
-                src={imageUrl(item.poster_path)}
-                alt={item.title}
-                className="h-full w-full object-cover opacity-80 transition group-hover:opacity-100"
-              />
-            )}
-          </div>
-          <p className="line-clamp-1 px-4 py-3 text-sm font-semibold text-white/80">{item.title}</p>
-        </a>
-      ))}
-    </div>
-  );
+  // ─── Render sections ────────────────────────────────────────────────────────
 
-  const renderCastGrid = (limit = 12) => (
-    <div className="grid grid-cols-2 gap-5 md:grid-cols-4 xl:grid-cols-6">
-      {castList.slice(0, limit).map((member: CastMember) => (
-        <div className="text-center" key={member.id}>
-          <div className="mx-auto mb-4 aspect-square overflow-hidden rounded-full bg-white/8">
-            {member.profile_path && (
-              <img src={imageUrl(member.profile_path, "w300")} alt={member.name} className="h-full w-full object-cover" />
-            )}
-          </div>
-          <p className="line-clamp-1 font-bold text-white">{member.name}</p>
-          <p className="line-clamp-1 text-sm text-white/45">{member.character}</p>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderVideoSection = () => {
-    const displayVideos = (videos ?? []).slice(0, 3);
-    const placeholders = Math.max(0, 3 - displayVideos.length);
+  const renderEpisodesTab = () => {
+    const PAGE_SIZE = 6;
+    const totalPages = Math.ceil(episodes.length / PAGE_SIZE);
+    const paged = episodes.slice((episodePage - 1) * PAGE_SIZE, episodePage * PAGE_SIZE);
 
     return (
-      <section className="mt-12">
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-2xl font-black text-white">예고편 및 영상</h3>
-          <button className="text-sm text-white/45 hover:text-white">전체보기 →</button>
-        </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {displayVideos.map((video: Video) => (
-            <button
-              className="group relative min-h-[180px] overflow-hidden rounded-lg border border-white/8 bg-white/8 text-left transition hover:border-[#e50914]/45"
-              key={video.id}
-              onClick={() => openVideo(video.key)}
-            >
-              <div className="absolute inset-0 flex items-center justify-center text-4xl text-white transition group-hover:scale-110">▶</div>
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-4">
-                <span className="line-clamp-1 text-sm text-white/58">{video.name}</span>
-                <span className="rounded bg-black/70 px-2 py-1 text-xs text-white/80">{video.type}</span>
-              </div>
-            </button>
-          ))}
-          {Array.from({ length: placeholders }).map((_, index) => (
-            <div className="relative min-h-[180px] rounded-lg border border-white/8 bg-white/8" key={`placeholder-${index}`}>
-              <div className="absolute inset-0 flex items-center justify-center text-4xl text-white/80">▶</div>
-              <p className="absolute bottom-4 left-4 text-sm text-white/42">영상 준비중</p>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  };
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "48px 40px 0" }}>
 
-  const renderInfoGrid = () => {
-    const rows = [
-      ["공개연도", releaseYear || "-"],
-      ["장르", genreText || "-"],
-      ["국가", countryText || "-"],
-      ["상태", mediaItem?.status || "-"],
-      ...(isTv
-        ? [
-            ["시즌", mediaItem?.number_of_seasons ? `${mediaItem.number_of_seasons}개` : "-"],
-            ["에피소드", mediaItem?.number_of_episodes ? `${mediaItem.number_of_episodes}개` : "-"],
-          ]
-        : [["상영시간", mediaItem?.runtime ? `${mediaItem.runtime}분` : "-"]]),
-    ];
-
-    return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {rows.map(([label, value]) => (
-          <div className="rounded-lg border border-white/8 bg-white/5 p-6" key={label}>
-            <p className="mb-2 text-sm text-white/45">{label}</p>
-            <p className="text-lg font-bold text-white">{value}</p>
+        {/* Header row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {seasons.map((season) => {
+              const isSelected = selectSeason === season.season_number;
+              return (
+                <button
+                  key={season.id}
+                  onClick={() => handleSeasonSelect(season.season_number)}
+                  style={{
+                    background: isSelected ? "#e50914" : "transparent",
+                    border: `1px solid ${isSelected ? "#e50914" : "#3a3a48"}`,
+                    padding: "8px 18px",
+                    borderRadius: 100,
+                    cursor: "pointer",
+                    fontSize: 14,
+                    fontWeight: isSelected ? 700 : 400,
+                    color: isSelected ? "#fff" : "#888",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {season.name}
+                </button>
+              );
+            })}
           </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderDirectorPanel = () => (
-    <div className="rounded-lg border border-white/8 bg-white/5 p-7">
-      <p className="mb-5 text-sm font-semibold text-[#e50914]">Creative</p>
-      <div className="flex flex-wrap gap-3">
-        {directorList.length > 0 ? directorList.map((person) => (
-          <span className="rounded-full border border-white/15 px-5 py-2 text-white/80" key={person.id}>{person.name}</span>
-        )) : <p className="text-white/50">등록된 감독 정보가 없습니다.</p>}
-      </div>
-    </div>
-  );
-
-  const renderRatingSection = () => (
-    <section className="mt-12 rounded-lg border border-white/8 bg-white/5 p-7">
-      <div className="flex flex-wrap items-center justify-between gap-6">
-        <div>
-          <h3 className="mb-2 text-2xl font-black text-white">{isTv ? "시리즈 평가" : "이 작품을 평가해보세요"}</h3>
-          <p className="text-white/45">별점으로 평가하고 다음 감상 목록에 추가해보세요.</p>
+          <button style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "#888", fontSize: 13, cursor: "pointer" }}>
+            <span style={{ fontSize: 14 }}>↕</span> 오래된순
+          </button>
         </div>
-        <p className="text-3xl text-[#e50914]">★★★★☆</p>
-      </div>
-    </section>
-  );
 
-  const renderEpisodesPanel = () => (
-    <div className="grid gap-10 lg:grid-cols-[minmax(340px,480px)_1fr]">
-      <div className="relative min-h-[520px] overflow-hidden rounded-lg bg-zinc-950">
-        {selectedEpisodeImage && (
-          <img
-            src={selectedEpisodeImage}
-            alt={selectedEpisode?.name ?? title}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
-        <div className="absolute inset-x-0 bottom-0 p-8">
-          <p className="mb-3 text-sm font-semibold text-white/65">Season {selectSeason}</p>
-          <h4 className="mb-4 text-4xl font-black leading-tight text-white">{title}</h4>
-          {selectedEpisode && (
-            <p className="line-clamp-3 text-sm leading-6 text-white/70">
-              E{selectedEpisode.episode_number}. {selectedEpisode.name}
-            </p>
-          )}
-          <button className="mt-7 bg-[#e50914] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#b00710]" onClick={handlePlay}>재생하기</button>
-        </div>
-      </div>
-
-      <div className="relative">
-        <div className="mb-5 flex flex-wrap gap-2">
-          {seasons.map((season) => {
-            const isSelected = selectSeason === season.season_number;
-
-            return (
-              <button
-                className={`rounded-full border px-5 py-2 text-sm font-semibold transition-all duration-300 ${
-                  isSelected
-                    ? "border-[#e50914] bg-[#e50914] text-white shadow-[0_0_18px_rgba(229,9,20,0.32)]"
-                    : "border-white/15 bg-transparent text-white/60 hover:border-white/40 hover:text-white"
-                }`}
-                key={season.id}
-                onClick={() => handleSeasonSelect(season.season_number)}
-              >
-                {season.name}
-              </button>
-            );
-          })}
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 top-12 z-10 h-10 bg-gradient-to-b from-[#141414] to-transparent" />
-        <ul className="flex max-h-[720px] flex-col gap-6 overflow-y-auto overflow-x-hidden py-8 pl-2 pr-5 [scrollbar-color:rgba(229,9,20,0.35)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#e50914]/35">
-          {episodes.map((ep) => {
+        {/* Episode grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          {paged.map((ep, idx) => {
             const isActive = ep.id === activeEpisodeId;
             const stillUrl = imageUrl(ep.still_path, "w500") || imageUrl(mediaItem?.backdrop_path, "w500");
+            const isLastRow = idx >= paged.length - (paged.length % 2 === 0 ? 2 : 1);
+            const isLeft = idx % 2 === 0;
+            const meta = [ep.runtime ? `${ep.runtime}분` : null, ep.air_date ?? null].filter(Boolean).join(" · ");
 
             return (
-              <li
-                className={`group grid min-h-[190px] cursor-pointer grid-cols-[260px_minmax(0,1fr)] overflow-hidden rounded-lg border transition-all duration-300 ${
-                  isActive
-                    ? "z-10 scale-[1.015] border-[#e50914]/45 bg-white/12 text-white shadow-[0_0_24px_rgba(229,9,20,0.38)]"
-                    : "border-white/5 bg-black/55 text-white opacity-70 hover:scale-[1.01] hover:opacity-100"
-                }`}
+              <div
                 key={ep.id}
                 onClick={() => setSelectEpisodeId(ep.id)}
+                style={{
+                  display: "flex",
+                  gap: 14,
+                  padding: "20px 0",
+                  borderBottom: isLastRow ? "none" : "1px solid rgba(255,255,255,0.07)",
+                  paddingLeft: isLeft ? 0 : 20,
+                  paddingRight: isLeft ? 20 : 0,
+                  cursor: "pointer",
+                  background: "transparent",
+                }}
               >
-                <div className="h-full min-h-[190px] overflow-hidden bg-zinc-900">
+                <div style={{ position: "relative", flexShrink: 0, width: 180, height: 110, borderRadius: 6, overflow: "hidden", background: "#2a2a35" }}>
                   {stillUrl && (
-                    <img
-                      src={stillUrl}
-                      alt={ep.name}
-                      className={`h-full w-full object-cover object-center transition duration-300 ${isActive ? "opacity-100" : "opacity-75 group-hover:opacity-100"}`}
-                    />
+                    <img src={stillUrl} alt={ep.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  )}
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: "rgba(0,0,0,0.25)",
+                    opacity: isActive ? 1 : 0,
+                    transition: "opacity 0.15s",
+                  }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14 }}>▶</div>
+                  </div>
+                  {isActive && (
+                    <div style={{ position: "absolute", bottom: 0, left: 0, height: 3, width: "65%", background: "#e50914" }} />
                   )}
                 </div>
-                <div className="flex min-w-0 flex-col justify-center" style={{ padding: "28px 32px" }}>
-                  <div className="mb-3 flex items-center justify-between gap-5">
-                    <strong className="line-clamp-1 text-base font-black uppercase tracking-wide">
-                      {ep.episode_number}. {ep.name}
-                    </strong>
-                    <span className={`shrink-0 text-xs font-semibold ${isActive ? "text-white/60" : "text-white/45"}`}>
-                      E{ep.episode_number}
-                    </span>
-                  </div>
-                  <p className={`line-clamp-3 text-sm leading-7 ${isActive ? "text-white/72" : "text-white/55"}`}>{ep.overview}</p>
-                  <div className={`mt-5 h-1 w-full overflow-hidden rounded-full ${isActive ? "bg-white/12" : "bg-white/10"}`}>
-                    <span className={`block h-full w-1/3 rounded-full ${isActive ? "bg-[#e50914]/80" : "bg-[#e50914]/55"}`} />
-                  </div>
+
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.4 }}>
+                    {ep.episode_number}. {ep.name}
+                  </p>
+                  {meta && <p style={{ fontSize: 14, color: "#666", margin: 0 }}>{meta}</p>}
+                  <p style={{
+                    fontSize: 14, color: "#999", margin: 0, lineHeight: 1.6,
+                    overflow: "hidden", display: "-webkit-box",
+                    WebkitBoxOrient: "vertical", WebkitLineClamp: 3,
+                  } as CSSProperties}>
+                    {ep.overview}
+                  </p>
                 </div>
-              </li>
+              </div>
             );
           })}
-        </ul>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#141414] to-transparent" />
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 8 }}>
+            <button
+              onClick={() => setEpisodePage((p) => Math.max(1, p - 1))}
+              disabled={episodePage === 1}
+              style={{ background: "none", border: "1px solid #3a3a48", color: episodePage === 1 ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: episodePage === 1 ? "default" : "pointer", fontSize: 14 }}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setEpisodePage(page)}
+                style={{
+                  width: 34, height: 34, borderRadius: 4, fontSize: 14, cursor: "pointer",
+                  background: page === episodePage ? "#e50914" : "none",
+                  border: `1px solid ${page === episodePage ? "#e50914" : "#3a3a48"}`,
+                  color: page === episodePage ? "#fff" : "#888",
+                  fontWeight: page === episodePage ? 700 : 400,
+                }}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setEpisodePage((p) => Math.min(totalPages, p + 1))}
+              disabled={episodePage === totalPages}
+              style={{ background: "none", border: "1px solid #3a3a48", color: episodePage === totalPages ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: episodePage === totalPages ? "default" : "pointer", fontSize: 14 }}
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSynopsis = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
+        {isTv ? "시리즈 줄거리" : "영화 줄거리"}
+      </h2>
+      <div style={{ position: "relative" }}>
+        <p style={{
+          fontSize: 16, color: "#ccc", lineHeight: 1.72, margin: 0,
+          overflow: "hidden",
+          whiteSpace: synopsisExpanded ? "normal" : "nowrap",
+          textOverflow: synopsisExpanded ? "clip" : "ellipsis",
+          maxWidth: synopsisExpanded ? "100%" : "50%",
+        }}>
+          {mediaItem?.overview}
+        </p>
+        {!synopsisExpanded && (
+          <div style={{
+            position: "absolute", top: 0, right: 0, bottom: 0, width: "50%",
+            background: "linear-gradient(to right, transparent 0%, #141414 100%)",
+            pointerEvents: "none",
+          }} />
+        )}
+      </div>
+      {mediaItem?.overview && (
+        <button
+          onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+          style={{ fontSize: 14, color: "#e50914", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", width: "fit-content" }}
+        >
+          {synopsisExpanded ? "접기 ▴" : "더보기 ▾"}
+        </button>
+      )}
+    </div>
+  );
+
+  const renderRating = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>시리즈 평가</h2>
+      <div style={{ borderRadius: 12, background: "rgba(255,255,255,0.02)", border: "1px solid #2a2a35", padding: "20px 21px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <span style={{ fontSize: 16, color: "#888" }}>별점을 매겨주세요</span>
+          <div style={{ display: "flex", gap: 2 }}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                onMouseEnter={() => setHoverStar(s)}
+                onMouseLeave={() => setHoverStar(0)}
+                onClick={() => setRatedStar(s)}
+                style={{
+                  fontSize: 24,
+                  color: s <= (hoverStar || ratedStar) ? "#e50914" : "#333",
+                  background: "none", border: "none", cursor: "pointer",
+                  transition: "color 0.1s", lineHeight: 1,
+                }}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <button style={{ borderRadius: 100, padding: "8px 14px", background: "rgba(229,9,20,0.12)", border: "1px solid #e50914", color: "#e50914", fontSize: 12, cursor: "pointer" }}>
+            ♡ 찜
+          </button>
+          <button style={{ borderRadius: 100, padding: "8px 14px", background: "transparent", border: "1px solid #3a3a48", color: "#888", fontSize: 12, cursor: "pointer" }}>
+            ＋ 플레이리스트
+          </button>
+          <button style={{ borderRadius: 100, padding: "8px 14px", background: "transparent", border: "1px solid #3a3a48", color: "#888", fontSize: 12, cursor: "pointer" }}>
+            🔔 신규 회차 알림
+          </button>
+        </div>
       </div>
     </div>
   );
 
-  const renderTabContent = () => {
-    if (activeTab === "episodes" && isTv) return renderEpisodesPanel();
-    if (activeTab === "cast") return renderCastGrid();
-    if (activeTab === "director") return renderDirectorPanel();
-    if (activeTab === "review") return renderRatingSection();
-    if (activeTab === "related") return renderRelatedGrid();
-    return renderInfoGrid();
+  const renderRelated = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>함께 보면 좋은 작품</h2>
+        <span style={{ fontSize: 12, color: "#888", cursor: "pointer" }}>더보기 →</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
+        {relatedItems.map((item) => {
+          const isHovered = hoveredRelatedId === item.id;
+          return (
+            <a
+              key={`${item.media_type}-${item.id}`}
+              href={`/detail/${item.media_type}/${item.id}`}
+              onMouseEnter={() => setHoveredRelatedId(item.id)}
+              onMouseLeave={() => setHoveredRelatedId(null)}
+              style={{
+                position: "relative", display: "block", borderRadius: 6, overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.05)", aspectRatio: "2/3",
+                background: "#1a1a22",
+                transform: isHovered ? "scale(1.04)" : "scale(1)",
+                transition: "transform 0.2s",
+              }}
+            >
+              {item.poster_path && (
+                <img
+                  src={imageUrl(item.poster_path)}
+                  alt={item.title}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", opacity: isHovered ? 0.4 : 0.8, transition: "opacity 0.2s" }}
+                />
+              )}
+              {isHovered && (
+                <div style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", flexDirection: "column", justifyContent: "flex-end",
+                  padding: 12,
+                  background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
+                  gap: 5,
+                }}>
+                  <span style={{ fontSize: 12, padding: "2px 7px", borderRadius: 3, background: "rgba(255,255,255,0.15)", color: "#ccc", alignSelf: "flex-start" }}>
+                    {item.media_type === "tv" ? "드라마" : "영화"}
+                  </span>
+                  <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.5 }}>
+                    {item.title}
+                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {item.vote_average > 0 && (
+                      <span style={{ fontSize: 16, color: "#e50914", fontWeight: 700 }}>★ {item.vote_average.toFixed(1)}</span>
+                    )}
+                    {item.release_date && (
+                      <span style={{ fontSize: 16, color: "#888" }}>{item.release_date.slice(0, 4)}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderCast = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>출연진</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+        {castList.slice(0, 12).map((member, idx) => {
+          const isLastRow = idx >= castList.slice(0, 12).length - (castList.slice(0, 12).length % 4 || 4);
+          const isRightCol = (idx + 1) % 4 !== 0;
+          return (
+            <div
+              key={member.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: "16px 0",
+                borderBottom: isLastRow ? "none" : "1px solid rgba(255,255,255,0.07)",
+                borderRight: isRightCol ? "1px solid rgba(255,255,255,0.07)" : "none",
+                paddingLeft: idx % 4 === 0 ? 0 : 20,
+                paddingRight: (idx + 1) % 4 === 0 ? 0 : 20,
+              }}
+            >
+              <div style={{
+                flexShrink: 0,
+                width: 52, height: 52,
+                borderRadius: 8,
+                overflow: "hidden",
+                background: "#2a2a35",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}>
+                {member.profile_path && (
+                  <img src={imageUrl(member.profile_path, "w185")} alt={member.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                )}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {member.name}
+                </p>
+                <p style={{ fontSize: 13, color: "#666", margin: 0, lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  출연 | {member.character}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderStills = () => {
+    const rawImages = movieImages[mediaId] ?? [];
+    const stills = rawImages.length > 0
+      ? rawImages.slice(0, 8).map((img) => imageUrl(img.file_path, "w780"))
+      : [
+        mediaItem?.backdrop_path ? imageUrl(mediaItem.backdrop_path, "w780") : null,
+        mediaItem?.poster_path ? imageUrl(mediaItem.poster_path, "w780") : null,
+      ].filter(Boolean) as string[];
+
+    if (stills.length === 0) return null;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>스틸컷</h2>
+        <div
+          ref={stillsRef}
+          className="scrollbar-hide"
+          style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, cursor: "grab", userSelect: "none" }}
+          onMouseDown={onStillsMouseDown}
+          onMouseMove={onStillsMouseMove}
+          onMouseUp={onStillsMouseUp}
+          onMouseLeave={onStillsMouseUp}
+        >
+          {stills.map((src, i) => (
+            <div
+              key={i}
+              onClick={() => onStillClick(src)}
+              style={{
+                flexShrink: 0,
+                width: 320,
+                height: 180,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "#1a1a22",
+                cursor: "pointer",
+              }}
+            >
+              <img src={src} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", pointerEvents: "none" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
+
+  const renderDirector = () => (
+    <div style={{ padding: "56px 40px 0" }}>
+      <div style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", padding: 28 }}>
+        <p style={{ marginBottom: 20, fontSize: 12, fontWeight: 600, color: "#e50914" }}>Creative</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          {directorList.length > 0
+            ? directorList.map((person) => (
+              <span key={person.id} style={{ borderRadius: 100, border: "1px solid rgba(255,255,255,0.15)", padding: "8px 20px", color: "rgba(255,255,255,0.8)", fontSize: 14 }}>
+                {person.name}
+              </span>
+            ))
+            : <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, margin: 0 }}>등록된 감독 정보가 없습니다.</p>}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
   return (
-    <>
-      <section className="relative overflow-hidden border-b border-white/10 bg-[#181820]">
+    <div style={{ background: "#141414", minHeight: "100vh" }}>
+
+      {/* Hero + Info Section (shared background) */}
+      <div style={{ position: "relative" }}>
         {detailBackdrop && (
-          <img src={detailBackdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+          <img
+            src={detailBackdrop}
+            alt=""
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", opacity: 0.45 }}
+          />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-[#1b1720]/92 to-[#e50914]/18" />
-        <div className="relative grid min-h-[440px] gap-10 px-12 py-16 lg:grid-cols-[240px_1fr]">
-          <div className="hidden overflow-hidden rounded-lg bg-white/8 shadow-2xl lg:block">
-            {posterUrl && <img src={posterUrl} alt={title} className="h-full w-full object-cover" />}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(20,20,20,0.7) 0%, rgba(20,20,20,0.4) 40%, transparent 75%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #141414 0%, rgba(20,20,20,0.2) 30%, transparent 60%)" }} />
+
+        {/* Hero spacer */}
+        <div style={{ height: 600 }} />
+
+        {/* Info Section */}
+        <div style={{ position: "relative", display: "flex", gap: 24, padding: "0 40px", zIndex: 10, paddingBottom: 40 }}>
+          {/* Poster */}
+          <div style={{
+            flexShrink: 0, width: 180, height: 260, borderRadius: 8,
+            overflow: "hidden", border: "1.5px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.7)", background: "#2a2a35",
+          }}>
+            {posterUrl && <img src={posterUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
           </div>
-          <div className="flex max-w-4xl flex-col justify-center">
-            <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-white/55">
-              <span className="rounded bg-[#e50914] px-3 py-1 font-bold text-white">{isTv ? "시리즈" : "영화"}</span>
-              {releaseYear && <span>{releaseYear}</span>}
-              {mediaItem?.number_of_seasons && <span>시즌 {mediaItem.number_of_seasons}</span>}
-              {mediaItem?.number_of_episodes && <span>{mediaItem.number_of_episodes}부작</span>}
-              {mediaItem?.runtime && <span>{mediaItem.runtime}분</span>}
-              {genreText && <span>{genreText}</span>}
+
+          {/* Metadata */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 8 }}>
+            <div>
+              <span style={{ background: "rgba(255, 255, 255, 0.1)", padding: "3px 8px", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "rgba(255, 255, 255, 0.5)" }}>
+                {isTv ? "드라마" : "영화"}
+                {mediaItem?.number_of_seasons ? ` · 시즌 ${mediaItem.number_of_seasons} 진행중` : ""}
+              </span>
             </div>
-            <h2 className="mb-3 text-5xl font-black leading-tight text-white">{title}</h2>
-            {mediaItem?.tagline && <p className="mb-3 text-white/45">{mediaItem.tagline}</p>}
-            <div className="mb-6 flex items-end gap-3">
-              <strong className="text-4xl font-black text-white">{mediaItem?.vote_average?.toFixed(1) ?? "-"}</strong>
-              <span className="pb-1 text-white/45">/10</span>
-              <span className="pb-1 text-[#e50914]">★★★★★</span>
+
+            <h1 style={{ fontWeight: 900, fontSize: 40, color: "#fff", lineHeight: 1.15, letterSpacing: -0.8, margin: 0 }}>
+              {title}
+            </h1>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {releaseYear && <span style={{ fontSize: 14, color: "#888" }}>{releaseYear}</span>}
+              {isTv && mediaItem?.number_of_seasons && (
+                <>
+                  <span style={{ color: "#444" }}>·</span>
+                  <span style={{ fontSize: 14, color: "#888" }}>
+                    시즌 {mediaItem.number_of_seasons} / {mediaItem.number_of_episodes}부작
+                  </span>
+                </>
+              )}
+              {!isTv && mediaItem?.runtime && (
+                <>
+                  <span style={{ color: "#444" }}>·</span>
+                  <span style={{ fontSize: 14, color: "#888" }}>{mediaItem.runtime}분</span>
+                </>
+              )}
+              {mediaItem?.genres && mediaItem.genres.length > 0 && (
+                <>
+                  <span style={{ color: "#444" }}>·</span>
+                  {mediaItem.genres.slice(0, 3).map((g) => (
+                    <span key={g.id} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid #555", fontSize: 11, color: "#999" }}>
+                      {g.name}
+                    </span>
+                  ))}
+                </>
+              )}
+              {countryText && (
+                <>
+                  <span style={{ color: "#444" }}>·</span>
+                  <span style={{ fontSize: 14, color: "#888" }}>{countryText}</span>
+                </>
+              )}
             </div>
-            <p className="mb-8 line-clamp-3 max-w-3xl leading-7 text-white/70">{mediaItem?.overview}</p>
-            <div className="flex flex-wrap gap-4">
-              <button className="bg-[#e50914] px-8 py-4 font-bold text-white transition hover:bg-[#b00710]" onClick={handlePlay}>
+
+            {/* Score */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontWeight: 700, fontSize: 32, color: "#fff", letterSpacing: -1.5 }}>
+                {mediaItem?.vote_average?.toFixed(1) ?? "-"}
+              </span>
+              <span style={{ fontSize: 16, color: "#888" }}>/ 10</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ color: "#e50914", fontSize: 14, letterSpacing: 2 }}>★★★★★</span>
+                {mediaItem?.vote_count && (
+                  <span style={{ fontSize: 12, color: "#888" }}>{mediaItem.vote_count.toLocaleString()}명 평가</span>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <button
+                onClick={handlePlay}
+                style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: "pointer" }}
+              >
                 ▶ {isTv ? "이어보기" : "재생하기"}
               </button>
-              <button className="h-14 w-14 rounded-full border border-[#e50914] text-[#e50914]">♡</button>
-              <button className="h-14 w-14 rounded-full border border-white/15 text-white/70">＋</button>
+              <button style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: "pointer" }}>
+                ＋ 내 리스트
+              </button>
+              <button style={{ background: "rgba(229,9,20,0.1)", border: "1px solid #e50914", color: "#e50914", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ♡
+              </button>
+              <button style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ↗
+              </button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="season w-[calc(100vw-120px)] max-w-[1480px] overflow-x-hidden">
-        <div className="flex border-b border-white/10" style={{ gap: "32px", padding: "0 48px" }}>
-          {tabItems.map((tab) => {
-            const isActive = activeTab === tab.id;
+      {/* TabNav */}
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "0 40px", marginTop: 24 }}>
+        {tabItems.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              height: 48,
+              padding: "0 14px 0 4px",
+              marginRight: 8,
+              background: "none",
+              border: "none",
+              borderBottom: activeTab === tab.id ? "2px solid #e50914" : "2px solid transparent",
+              marginBottom: -1,
+              color: activeTab === tab.id ? "#fff" : "#888",
+              fontWeight: activeTab === tab.id ? 700 : 400,
+              fontSize: 16,
+              cursor: "pointer",
+            }}
+          >
+            {tab.label}
+            {tab.meta && <span style={{ fontSize: 10, color: "#555", marginLeft: 2 }}>{tab.meta}</span>}
+          </button>
+        ))}
+      </div>
 
-            return (
-              <button
-                className={`relative text-sm font-bold transition ${isActive ? "text-white" : "text-white/42 hover:text-white/75"}`}
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{ padding: "20px 0" }}
-              >
-                {tab.label}
-                {tab.meta && <span className="ml-2 text-xs text-white/35">{tab.meta}</span>}
-                {isActive && <span className="absolute bottom-0 left-0 h-[2px] w-full bg-[#e50914]" />}
-              </button>
-            );
-          })}
+      {/* Tab content */}
+      <div style={{ paddingBottom: 80 }}>
+        {activeTab === "episodes" && isTv && renderEpisodesTab()}
+        {activeTab === "info" && !isTv && renderStills()}
+        {activeTab === "cast" && renderCast()}
+        {activeTab === "director" && renderDirector()}
+        {activeTab === "review" && renderRating()}
+        {activeTab === "related" && renderRelated()}
+
+        {(activeTab === "episodes" || activeTab === "info") && renderSynopsis()}
+        {activeTab === "episodes" && renderRating()}
+        {(activeTab === "episodes" || activeTab === "info") && renderRelated()}
+        {(activeTab === "episodes" || activeTab === "info") && renderCast()}
+      </div>
+
+      {/* Stills lightbox */}
+      {lightboxSrc && (
+        <div
+          onClick={() => setLightboxSrc(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <img
+            src={lightboxSrc}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "90vw", maxHeight: "90vh", borderRadius: 8, objectFit: "contain" }}
+          />
+          <button
+            onClick={() => setLightboxSrc(null)}
+            style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", padding: "8px 16px", borderRadius: 4, cursor: "pointer", fontSize: 14 }}
+          >
+            닫기
+          </button>
         </div>
+      )}
 
-        <div style={{ padding: "40px 48px" }}>
-          {renderTabContent()}
-
-          <section className="mt-14">
-            <h3 className="mb-5 text-2xl font-black text-white">{isTv ? "시리즈 줄거리" : "줄거리"}</h3>
-            <p className="max-w-5xl leading-8 text-white/68">{mediaItem?.overview}</p>
-          </section>
-
-          {!isTv && renderVideoSection()}
-
-          {renderRatingSection()}
-
-          {!isTv && (
-            <section className="mt-12">
-              <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-2xl font-black text-white">출연진</h3>
-                <button className="text-sm text-white/45 hover:text-white" onClick={() => setActiveTab("cast")}>전체보기 →</button>
-              </div>
-              {renderCastGrid(6)}
-            </section>
-          )}
-
-          <section className="mt-12">
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-2xl font-black text-white">함께 보면 좋은 작품</h3>
-              <button className="text-sm text-white/45 hover:text-white" onClick={() => setActiveTab("related")}>더보기 →</button>
-            </div>
-            {renderRelatedGrid()}
-          </section>
-        </div>
-      </section>
-
+      {/* Video popup */}
       {showPopup && popupVideoKey && (
-        <div className="fixed bg-black z-[10000] w-full h-full top-0 left-0">
-          <button className="absolute right-5 top-5 bg-white/10 px-4 py-2 text-white z-50" onClick={() => setShowPopup(false)}>닫기</button>
-          <div className="flex h-full items-center justify-center">
-            <iframe className="h-[90vh] w-full" src={`https://www.youtube.com/embed/${popupVideoKey}?autoplay=1&mute=1`} title="Trailer"></iframe>
+        <div style={{ position: "fixed", background: "#000", zIndex: 10000, width: "100%", height: "100%", top: 0, left: 0 }}>
+          <button
+            style={{ position: "absolute", right: 20, top: 20, background: "rgba(255,255,255,0.1)", padding: "8px 16px", color: "#fff", border: "none", cursor: "pointer", zIndex: 50 }}
+            onClick={() => setShowPopup(false)}
+          >
+            닫기
+          </button>
+          <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
+            <iframe
+              style={{ height: "90vh", width: "100%" }}
+              src={`https://www.youtube.com/embed/${popupVideoKey}?autoplay=1&mute=1`}
+              title="Trailer"
+            />
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

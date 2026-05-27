@@ -30,6 +30,8 @@ export interface Episodes {
     overview: string;
     still_path: string;
     episode_number: number;
+    runtime?: number;
+    air_date?: string;
 }
 //비디오타입
 export interface Video {
@@ -103,6 +105,8 @@ export interface MovieState {
     netflixOriginals: TV[],
     //각 TV별 스틸컷 백드롭 이미지 캐시
     tvImages: { [tvId: number]: StillImage[] },
+    //각 영화별 스틸컷 백드롭 이미지 캐시
+    movieImages: { [movieId: number]: StillImage[] },
 
     //추천작 (인기 영화 + 인기 TV 섞어서 랜덤)
     recommended: RecommendedItem[],
@@ -127,6 +131,7 @@ export interface MovieState {
 
     onFetchNetflixOriginals: () => Promise<void>,
     onFetchTvImages: (id: string | number) => Promise<void>,
+    onFetchMovieImages: (id: string | number) => Promise<void>,
 
     onFetchRecommended: () => Promise<void>,
     onFetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<void>,
