@@ -266,7 +266,11 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, transparent 100%);
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.88) 0%,
+      transparent 100%
+    );
   }
 
   .hero-nav {
@@ -377,6 +381,7 @@
     line-height: 1.72;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .hero-btns {
@@ -406,7 +411,7 @@
   }
 
   .btn-play:hover {
-    background: g.$main-color;
+    background: #b80710;
     transform: scale(1.02);
   }
 
@@ -528,7 +533,8 @@
   }
 
   @media (max-width: 900px) {
-    .hero {
+    & {
+      height: calc(100svh - g.$header-height);
       min-height: 560px;
     }
 
@@ -605,8 +611,8 @@
   }
 
   @media (max-width: 560px) {
-    .hero {
-      height: 560px;
+    & {
+      height: calc(100svh - g.$header-height);
       min-height: 560px;
     }
 
