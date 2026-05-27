@@ -4,12 +4,12 @@
 .original-banner {
   display: flex;
   gap: 8px;
-  margin-top: 40px;
+  margin-top: 20px;
   width: 100%;
   /* 와이어프레임 기준 가로형 패널: 세로비 4:1 정도 */
-  aspect-ratio: 4 / 1;
+  aspect-ratio: 4.6 / 1;
   background-color: #0a0a0a;
-  padding: 8px;
+  // padding: 8px;
   border-radius: 4px;
 
   /* 카드 한 조각 */
