@@ -60,14 +60,16 @@ export default function RecommendList() {
 
       <div className="inner">
         <SectionTitle title='추천' subTitle='새로운 작품들을 시청해보세요' />
-
+      </div>
         <Swiper
           modules={[Navigation, Autoplay]}
           grabCursor
           centeredSlides
           loop
-          slidesPerView={1.4}
-          spaceBetween={120}
+          slidesPerView={3}
+          spaceBetween={100}
+          observer={true}
+          observeParents={true}
           navigation
           autoplay={{
             delay: 5000,
@@ -79,6 +81,7 @@ export default function RecommendList() {
             640: { slidesPerView: 1.3, spaceBetween: 60 },
             1024: { slidesPerView: 1.4, spaceBetween: 80 },
             1400: { slidesPerView: 1.5, spaceBetween: 100 },
+            1700: { slidesPerView: 3, spaceBetween: 100 },
           }}
         >
           {recommended.map((item) => (
@@ -131,7 +134,6 @@ export default function RecommendList() {
             </SwiperSlide>
           ))}
         </Swiper>
-      </div>
     </section>
   );
 }
