@@ -1,7 +1,6 @@
+@use "@/app/globals" as g;
+
 .hero {
-  --hero-red: #e50914;
-  --hero-red-dark: #b00710;
-  --hero-muted: #999;
   position: relative;
   width: 100%;
   height: 100%;
