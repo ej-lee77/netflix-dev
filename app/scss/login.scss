@@ -1,4 +1,4 @@
-@use "../globals" as *;
+@use "@/app/globals" as g;
 
 // globals.scss 의 main { padding-top: 60px; padding-left: 60px; } 가 이미 적용됨
 // 로그인 페이지는 그 영역 안에서 전체를 채움
@@ -9,8 +9,8 @@
   display: flex;
   // 헤더(60px) + 사이드nav(60px) 패딩은 main 태그가 이미 처리
   // min-height: 뷰포트 전체 - 헤더 높이
-  min-height: calc(100vh - $header-height);
-  background-color: $bg-color;
+  min-height: calc(100vh - g.$header-height);
+  background-color: g.$bg-color;
 }
 
 // ─── 왼쪽: 포스터 그리드 ──────────────────────────────────────────────────────
@@ -25,7 +25,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, transparent 55%, $bg-color 92%);
+    background: linear-gradient(to right, transparent 55%, g.$bg-color 92%);
     z-index: 2;
     pointer-events: none;
   }
@@ -61,7 +61,7 @@
 }
 
 .poster-item {
-  border-radius: $radius-md;
+  border-radius: g.$radius-md;
   overflow: hidden;
   aspect-ratio: 2 / 3;
   flex-shrink: 0;
@@ -112,15 +112,15 @@
 }
 
 .login-title {
-  font-size: $text-32;
+  font-size: g.$text-32;
   font-weight: 700;
-  color: $w-color;
+  color: g.$w-color;
   line-height: 1.2;
   margin-bottom: 8px;
 }
 
 .login-subtitle {
-  font-size: $text-14;
+  font-size: g.$text-14;
   color: #a0a0a0;
   margin-bottom: 32px;
 }
@@ -130,9 +130,9 @@
 .login-error {
   background-color: rgba(229, 9, 20, 0.1);
   border: 1px solid rgba(229, 9, 20, 0.35);
-  border-radius: $radius-md;
+  border-radius: g.$radius-md;
   color: #ff6b6b;
-  font-size: $text-13;
+  font-size: g.$text-13;
   padding: 10px 14px;
   margin-bottom: 18px;
   animation: fade-up 0.2s ease both;
@@ -154,7 +154,7 @@
 }
 
 .form-label {
-  font-size: $text-13;
+  font-size: g.$text-13;
   font-weight: 500;
   color: #a0a0a0;
 }
@@ -170,9 +170,9 @@
   padding: 13px 16px;
   background-color: #1e1e1e;
   border: 1px solid #3a3a3a;
-  border-radius: $radius-md;
-  color: $w-color;
-  font-size: $text-16;
+  border-radius: g.$radius-md;
+  color: g.$w-color;
+  font-size: g.$text-16;
   outline: none;
   transition: border-color .15s, background-color .15s, box-shadow .15s;
 
@@ -187,7 +187,7 @@
 
   &:focus {
     background-color: #232323;
-    border-color: $main-color;
+    border-color: g.$main-color;
     box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.25);
   }
 
@@ -231,7 +231,7 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: $text-13;
+  font-size: g.$text-13;
   color: #a0a0a0;
   user-select: none;
 }
@@ -250,8 +250,8 @@
   transition: border-color .15s, background-color .15s;
 
   &:checked {
-    background-color: $main-color;
-    border-color: $main-color;
+    background-color: g.$main-color;
+    border-color: g.$main-color;
 
     &::after {
       content: "";
@@ -269,8 +269,8 @@
 }
 
 .forgot-link {
-  font-size: $text-13;
-  color: $main-color;
+  font-size: g.$text-13;
+  color: g.$main-color;
   font-weight: 500;
   transition: opacity .15s;
 
@@ -285,12 +285,12 @@
 .login-btn {
   width: 100%;
   padding: 14px;
-  background-color: $main-color;
-  color: $w-color;
-  font-size: $text-18;
+  background-color: g.$main-color;
+  color: g.$w-color;
+  font-size: g.$text-18;
   font-weight: 700;
   border: none;
-  border-radius: $radius-md;
+  border-radius: g.$radius-md;
   cursor: pointer;
   transition: background-color .15s, transform .15s, box-shadow .15s;
 
@@ -336,7 +336,7 @@
   align-items: center;
   gap: 12px;
   color: #666;
-  font-size: $text-13;
+  font-size: g.$text-13;
   margin: 20px 0;
 
   &::before,
@@ -366,9 +366,9 @@
   padding: 13px 16px;
   background-color: #1e1e1e;
   border: 1px solid #3a3a3a;
-  border-radius: $radius-md;
-  color: $w-color;
-  font-size: $text-14;
+  border-radius: g.$radius-md;
+  color: g.$w-color;
+  font-size: g.$text-14;
   font-weight: 500;
   cursor: pointer;
   transition: background-color .15s, border-color .15s, transform .15s;
@@ -401,7 +401,7 @@
   }
 
   &.icon-apple {
-    color: $w-color;
+    color: g.$w-color;
     font-size: 15px;
   }
 
@@ -420,11 +420,11 @@
 
 .login-signup {
   text-align: center;
-  font-size: $text-13;
+  font-size: g.$text-13;
   color: #8a8a8a;
 
   a {
-    color: $main-color;
+    color: g.$main-color;
     font-weight: 600;
     margin-left: 4px;
     transition: opacity .15s;
