@@ -1,0 +1,107 @@
+"use client";
+
+import React, { useState } from "react";
+import "./signin.scss";
+import StepRegister from "./components/StepRegister";
+import StepVerify   from "./components/StepVerify";
+import StepPlan     from "./components/StepPlan";
+import StepPayment  from "./components/StepPayment";
+import StepComplete from "./components/StepComplete";
+
+// ─── 타입 ──────────────────────────────────────────────────────────────────────
+
+type StepStatus = "active" | "done" | "idle";
+type BillingCycle = "monthly" | "annual";
+
+interface Step { label: string; status: StepStatus; }
+
+interface SelectedPlan {
+  name: string;
+  billing: BillingCycle;
+  monthlyPrice: number;
+  annualTotal: number;
+  annualDiscount: number;
+}
+
+// step 0,1 → 계정 만들기 active
+// step 2   → 플랜 선택 active
+// step 3   → 결제 active
+// step 4   → 구독 완료 active
+function buildSteps(current: number): Step[] {
+  const labels = ["계정 만들기", "플랜 선택", "결제", "구독 완료"];
+  const indicatorStep = current <= 1 ? 0 : current - 1;
+  return labels.map((label, i) => ({
+    label,
+    status: i < indicatorStep ? "done" : i === indicatorStep ? "active" : "idle",
+  }));
+}
+
+// ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
+
+export default function SigninPage() {
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [sentEmail,   setSentEmail]   = useState<string>("");
+  const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>({
+    name: "스탠다드",
+    billing: "monthly",
+    monthlyPrice: 13500,
+    annualTotal: 135000,
+    annualDiscount: 27000,
+  });
+
+  const steps = buildSteps(currentStep);
+
+  const handleVerificationSent = (email: string) => {
+    setSentEmail(email);
+    setCurrentStep(1);
+  };
+
+  const handleVerified  = ()                   => setCurrentStep(2);
+  const handlePlanNext  = (plan: SelectedPlan) => { setSelectedPlan(plan); setCurrentStep(3); };
+  const handlePayBack   = ()                   => setCurrentStep(2);
+  const handlePayComplete = ()                 => setCurrentStep(4);
+
+  return (
+    <div className="signin-page">
+
+      {/* ── 스텝 인디케이터 ──────────────────────────────────────────────── */}
+      <div className="step-bar" aria-label="가입 단계">
+        {steps.map((step, idx) => (
+          <React.Fragment key={step.label}>
+            <div className="step-node">
+              <div className={`step-circle ${step.status}`}>{idx + 1}</div>
+              <span className={`step-name ${step.status}`}>{step.label}</span>
+            </div>
+            {idx < steps.length - 1 && (
+              <div className="step-connector">
+                <div className={`step-line ${step.status === "done" ? "done" : ""}`} />
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* ── 단계별 컴포넌트 ───────────────────────────────────────────────── */}
+      {currentStep === 0 && (
+        <StepRegister onVerificationSent={handleVerificationSent} />
+      )}
+      {currentStep === 1 && (
+        <StepVerify email={sentEmail} onVerified={handleVerified} />
+      )}
+      {currentStep === 2 && (
+        <StepPlan onNext={handlePlanNext} />
+      )}
+      {currentStep === 3 && (
+        <StepPayment
+          plan={selectedPlan}
+          onBack={handlePayBack}
+          onComplete={handlePayComplete}
+        />
+      )}
+      {currentStep === 4 && (
+        <StepComplete plan={selectedPlan} />
+      )}
+
+    </div>
+  );
+}

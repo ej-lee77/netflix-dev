@@ -5,6 +5,7 @@ import "./globals.scss";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginBanner from "@/components/LoginBanner";
+import AuthProvider from "@/components/AuthProvider";
 
 const netflixSans = localFont({
   src: [
@@ -31,11 +32,14 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={netflixSans.variable}>
-        <Header />
-        <main>{children}</main>
-        <Footer />
-        {/* 비로그인 사용자에게 표시되는 하단 고정 배너 */}
-        <LoginBanner />
+        {/* 앱 시작 시 Firebase 인증 상태 복원 */}
+        <AuthProvider>
+          <Header />
+          <main>{children}</main>
+          <Footer />
+          {/* 비로그인 사용자에게 표시되는 하단 고정 배너 */}
+          <LoginBanner />
+        </AuthProvider>
       </body>
     </html>
   );
