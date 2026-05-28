@@ -26,11 +26,6 @@ export const mainMenus: mainMenu[] = [
   //     imgUrl: "/images/header/menu/playhist.svg",
   //     path: "/mypage/playhist"
   // },
-  {
-    title: "마이페이지",
-    imgUrl: "/images/header/menu/mypage.svg",
-    path: "/mypage",
-  },
   // {
   //     title: "커스텀",
   //     imgUrl: "/images/header/menu/custom.svg",
