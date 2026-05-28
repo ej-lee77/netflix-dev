@@ -72,8 +72,8 @@ export default function Header() {
 
             {!user ? (
               <li>
-                <Link href="/login" className="login-link">
-                  로그인
+                <Link href="/login" className="login-link" aria-label="로그인">
+                  <Image src="/images/header/menu/mypage.svg" alt="" width={24} height={24} />
                 </Link>
               </li>
             ) : (

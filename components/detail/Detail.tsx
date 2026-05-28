@@ -119,6 +119,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   } = useMovieStore();
 
   const { onAddPlayList, onAddMyList } = usePlayListStore();
+  const { onLoadWishlist } = useWishlistStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);

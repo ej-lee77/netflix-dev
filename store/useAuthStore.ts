@@ -6,7 +6,7 @@ import { auth } from "@/firebase/firebase"
 export const DEFAULT_PROFILES = Array.from({ length: 6 }, (_, index) => ({
     id: index + 1,
     name: `유저 ${index + 1}`,
-    imgUrl: `/images/profile/default_icons/${17 + index}.png`,
+    imgUrl: `/images/profile/default_icons/${17 + (index % 4)}.png`,
 }));
 
 const PROFILE_STORAGE_KEY = "netflix-current-profile";
