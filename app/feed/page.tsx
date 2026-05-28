@@ -161,7 +161,7 @@ export default function FeedPage() {
           <div className="feed-main">
             {filtered.map((post) => (
               <article key={post.id} className="feed-post">
-                <header className="post-head">
+                <div className="post-head">
                   <div className="post-avatar"></div>
                   <div className="post-meta">
                     <h3>{post.friend}</h3>
@@ -172,7 +172,7 @@ export default function FeedPage() {
                     </div>
                   </div>
                   <button className="post-more">⋯</button>
-                </header>
+                </div>
 
                 {/* 리뷰 본문 */}
                 {post.type === "review" && (

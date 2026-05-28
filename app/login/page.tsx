@@ -121,7 +121,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "images/profile/1.png" }];
+  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "/images/profile/normal.svg" }];
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,98 +1,478 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
-import { useMovieStore } from "@/store/useMovieStore";
+import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
 
+type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv";
 
+interface CustomPlaylist {
+  id: string;
+  title: string;
+  itemKeys: string[];
+  createdAt: string;
+}
+
+interface ActivityReview {
+  id: number;
+  author: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+  spoiler: boolean;
+  mediaId: number;
+  mediaType: "movie" | "tv";
+  mediaTitle: string;
+  posterPath?: string;
+}
+
+const CUSTOM_PLAYLIST_KEY = "netflix-custom-playlists";
+const USER_REVIEWS_KEY = "netflix-user-reviews";
+const SELECTABLE_PAGE_SIZE = 5;
+
+const tabs: { id: ActivityTab; label: string }[] = [
+  { id: "watching", label: "시청중" },
+  { id: "history", label: "시청기록" },
+  { id: "wishlist", label: "찜하기" },
+  { id: "reviews", label: "리뷰" },
+  { id: "playlists", label: "플레이리스트" },
+];
+
+const getItemKey = (item: Pick<PlayListItem, "id" | "mediaType">) => `${item.mediaType}-${item.id}`;
+
+const getPosterUrl = (path?: string) => (
+  path ? `https://image.tmdb.org/t/p/w500${path}` : ""
+);
+
+const getBackdropUrl = (item: PlayListItem) => (
+  getPosterUrl(item.backdrop_path || item.poster_path)
+);
+
+const getProgress = (item: PlayListItem) => 35 + (item.id % 50);
+
+const formatDate = (value: string) => new Date(value).toLocaleDateString("ko-KR");
+
+const loadCustomPlaylists = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = window.localStorage.getItem(CUSTOM_PLAYLIST_KEY);
+    return stored ? JSON.parse(stored) as CustomPlaylist[] : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCustomPlaylists = (items: CustomPlaylist[]) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CUSTOM_PLAYLIST_KEY, JSON.stringify(items));
+};
+
+const loadUserReviews = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = window.localStorage.getItem(USER_REVIEWS_KEY);
+    return stored ? JSON.parse(stored) as ActivityReview[] : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function PlaylistPage() {
-  const { playList, onLoadPlayList } = usePlayListStore();
-  const { popMovies, onFetchPopular } = useMovieStore();
+  const {
+    playList,
+    myList,
+    onLoadPlayList,
+    onLoadMyList,
+    onRemovePlayList,
+    onRemoveMyList,
+  } = usePlayListStore();
+  const [activeTab, setActiveTab] = useState<ActivityTab>("watching");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [playlistTitle, setPlaylistTitle] = useState("");
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [selectionPage, setSelectionPage] = useState(1);
+  const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
+  const [reviews, setReviews] = useState<ActivityReview[]>(loadUserReviews);
 
   useEffect(() => {
     onLoadPlayList();
-    if (popMovies.length === 0) onFetchPopular();
-  }, []);
+    onLoadMyList();
+    const timeoutId = window.setTimeout(() => {
+      setReviews(loadUserReviews());
+    }, 0);
 
-  // 실제 PlayList가 비어있으면 데모로 popular movies 표시
-  const items = playList.length > 0
-    ? playList
-    : popMovies.slice(0, 8).map((m) => ({
-        id: m.id,
-        title: m.title,
-        poster_path: m.poster_path,
-        mediaType: "movie" as const,
-        playTime: new Date().toISOString(),
-      }));
+    return () => window.clearTimeout(timeoutId);
+  }, [onLoadPlayList, onLoadMyList]);
 
-  const filtered = filter === "all" ? items : items.filter((i) => i.mediaType === filter);
-  const movieCount = items.filter((i) => i.mediaType === "movie").length;
-  const tvCount = items.filter((i) => i.mediaType === "tv").length;
+  const watchItems = playList;
+  const listItems = myList;
+  const watchingItems = watchItems.slice(0, 6);
+  const filteredHistory = filter === "all" ? watchItems : watchItems.filter((item) => item.mediaType === filter);
+  const movieCount = watchItems.filter((item) => item.mediaType === "movie").length;
+  const tvCount = watchItems.filter((item) => item.mediaType === "tv").length;
+
+  const selectedItems = listItems.filter((item) => selectedKeys.includes(getItemKey(item)));
+  const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
+  const currentSelectionPage = Math.min(selectionPage, totalSelectionPages);
+  const pagedSelectionItems = listItems.slice(
+    (currentSelectionPage - 1) * SELECTABLE_PAGE_SIZE,
+    currentSelectionPage * SELECTABLE_PAGE_SIZE
+  );
+
+  const toggleSelected = (key: string) => {
+    setSelectedKeys((prev) => (
+      prev.includes(key)
+        ? prev.filter((itemKey) => itemKey !== key)
+        : [...prev, key]
+    ));
+  };
+
+  const handleCreatePlaylist = () => {
+    const title = playlistTitle.trim();
+    if (!title || selectedKeys.length === 0) return;
+
+    const nextPlaylists = [
+      {
+        id: `${Date.now()}`,
+        title,
+        itemKeys: selectedKeys,
+        createdAt: new Date().toISOString(),
+      },
+      ...customPlaylists,
+    ];
+
+    setCustomPlaylists(nextPlaylists);
+    saveCustomPlaylists(nextPlaylists);
+    setPlaylistTitle("");
+    setSelectedKeys([]);
+    setSelectionPage(1);
+  };
+
+  const handleDeletePlaylist = (playlistId: string) => {
+    const nextPlaylists = customPlaylists.filter((playlist) => playlist.id !== playlistId);
+
+    setCustomPlaylists(nextPlaylists);
+    saveCustomPlaylists(nextPlaylists);
+  };
+
+  const handleDeleteWatchingItem = async (item: PlayListItem) => {
+    await onRemovePlayList(item.id, item.mediaType);
+  };
+
+  const handleDeleteMyListItem = async (item: PlayListItem) => {
+    await onRemoveMyList(item.id, item.mediaType);
+
+    const itemKey = getItemKey(item);
+    setSelectedKeys((prev) => prev.filter((key) => key !== itemKey));
+
+    const nextPlaylists = customPlaylists.map((playlist) => ({
+      ...playlist,
+      itemKeys: playlist.itemKeys.filter((key) => key !== itemKey),
+    }));
+    setCustomPlaylists(nextPlaylists);
+    saveCustomPlaylists(nextPlaylists);
+  };
+
+  const renderEmpty = (message: string) => (
+    <div className="empty">
+      <p>{message}</p>
+      <Link href="/" className="btn-primary">작품 둘러보기</Link>
+    </div>
+  );
+
+  const renderWatching = () => (
+    <section className="activity-section">
+      <div className="section-head">
+        <h2>시청 중인 콘텐츠 <strong>{watchingItems.length}</strong></h2>
+        <button type="button" onClick={() => setActiveTab("history")}>전체보기</button>
+      </div>
+
+      {watchingItems.length > 0 ? (
+        <div className="watching-grid">
+          {watchingItems.map((item) => (
+            <article className="watch-card" key={getItemKey(item)}>
+              <button
+                type="button"
+                className="watch-delete-btn"
+                onClick={() => handleDeleteWatchingItem(item)}
+                aria-label={`${item.title} 시청중 콘텐츠 삭제`}
+              >
+                삭제
+              </button>
+              <Link href={`/detail/${item.mediaType}/${item.id}`}>
+                <div className="watch-thumb">
+                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
+                  <span className="progress-bar" style={{ width: `${getProgress(item)}%` }} />
+                </div>
+                <div className="watch-info">
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>마지막 시청: {formatDate(item.playTime)}</p>
+                  </div>
+                  <span className="play-pill">▶ 이어보기</span>
+                </div>
+              </Link>
+            </article>
+          ))}
+        </div>
+      ) : renderEmpty("시청 중인 콘텐츠가 없어요.")}
+    </section>
+  );
+
+  const renderHistory = () => (
+    <section className="activity-section">
+      <div className="section-head">
+        <h2>시청기록</h2>
+        <select className="sort-select" defaultValue="recent" aria-label="정렬">
+          <option value="recent">최근 시청순</option>
+          <option value="title">제목순</option>
+        </select>
+      </div>
+
+      <div className="filter-row">
+        <div className="filter-chips">
+          <button className={filter === "all" ? "chip active" : "chip"} onClick={() => setFilter("all")}>
+            전체 {watchItems.length}
+          </button>
+          <button className={filter === "movie" ? "chip active" : "chip"} onClick={() => setFilter("movie")}>
+            영화 {movieCount}
+          </button>
+          <button className={filter === "tv" ? "chip active" : "chip"} onClick={() => setFilter("tv")}>
+            TV 프로그램 {tvCount}
+          </button>
+        </div>
+      </div>
+
+      {filteredHistory.length > 0 ? (
+        <div className="history-poster-grid">
+          {filteredHistory.map((item) => (
+            <article className="mini-poster-card" key={getItemKey(item)}>
+              <button
+                type="button"
+                className="mini-delete-btn"
+                onClick={() => handleDeleteWatchingItem(item)}
+                aria-label={`${item.title} 시청기록 삭제`}
+              >
+                삭제
+              </button>
+              <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
+                <div className="mini-poster__image">
+                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
+                </div>
+                <h3>{item.title}</h3>
+                <p>{formatDate(item.playTime)}</p>
+              </Link>
+            </article>
+          ))}
+        </div>
+      ) : renderEmpty("시청기록이 없어요.")}
+    </section>
+  );
+
+  const renderWishlist = () => (
+    <section className="activity-section">
+      <div className="section-head">
+        <h2>찜하기</h2>
+        <span>0개</span>
+      </div>
+      <div className="empty">
+        <p>찜하기 기능은 준비 중이에요.</p>
+      </div>
+    </section>
+  );
+
+  const renderReviews = () => (
+    <section className="activity-section">
+      <div className="section-head">
+        <h2>작성한 리뷰</h2>
+        <span>{reviews.length}개</span>
+      </div>
+
+      {reviews.length > 0 ? (
+        <div className="review-stack">
+          {reviews.map((review) => (
+            <article className="review-row" key={review.id}>
+              <Link href={`/detail/${review.mediaType}/${review.mediaId}`} className="review-poster">
+                {review.posterPath && <img src={getPosterUrl(review.posterPath)} alt={review.mediaTitle} />}
+              </Link>
+              <div className="review-content">
+                <div className="review-title-row">
+                  <h3>{review.mediaTitle}</h3>
+                  {review.spoiler && <span>스포일러</span>}
+                </div>
+                <p className="stars">★★★★★ <em>{review.rating.toFixed(1)} / 5.0</em></p>
+                <p className="review-copy">{review.content}</p>
+                <div className="review-meta">
+                  <span>{review.author}</span>
+                  <time>{review.createdAt}</time>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : renderEmpty("작성한 리뷰가 없어요.")}
+    </section>
+  );
+
+  const renderPlaylistMosaic = (playlist: CustomPlaylist) => {
+    const playlistItems = listItems.filter((item) => playlist.itemKeys.includes(getItemKey(item)));
+    const previewItems = playlistItems.slice(0, 4);
+
+    return (
+      <article className="custom-playlist-card" key={playlist.id}>
+        <button
+          type="button"
+          className="playlist-delete-btn"
+          onClick={() => handleDeletePlaylist(playlist.id)}
+          aria-label={`${playlist.title} 플레이리스트 삭제`}
+        >
+          삭제
+        </button>
+        <div className="playlist-mosaic">
+          {previewItems.map((item) => (
+            <div key={getItemKey(item)}>
+              {(item.backdrop_path || item.poster_path) && <img src={getBackdropUrl(item)} alt={item.title} />}
+            </div>
+          ))}
+          {playlistItems.length > 4 && <span>+{playlistItems.length - 4}</span>}
+        </div>
+        <h3>{playlist.title}</h3>
+        <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
+      </article>
+    );
+  };
+
+  const renderPlaylists = () => (
+    <section className="activity-section">
+      <div className="section-head">
+        <h2>나의 플레이리스트</h2>
+        <span>{customPlaylists.length}개</span>
+      </div>
+
+      <div className="playlist-builder">
+        <div className="builder-panel">
+          <div className="builder-plus">＋</div>
+          <h3>플레이리스트 만들기</h3>
+          <input
+            type="text"
+            value={playlistTitle}
+            onChange={(event) => setPlaylistTitle(event.target.value)}
+            placeholder="플레이리스트 이름"
+          />
+          <button type="button" onClick={handleCreatePlaylist} disabled={!playlistTitle.trim() || selectedKeys.length === 0}>
+            선택한 작품으로 만들기
+          </button>
+          <p>{selectedItems.length}개 선택됨</p>
+        </div>
+
+        <div className="selectable-history-wrap">
+          <div className="selectable-history">
+            {pagedSelectionItems.map((item) => {
+              const key = getItemKey(item);
+              const isSelected = selectedKeys.includes(key);
+
+              return (
+                <article key={key} className={isSelected ? "select-card selected" : "select-card"}>
+                  <button
+                    type="button"
+                    className="select-card-main"
+                    onClick={() => toggleSelected(key)}
+                  >
+                    <span className="select-check">{isSelected ? "✓" : "+"}</span>
+                    {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+                    <strong>{item.title}</strong>
+                  </button>
+                  <button
+                    type="button"
+                    className="select-delete-btn"
+                    onClick={() => handleDeleteMyListItem(item)}
+                    aria-label={`${item.title} 내 리스트 삭제`}
+                  >
+                    삭제
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+
+          {listItems.length === 0 && (
+            <div className="empty">
+              <p>상세 페이지에서 + 내 리스트를 눌러 작품을 담아주세요.</p>
+            </div>
+          )}
+
+          {totalSelectionPages > 1 && (
+            <div className="selection-pagination">
+              <button
+                type="button"
+                onClick={() => setSelectionPage((page) => Math.max(1, page - 1))}
+                disabled={currentSelectionPage === 1}
+              >
+                ‹
+              </button>
+              {Array.from({ length: totalSelectionPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  type="button"
+                  key={page}
+                  className={page === currentSelectionPage ? "active" : ""}
+                  onClick={() => setSelectionPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setSelectionPage((page) => Math.min(totalSelectionPages, page + 1))}
+                disabled={currentSelectionPage === totalSelectionPages}
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {customPlaylists.length > 0 && (
+        <div className="custom-playlist-grid">
+          {customPlaylists.map(renderPlaylistMosaic)}
+        </div>
+      )}
+    </section>
+  );
 
   return (
-    <div className="media-list-page">
+    <div className="media-list-page activity-page">
       <div className="inner">
-        <div className="page-head">
-          <h1>재생목록</h1>
-          <p>최근 시청한 작품 {items.length}개</p>
-        </div>
-
-        <div className="filter-row">
-          <div className="filter-chips">
-            <button
-              className={filter === "all" ? "chip active" : "chip"}
-              onClick={() => setFilter("all")}
-            >
-              전체 {items.length}
-            </button>
-            <button
-              className={filter === "movie" ? "chip active" : "chip"}
-              onClick={() => setFilter("movie")}
-            >
-              영화 {movieCount}
-            </button>
-            <button
-              className={filter === "tv" ? "chip active" : "chip"}
-              onClick={() => setFilter("tv")}
-            >
-              시리즈 {tvCount}
-            </button>
+        <div className="activity-hero">
+          <div className="page-head">
+            <h1>콘텐츠 활동</h1>
+            <p>내가 시청하고 기록한 모든 작품</p>
           </div>
-        </div>
 
-        {filtered.length > 0 ? (
-          <ul className="history-list">
-            {filtered.map((item) => (
-              <li key={`${item.mediaType}-${item.id}`} className="history-item">
-                <Link href={`/detail/${item.mediaType}/${item.id}`} className="history-link">
-                  <div className="thumb">
-                    {item.poster_path && (
-                      <img src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} alt={item.title} />
-                    )}
-                    <div className="progress"></div>
-                  </div>
-                  <div className="info">
-                    <span className="type-tag">{item.mediaType === "movie" ? "영화" : "TV"}</span>
-                    <h3>{item.title}</h3>
-                    <p className="watched-at">
-                      {new Date(item.playTime).toLocaleDateString("ko-KR")}
-                    </p>
-                    <span className="progress-text">시청 중 · 이어보기</span>
-                  </div>
-                  <button className="icon-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>⋯</button>
-                </Link>
-              </li>
+          <nav className="activity-tabs" aria-label="콘텐츠 활동 탭">
+            {tabs.map((tab) => (
+              <button
+                type="button"
+                key={tab.id}
+                className={activeTab === tab.id ? "active" : ""}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
             ))}
-          </ul>
-        ) : (
-          <div className="empty">
-            <p>재생한 작품이 없어요</p>
-            <Link href="/" className="btn-primary">작품 둘러보기</Link>
-          </div>
-        )}
+          </nav>
+        </div>
+
+        {activeTab === "watching" && renderWatching()}
+        {activeTab === "history" && renderHistory()}
+        {activeTab === "wishlist" && renderWishlist()}
+        {activeTab === "reviews" && renderReviews()}
+        {activeTab === "playlists" && renderPlaylists()}
       </div>
     </div>
   );

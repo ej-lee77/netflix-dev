@@ -12,7 +12,7 @@
 
     .cast-title {
       position: relative;
-      font-size: g.$text-16;
+      font-size: g.$text-32;
       font-weight: 700;
       color: g.$w-color;
       letter-spacing: 1.5px;
@@ -43,8 +43,8 @@
   /* 10명 카드 한 줄에 꽉 차게: grid 10등분 */
   .cast-grid {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 12px;
     padding: 0 4px;
     list-style: none;
   }
@@ -54,6 +54,11 @@
     text-align: center;
     color: g.$w-color;
     min-width: 0;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-3px);
+    }
     /* grid 안에서 텍스트 ellipsis 동작하도록 */
 
     .cast-photo {

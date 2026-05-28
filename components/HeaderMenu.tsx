@@ -54,7 +54,7 @@ export default function HeaderMenu() {
                 </div>
             </div>
             <div className={`sb-icon sb-bottom ${pathname === '/settings' ? 'active' : ''}`}>
-                <Link href="/">
+                <Link href="/settings">
                     <Image src="/images/header/menu/setting.svg" alt="설정" width="24" height="24" />
                     <span className='sb-label'>설정</span>
                 </Link>
