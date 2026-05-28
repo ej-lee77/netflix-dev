@@ -267,5 +267,29 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         set({
             netflixHighlights: highlightResults.filter(Boolean).slice(0, 8)
         });
-    }
+    },
+
+    certifications: {},
+    onFetchCertification: async (id, mediaType) => {
+        const key = `${mediaType}-${id}`;
+        const { certifications } = get();
+        if (certifications[key] !== undefined) return;
+
+        let cert = "";
+        if (mediaType === "movie") {
+            const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/release_dates?api_key=${TMDB_KEY}`);
+            const data = await res.json();
+            const kr = (data.results ?? []).find((r: any) => r.iso_3166_1 === "KR");
+            cert = kr?.release_dates?.[0]?.certification ?? "";
+        } else {
+            const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/content_ratings?api_key=${TMDB_KEY}`);
+            const data = await res.json();
+            const kr = (data.results ?? []).find((r: any) => r.iso_3166_1 === "KR");
+            cert = kr?.rating ?? "";
+        }
+
+        set((state) => ({
+            certifications: { ...state.certifications, [key]: cert }
+        }));
+    },
 }))

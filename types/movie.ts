@@ -149,5 +149,8 @@ export interface MovieState {
     onFetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchPopularPeople: () => Promise<void>,
-    onFetchNetflixHighlights: () => Promise<void>
+    onFetchNetflixHighlights: () => Promise<void>,
+
+    certifications: { [key: string]: string },
+    onFetchCertification: (id: number, mediaType: "movie" | "tv") => Promise<void>,
 }
