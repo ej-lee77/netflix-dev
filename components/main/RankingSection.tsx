@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
 import { useMovieStore } from "@/store/useMovieStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -27,6 +28,7 @@ function getStars(rating: number) {
 
 export default function RankingSection() {
   const { trendingMovies, onFetchTrending } = useMovieStore();
+  const { currentProfile } = useAuthStore();
 
   const [activeId, setActiveId] = useState<number | null>(null);
   const [slideProgress, setSlideProgress] = useState(0);
@@ -44,13 +46,22 @@ export default function RankingSection() {
     }
   }, [onFetchTrending, trendingMovies.length]);
 
-  const rankingItems = useMemo(
-    () =>
-      trendingMovies
-        .filter((movie) => movie.poster_path && movie.backdrop_path)
-        .slice(0, 10),
-    [trendingMovies],
-  );
+  const rankingItems = useMemo(() => {
+    const filteredMovies = trendingMovies
+      .filter((movie) => movie.poster_path && movie.backdrop_path)
+      .slice(0, 18);
+    const profileOffset = currentProfile ? (currentProfile.id - 1) * 3 : 0;
+    const personalizedMovies = [
+      ...filteredMovies.slice(profileOffset),
+      ...filteredMovies.slice(0, profileOffset),
+    ];
+
+    return personalizedMovies.slice(0, 10);
+  }, [currentProfile, trendingMovies]);
+
+  useEffect(() => {
+    setActiveId(rankingItems[0]?.id ?? null);
+  }, [currentProfile?.id, rankingItems]);
 
   useEffect(() => {
     if (!activeId && rankingItems[0]) {
@@ -143,7 +154,7 @@ export default function RankingSection() {
   if (!rankingItems.length) {
     return (
       <section className="ranking-section">
-        <SectionTitle title='랭킹' subTitle='새로운 작품들을 시청해보세요' />
+        <SectionTitle title='방구석 TOP 10' subTitle={`${currentProfile?.name ?? "유저"}님 취향에 맞춘 오늘의 추천`} />
 
         <div className="ranking-skeleton-row">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -157,7 +168,7 @@ export default function RankingSection() {
   return (
     <section className="ranking-section">
       <div className="inner">
-        <SectionTitle title='랭킹' subTitle='새로운 작품들을 시청해보세요' />
+        <SectionTitle title='방구석 TOP 10' subTitle={`${currentProfile?.name ?? "유저"}님 취향에 맞춘 오늘의 추천`} />
       </div>
 
       <div className="ranking-swiper-wrap">

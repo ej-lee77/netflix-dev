@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMovieStore } from "@/store/useMovieStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/mediaList.scss";
 
 type FilterType = "all" | "movie" | "tv";
@@ -9,8 +10,10 @@ type SortType = "recent" | "title" | "rating";
 
 export default function WishlistPage() {
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
+  const { currentProfile } = useAuthStore();
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
+  const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0);
 
   useEffect(() => {
     if (popMovies.length === 0) onFetchPopular();
@@ -18,7 +21,16 @@ export default function WishlistPage() {
   }, []);
 
   // 위시리스트는 실제로 firebase 연동이 필요하지만, 데모용으로 TMDB 데이터 사용
-  const movieItems = popMovies.slice(0, 8).map((m) => ({
+  const profileMovies = [
+    ...popMovies.slice(profileOffset),
+    ...popMovies.slice(0, profileOffset),
+  ];
+  const profileTvs = [
+    ...tvs.slice(profileOffset),
+    ...tvs.slice(0, profileOffset),
+  ];
+
+  const movieItems = profileMovies.slice(0, 8).map((m) => ({
     id: m.id,
     title: m.title,
     poster_path: m.poster_path,
@@ -27,7 +39,7 @@ export default function WishlistPage() {
     type: "movie" as const,
   }));
 
-  const tvItems = tvs.slice(0, 8).map((t) => ({
+  const tvItems = profileTvs.slice(0, 8).map((t) => ({
     id: t.id,
     title: t.name,
     poster_path: t.poster_path,
