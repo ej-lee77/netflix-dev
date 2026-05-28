@@ -40,6 +40,200 @@ header{
             align-items: center;
         }
     }
+
+    .login-link {
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .profile-menu-wrap {
+        position: relative;
+    }
+
+    .main-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 0;
+        padding: 0;
+        color: #fff;
+        background: transparent;
+        cursor: pointer;
+
+        img {
+            border-radius: 4px;
+            object-fit: cover;
+        }
+    }
+
+    .profile-arrow {
+        width: 0;
+        height: 0;
+        border-right: 6px solid transparent;
+        border-left: 6px solid transparent;
+        border-top: 7px solid #fff;
+        transition: transform 0.2s ease;
+    }
+
+    .main-profile[aria-expanded="true"] .profile-arrow {
+        transform: rotate(180deg);
+    }
+
+    .profile-dropdown {
+        position: absolute;
+        top: calc(100% + 18px);
+        right: 0;
+        width: 300px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #fff;
+        background: rgba(0, 0, 0, 0.96);
+        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    .profile-dropdown-caret {
+        position: absolute;
+        top: -14px;
+        right: 26px;
+        width: 0;
+        height: 0;
+        border-right: 12px solid transparent;
+        border-left: 12px solid transparent;
+        border-bottom: 14px solid rgba(0, 0, 0, 0.96);
+    }
+
+    .profile-switch-list,
+    .profile-link-list {
+        padding: 18px 20px 12px;
+    }
+
+    .profile-switch-list button,
+    .profile-link-list a {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 14px;
+        border: 0;
+        padding: 7px 0;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        text-align: left;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .profile-switch-list img {
+        border-radius: 4px;
+        object-fit: cover;
+    }
+
+    .profile-switch-list button:hover span,
+    .profile-link-list a:hover {
+        text-decoration: underline;
+    }
+
+    .profile-link-list {
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .profile-logout {
+        width: 100%;
+        border: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 18px 16px;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 700;
+        background: transparent;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.profile-select-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 54px;
+    padding: 80px 32px;
+    color: #fff;
+    background: #141414;
+
+    h2 {
+        font-size: clamp(2rem, 4vw, 4rem);
+        font-weight: 500;
+        text-align: center;
+    }
+}
+
+.profile-select-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 170px));
+    gap: 34px;
+    width: min(100%, 1190px);
+    justify-content: center;
+}
+
+.profile-select-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    border: 0;
+    color: rgba(255, 255, 255, 0.58);
+    background: transparent;
+    cursor: pointer;
+
+    img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        border: 3px solid transparent;
+        border-radius: 5px;
+        object-fit: cover;
+        transition: border-color 0.16s ease, transform 0.16s ease;
+    }
+
+    span {
+        font-size: 1.3rem;
+        font-weight: 500;
+    }
+
+    &:hover {
+        color: #fff;
+
+        img {
+            border-color: #fff;
+            transform: translateY(-2px);
+        }
+    }
+}
+
+@media (max-width: 1100px) {
+    .profile-select-grid {
+        grid-template-columns: repeat(3, minmax(110px, 160px));
+    }
+}
+
+@media (max-width: 640px) {
+    .profile-select-screen {
+        gap: 34px;
+    }
+
+    .profile-select-grid {
+        grid-template-columns: repeat(2, minmax(108px, 145px));
+        gap: 24px;
+    }
 }
 
 nav{
@@ -189,4 +383,16 @@ nav{
         margin: 6px 0 2px;
     }
 
+}
+
+/* 프로필 드롭다운 - 프로필 전환 링크 (로그아웃 버튼과 동일한 스타일) */
+.profile-switch-item {
+    a {
+        display: block;
+        width: 100%;
+        text-align: center;
+        color: inherit;
+        text-decoration: none;
+        cursor: pointer;
+    }
 }

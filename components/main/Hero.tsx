@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -330,6 +331,8 @@ export default function Hero() {
   }
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
+  const detailHref = `/detail/${activeItem.media_type}/${activeItem.id}`;
+  const playHref = `${detailHref}?play=1`;
   const getVideoSrc = (videoKey: string) =>
     `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1`;
   const visiblePosters = [-2, -1, 0, 1, 2]
@@ -450,7 +453,11 @@ export default function Hero() {
         </div>
         <p className="hero-desc">{activeItem.overview}</p>
         <div className="hero-btns">
-          <button className="btn-play" type="button">
+          <Link
+            className="btn-play"
+            href={playHref}
+            aria-label={`${getTitle(activeItem)} 재생`}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
@@ -463,7 +470,7 @@ export default function Hero() {
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             상세정보
-          </button>
+          </Link>
         </div>
       </div>
 

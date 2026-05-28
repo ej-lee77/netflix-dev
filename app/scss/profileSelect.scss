@@ -1,0 +1,141 @@
+@use "@/app/globals" as g;
+
+.profile-select {
+  min-height: 100vh;
+  background-color: g.$bg-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.profile-select-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+}
+
+.ps-title {
+  font-size: 48px;
+  font-weight: 800;
+  color: g.$w-color;
+  text-align: center;
+
+  @media (max-width: 600px) {
+    font-size: 32px;
+  }
+}
+
+.ps-grid {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+
+  @media (max-width: 600px) {
+    gap: 20px;
+  }
+}
+
+.ps-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    .ps-avatar {
+      border-color: g.$w-color;
+    }
+    .ps-name {
+      color: g.$w-color;
+    }
+  }
+}
+
+.ps-avatar {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: g.$radius-md;
+  overflow: hidden;
+  border: 3px solid transparent;
+  background: linear-gradient(135deg, #2a2a32, #3a3a48);
+  transition: border-color 0.2s ease;
+
+  @media (max-width: 600px) {
+    width: 90px;
+    height: 90px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.ps-avatar-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 2px dashed g.$g-color;
+  color: g.$main-menu-color;
+}
+
+// 편집 모드일 때 어둡게 + 연필 아이콘
+.ps-item.is-edit .ps-avatar {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(g.$d-color, 0.5);
+  }
+}
+
+.ps-edit-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: g.$w-color;
+  z-index: 1;
+}
+
+.ps-name {
+  font-size: 16px;
+  color: g.$main-menu-color;
+  transition: color 0.2s ease;
+}
+
+.ps-manage {
+  padding: 12px 28px;
+  background: transparent;
+  border: 1px solid g.$main-menu-color;
+  border-radius: g.$radius-md;
+  color: g.$main-menu-color;
+  font-size: g.$text-14;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    color: g.$w-color;
+    border-color: g.$w-color;
+  }
+
+  &.is-active {
+    color: g.$w-color;
+    border-color: g.$w-color;
+    background: g.$main-color;
+    border-color: g.$main-color;
+  }
+}
