@@ -7,17 +7,14 @@ export interface WishItem {
   mediaType: "movie" | "tv";
   genre: "movie" | "drama" | "animation";
   vote_average: number;
-  addedAt: string; // ISO 문자열 (찜한 시각)
+  addedAt: string; // ID만 저장하는 구조에선 빈 문자열 (찜 시각 미보관)
 }
 
 export interface WishlistState {
-  wishlist: WishItem[];
-  // 찜 추가
+  wishlist: WishItem[];     // 화면 표시용 (TMDB API로 채운 객체 배열)
+  wishlistIds: string[];    // Firestore movies.wishlist 에 저장되는 ID 배열 (팀 표준)
   onAddWish: (item: Movie | TV) => Promise<void>;
-  // 찜 해제
   onRemoveWish: (id: number) => Promise<void>;
-  // 찜 목록 불러오기
   onLoadWishlist: () => Promise<void>;
-  // 특정 작품이 찜되어 있는지 확인
   isWished: (id: number) => boolean;
 }

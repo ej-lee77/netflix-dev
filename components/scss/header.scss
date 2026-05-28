@@ -190,3 +190,15 @@ nav{
     }
 
 }
+
+/* 프로필 드롭다운 - 프로필 전환 링크 (로그아웃 버튼과 동일한 스타일) */
+.profile-switch-item {
+    a {
+        display: block;
+        width: 100%;
+        text-align: center;
+        color: inherit;
+        text-decoration: none;
+        cursor: pointer;
+    }
+}

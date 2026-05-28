@@ -28,6 +28,7 @@ const SORT_OPTIONS: { key: SortType; label: string }[] = [
 
 // "n일 전 찜" 텍스트 생성 (addedAt ISO 문자열 기준)
 function formatAddedTime(addedAt: string): string {
+  if (!addedAt) return ""; // ID만 저장하는 구조: 찜 시각 미보관
   const added = new Date(addedAt).getTime();
   const now = Date.now();
   const diffDays = Math.floor((now - added) / (1000 * 60 * 60 * 24));
@@ -69,7 +70,7 @@ export default function WishlistPage() {
   // 정렬
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "recent") {
-      return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime();
+      return 0; // 배열 순서가 이미 최신 찜 순 (맨 앞이 최근)
     }
     if (sort === "title") return a.title.localeCompare(b.title);
     if (sort === "rating") return b.vote_average - a.vote_average;
@@ -97,14 +98,14 @@ export default function WishlistPage() {
     <div className="wishlist-page">
       <div className="wishlist-inner">
         {/* ── 헤더 ──────────────────────────────────────────────────────── */}
-        <header className="wishlist-header">
+        <div className="wishlist-header">
           <h1 className="wishlist-title">위시리스트</h1>
           <p className="wishlist-subtitle">내가 찜한 모든 작품</p>
-        </header>
+        </div>
 
         {/* ── 탭 + 정렬 ─────────────────────────────────────────────────── */}
         <div className="wishlist-toolbar">
-          <nav className="wishlist-tabs">
+          <div className="wishlist-tabs">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -116,7 +117,7 @@ export default function WishlistPage() {
                 <span className="tab-count">{getCount(tab.key)}</span>
               </button>
             ))}
-          </nav>
+          </div>
 
           {/* 정렬 드롭다운 */}
           <div className="wishlist-sort">
@@ -209,7 +210,9 @@ export default function WishlistPage() {
                   </div>
                   <div className="wish-info">
                     <h3 className="wish-card-title">{item.title}</h3>
-                    <p className="wish-added">{formatAddedTime(item.addedAt)}</p>
+                    {formatAddedTime(item.addedAt) && (
+                      <p className="wish-added">{formatAddedTime(item.addedAt)}</p>
+                    )}
                   </div>
                 </Link>
               </li>

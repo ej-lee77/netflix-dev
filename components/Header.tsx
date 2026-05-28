@@ -84,6 +84,10 @@ export default function Header() {
                       </li>
                     ))}
 
+                  <li className="profile-switch-item">
+                    <Link href="/profiles">프로필 전환</Link>
+                  </li>
+
                   <li className="logout-item">
                     <button type="button" onClick={onLogout}>로그아웃</button>
                   </li>
