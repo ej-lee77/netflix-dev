@@ -461,13 +461,9 @@ export default function Hero() {
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            Watch Now
-          </Link>
-          <Link
-            className="btn-info"
-            href={detailHref}
-            aria-label={`${getTitle(activeItem)} 상세정보`}
-          >
+            <button className="btn-info" type="button">
+              재생하기
+            </button>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="16" x2="12" y2="12" />
