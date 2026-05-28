@@ -1,219 +1,174 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+
 import Image from "next/image";
-import { useMovieStore } from "@/store/useMovieStore";
-import "../scss/search.scss";
+import { useState } from "react";
+import "./search.scss";
 
-interface SearchResult {
-  id: number;
-  title?: string;
-  name?: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  media_type: "movie" | "tv" | "person";
-  release_date?: string;
-  first_air_date?: string;
-  vote_average?: number;
-  overview?: string;
-}
+type SearchOption = {
+  label: string;
+  value: string;
+  icon: string;
+};
 
-const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-
-// 추천 검색어 (인기 키워드)
-const recommendKeywords = [
-  "넷플릭스 오리지널",
-  "한국 드라마",
-  "스릴러",
-  "로맨틱 코미디",
-  "공포",
-  "애니메이션",
-  "다큐멘터리",
-  "SF",
+const moodOptions: SearchOption[] = [
+  { label: "힐링", value: "chill", icon: "/images/header/menu/mood-chill.svg" },
+  { label: "다크", value: "dark", icon: "/images/header/menu/mood-dark.svg" },
+  { label: "감성적", value: "emotional", icon: "/images/header/menu/mood-emotional.svg" },
+  { label: "신나는", value: "exciting", icon: "/images/header/menu/mood-exciting.svg" },
+  { label: "웃긴", value: "funny", icon: "/images/header/menu/mood-funny.svg" },
+  { label: "로맨틱", value: "romantic", icon: "/images/header/menu/mood-romantic.svg" },
+  { label: "무서운", value: "scary", icon: "/images/header/menu/mood-scary.svg" },
+  { label: "생각나는", value: "thoughtful", icon: "/images/header/menu/mood-thoughtful.svg" },
 ];
 
+const genreOptions: SearchOption[] = [
+  { label: "액션", value: "action", icon: "/images/header/menu/genre-action.svg" },
+  { label: "애니메이션", value: "animation", icon: "/images/header/menu/genre-animation.svg" },
+  { label: "코미디", value: "comedy", icon: "/images/header/menu/genre-comedy.svg" },
+  { label: "다큐멘터리", value: "documentary", icon: "/images/header/menu/genre-documentary.svg" },
+  { label: "드라마", value: "drama", icon: "/images/header/menu/genre-drama.svg" },
+  { label: "판타지", value: "fantasy", icon: "/images/header/menu/genre-fantasy.svg" },
+  { label: "공포", value: "horror", icon: "/images/header/menu/genre-horror.svg" },
+  { label: "미스터리", value: "mystery", icon: "/images/header/menu/genre-mystery.svg" },
+  { label: "로맨스", value: "romance", icon: "/images/header/menu/genre-romance.svg" },
+  { label: "SF", value: "scifi", icon: "/images/header/menu/genre-scifi.svg" },
+  { label: "스릴러", value: "thriller", icon: "/images/header/menu/genre-thriller.svg" },
+  { label: "전쟁", value: "war", icon: "/images/header/menu/genre-war.svg" },
+];
+
+const recentSearches = ["오펜하이머", "봉준호", "스릴러 한국영화", "로맨틱 코미디"];
+const recommendedSearches = ["파묘", "서울의 봄", "듄: 파트2", "웡카", "노량", "쿵푸팬더4", "패스트", "아가일"];
+const creators = ["송강호", "전도연", "이병헌", "박찬욱", "봉준호", "놀란", "스필버그", "타란티노"];
+
 export default function SearchPage() {
-  const [keyword, setKeyword] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [recents, setRecents] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"all" | "movie" | "tv" | "person">("all");
+  const [activeMoods, setActiveMoods] = useState<string[]>(["exciting"]);
+  const [activeGenres, setActiveGenres] = useState<string[]>(["thriller"]);
 
-  const { popMovies, onFetchPopular, tvs, onFetchTvs } = useMovieStore();
-
-  useEffect(() => {
-    // localStorage에서 최근 검색어 가져오기
-    const saved = localStorage.getItem("recentSearches");
-    if (saved) setRecents(JSON.parse(saved));
-
-    if (popMovies.length === 0) onFetchPopular();
-    if (tvs.length === 0) onFetchTvs();
-  }, []);
-
-  // 검색 실행
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&language=ko-KR&query=${encodeURIComponent(query)}&page=1`
-      );
-      const data = await res.json();
-      setResults(data.results || []);
-
-      // 최근 검색어 저장
-      const updatedRecents = [query, ...recents.filter((r) => r !== query)].slice(0, 8);
-      setRecents(updatedRecents);
-      localStorage.setItem("recentSearches", JSON.stringify(updatedRecents));
-    } catch (err) {
-      console.error("검색 오류", err);
-    }
-    setLoading(false);
+  const toggleOption = (
+    value: string,
+    selectedValues: string[],
+    setSelectedValues: (values: string[]) => void,
+  ) => {
+    setSelectedValues(
+      selectedValues.includes(value)
+        ? selectedValues.filter((selectedValue) => selectedValue !== value)
+        : [...selectedValues, value],
+    );
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSearch(keyword);
-  };
-
-  const handleKeywordClick = (kw: string) => {
-    setKeyword(kw);
-    handleSearch(kw);
-  };
-
-  const handleRemoveRecent = (kw: string) => {
-    const updated = recents.filter((r) => r !== kw);
-    setRecents(updated);
-    localStorage.setItem("recentSearches", JSON.stringify(updated));
-  };
-
-  // 필터링된 결과
-  const filteredResults =
-    activeFilter === "all"
-      ? results.filter((r) => r.media_type !== "person")
-      : results.filter((r) => r.media_type === activeFilter);
 
   return (
-    <div className="search-page">
-      <div className="inner">
-        {/* 검색 바 */}
-        <form className="search-bar" onSubmit={handleSubmit}>
-          <Image src="/images/header/search.svg" alt="검색" width={24} height={24} />
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="영화·시리즈·인물 검색"
-            autoFocus
-          />
-          {keyword && (
-            <button type="button" className="clear-btn" onClick={() => { setKeyword(""); setResults([]); }}>
-              ×
-            </button>
-          )}
-        </form>
+    <section className="search-page">
+      <div className="search-page__inner">
+        <div className="search-page__field">
+          <Image src="/images/header/search.svg" alt="" width={22} height={22} />
+          <input type="search" placeholder="제목, 배우, 감독 검색..." aria-label="검색어 입력" />
+        </div>
 
-        {/* 검색 결과가 있으면 결과 영역만 보여줌 */}
-        {results.length > 0 ? (
-          <div className="search-results">
-            <div className="filter-tabs">
-              <button
-                className={activeFilter === "all" ? "active" : ""}
-                onClick={() => setActiveFilter("all")}
-              >
-                전체
-              </button>
-              <button
-                className={activeFilter === "movie" ? "active" : ""}
-                onClick={() => setActiveFilter("movie")}
-              >
-                영화
-              </button>
-              <button
-                className={activeFilter === "tv" ? "active" : ""}
-                onClick={() => setActiveFilter("tv")}
-              >
-                시리즈
-              </button>
+        <div className="search-page__top-grid">
+          <section className="search-block search-block--recent">
+            <div className="search-block__header">
+              <h2>최근 검색어</h2>
+              <button type="button">모두 삭제</button>
             </div>
 
-            <div className="result-grid">
-              {filteredResults.map((item) => (
-                <Link
-                  key={`${item.media_type}-${item.id}`}
-                  href={`/detail/${item.media_type}/${item.id}`}
-                  className="result-card"
-                >
-                  <div className="poster">
-                    {item.poster_path ? (
-                      <img
-                        src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
-                        alt={item.title || item.name}
-                      />
-                    ) : (
-                      <div className="no-image">No Image</div>
-                    )}
-                  </div>
-                  <div className="meta">
-                    <span className="type-badge">{item.media_type === "movie" ? "영화" : "시리즈"}</span>
-                    <h3>{item.title || item.name}</h3>
-                    <p className="date">{(item.release_date || item.first_air_date)?.slice(0, 4)}</p>
-                  </div>
-                </Link>
+            <ul className="recent-list">
+              {recentSearches.map((keyword) => (
+                <li key={keyword}>
+                  <button type="button">
+                    <span>{keyword}</span>
+                    <span aria-hidden="true">x</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="search-block">
+            <div className="search-block__header">
+              <h2>추천 검색어</h2>
+              <span>실시간 인기</span>
+            </div>
+
+            <div className="keyword-cloud">
+              {recommendedSearches.map((keyword, index) => (
+                <button className={index === 0 ? "active" : ""} type="button" key={keyword}>
+                  {keyword}
+                </button>
               ))}
             </div>
+          </section>
+        </div>
+
+        <section className="finder-section">
+          <div className="finder-section__header">
+            <h2>무드로 찾기</h2>
+            <p>오늘 보고 싶은 감정에 맞춰 골라보세요.</p>
           </div>
-        ) : (
-          <>
-            {/* 최근 검색어 */}
-            {recents.length > 0 && (
-              <div className="search-block">
-                <h2 className="block-title">최근 검색어</h2>
-                <div className="keyword-chips">
-                  {recents.map((kw) => (
-                    <span key={kw} className="chip">
-                      <button onClick={() => handleKeywordClick(kw)}>{kw}</button>
-                      <button className="remove" onClick={() => handleRemoveRecent(kw)}>×</button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* 추천 검색어 */}
-            <div className="search-block">
-              <h2 className="block-title">추천 검색어</h2>
-              <div className="keyword-chips">
-                {recommendKeywords.map((kw) => (
-                  <button key={kw} className="chip outline" onClick={() => handleKeywordClick(kw)}>
-                    {kw}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="option-grid option-grid--mood">
+            {moodOptions.map((option) => {
+              const isActive = activeMoods.includes(option.value);
 
-            {/* 인기 작품 추천 */}
-            <div className="search-block">
-              <h2 className="block-title">지금 인기있는 작품</h2>
-              <div className="popular-grid">
-                {popMovies.slice(0, 12).map((m) => (
-                  <Link key={m.id} href={`/detail/movie/${m.id}`} className="popular-card">
-                    {m.poster_path && (
-                      <img src={`https://image.tmdb.org/t/p/w300${m.poster_path}`} alt={m.title} />
-                    )}
-                    <p>{m.title}</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
+              return (
+                <button
+                  className={isActive ? "option-card active" : "option-card"}
+                  type="button"
+                  key={option.value}
+                  onClick={() => toggleOption(option.value, activeMoods, setActiveMoods)}
+                >
+                  <span className="option-card__icon">
+                    <Image src={option.icon} alt="" width={42} height={42} />
+                  </span>
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-        {loading && <div className="loading">검색 중...</div>}
+        <section className="finder-section">
+          <div className="finder-section__header">
+            <h2>장르로 찾기</h2>
+            <p>자주 찾는 장르 아이콘만 먼저 담았어요.</p>
+          </div>
+
+          <div className="option-grid option-grid--genre">
+            {genreOptions.map((option) => {
+              const isActive = activeGenres.includes(option.value);
+
+              return (
+                <button
+                  className={isActive ? "option-card active" : "option-card"}
+                  type="button"
+                  key={option.value}
+                  onClick={() => toggleOption(option.value, activeGenres, setActiveGenres)}
+                >
+                  <span className="option-card__icon">
+                    <Image src={option.icon} alt="" width={42} height={42} />
+                  </span>
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="creator-section">
+          <div className="search-block__header">
+            <h2>배우 · 감독으로 찾기</h2>
+            <button type="button">전체보기 →</button>
+          </div>
+
+          <div className="creator-list">
+            {creators.map((creator) => (
+              <button type="button" key={creator}>
+                <span aria-hidden="true">{creator.slice(0, 1)}</span>
+                <strong>{creator}</strong>
+              </button>
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </section>
   );
 }
