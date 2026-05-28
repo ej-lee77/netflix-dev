@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
+import "./detail.module.scss";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -25,6 +26,39 @@ type DetailMedia = (Movie | TV) & {
 
 type DetailTab = "episodes" | "info" | "cast" | "director" | "review" | "related";
 
+const REVIEW_PAGE_SIZE = 5;
+
+interface RegisteredReview {
+  id: number;
+  author: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+  spoiler: boolean;
+  mediaId?: number;
+  mediaType?: "movie" | "tv";
+  mediaTitle?: string;
+  posterPath?: string;
+}
+
+const USER_REVIEWS_KEY = "netflix-user-reviews";
+
+const loadUserReviews = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = window.localStorage.getItem(USER_REVIEWS_KEY);
+    return stored ? JSON.parse(stored) as RegisteredReview[] : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveUserReviews = (reviews: RegisteredReview[]) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(USER_REVIEWS_KEY, JSON.stringify(reviews));
+};
+
 function getTitle(item?: DetailMedia) {
   if (!item) return "";
   return "name" in item ? item.name : item.title;
@@ -32,6 +66,36 @@ function getTitle(item?: DetailMedia) {
 
 function imageUrl(path?: string | null, size = "w500") {
   return path ? `https://image.tmdb.org/t/p/${size}${path}` : "";
+}
+
+function getMoodTags(genres?: { id: number; name: string }[]) {
+  const moodByGenreId: Record<number, string> = {
+    12: "모험적인",
+    14: "몽환적인",
+    16: "따뜻한",
+    18: "감성적인",
+    27: "무서운",
+    28: "흥미진진",
+    35: "유쾌한",
+    36: "묵직한",
+    53: "긴장감",
+    80: "어두운",
+    99: "지적인",
+    878: "상상력",
+    9648: "미스터리",
+    10402: "감각적인",
+    10749: "로맨틱",
+    10751: "편안한",
+    10752: "강렬한",
+    10759: "흥미진진",
+    10762: "가벼운",
+    10764: "리얼한",
+    10765: "상상력",
+    10766: "몰입감",
+    10768: "묵직한",
+  };
+
+  return Array.from(new Set((genres ?? []).map((genre) => moodByGenreId[genre.id]).filter(Boolean))).slice(0, 2);
 }
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
@@ -48,7 +112,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     movieImages, onFetchMovieImages,
   } = useMovieStore();
 
-  const { onAddPlayList } = usePlayListStore();
+  const { onAddPlayList, onAddMyList } = usePlayListStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -62,6 +126,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [hoveredRelatedId, setHoveredRelatedId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
+  const [isAddingMyList, setIsAddingMyList] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewHasSpoiler, setReviewHasSpoiler] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [submittedReviews, setSubmittedReviews] = useState<RegisteredReview[]>([]);
 
   const stillsRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -116,6 +185,17 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (!isTv && mediaId) onFetchMovieImages(mediaId);
   }, [isTv, mediaId, onFetchMovieImages]);
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const reviews = loadUserReviews().filter((review) => (
+        review.mediaId === mediaId && review.mediaType === type
+      ));
+      setSubmittedReviews(reviews);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [mediaId, type]);
+
   const mediaItem = (mediaDetails[`${type}-${mediaId}`] ?? (
     isTv
       ? tvs.find((item) => item.id === mediaId)
@@ -125,7 +205,14 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const title = getTitle(mediaItem);
   const releaseDate = isTv ? mediaItem?.first_air_date : (mediaItem as Movie | undefined)?.release_date;
   const releaseYear = releaseDate?.split("-")[0] ?? "";
-const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
+  const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
+  const seasonOrRuntimeText = isTv
+    ? [
+        mediaItem?.number_of_seasons ? `시즌 ${mediaItem.number_of_seasons}` : null,
+        mediaItem?.number_of_episodes ? `${mediaItem.number_of_episodes}부작` : null,
+      ].filter(Boolean).join(" / ")
+    : mediaItem?.runtime ? `${mediaItem.runtime}분` : "";
+  const moodTags = getMoodTags(mediaItem?.genres);
   const castKey = `${type}-${mediaId}`;
   const castList: CastMember[] = casts[castKey] ?? [];
   const directorList = isTv
@@ -147,6 +234,22 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
   const relatedItems = recommended
     .filter((item: RecommendedItem) => item.id !== mediaId)
     .slice(0, 6);
+  const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
+    id: index + 1,
+    author: ["민지", "준호", "서연", "도윤", "하린", "지우"][index % 6],
+    rating: 5 - (index % 3) * 0.5,
+    content: index % 2 === 0
+      ? `${title || "이 작품"}은 장면의 밀도와 분위기가 좋아서 끝까지 몰입하게 만드는 힘이 있었어요.`
+      : "캐릭터의 선택이 인상적이었고 후반부 전개가 꽤 강하게 남았습니다.",
+    createdAt: `2026.05.${String(28 - index).padStart(2, "0")}`,
+    spoiler: index % 4 === 0,
+  }));
+  const registeredReviews = [...submittedReviews, ...sampleReviews];
+  const totalReviewPages = Math.ceil(registeredReviews.length / REVIEW_PAGE_SIZE);
+  const pagedReviews = registeredReviews.slice(
+    (reviewPage - 1) * REVIEW_PAGE_SIZE,
+    reviewPage * REVIEW_PAGE_SIZE
+  );
 
   const tabItems: { id: DetailTab; label: string; meta?: string }[] = [
     ...(isTv ? [{ id: "episodes" as const, label: "회차", meta: episodes.length ? `${episodes.length}` : undefined }] : []),
@@ -181,6 +284,43 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
     } finally {
       setIsAddingPlayList(false);
     }
+  };
+
+  const handleMyList = async () => {
+    if (!mediaItem || isAddingMyList) return;
+
+    setIsAddingMyList(true);
+    try {
+      await onAddMyList(mediaItem);
+    } finally {
+      setIsAddingMyList(false);
+    }
+  };
+
+  const handleSubmitReview = () => {
+    const content = reviewText.trim();
+    if (!content) return;
+
+    const newReview: RegisteredReview = {
+      id: Date.now(),
+      author: "나",
+      rating: ratedStar || 5,
+      content,
+      createdAt: new Date().toLocaleDateString("ko-KR"),
+      spoiler: reviewHasSpoiler,
+      mediaId,
+      mediaType: type,
+      mediaTitle: title,
+      posterPath: mediaItem?.poster_path,
+    };
+
+    setSubmittedReviews((prev) => [newReview, ...prev]);
+    saveUserReviews([newReview, ...loadUserReviews()]);
+    setReviewText("");
+    setReviewHasSpoiler(false);
+    setRatedStar(0);
+    setHoverStar(0);
+    setReviewPage(1);
   };
 
   // ─── Render sections ────────────────────────────────────────────────────────
@@ -395,6 +535,181 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
       </div>
     </div>
   );
+  void renderRating;
+
+  const renderReviewTab = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "56px 40px 0" }}>
+      <section style={{ border: "1px solid #2a2a35", borderRadius: 8, background: "rgba(255,255,255,0.03)", padding: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 18 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0 }}>내 리뷰 작성</h2>
+          <div style={{ display: "flex", gap: 2 }}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                type="button"
+                key={star}
+                className="detail-icon-hover"
+                onMouseEnter={() => setHoverStar(star)}
+                onMouseLeave={() => setHoverStar(0)}
+                onClick={() => setRatedStar(star)}
+                style={{
+                  fontSize: 24,
+                  color: star <= (hoverStar || ratedStar) ? "#e50914" : "#3a3a48",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                }}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+        </div>
+        <textarea
+          value={reviewText}
+          onChange={(event) => setReviewText(event.target.value)}
+          placeholder="이 작품에 대한 감상을 남겨보세요."
+          style={{
+            width: "100%",
+            minHeight: 130,
+            resize: "vertical",
+            border: "1px solid #3a3a48",
+            borderRadius: 6,
+            background: "#111",
+            color: "#fff",
+            padding: 16,
+            fontSize: 14,
+            lineHeight: 1.7,
+            outline: "none",
+          }}
+        />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="detail-chip-hover"
+            onClick={() => setReviewHasSpoiler((value) => !value)}
+            style={{
+              height: 38,
+              padding: "0 14px",
+              borderRadius: 6,
+              border: `1px solid ${reviewHasSpoiler ? "#e50914" : "#3a3a48"}`,
+              background: reviewHasSpoiler ? "rgba(229,9,20,0.12)" : "transparent",
+              color: reviewHasSpoiler ? "#e50914" : "#aaa",
+              cursor: "pointer",
+              fontWeight: 700,
+            }}
+          >
+            {reviewHasSpoiler ? "스포일러 포함" : "스포일러 없음"}
+          </button>
+          <button
+            type="button"
+            className="detail-primary-hover"
+            onClick={handleSubmitReview}
+            disabled={!reviewText.trim()}
+            style={{
+              height: 40,
+              padding: "0 18px",
+              borderRadius: 6,
+              border: "none",
+              background: "#e50914",
+              color: "#fff",
+              cursor: reviewText.trim() ? "pointer" : "default",
+              opacity: reviewText.trim() ? 1 : 0.45,
+              fontWeight: 800,
+            }}
+          >
+            리뷰 등록
+          </button>
+        </div>
+      </section>
+
+      <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0 }}>등록된 리뷰</h2>
+          <span style={{ color: "#888", fontSize: 13 }}>{registeredReviews.length}개</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {pagedReviews.map((review) => (
+            <article
+              key={review.id}
+              style={{
+                border: "1px solid #2a2a35",
+                borderRadius: 8,
+                background: "rgba(255,255,255,0.025)",
+                padding: 18,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+                <div>
+                  <strong style={{ color: "#fff", fontSize: 15 }}>{review.author}</strong>
+                  <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>★★★★★</span>
+                  <span style={{ color: "#aaa", marginLeft: 8, fontSize: 12 }}>{review.rating.toFixed(1)} / 5.0</span>
+                  {review.spoiler && (
+                    <span style={{ marginLeft: 8, padding: "2px 7px", borderRadius: 4, border: "1px solid rgba(229,9,20,0.45)", color: "#e50914", fontSize: 11 }}>
+                      스포일러
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="detail-outline-hover"
+                  style={{ border: "1px solid #3a3a48", borderRadius: 4, background: "transparent", color: "#888", height: 30, padding: "0 10px", cursor: "pointer", fontSize: 12 }}
+                >
+                  신고
+                </button>
+              </div>
+              <p style={{ margin: 0, color: "#cfcfcf", lineHeight: 1.7, fontSize: 14 }}>{review.content}</p>
+              <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>{review.createdAt}</time>
+            </article>
+          ))}
+        </div>
+
+        {totalReviewPages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 8 }}>
+            <button
+              type="button"
+              className="detail-page-hover"
+              onClick={() => setReviewPage((page) => Math.max(1, page - 1))}
+              disabled={reviewPage === 1}
+              style={{ background: "none", border: "1px solid #3a3a48", color: reviewPage === 1 ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: reviewPage === 1 ? "default" : "pointer", fontSize: 14 }}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalReviewPages }, (_, index) => index + 1).map((page) => (
+              <button
+                type="button"
+                key={page}
+                className="detail-page-hover"
+                onClick={() => setReviewPage(page)}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 4,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  background: page === reviewPage ? "#e50914" : "none",
+                  border: `1px solid ${page === reviewPage ? "#e50914" : "#3a3a48"}`,
+                  color: page === reviewPage ? "#fff" : "#888",
+                  fontWeight: page === reviewPage ? 700 : 400,
+                }}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="detail-page-hover"
+              onClick={() => setReviewPage((page) => Math.min(totalReviewPages, page + 1))}
+              disabled={reviewPage === totalReviewPages}
+              style={{ background: "none", border: "1px solid #3a3a48", color: reviewPage === totalReviewPages ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: reviewPage === totalReviewPages ? "default" : "pointer", fontSize: 14 }}
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 
   const renderRelated = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
@@ -604,7 +919,7 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
 
           {/* Metadata */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 8 }}>
-            <div>
+            <div style={{ display: "none" }}>
               <span style={{ background: "rgba(255, 255, 255, 0.1)", padding: "3px 8px", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "rgba(255, 255, 255, 0.5)" }}>
                 {isTv ? "드라마" : "영화"}
                 {mediaItem?.number_of_seasons ? ` · 시즌 ${mediaItem.number_of_seasons} 진행중` : ""}
@@ -615,7 +930,32 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
               {title}
             </h1>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {releaseYear && <span style={{ fontSize: 14, color: "#888" }}>{releaseYear}</span>}
+                {seasonOrRuntimeText && (
+                  <>
+                    {releaseYear && <span style={{ color: "#444" }}>·</span>}
+                    <span style={{ fontSize: 14, color: "#888" }}>{seasonOrRuntimeText}</span>
+                  </>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {mediaItem?.genres?.slice(0, 3).map((g) => (
+                  <span key={g.id} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid #555", fontSize: 11, color: "#999" }}>
+                    {g.name}
+                  </span>
+                ))}
+                {moodTags.map((mood) => (
+                  <span key={mood} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.06)", fontSize: 11, color: "#bbb" }}>
+                    {mood}
+                  </span>
+                ))}
+                {countryText && <span style={{ fontSize: 14, color: "#888" }}>{countryText}</span>}
+              </div>
+            </div>
+
+            <div style={{ display: "none", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {releaseYear && <span style={{ fontSize: 14, color: "#888" }}>{releaseYear}</span>}
               {isTv && mediaItem?.number_of_seasons && (
                 <>
@@ -666,20 +1006,26 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
             {/* Action buttons */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <button
+                className="detail-primary-hover"
                 onClick={handlePlay}
                 disabled={isAddingPlayList}
                 style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: isAddingPlayList ? "default" : "pointer", opacity: isAddingPlayList ? 0.7 : 1 }}
               >
                 {isAddingPlayList ? "추가 중..." : `▶ ${isTv ? "이어보기" : "재생하기"}`}
               </button>
-              <button style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: "pointer" }}>
-                ＋ 내 리스트
+              <button
+                className="detail-secondary-hover"
+                onClick={handleMyList}
+                disabled={isAddingMyList}
+                style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: isAddingMyList ? "default" : "pointer", opacity: isAddingMyList ? 0.7 : 1 }}
+              >
+                {isAddingMyList ? "담는 중..." : "＋ 내 리스트"}
               </button>
-              <button style={{ background: "rgba(229,9,20,0.1)", border: "1px solid #e50914", color: "#e50914", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <button className="detail-circle-hover" style={{ background: "rgba(229,9,20,0.1)", border: "1px solid #e50914", color: "#e50914", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 ♡
               </button>
-              <button style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                ↗
+              <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                🔔
               </button>
             </div>
           </div>
@@ -716,15 +1062,13 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
       <div style={{ paddingBottom: 80 }}>
         {activeTab === "episodes" && isTv && renderEpisodesTab()}
         {activeTab === "info" && !isTv && renderStills()}
+        {activeTab === "info" && renderSynopsis()}
+        {activeTab === "info" && renderRelated()}
+        {activeTab === "info" && renderCast()}
         {activeTab === "cast" && renderCast()}
         {activeTab === "director" && renderDirector()}
-        {activeTab === "review" && renderRating()}
+        {activeTab === "review" && renderReviewTab()}
         {activeTab === "related" && renderRelated()}
-
-        {(activeTab === "episodes" || activeTab === "info") && renderSynopsis()}
-        {activeTab === "episodes" && renderRating()}
-        {(activeTab === "episodes" || activeTab === "info") && renderRelated()}
-        {(activeTab === "episodes" || activeTab === "info") && renderCast()}
       </div>
 
       {/* Stills lightbox */}
