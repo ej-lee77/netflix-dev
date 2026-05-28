@@ -265,7 +265,7 @@ export default function LoginPage() {
 
           <p className="login-signup">
             아직 회원이 아니신가요?
-            <Link href="/signup">회원가입</Link>
+            <Link href="/signin">회원가입</Link>
           </p>
         </div>
       </section>

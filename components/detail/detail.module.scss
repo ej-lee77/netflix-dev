@@ -1,0 +1,46 @@
+:global(.detail-primary-hover),
+:global(.detail-secondary-hover),
+:global(.detail-circle-hover),
+:global(.detail-chip-hover),
+:global(.detail-outline-hover),
+:global(.detail-page-hover),
+:global(.detail-icon-hover) {
+  transition:
+    transform 0.16s ease,
+    filter 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+:global(.detail-primary-hover:hover:not(:disabled)) {
+  filter: brightness(1.16);
+  transform: translateY(-1px);
+}
+
+:global(.detail-secondary-hover:hover:not(:disabled)) {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+:global(.detail-circle-hover:hover:not(:disabled)) {
+  background-color: rgba(229, 9, 20, 0.2) !important;
+  border-color: #e50914 !important;
+  color: #fff !important;
+  transform: translateY(-1px) scale(1.04);
+}
+
+:global(.detail-chip-hover:hover:not(:disabled)),
+:global(.detail-outline-hover:hover:not(:disabled)),
+:global(.detail-page-hover:hover:not(:disabled)) {
+  border-color: #e50914 !important;
+  color: #fff !important;
+  background-color: rgba(229, 9, 20, 0.16) !important;
+}
+
+:global(.detail-icon-hover:hover:not(:disabled)) {
+  transform: translateY(-1px) scale(1.08);
+  filter: brightness(1.2);
+}
