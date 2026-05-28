@@ -119,7 +119,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   } = useMovieStore();
 
   const { onAddPlayList, onAddMyList } = usePlayListStore();
-  const { onLoadWishlist } = useWishlistStore();
+  const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -134,6 +134,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [hoveredRelatedId, setHoveredRelatedId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
   const [isAddingMyList, setIsAddingMyList] = useState(false);
+  const [isAddingWish, setIsAddingWish] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [reviewHasSpoiler, setReviewHasSpoiler] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
@@ -315,6 +316,22 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       await onAddMyList(mediaItem);
     } finally {
       setIsAddingMyList(false);
+    }
+  };
+
+  // 위시리스트 찜 추가/해제 토글
+  const handleWish = async () => {
+    if (!mediaItem || isAddingWish) return;
+
+    setIsAddingWish(true);
+    try {
+      if (isWished(mediaItem.id)) {
+        await onRemoveWish(mediaItem.id);
+      } else {
+        await onAddWish(mediaItem);
+      }
+    } finally {
+      setIsAddingWish(false);
     }
   };
 
@@ -1043,8 +1060,28 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               >
                 {isAddingMyList ? "담는 중..." : "＋ 내 리스트"}
               </button>
-              <button className="detail-circle-hover" style={{ background: "rgba(229,9,20,0.1)", border: "1px solid #e50914", color: "#e50914", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                ♡
+              <button
+                className="detail-circle-hover"
+                onClick={handleWish}
+                disabled={isAddingWish}
+                aria-pressed={mediaItem ? wishlistIds.includes(String(mediaItem.id)) : false}
+                aria-label="위시리스트에 추가"
+                style={{
+                  background: mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "#e50914" : "rgba(229,9,20,0.1)",
+                  border: "1px solid #e50914",
+                  color: mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "#fff" : "#e50914",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  cursor: isAddingWish ? "default" : "pointer",
+                  opacity: isAddingWish ? 0.6 : 1,
+                  fontSize: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "♥" : "♡"}
               </button>
               <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 🔔
