@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
-import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/mediaList.scss";
 
 type FilterType = "all" | "movie" | "tv";
@@ -11,9 +10,7 @@ type FilterType = "all" | "movie" | "tv";
 export default function PlaylistPage() {
   const { playList, onLoadPlayList } = usePlayListStore();
   const { popMovies, onFetchPopular } = useMovieStore();
-  const { currentProfile } = useAuthStore();
   const [filter, setFilter] = useState<FilterType>("all");
-  const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0);
 
   useEffect(() => {
     onLoadPlayList();
@@ -21,18 +18,9 @@ export default function PlaylistPage() {
   }, []);
 
   // 실제 PlayList가 비어있으면 데모로 popular movies 표시
-  const profilePlayList = [
-    ...playList.slice(profileOffset),
-    ...playList.slice(0, profileOffset),
-  ];
-  const profileMovies = [
-    ...popMovies.slice(profileOffset),
-    ...popMovies.slice(0, profileOffset),
-  ];
-
-  const items = profilePlayList.length > 0
-    ? profilePlayList
-    : profileMovies.slice(0, 8).map((m) => ({
+  const items = playList.length > 0
+    ? playList
+    : popMovies.slice(0, 8).map((m) => ({
         id: m.id,
         title: m.title,
         poster_path: m.poster_path,
