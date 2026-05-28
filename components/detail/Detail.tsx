@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
 
 interface DetailClientProps {
@@ -49,6 +50,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   } = useMovieStore();
 
   const { onAddPlayList } = usePlayListStore();
+  const { onAddWish, onRemoveWish, isWished, onLoadWishlist } = useWishlistStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -74,6 +76,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const onStillClick = (src: string) => {
     if (!isDragging.current) setLightboxSrc(src);
   };
+
+  // 찜 버튼 상태 표시를 위해 위시리스트 로드
+  useEffect(() => {
+    onLoadWishlist();
+  }, []);
 
   useEffect(() => {
     setActiveTab(isTv ? "episodes" : "info");
@@ -123,7 +130,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const title = getTitle(mediaItem);
   const releaseDate = isTv ? mediaItem?.first_air_date : (mediaItem as Movie | undefined)?.release_date;
   const releaseYear = releaseDate?.split("-")[0] ?? "";
-const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
+  const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
   const castKey = `${type}-${mediaId}`;
   const castList: CastMember[] = casts[castKey] ?? [];
   const directorList = isTv
@@ -374,8 +381,26 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button style={{ borderRadius: 100, padding: "8px 14px", background: "rgba(229,9,20,0.12)", border: "1px solid #e50914", color: "#e50914", fontSize: 12, cursor: "pointer" }}>
-            ♡ 찜
+          <button
+            onClick={() => {
+              if (!mediaItem) return;
+              if (isWished(mediaItem.id)) {
+                onRemoveWish(mediaItem.id);
+              } else {
+                onAddWish(mediaItem);
+              }
+            }}
+            style={{
+              borderRadius: 100,
+              padding: "8px 14px",
+              background: mediaItem && isWished(mediaItem.id) ? "#e50914" : "rgba(229,9,20,0.12)",
+              border: "1px solid #e50914",
+              color: mediaItem && isWished(mediaItem.id) ? "#fff" : "#e50914",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {mediaItem && isWished(mediaItem.id) ? "♥ 찜 완료" : "♡ 찜"}
           </button>
           <button style={{ borderRadius: 100, padding: "8px 14px", background: "transparent", border: "1px solid #3a3a48", color: "#888", fontSize: 12, cursor: "pointer" }}>
             ＋ 플레이리스트
