@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/navigation";
 import "./scss/connectReviewSpotlight.scss";
+import SectionTitle from "../common/SectionTitle";
 
 export interface ConnectReview {
   author: string;
@@ -35,15 +41,15 @@ const defaultItems: ConnectMovieSpotlight[] = [
     expectedRating: 4.5,
     averageRating: 3.7,
     reviews: [
-      { author: "남린", text: "이 영화는 시간이동에 대한 영화인가요?" },
-      { author: "이동욱 평론가", text: "복잡한 플롯을 시각적이고 지적인 쾌감으로 전달해내는 놀란의 고유성." },
-      { author: "DXRE", text: "이해하려 하지 말아요. 시간에 양보하세요." },
+      { author: "민지", text: "시간 구조가 복잡하지만 계속 생각나게 만드는 영화예요." },
+      { author: "이동진 평론가", text: "시각적이고 지적인 쾌감으로 끝까지 밀어붙이는 작품." },
+      { author: "DXRE", text: "이해하려 하지 말고 먼저 느끼면 더 재밌어요." },
     ],
     connectPointTitle: "Connect Point!",
     connectPointLines: [
-      "복잡한 시간 구조와 높은 평점을 받은 영화",
-      "선호 감독 크리스토퍼 놀란의 대표작",
-      "선호 태그 시간 여행, 두뇌 싸움",
+      "복잡한 시간 구조와 높은 평점을 선호하는 취향",
+      "크리스토퍼 놀란 감독 스타일과 잘 맞는 작품",
+      "선호 태그: 시간 여행, 두뇌 싸움, 액션",
     ],
   },
   {
@@ -55,15 +61,15 @@ const defaultItems: ConnectMovieSpotlight[] = [
     expectedRating: 4.7,
     averageRating: 4.1,
     reviews: [
-      { author: "윤서", text: "우주보다 더 크게 느껴지는 가족의 시간." },
-      { author: "김태오", text: "차갑고 거대한 이미지 안에 끝까지 따뜻한 감정이 남는다." },
-      { author: "J", text: "다시 봐도 사운드와 감정선이 압도적이다." },
+      { author: "다서", text: "우주보다 크게 남는 건 결국 가족의 시간이에요." },
+      { author: "김시오", text: "차갑고 거대한 이미지 안에 감정이 끝까지 흐릅니다." },
+      { author: "J", text: "다시 봐도 사운드와 감정선이 압도적이에요." },
     ],
     connectPointTitle: "Connect Point!",
     connectPointLines: [
       "SF와 드라마를 함께 좋아하는 취향",
-      "긴 러닝타임에도 몰입도가 높은 작품",
-      "선호 태그 우주, 가족, 생존",
+      "긴 러닝타임 안에서 몰입감이 높은 작품",
+      "선호 태그: 우주, 가족, 생존",
     ],
   },
   {
@@ -75,22 +81,21 @@ const defaultItems: ConnectMovieSpotlight[] = [
     expectedRating: 4.3,
     averageRating: 3.9,
     reviews: [
-      { author: "해나", text: "세계관을 설명하기보다 체험하게 만드는 영화." },
-      { author: "민재", text: "사막의 질감과 음악만으로도 충분히 설득된다." },
-      { author: "CINE", text: "속편을 기다리게 만드는 장대한 첫 장." },
+      { author: "이나", text: "세계관을 설명하기보다 체험하게 만드는 영화예요." },
+      { author: "민재", text: "사막의 질감과 음악만으로도 충분히 압도적입니다." },
+      { author: "CINE", text: "후속편을 기다리게 만드는 첫 장." },
     ],
     connectPointTitle: "Connect Point!",
     connectPointLines: [
       "웅장한 영상미를 선호하는 취향",
-      "세계관 중심의 시리즈 선호",
-      "선호 태그 판타지, 권력, 운명",
+      "세계관 중심의 시리즈를 좋아하는 사용자",
+      "선호 태그: 판타지, 권력, 운명",
     ],
   },
 ];
 
 export default function ConnectReviewSpotlight({ items = defaultItems }: ConnectReviewSpotlightProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeItem = items[activeIndex];
 
   const sidePreview = useMemo(() => {
     const prev = items[(activeIndex - 1 + items.length) % items.length];
@@ -98,64 +103,76 @@ export default function ConnectReviewSpotlight({ items = defaultItems }: Connect
     return { prev, next };
   }, [activeIndex, items]);
 
-  const move = (direction: -1 | 1) => {
-    setActiveIndex((index) => (index + direction + items.length) % items.length);
-  };
-
-  if (!activeItem) return null;
+  if (!items.length) return null;
 
   return (
     <section className="connect-review-spotlight" aria-label="커넥트 영화 리뷰 추천">
-      <div
-        className="connect-review-spotlight__panel"
-        style={{ backgroundImage: `url(${activeItem.backdropUrl})` }}
-      >
-        <div className="connect-review-spotlight__side connect-review-spotlight__side--prev" aria-hidden="true">
-          {sidePreview.prev.title}
-        </div>
-        <div className="connect-review-spotlight__side connect-review-spotlight__side--next" aria-hidden="true">
-          {sidePreview.next.title}
-        </div>
+      <SectionTitle
+        title="커넥트 리뷰 spotlight"
+        subTitle="주목받는 리뷰와 영화를 확인해보세요"
+      />
 
-        <div className="connect-review-spotlight__header">
-          <h2>{activeItem.title} ({activeItem.year})</h2>
-          {/* <span>예상 ★ {activeItem.expectedRating.toFixed(1)}</span>
-          <span>평균 ★ {activeItem.averageRating.toFixed(1)}</span> */}
-        </div>
+      <div className="connect-review-spotlight__swiper-shell">
+        <Swiper
+          modules={[Navigation]}
+          navigation
+          loop={items.length > 1}
+          slidesPerView={1}
+          spaceBetween={24}
+          onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+          className="connect-review-spotlight__swiper"
+        >
+          {items.map((item) => (
+            <SwiperSlide key={item.id} className="connect-review-spotlight__slide">
+              <article
+                className="connect-review-spotlight__panel"
+                style={{ backgroundImage: `url(${item.backdropUrl})` }}
+              >
+                <div className="connect-review-spotlight__side connect-review-spotlight__side--prev" aria-hidden="true">
+                  {sidePreview.prev.title}
+                </div>
+                <div className="connect-review-spotlight__side connect-review-spotlight__side--next" aria-hidden="true">
+                  {sidePreview.next.title}
+                </div>
 
-        <button className="connect-review-spotlight__arrow connect-review-spotlight__arrow--left" type="button" onClick={() => move(-1)} aria-label="이전 작품">
-          ‹
-        </button>
-        <button className="connect-review-spotlight__arrow connect-review-spotlight__arrow--right" type="button" onClick={() => move(1)} aria-label="다음 작품">
-          ›
-        </button>
+                <div className="connect-review-spotlight__header">
+                  <h2>
+                    {item.title} ({item.year})
+                  </h2>
+                  {/* <span>예상 {item.expectedRating.toFixed(1)}</span>
+                  <span>평균 {item.averageRating.toFixed(1)}</span> */}
+                </div>
 
-        <div className="connect-review-spotlight__content">
-          <div className="connect-review-spotlight__poster">
-            <img src={activeItem.posterUrl} alt={`${activeItem.title} 포스터`} />
-          </div>
+                <div className="connect-review-spotlight__content">
+                  <div className="connect-review-spotlight__poster">
+                    <img src={item.posterUrl} alt={`${item.title} 포스터`} />
+                  </div>
 
-          <div className="connect-review-spotlight__reviews">
-            {activeItem.reviews.map((review) => (
-              <figure className="connect-review-spotlight__quote" key={`${review.author}-${review.text}`}>
-                <blockquote>{review.text}</blockquote>
-                <figcaption>{review.author}</figcaption>
-              </figure>
-            ))}
-          </div>
+                  <div className="connect-review-spotlight__reviews">
+                    {item.reviews.map((review) => (
+                      <figure className="connect-review-spotlight__quote" key={`${review.author}-${review.text}`}>
+                        <blockquote>{review.text}</blockquote>
+                        <figcaption>{review.author}</figcaption>
+                      </figure>
+                    ))}
+                  </div>
 
-          <div className="connect-review-spotlight__point">
-            <h3>{activeItem.connectPointTitle}</h3>
-            <ul>
-              {activeItem.connectPointLines.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
+                  <div className="connect-review-spotlight__point">
+                    <h3>{item.connectPointTitle}</h3>
+                    <ul>
+                      {item.connectPointLines.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </article>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
 
-      <p className="connect-review-spotlight__prompt">더 완벽한 추천을 바란다면?</p>
+      <p className="connect-review-spotlight__prompt">내 취향과 맞는 리뷰를 더 찾아볼까요?</p>
     </section>
   );
 }
