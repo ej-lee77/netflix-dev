@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
@@ -36,6 +37,8 @@ function imageUrl(path?: string | null, size = "w500") {
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
+  const searchParams = useSearchParams();
+  const shouldAutoPlay = searchParams.get("play") === "1";
 
   const {
     tvs, tvVideos, onFetchTvs, onFetchTvVideos,
@@ -64,6 +67,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const stillsRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const hasAutoPlayed = useRef(false);
 
   const onStillsMouseDown = () => { isDragging.current = true; };
   const onStillsMouseMove = (e: React.MouseEvent) => {
@@ -174,6 +178,13 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
     await onAddPlayList(mediaItem);
     await openVideo();
   };
+
+  useEffect(() => {
+    if (!shouldAutoPlay || hasAutoPlayed.current || !mediaItem || !videos) return;
+
+    hasAutoPlayed.current = true;
+    handlePlay();
+  }, [shouldAutoPlay, mediaItem, videos]);
 
   // ─── Render sections ────────────────────────────────────────────────────────
 
