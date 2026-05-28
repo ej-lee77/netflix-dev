@@ -11,6 +11,6 @@ export interface PlayListItem{
 
 export interface PlayListState{
     playList: PlayListItem[],
-    onAddPlayList: (item: Movie | TV)=>Promise<void>,
+    onAddPlayList: (item: Movie | TV)=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>
 }

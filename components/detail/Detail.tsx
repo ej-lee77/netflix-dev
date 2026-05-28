@@ -61,6 +61,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [ratedStar, setRatedStar] = useState(0);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [hoveredRelatedId, setHoveredRelatedId] = useState<number | null>(null);
+  const [isAddingPlayList, setIsAddingPlayList] = useState(false);
 
   const stillsRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -71,12 +72,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     stillsRef.current.scrollLeft -= e.movementX;
   };
   const onStillsMouseUp = () => { isDragging.current = false; };
-  const onStillClick = (src: string) => {
-    if (!isDragging.current) setLightboxSrc(src);
-  };
 
   useEffect(() => {
-    setActiveTab(isTv ? "episodes" : "info");
+    const timeoutId = window.setTimeout(() => {
+      setActiveTab(isTv ? "episodes" : "info");
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [isTv]);
 
   useEffect(() => {
@@ -170,9 +172,15 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
   };
 
   const handlePlay = async () => {
-    if (!mediaItem) return;
-    await onAddPlayList(mediaItem);
-    await openVideo();
+    if (!mediaItem || isAddingPlayList) return;
+
+    setIsAddingPlayList(true);
+    try {
+      await onAddPlayList(mediaItem);
+      await openVideo();
+    } finally {
+      setIsAddingPlayList(false);
+    }
   };
 
   // ─── Render sections ────────────────────────────────────────────────────────
@@ -523,7 +531,9 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
           {stills.map((src, i) => (
             <div
               key={i}
-              onClick={() => onStillClick(src)}
+              onClick={() => {
+                if (!isDragging.current) setLightboxSrc(src);
+              }}
               style={{
                 flexShrink: 0,
                 width: 320,
@@ -657,9 +667,10 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <button
                 onClick={handlePlay}
-                style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: "pointer" }}
+                disabled={isAddingPlayList}
+                style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: isAddingPlayList ? "default" : "pointer", opacity: isAddingPlayList ? 0.7 : 1 }}
               >
-                ▶ {isTv ? "이어보기" : "재생하기"}
+                {isAddingPlayList ? "추가 중..." : `▶ ${isTv ? "이어보기" : "재생하기"}`}
               </button>
               <button style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: "pointer" }}>
                 ＋ 내 리스트

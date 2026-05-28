@@ -1,36 +1,24 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
-import { useMovieStore } from "@/store/useMovieStore";
 import "../../scss/mediaList.scss";
 
 type FilterType = "all" | "movie" | "tv";
 
 export default function PlaylistPage() {
   const { playList, onLoadPlayList } = usePlayListStore();
-  const { popMovies, onFetchPopular } = useMovieStore();
   const [filter, setFilter] = useState<FilterType>("all");
 
   useEffect(() => {
     onLoadPlayList();
-    if (popMovies.length === 0) onFetchPopular();
-  }, []);
+  }, [onLoadPlayList]);
 
-  // 실제 PlayList가 비어있으면 데모로 popular movies 표시
-  const items = playList.length > 0
-    ? playList
-    : popMovies.slice(0, 8).map((m) => ({
-        id: m.id,
-        title: m.title,
-        poster_path: m.poster_path,
-        mediaType: "movie" as const,
-        playTime: new Date().toISOString(),
-      }));
-
-  const filtered = filter === "all" ? items : items.filter((i) => i.mediaType === filter);
-  const movieCount = items.filter((i) => i.mediaType === "movie").length;
-  const tvCount = items.filter((i) => i.mediaType === "tv").length;
+  const items = playList;
+  const filtered = filter === "all" ? items : items.filter((item) => item.mediaType === filter);
+  const movieCount = items.filter((item) => item.mediaType === "movie").length;
+  const tvCount = items.filter((item) => item.mediaType === "tv").length;
 
   return (
     <div className="media-list-page">
@@ -82,14 +70,16 @@ export default function PlaylistPage() {
                     </p>
                     <span className="progress-text">시청 중 · 이어보기</span>
                   </div>
-                  <button className="icon-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>⋯</button>
+                  <button className="icon-btn" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                    ⋯
+                  </button>
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
           <div className="empty">
-            <p>재생한 작품이 없어요</p>
+            <p>재생한 작품이 없어요.</p>
             <Link href="/" className="btn-primary">작품 둘러보기</Link>
           </div>
         )}
