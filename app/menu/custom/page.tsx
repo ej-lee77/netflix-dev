@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { customMenus } from "@/data/mainMenu";
 import "./menuCustom.scss";
 
@@ -177,7 +177,7 @@ export default function MenuCustomPage() {
                   max="100"
                   value={slider.value}
                   onChange={(event) => updateSlider(slider.id, Number(event.target.value))}
-                  style={{ "--range-value": `${slider.value}%` } as React.CSSProperties}
+                  style={{ "--range-value": `${slider.value}%` } as CSSProperties}
                   aria-label={slider.title}
                 />
 
@@ -229,7 +229,7 @@ export default function MenuCustomPage() {
                 >
                   <Image src={genre.imgUrl} alt="" width={22} height={22} />
                   <span>{genre.label}</span>
-                  {/* <em aria-hidden="true">{genre.emoji}</em> */}
+                  <em aria-hidden="true">{genre.emoji}</em>
                   {activeTab === "exclude" && isSelected ? <strong aria-hidden="true">×</strong> : null}
                 </button>
               );
