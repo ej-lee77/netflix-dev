@@ -1,306 +1,247 @@
 "use client";
-import React, { useState } from "react";
-import Image from "next/image";
-import { customMenus } from "@/data/mainMenu";
-import "../../scss/custom.scss";
 
-interface HomeSection {
+import Image from "next/image";
+import { type CSSProperties, useState } from "react";
+import { customMenus } from "@/data/mainMenu";
+import "./menuCustom.scss";
+
+type HomeSection = {
   id: string;
-  name: string;
-  desc: string;
+  title: string;
+  description: string;
   enabled: boolean;
-}
+};
+
+type SliderSetting = {
+  id: string;
+  title: string;
+  leftLabel: string;
+  rightLabel: string;
+  valueLabel: string;
+  value: number;
+};
+
+const initialSections: HomeSection[] = [
+  { id: "mood", title: "오늘의 무드 추천", description: "기분에 맞춘 작품 추천", enabled: true },
+  { id: "watching", title: "최근 시청 이어보기", description: "시청 중인 작품 빠른 진입", enabled: true },
+  { id: "friends", title: "친구들의 활동", description: "팔로우 친구들의 리뷰·시청", enabled: true },
+  { id: "popular", title: "이번 주 인기 작품", description: "트렌딩 콘텐츠", enabled: true },
+  { id: "editor", title: "에디터 픽 큐레이션", description: "전문가 추천 모음", enabled: false },
+  { id: "upcoming", title: "공개 예정 작품", description: "곧 출시될 콘텐츠", enabled: true },
+];
+
+const initialSliders: SliderSetting[] = [
+  {
+    id: "taste",
+    title: "취향 일치도",
+    leftLabel: "새로운 발견",
+    rightLabel: "익숙한 취향",
+    valueLabel: "강함",
+    value: 82,
+  },
+  {
+    id: "friends",
+    title: "친구 활동 반영도",
+    leftLabel: "개인 추천만",
+    rightLabel: "친구 활동 우선",
+    valueLabel: "중간",
+    value: 52,
+  },
+  {
+    id: "newness",
+    title: "신작 노출",
+    leftLabel: "거의 안 보임",
+    rightLabel: "가장 많이",
+    valueLabel: "자주",
+    value: 72,
+  },
+];
+
+const genreMeta: Record<string, { label: string; emoji: string }> = {
+  action: { label: "액션", emoji: "💥" },
+  animation: { label: "애니메이션", emoji: "⭐" },
+  comedy: { label: "코미디", emoji: "🙂" },
+  documentary: { label: "다큐멘터리", emoji: "🎥" },
+  drama: { label: "드라마", emoji: "🎭" },
+  fantasy: { label: "판타지", emoji: "🪄" },
+  horror: { label: "공포", emoji: "💀" },
+  mystery: { label: "미스터리", emoji: "🔎" },
+  romance: { label: "로맨스", emoji: "♡" },
+  scifi: { label: "SF", emoji: "🪐" },
+  thriller: { label: "스릴러", emoji: "!" },
+  war: { label: "전쟁", emoji: "⚔" },
+};
+
+const genreOptions = customMenus
+  .filter((menu) => menu.path.startsWith("/genre/"))
+  .map((menu) => {
+    const slug = menu.path.replace("/genre/", "");
+    const meta = genreMeta[slug] ?? { label: slug, emoji: "•" };
+
+    return {
+      ...menu,
+      slug,
+      label: meta.label,
+      emoji: meta.emoji,
+    };
+  });
 
 export default function MenuCustomPage() {
-  // 홈 섹션 토글 + 순서
-  const [sections, setSections] = useState<HomeSection[]>([
-    { id: "ranking", name: "TOP 10 랭킹", desc: "이번 주 가장 인기있는 작품", enabled: true },
-    { id: "watching", name: "최근 시청 이어보기", desc: "시청 중인 작품 빠른 진입", enabled: true },
-    { id: "netflix", name: "넷플릭스 오리지널", desc: "넷플릭스만의 독점 콘텐츠", enabled: true },
-    { id: "new", name: "신작", desc: "최근 공개된 작품", enabled: true },
-    { id: "rising", name: "급상승 작품", desc: "지금 사람들이 많이 보는 작품", enabled: true },
-    { id: "recommend", name: "맞춤 추천", desc: "취향 기반 추천 작품", enabled: true },
-    { id: "topcast", name: "TOP 출연자", desc: "주목받는 배우들", enabled: false },
-    { id: "release", name: "공개 예정", desc: "곧 공개될 작품", enabled: true },
-  ]);
-
-  // 알고리즘 슬라이더
-  const [algoTaste, setAlgoTaste] = useState(80);
-  const [algoFriend, setAlgoFriend] = useState(50);
-  const [algoNew, setAlgoNew] = useState(70);
-
-  // 선호/제외 장르 + 무드
-  const [genreTab, setGenreTab] = useState<"preferred" | "excluded">("preferred");
-  const [moodTab, setMoodTab] = useState<"preferred" | "excluded">("preferred");
-
-  // 장르 분리
-  const allGenres = customMenus.filter((m) => m.path.startsWith("/genre/"));
-  const allMoods = customMenus.filter((m) => m.path.startsWith("/mood/"));
-
-  const [preferredGenres, setPreferredGenres] = useState<string[]>(["스릴러", "미스터리", "SF", "드라마", "로맨스"]);
-  const [excludedGenres, setExcludedGenres] = useState<string[]>(["공포", "전쟁"]);
-
-  const [preferredMoods, setPreferredMoods] = useState<string[]>(["잔잔한", "감성적인", "심오한"]);
-  const [excludedMoods, setExcludedMoods] = useState<string[]>(["무서운"]);
+  const [sections, setSections] = useState(initialSections);
+  const [sliders, setSliders] = useState(initialSliders);
+  const [activeTab, setActiveTab] = useState<"favorite" | "exclude">("favorite");
+  const [favoriteGenres, setFavoriteGenres] = useState(["thriller", "mystery", "scifi", "drama", "romance"]);
+  const [excludedGenres, setExcludedGenres] = useState(["horror", "war", "documentary"]);
 
   const toggleSection = (id: string) => {
-    setSections(sections.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)));
+    setSections((currentSections) =>
+      currentSections.map((section) =>
+        section.id === id ? { ...section, enabled: !section.enabled } : section,
+      ),
+    );
   };
 
-  const toggleGenre = (genre: string) => {
-    if (genreTab === "preferred") {
-      if (preferredGenres.includes(genre)) {
-        setPreferredGenres(preferredGenres.filter((g) => g !== genre));
-      } else {
-        // 제외 장르에 있으면 제외 해제 후 선호로
-        setExcludedGenres(excludedGenres.filter((g) => g !== genre));
-        setPreferredGenres([...preferredGenres, genre]);
-      }
-    } else {
-      if (excludedGenres.includes(genre)) {
-        setExcludedGenres(excludedGenres.filter((g) => g !== genre));
-      } else {
-        setPreferredGenres(preferredGenres.filter((g) => g !== genre));
-        setExcludedGenres([...excludedGenres, genre]);
-      }
-    }
+  const updateSlider = (id: string, value: number) => {
+    setSliders((currentSliders) =>
+      currentSliders.map((slider) => (slider.id === id ? { ...slider, value } : slider)),
+    );
   };
 
-  const toggleMood = (mood: string) => {
-    if (moodTab === "preferred") {
-      if (preferredMoods.includes(mood)) {
-        setPreferredMoods(preferredMoods.filter((m) => m !== mood));
-      } else {
-        setExcludedMoods(excludedMoods.filter((m) => m !== mood));
-        setPreferredMoods([...preferredMoods, mood]);
-      }
-    } else {
-      if (excludedMoods.includes(mood)) {
-        setExcludedMoods(excludedMoods.filter((m) => m !== mood));
-      } else {
-        setPreferredMoods(preferredMoods.filter((m) => m !== mood));
-        setExcludedMoods([...excludedMoods, mood]);
-      }
-    }
-  };
+  const toggleGenre = (slug: string) => {
+    const selectedGenres = activeTab === "favorite" ? favoriteGenres : excludedGenres;
+    const setSelectedGenres = activeTab === "favorite" ? setFavoriteGenres : setExcludedGenres;
 
-  const moveSection = (id: string, direction: "up" | "down") => {
-    const idx = sections.findIndex((s) => s.id === id);
-    if (idx === -1) return;
-    const newSections = [...sections];
-    const target = direction === "up" ? idx - 1 : idx + 1;
-    if (target < 0 || target >= newSections.length) return;
-    [newSections[idx], newSections[target]] = [newSections[target], newSections[idx]];
-    setSections(newSections);
-  };
-
-  const getAlgoLabel = (val: number) => {
-    if (val < 30) return "약함";
-    if (val < 70) return "중간";
-    return "강함";
-  };
-
-  const handleReset = () => {
-    if (!confirm("모든 설정을 기본값으로 되돌릴까요?")) return;
-    setSections(sections.map((s) => ({ ...s, enabled: true })));
-    setAlgoTaste(80);
-    setAlgoFriend(50);
-    setAlgoNew(70);
-    setPreferredGenres(["스릴러", "미스터리", "SF", "드라마", "로맨스"]);
-    setExcludedGenres(["공포", "전쟁"]);
-    setPreferredMoods(["잔잔한", "감성적인", "심오한"]);
-    setExcludedMoods(["무서운"]);
+    setSelectedGenres(
+      selectedGenres.includes(slug)
+        ? selectedGenres.filter((genre) => genre !== slug)
+        : [...selectedGenres, slug],
+    );
   };
 
   return (
-    <div className="custom-page">
-      <div className="inner">
-        <div className="page-head">
+    <section className="menu-custom-page">
+      <div className="menu-custom-page__inner">
+        <div className="menu-custom-page__hero">
           <h1>메뉴 커스텀</h1>
-          <p>홈 화면에 표시할 섹션과 추천 강도, 선호 장르를 직접 설정할 수 있어요</p>
+          <p>홈 화면에 표시할 섹션과 추천 강도를 직접 설정할 수 있어요</p>
         </div>
 
-        {/* 홈 섹션 ON/OFF */}
-        <section className="custom-section">
-          <h2>홈 섹션 표시</h2>
-          <p className="desc">▲▼ 버튼으로 순서를 변경하거나, 스위치로 표시 여부를 조절하세요</p>
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>홈 섹션 표시 <span>(드래그로 순서 변경)</span></h2>
+            <p>홈 화면에 어떤 섹션을 보여줄지, 어떤 순서로 정렬할지 선택하세요</p>
+          </div>
 
-          <ul className="toggle-list">
-            {sections.map((section, idx) => (
-              <li key={section.id} className="toggle-row">
-                <div className="order-controls">
-                  <button
-                    onClick={() => moveSection(section.id, "up")}
-                    disabled={idx === 0}
-                  >▲</button>
-                  <button
-                    onClick={() => moveSection(section.id, "down")}
-                    disabled={idx === sections.length - 1}
-                  >▼</button>
+          <div className="section-list">
+            {sections.map((section) => (
+              <article className="section-item" key={section.id}>
+                <button className="section-item__handle" type="button" aria-label={`${section.title} 순서 변경`}>
+                  ⋮⋮
+                </button>
+
+                <div>
+                  <h3>{section.title}</h3>
+                  <p>{section.description}</p>
                 </div>
-                <div className="info">
-                  <h3>{section.name}</h3>
-                  <p>{section.desc}</p>
-                </div>
+
                 <button
-                  className={`toggle-switch ${section.enabled ? "on" : ""}`}
+                  className={section.enabled ? "switch active" : "switch"}
+                  type="button"
+                  aria-pressed={section.enabled}
                   onClick={() => toggleSection(section.id)}
                 >
-                  <span className="thumb"></span>
+                  <span />
                 </button>
-              </li>
+              </article>
             ))}
-          </ul>
-        </section>
-
-        {/* 추천 알고리즘 */}
-        <section className="custom-section">
-          <h2>추천 알고리즘 조정</h2>
-          <p className="desc">취향 학습 강도를 직접 조절하세요. 강할수록 익숙한 작품, 약할수록 새로운 발견</p>
-
-          <div className="slider-block">
-            <div className="head">
-              <span className="name">취향 일치도</span>
-              <span className="value">{getAlgoLabel(algoTaste)} ({algoTaste}%)</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={algoTaste}
-              onChange={(e) => setAlgoTaste(Number(e.target.value))}
-            />
-            <div className="labels">
-              <span>새로운 발견</span>
-              <span>익숙한 취향</span>
-            </div>
-          </div>
-
-          <div className="slider-block">
-            <div className="head">
-              <span className="name">친구 활동 반영도</span>
-              <span className="value">{getAlgoLabel(algoFriend)} ({algoFriend}%)</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={algoFriend}
-              onChange={(e) => setAlgoFriend(Number(e.target.value))}
-            />
-            <div className="labels">
-              <span>개인 추천만</span>
-              <span>친구 활동 우선</span>
-            </div>
-          </div>
-
-          <div className="slider-block">
-            <div className="head">
-              <span className="name">신작 노출</span>
-              <span className="value">{getAlgoLabel(algoNew)} ({algoNew}%)</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={algoNew}
-              onChange={(e) => setAlgoNew(Number(e.target.value))}
-            />
-            <div className="labels">
-              <span>거의 안 보임</span>
-              <span>가장 많이</span>
-            </div>
           </div>
         </section>
 
-        {/* 장르 설정 */}
-        <section className="custom-section">
-          <h2>장르 설정</h2>
-          <p className="desc">선호하는 장르와 추천에서 제외할 장르를 설정하세요</p>
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>추천 알고리즘 조정</h2>
+            <p>취향 학습 강도를 직접 조절하세요. 강할수록 익숙한 작품 위주, 약할수록 새로운 발견이 많아져요</p>
+          </div>
 
-          <div className="tab-bar">
+          <div className="slider-list">
+            {sliders.map((slider) => (
+              <article className="slider-card" key={slider.id}>
+                <div className="slider-card__top">
+                  <h3>{slider.title}</h3>
+                  <strong>{slider.valueLabel}</strong>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={slider.value}
+                  onChange={(event) => updateSlider(slider.id, Number(event.target.value))}
+                  style={{ "--range-value": `${slider.value}%` } as CSSProperties}
+                  aria-label={slider.title}
+                />
+
+                <div className="slider-card__labels">
+                  <span>{slider.leftLabel}</span>
+                  <span>{slider.rightLabel}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>장르 설정</h2>
+            <p>선호하는 장르와 추천에서 제외할 장르를 설정하세요</p>
+          </div>
+
+          <div className="genre-tabs" role="tablist" aria-label="장르 설정">
             <button
-              className={genreTab === "preferred" ? "active" : ""}
-              onClick={() => setGenreTab("preferred")}
+              className={activeTab === "favorite" ? "active" : ""}
+              type="button"
+              onClick={() => setActiveTab("favorite")}
             >
-              선호 장르 ({preferredGenres.length})
+              선호 장르 ({favoriteGenres.length})
             </button>
             <button
-              className={genreTab === "excluded" ? "active" : ""}
-              onClick={() => setGenreTab("excluded")}
+              className={activeTab === "exclude" ? "active" : ""}
+              type="button"
+              onClick={() => setActiveTab("exclude")}
             >
               제외 장르 ({excludedGenres.length})
             </button>
           </div>
 
-          <div className="chip-grid">
-            {allGenres.map((g) => {
-              const isPreferred = preferredGenres.includes(g.title);
-              const isExcluded = excludedGenres.includes(g.title);
-              const isActive = genreTab === "preferred" ? isPreferred : isExcluded;
-              const otherActive = genreTab === "preferred" ? isExcluded : isPreferred;
+          <div className="genre-grid">
+            {genreOptions.map((genre) => {
+              const isSelected =
+                activeTab === "favorite"
+                  ? favoriteGenres.includes(genre.slug)
+                  : excludedGenres.includes(genre.slug);
 
               return (
                 <button
-                  key={g.title}
-                  className={`pref-chip ${isActive ? "selected" : ""} ${otherActive ? "other" : ""}`}
-                  onClick={() => toggleGenre(g.title)}
+                  className={isSelected ? "genre-button active" : "genre-button"}
+                  type="button"
+                  key={genre.slug}
+                  onClick={() => toggleGenre(genre.slug)}
                 >
-                  <Image src={g.imgUrl} alt={g.title} width={20} height={20} />
-                  <span>{g.title}</span>
+                  <Image src={genre.imgUrl} alt="" width={22} height={22} />
+                  <span>{genre.label}</span>
+                  <em aria-hidden="true">{genre.emoji}</em>
+                  {activeTab === "exclude" && isSelected ? <strong aria-hidden="true">×</strong> : null}
                 </button>
               );
             })}
           </div>
         </section>
 
-        {/* 무드 설정 */}
-        <section className="custom-section">
-          <h2>무드 설정</h2>
-          <p className="desc">기분에 따라 보고 싶은 분위기를 선택하세요</p>
-
-          <div className="tab-bar">
-            <button
-              className={moodTab === "preferred" ? "active" : ""}
-              onClick={() => setMoodTab("preferred")}
-            >
-              선호 무드 ({preferredMoods.length})
-            </button>
-            <button
-              className={moodTab === "excluded" ? "active" : ""}
-              onClick={() => setMoodTab("excluded")}
-            >
-              제외 무드 ({excludedMoods.length})
-            </button>
-          </div>
-
-          <div className="chip-grid">
-            {allMoods.map((m) => {
-              const isPreferred = preferredMoods.includes(m.title);
-              const isExcluded = excludedMoods.includes(m.title);
-              const isActive = moodTab === "preferred" ? isPreferred : isExcluded;
-              const otherActive = moodTab === "preferred" ? isExcluded : isPreferred;
-
-              return (
-                <button
-                  key={m.title}
-                  className={`pref-chip ${isActive ? "selected" : ""} ${otherActive ? "other" : ""}`}
-                  onClick={() => toggleMood(m.title)}
-                >
-                  <Image src={m.imgUrl} alt={m.title} width={20} height={20} />
-                  <span>{m.title}</span>
-                </button>
-              );
-            })}
-          </div>
+        <section className="reset-panel">
+          <p>설정을 초기 상태로 되돌리고 싶으신가요?</p>
+          <button type="button">기본값 복원</button>
         </section>
-
-        {/* 저장 / 초기화 */}
-        <div className="action-bar">
-          <button className="btn-reset" onClick={handleReset}>기본값 복원</button>
-          <button className="btn-save">설정 저장</button>
-        </div>
       </div>
-    </div>
+    </section>
   );
 }

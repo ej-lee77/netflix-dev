@@ -37,6 +37,8 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         set({ trendingMovies: data.results });
     },
 
+    //==============급상승 영화 받아오기==============
+
     //티비
     //영화의 영상을 저장할 변수 popVideos
     popVideos: {},
@@ -215,10 +217,55 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     },
     //전 세계 인기 인물 (배우/감독)
     popularPeople: [],
+    netflixHighlights: [],
     onFetchPopularPeople: async () => {
         const res = await fetch(`https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
         const data = await res.json();
         console.log("인기 인물", data.results);
         set({ popularPeople: data.results || [] });
+    },
+    onFetchNetflixHighlights: async () => {
+        const { netflixHighlights } = get();
+        if (netflixHighlights.length > 0) return;
+
+        const popularRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const popularData = await popularRes.json();
+        const movies = (popularData.results || []).slice(0, 12);
+
+        const highlightResults = await Promise.all(
+            movies.map(async (movie: { id: number; title: string; poster_path: string; backdrop_path: string }) => {
+                const [koRes, enRes] = await Promise.all([
+                    fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=ko-KR`),
+                    fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=en-US`)
+                ]);
+                const koData = await koRes.json();
+                const enData = await enRes.json();
+                const videos = [...(koData.results || []), ...(enData.results || [])];
+                const youtubeVideos = videos.filter((video) => video.site === "YouTube");
+                const preferredVideo =
+                    youtubeVideos.find((video) => video.type === "Clip") ||
+                    youtubeVideos.find((video) => video.type === "Teaser") ||
+                    youtubeVideos.find((video) => video.type === "Trailer") ||
+                    youtubeVideos.find((video) => video.type === "Featurette") ||
+                    youtubeVideos[0];
+
+                if (!preferredVideo) return null;
+
+                return {
+                    id: Number(preferredVideo.id.replace(/\D/g, "").slice(-8)) || movie.id,
+                    movieId: movie.id,
+                    title: movie.title,
+                    poster_path: movie.poster_path,
+                    backdrop_path: movie.backdrop_path,
+                    videoKey: preferredVideo.key,
+                    videoName: preferredVideo.name,
+                    videoType: preferredVideo.type
+                };
+            })
+        );
+
+        set({
+            netflixHighlights: highlightResults.filter(Boolean).slice(0, 8)
+        });
     }
 }))
