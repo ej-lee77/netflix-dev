@@ -10,9 +10,8 @@
   }
 
   .release-container {
-    /* max-width: 1152px; */
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
+    padding-right: clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
   }
 
   /* 🌟 아래 칸 영화가 빈 곳으로 쏙 올라오게 만드는 다단 레이아웃 */
@@ -114,7 +113,7 @@
   }
 
   .release-card:hover .card-title {
-    color: #fde68a;
+    color: #ffffff;
   }
 
   .card-overview {

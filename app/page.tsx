@@ -35,9 +35,9 @@ export default function Home() {
       <NewMovieList />
       {/* 급상승 */}
       <RisingMovieList />
-      {/* 추천 + TOP CAST */}
+      {/* 추천 */}
       <RecommendList />
-      <TopCast />
+      {/* <TopCast /> */}
       {/* 공개예정 */}
       <Release />
       {/* 카테고리 */}

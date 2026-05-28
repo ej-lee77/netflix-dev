@@ -13,7 +13,7 @@
 }
 
 .section-title {
-    font-size: g.$text-16;
+    font-size: g.$text-32;
     font-weight: 700;
     letter-spacing: 0.2px;
     color: g.$w-color;
@@ -21,9 +21,9 @@
 }
 
 .section-sub {
-    margin-top: 4px;
-    font-size: g.$text-12;
-    color: g.$main-menu-color;
+    margin-top: 2px;
+    font-size: g.$text-14;
+    color: g.$g-color;
     line-height: 1.4;
 }
 
@@ -34,8 +34,8 @@
     padding-bottom: 2px;
     background: none;
     border: none;
-    font-size: g.$text-12;
-    color: g.$main-menu-color;
+    font-size: g.$text-14;
+    color: g.$g-color;
     cursor: pointer;
     transition: color 0.2s ease;
 

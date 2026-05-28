@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
 import { useMovieStore } from "@/store/useMovieStore";
+import type { Movie } from "@/types/movie";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -262,7 +263,9 @@ export default function RankingSection() {
                       url(${imageUrl(movie.backdrop_path, "w780")})`,
                     }}
                   >
-                    <span className="ranking-detail-rank">#{index + 1}위</span>
+                    <span className="ranking-detail-rank">
+                      {(movie as Movie & { media_type?: string }).media_type === "tv" ? "시리즈" : "영화"}
+                    </span>
 
                     <strong className="ranking-detail-title">
                       {movie.title}
@@ -279,10 +282,20 @@ export default function RankingSection() {
                     </span>
 
                     <span className="ranking-detail-actions">
-                      <Link href={`/detail/movie/${movie.id}`}>상세보기</Link>
-                      <Link href={`/detail/movie/${movie.id}?play=1`}>
+                      <button type="button">
+                        <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
                         재생
-                      </Link>
+                      </button>
+                      <button type="button">
+                        <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" style={{ fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                        상세보기
+                      </button>
                     </span>
                   </span>
 

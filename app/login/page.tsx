@@ -121,7 +121,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "images/profile/1.png" }];
+  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "/images/profile/normal.svg" }];
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,7 +265,7 @@ export default function LoginPage() {
 
           <p className="login-signup">
             아직 회원이 아니신가요?
-            <Link href="/signup">회원가입</Link>
+            <Link href="/signin">회원가입</Link>
           </p>
         </div>
       </section>
