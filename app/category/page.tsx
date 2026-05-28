@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/category.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -214,7 +213,6 @@ const defaultSelection: Record<FilterTab, string[]> = {
 };
 
 export default function CategoryPage() {
-  const { currentProfile } = useAuthStore();
   const [mainTab, setMainTab] = useState<MainTab>("movie");
   const [filterTab, setFilterTab] = useState<VisibleFilterTab>("genreMood");
   const [selected, setSelected] = useState(defaultSelection);
@@ -228,7 +226,6 @@ export default function CategoryPage() {
   const [totalResults, setTotalResults] = useState(0);
 
   const mediaType: "movie" | "tv" = mainTab === "tv" ? "tv" : "movie";
-  const profilePageOffset = Math.max((currentProfile?.id ?? 1) - 1, 0);
   const currentOptions = filterTab === "genreMood" ? [] : filters[filterTab];
   const selectedOptions = useMemo<SelectedFilterOption[]>(
     () =>
@@ -293,8 +290,6 @@ export default function CategoryPage() {
     if (mainTab === "animation") {
       params.set("with_genres", "16");
     }
-
-    params.set("page", String(page + profilePageOffset));
 
     return params;
   };
@@ -459,7 +454,7 @@ export default function CategoryPage() {
 
     fetchCategoryBatch(1, controller.signal, true);
     return () => controller.abort();
-  }, [currentProfile?.id, mainTab, mediaType, selectedOptions, sort]);
+  }, [mainTab, mediaType, selectedOptions, sort]);
 
   const handleLoadMore = () => {
     const controller = new AbortController();
