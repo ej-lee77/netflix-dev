@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
@@ -11,6 +12,7 @@ interface DetailClientProps {
 }
 
 type DetailMedia = (Movie | TV) & {
+  adult?: boolean;
   created_by?: { id: number; name: string }[];
   first_air_date?: string;
   genres?: { id: number; name: string }[];
@@ -36,6 +38,8 @@ function imageUrl(path?: string | null, size = "w500") {
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
+  const searchParams = useSearchParams();
+  const shouldAutoPlay = searchParams.get("play") === "1";
 
   const {
     tvs, tvVideos, onFetchTvs, onFetchTvVideos,
@@ -46,6 +50,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     casts, onFetchCredits,
     recommended, onFetchRecommended,
     movieImages, onFetchMovieImages,
+    certifications, onFetchCertification,
   } = useMovieStore();
 
   const { onAddPlayList } = usePlayListStore();
@@ -64,6 +69,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const stillsRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const hasAutoPlayed = useRef(false);
 
   const onStillsMouseDown = () => { isDragging.current = true; };
   const onStillsMouseMove = (e: React.MouseEvent) => {
@@ -114,6 +120,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (!isTv && mediaId) onFetchMovieImages(mediaId);
   }, [isTv, mediaId, onFetchMovieImages]);
 
+  useEffect(() => {
+    if (mediaId) onFetchCertification(mediaId, type);
+  }, [mediaId, type, onFetchCertification]);
+
   const mediaItem = (mediaDetails[`${type}-${mediaId}`] ?? (
     isTv
       ? tvs.find((item) => item.id === mediaId)
@@ -123,9 +133,17 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const title = getTitle(mediaItem);
   const releaseDate = isTv ? mediaItem?.first_air_date : (mediaItem as Movie | undefined)?.release_date;
   const releaseYear = releaseDate?.split("-")[0] ?? "";
-const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
+  const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
   const castKey = `${type}-${mediaId}`;
   const castList: CastMember[] = casts[castKey] ?? [];
+
+  const rawCert = certifications[castKey] ?? "";
+  const ageBadge = ((): "ALL" | "12+" | "15+" | "19+" => {
+    if (rawCert === "12") return "12+";
+    if (rawCert === "15") return "15+";
+    if (rawCert === "19" || rawCert === "Restricted Screening") return "19+";
+    return "ALL";
+  })();
   const directorList = isTv
     ? mediaItem?.created_by ?? []
     : castList.filter((m) => m.order <= 2).slice(0, 3);
@@ -174,6 +192,13 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
     await onAddPlayList(mediaItem);
     await openVideo();
   };
+
+  useEffect(() => {
+    if (!shouldAutoPlay || hasAutoPlayed.current || !mediaItem || !videos) return;
+
+    hasAutoPlayed.current = true;
+    handlePlay();
+  }, [shouldAutoPlay, mediaItem, videos]);
 
   // ─── Render sections ────────────────────────────────────────────────────────
 
@@ -427,7 +452,7 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
                   gap: 5,
                 }}>
                   <span style={{ fontSize: 12, padding: "2px 7px", borderRadius: 3, background: "rgba(255,255,255,0.15)", color: "#ccc", alignSelf: "flex-start" }}>
-                    {item.media_type === "tv" ? "드라마" : "영화"}
+                    {item.media_type === "tv" ? "시리즈" : "영화"}
                   </span>
                   <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.5 }}>
                     {item.title}
@@ -596,7 +621,7 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 8 }}>
             <div>
               <span style={{ background: "rgba(255, 255, 255, 0.1)", padding: "3px 8px", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "rgba(255, 255, 255, 0.5)" }}>
-                {isTv ? "드라마" : "영화"}
+                {isTv ? "시리즈" : "영화"}
                 {mediaItem?.number_of_seasons ? ` · 시즌 ${mediaItem.number_of_seasons} 진행중` : ""}
               </span>
             </div>
@@ -606,12 +631,15 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
             </h1>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ padding: "2px 8px", border: "1px solid #555", borderRadius: 3, fontSize: 12, color: "#aaa", fontWeight: 600 }}>
+                {ageBadge}
+              </span>
               {releaseYear && <span style={{ fontSize: 14, color: "#888" }}>{releaseYear}</span>}
               {isTv && mediaItem?.number_of_seasons && (
                 <>
                   <span style={{ color: "#444" }}>·</span>
                   <span style={{ fontSize: 14, color: "#888" }}>
-                    시즌 {mediaItem.number_of_seasons} / {mediaItem.number_of_episodes}부작
+                    시즌 {mediaItem.number_of_seasons}
                   </span>
                 </>
               )}
@@ -623,7 +651,7 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
               )}
               {mediaItem?.genres && mediaItem.genres.length > 0 && (
                 <>
-                  <span style={{ color: "#444" }}>·</span>
+                  {/* <span style={{ color: "#444" }}>·</span> */}
                   {mediaItem.genres.slice(0, 3).map((g) => (
                     <span key={g.id} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid #555", fontSize: 11, color: "#999" }}>
                       {g.name}
@@ -631,35 +659,32 @@ const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.na
                   ))}
                 </>
               )}
-              {countryText && (
+              {/* {countryText && (
                 <>
                   <span style={{ color: "#444" }}>·</span>
                   <span style={{ fontSize: 14, color: "#888" }}>{countryText}</span>
                 </>
-              )}
+              )} */}
             </div>
 
             {/* Score */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontWeight: 700, fontSize: 32, color: "#fff", letterSpacing: -1.5 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ color: "#e50914", fontSize: 16, letterSpacing: -7 }}>★</span>
+              <span style={{ fontWeight: 500, fontSize: 16, color: "#fff" }}>
                 {mediaItem?.vote_average?.toFixed(1) ?? "-"}
               </span>
-              <span style={{ fontSize: 16, color: "#888" }}>/ 10</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ color: "#e50914", fontSize: 14, letterSpacing: 2 }}>★★★★★</span>
-                {mediaItem?.vote_count && (
-                  <span style={{ fontSize: 12, color: "#888" }}>{mediaItem.vote_count.toLocaleString()}명 평가</span>
-                )}
-              </div>
+              {mediaItem?.vote_count && (
+                <span style={{ fontSize: 14, color: "#888" }}>{mediaItem.vote_count.toLocaleString()}명 평가</span>
+              )}
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
               <button
                 onClick={handlePlay}
                 style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: "pointer" }}
               >
-                ▶ {isTv ? "이어보기" : "재생하기"}
+                ▶ 재생하기
               </button>
               <button style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: "pointer" }}>
                 ＋ 내 리스트
