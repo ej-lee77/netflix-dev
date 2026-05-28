@@ -22,3 +22,60 @@ export interface AuthState{
     onLogout: ()=>Promise<void>;
     onSetMember: (member:FamilyMember)=>void;
 }
+
+export interface UserProfile {
+    nickname: string;
+    imgUrl: string;
+    viewAge: string;
+}
+
+export interface UserGenreStats {
+  [genreName: string]: number; // 예: { "action": 12, "comedy": 5 }
+}
+
+export interface PlayList{
+  playlistVideos: string[]; // 플레이리스트 영상 ID 목록
+  customPlaylists: string[]; // 커스텀 플레이리스트 ID 목록
+}
+
+export interface MovieList{
+  watchingVideos: string[]; // 시청중인 영상 ID 목록
+  wishlist: string[];       // 찜목록 영상 ID 목록
+  playlist: PlayList;
+  genreStats: UserGenreStats; // 장르별 시청도 카운트
+}
+
+export interface CommunityList{
+  earnedBadges: string[];   // 획득 뱃지 ID 목록
+  equippedBadges: string;  // 장착 뱃지 ID 하나만
+}
+
+export interface BadgeList{
+  followers: string[];   // 팔로워 유저 ID 목록
+  following: string[]; // 팔로잉 유저 ID 하나만
+  reviews: string[]; //리뷰 ID 목록
+  feeds: string[]; //피드 ID 목록
+}
+
+// 최종 Firebase 'users' 컬렉션의 문서 구조
+export interface UserDocument {
+    userId: string; // 문서 ID로 사용됨
+    
+    // 기본정보
+    email: string;
+    name: string;
+    phoneNumber: string;
+    planType: string;
+    profile: UserProfile;
+
+    // 영상관련 (기본 필드 형태)
+    movies: MovieList;
+
+    // 커뮤니티관련
+    community: CommunityList;
+
+    // 메뉴 및 뱃지
+    headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
+    bages: BadgeList;
+
+}
