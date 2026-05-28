@@ -19,27 +19,17 @@ export default function MyPage() {
   }, []);
 
   const activeProfile = currentProfile ?? user?.profiles?.[0] ?? null;
-  const profileIndex = Math.max((activeProfile?.id ?? 1) - 1, 0);
 
   // 가짜 통계 (실제로는 firebase에서 가져옴)
   const stats = {
-    watched: playList.length + profileIndex * 2,
-    wishlist: 38 + profileIndex * 3,
-    review: 24 + profileIndex,
-    badge: 12 + (profileIndex % 3),
+    watched: playList.length,
+    wishlist: 38,
+    review: 24,
+    badge: 12,
   };
 
   const profileMovies = [
-    ...popMovies.slice(profileIndex),
-    ...popMovies.slice(0, profileIndex),
-  ];
-  const profileTvs = [
-    ...tvs.slice(profileIndex),
-    ...tvs.slice(0, profileIndex),
-  ];
-  const profilePlayList = [
-    ...playList.slice(profileIndex),
-    ...playList.slice(0, profileIndex),
+    ...popMovies,
   ];
 
   // 더미 친구 활동 (실제 TMDB 데이터로 만듦)
@@ -146,7 +136,7 @@ export default function MyPage() {
           </div>
           {playList.length > 0 ? (
             <div className="poster-row">
-              {profilePlayList.slice(0, 6).map((item) => (
+              {playList.slice(0, 6).map((item) => (
                 <Link
                   key={item.id}
                   href={`/detail/${item.mediaType}/${item.id}`}
@@ -173,7 +163,7 @@ export default function MyPage() {
             <Link href="/mypage/wishlist" className="more">전체 {stats.wishlist}개 →</Link>
           </div>
           <div className="poster-row">
-            {profileTvs.slice(0, 6).map((item) => (
+            {tvs.slice(0, 6).map((item) => (
               <Link key={item.id} href={`/detail/tv/${item.id}`} className="poster-item">
                 <div className="poster-img">
                   {item.poster_path && (
