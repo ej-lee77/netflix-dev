@@ -47,6 +47,17 @@ export interface Video {
 }
 
 //스틸컷 (TMDB images 응답의 backdrops 배열의 한 항목)
+export interface HighlightItem {
+    id: number;
+    movieId: number;
+    title: string;
+    poster_path: string;
+    backdrop_path: string;
+    videoKey: string;
+    videoName: string;
+    videoType: string;
+}
+
 export interface StillImage {
     file_path: string;
     width: number;
@@ -115,6 +126,7 @@ export interface MovieState {
     casts: { [key: string]: CastMember[] },
     //전 세계 인기 인물 (배우/감독) 리스트
     popularPeople: PopularPerson[],
+    netflixHighlights: HighlightItem[],
 
     onFetchPopular: () => Promise<void>,
     onFetchNewest: () => Promise<void>,
@@ -136,5 +148,6 @@ export interface MovieState {
     onFetchRecommended: () => Promise<void>,
     onFetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>,
-    onFetchPopularPeople: () => Promise<void>
+    onFetchPopularPeople: () => Promise<void>,
+    onFetchNetflixHighlights: () => Promise<void>
 }
