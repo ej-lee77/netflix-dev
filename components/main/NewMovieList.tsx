@@ -2,6 +2,7 @@
 import { useMovieStore } from '@/store/useMovieStore';
 import React, { useState } from 'react';
 import SectionTitle from '../common/SectionTitle';
+import "./scss/newMovieList.scss"
 
 export default function NewMovieList() {
     const { newMovies } = useMovieStore();
@@ -9,104 +10,71 @@ export default function NewMovieList() {
 
     const total = newMovies.length;
 
-
     return (
-        <section>
+        <section className="new-movie-section">
             <div className="inner">
                 <SectionTitle title='신작' subTitle='새로운 작품들을 시청해보세요' />
             </div>
-            <div className='relative left-1/2 h-[600px] w-[calc(100vw-var(--main-menu-width))] -translate-x-1/2 overflow-hidden'>
-
+            
+            {/* 슬라이더 전체를 감싸는 뷰포트 영역 */}
+            <div className="movie-list-viewport">
                 <ul className="new-movie-list">
-                    {
-                        newMovies.map((movie, index) => {
+                    {newMovies.map((movie, index) => {
+                        let diff = index - activeIndex;
+                        if (diff > total / 2) diff -= total;
+                        if (diff < -total / 2) diff += total;
+                        const abs = Math.abs(diff);
 
-                            let diff = index - activeIndex;
-                            if (diff > total / 2) diff -= total;
-                            if (diff < -total / 2) diff += total;
-                            const abs = Math.abs(diff);
+                        // SCSS 분기 처리를 위해 스타일 맵을 컴포넌트에서 전달
+                        const scale =
+                            abs === 0 ? 1.4 :
+                            abs === 1 ? 1.2 :
+                            abs === 2 ? 1.1 :
+                            abs === 3 ? 1 :
+                            abs === 4 ? 0.9 :
+                            abs === 5 ? 0.8 :
+                            abs === 6 ? 0.7 : 0.6;
 
-                            const scale =
-                                abs === 0 ? 1.4 :
-                                    abs === 1 ? 1.3 :
-                                        abs === 2 ? 1.2 :
-                                            abs === 3 ? 1.1 :
-                                                abs === 4 ? 1 :
-                                                    abs === 5 ? 0.95 :
-                                                        abs === 6 ? 0.85 : 0.8;
+                        const translateX = 
+                            abs === 0 ? diff * 260 :
+                            abs === 1 ? diff * 250 :
+                            abs === 2 ? diff * 250 :
+                            abs === 3 ? diff * 230 : diff * 260;
+                        const zIndex = 100 - abs;
+                        const opacity = 
+                            abs === 0 ? 1 :
+                            abs > 5 ? 0 : 0.7;
 
-                            // const neonClass =
-                            //     diff === 0
-                            //         ? "shadow-[0_0_35px_rgba(255,0,0,0.3)]"
-                            //         : diff === -1
-                            //             ? "shadow-[0_0_35px_rgba(234,0,255,0.25)]"
-                            //             : diff === 1
-                            //                 ? "shadow-[0_0_35px_rgba(255,174,0,0.3)]"
-                            //                 : "shadow-2xl";
+                        return (
+                            <li key={movie.id}>
+                                <div
+                                    onClick={() => setActiveIndex(index)}
+                                    // abs 값에 따라 고유 클래스를 동적으로 매핑하여 SCSS에서 스타일 분기 조절
+                                    className={`movie-card-item abs-${abs}`}
+                                    style={{
+                                        transform: `translate(-50%, -50%) translateX(${translateX}px) scale(${scale})`,
+                                        zIndex,
+                                        opacity,
+                                    }}
+                                >
+                                    <img
+                                        src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
+                                        alt={movie.title}
+                                        className="poster-img"
+                                    />
+                                    
+                                    {/* 딤드 오버레이 레이어 */}
+                                    <div className="dim-overlay" />
 
-                            // const neonClass =
-                            //     diff === 0
-                            //         ? "ring-2 ring-[#FF0000]/30 shadow-[0_0_35px_rgba(255,0,0,0.3)]"
-                            //         : diff === -1
-                            //             ? "ring-2 ring-[#EA00FF]/25 shadow-[0_0_35px_rgba(234,0,255,0.25)]"
-                            //             : diff === 1
-                            //                 ? "ring-2 ring-[#FFAE00]/30 shadow-[0_0_35px_rgba(255,174,0,0.3)]"
-                            //                 : "shadow-2xl";
-
-                            const activeClass =
-                                abs === 0
-                                    ? "border-1 border-white-50 shadow-[0_0_45px_rgba(255,0,0,0.65)]"
-                                    : "shadow-2xl";
-
-                            const translateX = diff * 260;
-                            const zIndex = 100 - abs;
-                            const opacity = abs > 5 ? 0 : 1;
-
-                            return (
-                                <li key={movie.id}>
-                                    <div key={movie.id}
-                                        onClick={() => setActiveIndex(index)}
-                                        className={`
-                                        absolute
-                                        left-1/2
-                                        top-1/2
-                                        h-[420px]
-                                        w-[280px]
-                                        overflow-hidden
-                                        rounded-lg
-                                        bg-zinc-300
-                                        transition-all
-                                        duration-500
-                                        ease-out
-                                        ${activeClass}
-                                        `}
-                                        style={{
-                                            transform: `translate(-50%, -50%) translateX(${translateX}px) scale(${scale})`,
-                                            zIndex,
-                                            opacity,
-                                        }}>
-                                        <img
-                                            src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
-                                            alt="."
-                                            className='h-full w-full object-cover' />
-                                        <div
-                                            className={`
-                                            absolute inset-0 transition-all duration-300
-                                            ${abs === 0 ? "bg-black/0" : "bg-black/30"}
-                                        `}
-                                        />
-
-                                        <p className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-3 text-sm font-semibold text-white">
-                                            {movie.title}
-                                        </p>
-                                    </div>
-                                </li>
-                            )
-                        })
-                    }
+                                    <p className="movie-title">
+                                        {movie.title}
+                                    </p>
+                                </div>
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
         </section>
-
-    )
+    );
 }

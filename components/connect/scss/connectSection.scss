@@ -1,0 +1,22 @@
+.connect-section {
+  position: relative;
+  color: #fff;
+}
+
+.connect-section__inner {
+  position: relative;
+  width: min(1320px, calc(100vw - 120px));
+  margin: 0 auto;
+}
+
+@media (max-width: 1280px) {
+  .connect-section__inner {
+    width: min(1080px, calc(100vw - 80px));
+  }
+}
+
+@media (max-width: 860px) {
+  .connect-section__inner {
+    width: min(520px, calc(100vw - 32px));
+  }
+}

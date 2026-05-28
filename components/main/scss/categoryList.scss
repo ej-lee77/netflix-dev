@@ -1,19 +1,19 @@
 @use "@/app/globals" as g;
 
-.category-list-wrap {
+.category-section {
+  position: relative;
   width: 100%;
-  padding: 24px 0;
 
   .media-swiper {
     overflow: visible !important;
-    padding: 0 32px 40px !important;
   }
 
+  // 슬라이더 개별 카드 고정 가로폭 분기
   .category-slide {
-    width: 260px !important;
+    width: 220px !important;
 
     @media (min-width: 768px) {
-      width: 300px !important;
+      width: 230px !important;
     }
   }
 
@@ -25,12 +25,11 @@
     position: relative;
 
     &:hover {
-      .poster-img {
+      .img-box .poster-img {
         transform: scale(1.05);
       }
-
-      .item-title {
-        color: #fbbf24;
+      .text-box .item-title {
+        color: #fde047; /* 마우스 호버 시 포인트 컬러 리액션 */
       }
     }
   }
@@ -38,37 +37,109 @@
   .img-box {
     position: relative;
     width: 100%;
-    aspect-ratio: 2 / 3;
-    background: #18181b;
-    border-radius: g.$radius-lg;
+    aspect-ratio: 2 / 3; /* 세로 포스터 고정 비율 */
+    background: #18181b; 
+    border-radius: g.$radius-lg; /* 🌟 공통 라디우스 변수 적용 (16px) */
     overflow: hidden;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(g.$w-color, 0.05);
+    box-shadow: 0 20px 25px -5px rgba(g.$d-color, 0.3); /* 🌟 블랙 변수 활용 */
+    border: 1px solid rgba(g.$w-color, 0.05); /* 🌟 화이트 변수 활용 */
 
     .poster-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       filter: brightness(0.85);
-      transition: transform 0.5s;
+      transition: transform 0.5s ease;
     }
 
-    .overlay {
+    /* 시인성 개선용 시네마틱 흑색 그라데이션 */
+    .overlay-gradient {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(g.$d-color, 0.9), rgba(g.$d-color, 0.4) 50%, transparent);
+      background: linear-gradient(to top, rgba(g.$d-color, 0.9) 0%, rgba(g.$d-color, 0.4) 40%, transparent 100%); /* 🌟 블랙 변수 활용 */
       pointer-events: none;
+    }
+
+    /* 호버 시 카드 내부에서 동적으로 열리는 유튜브 트레일러 박스 */
+    .trailer-box {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: g.$d-color; /* 🌟 블랙 변수 활용 */
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      border-radius: g.$radius-lg; /* 🌟 공통 라디우스 변수 적용 */
+      overflow: hidden;
+
+      .trailer-iframe {
+        width: 100%;
+        flex: 1;
+        border: 0;
+      }
+
+      .trailer-info {
+        background: g.$d-color; /* 🌟 블랙 변수 활용 */
+        padding: 16px;
+
+        .trailer-title {
+          color: g.$w-color; /* 🌟 화이트 변수 활용 */
+          font-size: g.$text-18; /* 🌟 폰트 변수 적용 */
+          font-weight: 700;
+          margin-bottom: 8px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .trailer-sub {
+          font-size: g.$text-12; /* 🌟 폰트 변수 적용 */
+          color: #a1a1aa; 
+          margin-bottom: 12px;
+        }
+
+        .btn-group {
+          display: flex;
+          gap: 12px;
+
+          .action-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+
+            img {
+              width: 40px;
+              height: 40px;
+              display: block;
+              
+              &.bg-zinc-700 { 
+                background-color: #3f3f46;
+                border-radius: 50%;
+                padding: 8px;
+                transition: background-color 0.2s;
+
+                &:hover {
+                  background-color: #52525b;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
+  /* 카드 하단 텍스트 */
   .text-box {
     margin-top: 12px;
     padding: 0 4px;
 
     .item-title {
-      font-size: g.$text-18;
+      font-size: g.$text-18; /* 🌟 폰트 변수 적용 */
       font-weight: 600;
-      color: #e4e4e7;
+      color: #e4e4e7; 
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -82,17 +153,23 @@
       margin-top: 4px;
 
       span {
-        color: #fbbf24;
-        font-size: g.$text-13;
+        color: #fbbf24; 
+        font-size: g.$text-13; /* 🌟 폰트 변수 적용 */
         font-weight: 600;
       }
     }
   }
 
-  /* 호버 동영상 부드럽게 등장하는 애니메이션 */
+  /* 페이드 인 애니메이션 효과 */
   @keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .animate-fade-in {

@@ -119,6 +119,20 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         set({ netflixOriginals: shuffled });
     },
     //스틸컷(백드롭) 가져오기
+    movieImages: {},
+    onFetchMovieImages: async (id) => {
+        const movieId = Number(id);
+        const { movieImages } = get();
+        if (movieImages[movieId]) return;
+        const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/images?api_key=${TMDB_KEY}&include_image_language=null,en,ko`);
+        const data = await res.json();
+        set((state) => ({
+            movieImages: {
+                ...state.movieImages,
+                [movieId]: data.backdrops || []
+            }
+        }));
+    },
     tvImages: {},
     onFetchTvImages: async (id) => {
         const tvId = Number(id);

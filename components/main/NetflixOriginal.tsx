@@ -28,8 +28,8 @@ export default function NetflixOriginal() {
 
   return (
     <section className="netflix-original-section">
-      <div className="inner">
-        <SectionTitle title='오리지널' subTitle='새로운 작품들을 시청해보세요' />
+      
+        {/* <SectionTitle title='오리지널' subTitle='새로운 작품들을 시청해보세요' /> */}
 
         <div className="original-wrap">
           {/* 좌측 고정 로고 영역 */}
@@ -48,9 +48,9 @@ export default function NetflixOriginal() {
             <Swiper
               modules={[Navigation]}
               navigation
-              slidesPerView={4}
+              slidesPerView={6}
               spaceBetween={12}
-              slidesPerGroup={4}
+              slidesPerGroup={6}
               className="original-swiper"
             >
               {netflixOriginals.map((tv) => (
@@ -72,7 +72,7 @@ export default function NetflixOriginal() {
             </Swiper>
           </div>
         </div>
-
+      <div className="inner">
         {/* 하단 조각 배너: 단일 작품 + 그 작품의 여러 스틸컷 */}
         {bannerTv && <OriginalBanner tv={bannerTv} pieces={7} />}
       </div>
