@@ -6,7 +6,7 @@ $main-color: #e50914;
 $bg-color: #141414;
 $w-color: #ffffff; // 흰색
 $d-color: #000000; // 검정색
-$g-color: #454545; // 회색
+$g-color: #999999; // 회색 (DS: --gray1)
 // TEXT-SIZE
 $text-12: 0.75rem; // 12px
 $text-13: 0.8125rem; // 13px
@@ -30,11 +30,11 @@ $radius-lg: 16px;
 }
 
 /* header */
-$header-height: 60px;
-$main-menu-width: 60px;
+$header-height: 56px;
+$main-menu-width: 80px;
 $main-menu-color: #8a8a88;
 // GAP
-$section-gap: 50px;
+$section-gap: 40px;
 
 * {
   margin: 0;
@@ -95,5 +95,11 @@ main {
 .main-page-wrap{
   section{
     margin-top: $section-gap;
+
+    .inner {
+      margin-left: 0;
+      margin-right: 0;
+      padding-left: clamp(24px, calc((100vw - $main-menu-width - 1600px) / 2), 80px);
+    }
   }
 }
