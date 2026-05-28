@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { KeyboardEvent, PointerEvent } from "react";
+import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
 import { useMovieStore } from "@/store/useMovieStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -26,14 +28,17 @@ function getStars(rating: number) {
 
 export default function RankingSection() {
   const { trendingMovies, onFetchTrending } = useMovieStore();
+  const { currentProfile } = useAuthStore();
 
   const [activeId, setActiveId] = useState<number | null>(null);
   const [slideProgress, setSlideProgress] = useState(0);
+  const [isAutoPaused, setIsAutoPaused] = useState(false);
 
   const swiperRef = useRef<SwiperClass | null>(null);
   const pointerStartRef = useRef({ x: 0, y: 0 });
   const isDraggingRef = useRef(false);
   const isSwiperDraggingRef = useRef(false);
+  const isActiveHoverRef = useRef(false);
 
   useEffect(() => {
     if (!trendingMovies.length) {
@@ -41,13 +46,22 @@ export default function RankingSection() {
     }
   }, [onFetchTrending, trendingMovies.length]);
 
-  const rankingItems = useMemo(
-    () =>
-      trendingMovies
-        .filter((movie) => movie.poster_path && movie.backdrop_path)
-        .slice(0, 10),
-    [trendingMovies],
-  );
+  const rankingItems = useMemo(() => {
+    const filteredMovies = trendingMovies
+      .filter((movie) => movie.poster_path && movie.backdrop_path)
+      .slice(0, 18);
+    const profileOffset = currentProfile ? (currentProfile.id - 1) * 3 : 0;
+    const personalizedMovies = [
+      ...filteredMovies.slice(profileOffset),
+      ...filteredMovies.slice(0, profileOffset),
+    ];
+
+    return personalizedMovies.slice(0, 10);
+  }, [currentProfile, trendingMovies]);
+
+  useEffect(() => {
+    setActiveId(rankingItems[0]?.id ?? null);
+  }, [currentProfile?.id, rankingItems]);
 
   useEffect(() => {
     if (!activeId && rankingItems[0]) {
@@ -55,12 +69,33 @@ export default function RankingSection() {
     }
   }, [activeId, rankingItems]);
 
-  const selectRankingItem = (id: number, index: number) => {
-    const swiper = swiperRef.current;
-    const canClick = (swiper as (SwiperClass & { allowClick?: boolean }) | null)
-      ?.allowClick;
+  useEffect(() => {
+    if (rankingItems.length <= 1 || isAutoPaused) return;
 
-    if (isDraggingRef.current || isSwiperDraggingRef.current || canClick === false) {
+    const timer = window.setInterval(() => {
+      const currentIndex = rankingItems.findIndex((item) => item.id === activeId);
+      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % rankingItems.length : 0;
+      const nextItem = rankingItems[nextIndex];
+
+      if (!nextItem) return;
+
+      setActiveId(nextItem.id);
+
+      window.requestAnimationFrame(() => {
+        const swiper = swiperRef.current;
+
+        if (!swiper) return;
+
+        swiper.update();
+        swiper.slideTo(Math.max(nextIndex - 1, 0), 420);
+      });
+    }, 3000);
+
+    return () => window.clearInterval(timer);
+  }, [activeId, isAutoPaused, rankingItems]);
+
+  const selectRankingItem = (id: number, index: number) => {
+    if (isDraggingRef.current || isSwiperDraggingRef.current) {
       isDraggingRef.current = false;
       return;
     }
@@ -91,6 +126,7 @@ export default function RankingSection() {
   };
 
   const handlePointerDown = (event: PointerEvent) => {
+    setIsAutoPaused(true);
     pointerStartRef.current = {
       x: event.clientX,
       y: event.clientY,
@@ -107,10 +143,18 @@ export default function RankingSection() {
     }
   };
 
+  const handlePointerEnd = () => {
+    window.setTimeout(() => {
+      if (!isSwiperDraggingRef.current && !isActiveHoverRef.current) {
+        setIsAutoPaused(false);
+      }
+    }, 0);
+  };
+
   if (!rankingItems.length) {
     return (
       <section className="ranking-section">
-        <SectionTitle title='랭킹' subTitle='새로운 작품들을 시청해보세요' />
+        <SectionTitle title='방구석 TOP 10' subTitle={`${currentProfile?.name ?? "유저"}님 취향에 맞춘 오늘의 추천`} />
 
         <div className="ranking-skeleton-row">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -124,7 +168,7 @@ export default function RankingSection() {
   return (
     <section className="ranking-section">
       <div className="inner">
-        <SectionTitle title='랭킹' subTitle='새로운 작품들을 시청해보세요' />
+        <SectionTitle title='방구석 TOP 10' subTitle={`${currentProfile?.name ?? "유저"}님 취향에 맞춘 오늘의 추천`} />
       </div>
 
       <div className="ranking-swiper-wrap">
@@ -146,13 +190,19 @@ export default function RankingSection() {
           }}
           onSliderMove={() => {
             isSwiperDraggingRef.current = true;
+            setIsAutoPaused(true);
+          }}
+          onTouchStart={() => {
+            setIsAutoPaused(true);
           }}
           onTouchMove={() => {
             isSwiperDraggingRef.current = true;
+            setIsAutoPaused(true);
           }}
           onTouchEnd={() => {
             window.setTimeout(() => {
               isSwiperDraggingRef.current = false;
+              setIsAutoPaused(false);
             }, 0);
           }}
           onProgress={(_, progress) => {
@@ -183,6 +233,21 @@ export default function RankingSection() {
                   className={`ranking-card ${isActive ? "active" : ""}`}
                   onPointerDown={handlePointerDown}
                   onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerEnd}
+                  onPointerCancel={handlePointerEnd}
+                  onPointerLeave={handlePointerEnd}
+                  onMouseEnter={() => {
+                    if (isActive) {
+                      isActiveHoverRef.current = true;
+                      setIsAutoPaused(true);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (isActive) {
+                      isActiveHoverRef.current = false;
+                      if (!isSwiperDraggingRef.current) setIsAutoPaused(false);
+                    }
+                  }}
                   {...cardRoleProps}
                 >
                   <span className="ranking-card-poster">
@@ -225,8 +290,10 @@ export default function RankingSection() {
                     </span>
 
                     <span className="ranking-detail-actions">
-                      <button type="button">상세보기</button>
-                      <button type="button">재생</button>
+                      <Link href={`/detail/movie/${movie.id}`}>상세보기</Link>
+                      <Link href={`/detail/movie/${movie.id}?play=1`}>
+                        재생
+                      </Link>
                     </span>
                   </span>
 

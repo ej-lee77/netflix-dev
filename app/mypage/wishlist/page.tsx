@@ -1,109 +1,228 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useMovieStore } from "@/store/useMovieStore";
-import "../../scss/mediaList.scss";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import "../scss/wishlist.scss";
 
-type FilterType = "all" | "movie" | "tv";
+// ─── 타입 ─────────────────────────────────────────────────────────────────────
+
+type FilterType = "all" | "movie" | "tv" | "animation";
 type SortType = "recent" | "title" | "rating";
 
+// ─── 탭 정의 ──────────────────────────────────────────────────────────────────
+
+const TABS: { key: FilterType; label: string }[] = [
+  { key: "all", label: "전체리스트" },
+  { key: "movie", label: "영화" },
+  { key: "tv", label: "드라마" },
+  { key: "animation", label: "애니메이션" },
+];
+
+const SORT_OPTIONS: { key: SortType; label: string }[] = [
+  { key: "recent", label: "최근 찜한 순" },
+  { key: "title", label: "제목순" },
+  { key: "rating", label: "평점순" },
+];
+
+// "n일 전 찜" 텍스트 생성 (addedAt ISO 문자열 기준)
+function formatAddedTime(addedAt: string): string {
+  if (!addedAt) return ""; // ID만 저장하는 구조: 찜 시각 미보관
+  const added = new Date(addedAt).getTime();
+  const now = Date.now();
+  const diffDays = Math.floor((now - added) / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return "오늘 찜";
+  if (diffDays < 7) return `${diffDays}일 전 찜`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전 찜`;
+  return `${Math.floor(diffDays / 30)}달 전 찜`;
+}
+
 export default function WishlistPage() {
-  const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
+  const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
+  const { user } = useAuthStore();
+
   const [filter, setFilter] = useState<FilterType>("all");
   const [sort, setSort] = useState<SortType>("recent");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 찜 목록 불러오기
   useEffect(() => {
-    if (popMovies.length === 0) onFetchPopular();
-    if (tvs.length === 0) onFetchTvs();
-  }, []);
+    const load = async () => {
+      setIsLoading(true);
+      await onLoadWishlist();
+      setIsLoading(false);
+    };
+    load();
+  }, [user]);
 
-  // 위시리스트는 실제로 firebase 연동이 필요하지만, 데모용으로 TMDB 데이터 사용
-  const movieItems = popMovies.slice(0, 8).map((m) => ({
-    id: m.id,
-    title: m.title,
-    poster_path: m.poster_path,
-    backdrop_path: m.backdrop_path,
-    vote_average: m.vote_average,
-    type: "movie" as const,
-  }));
-
-  const tvItems = tvs.slice(0, 8).map((t) => ({
-    id: t.id,
-    title: t.name,
-    poster_path: t.poster_path,
-    backdrop_path: t.backdrop_path,
-    vote_average: t.vote_average,
-    type: "tv" as const,
-  }));
-
-  let items = filter === "all" ? [...movieItems, ...tvItems] : filter === "movie" ? movieItems : tvItems;
+  // 필터링
+  const filtered = wishlist.filter((item) => {
+    if (filter === "all") return true;
+    if (filter === "movie") return item.genre === "movie";
+    if (filter === "tv") return item.genre === "drama";
+    if (filter === "animation") return item.genre === "animation";
+    return true;
+  });
 
   // 정렬
-  if (sort === "title") {
-    items = [...items].sort((a, b) => a.title.localeCompare(b.title));
-  } else if (sort === "rating") {
-    items = [...items].sort((a, b) => b.vote_average - a.vote_average);
-  }
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "recent") {
+      return 0; // 배열 순서가 이미 최신 찜 순 (맨 앞이 최근)
+    }
+    if (sort === "title") return a.title.localeCompare(b.title);
+    if (sort === "rating") return b.vote_average - a.vote_average;
+    return 0;
+  });
+
+  // 각 탭별 개수
+  const getCount = (key: FilterType) => {
+    if (key === "all") return wishlist.length;
+    if (key === "movie") return wishlist.filter((i) => i.genre === "movie").length;
+    if (key === "tv") return wishlist.filter((i) => i.genre === "drama").length;
+    if (key === "animation") return wishlist.filter((i) => i.genre === "animation").length;
+    return 0;
+  };
+
+  const currentSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label;
+
+  // 찜 해제 핸들러
+  const handleRemove = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
+    await onRemoveWish(id);
+  };
 
   return (
-    <div className="media-list-page">
-      <div className="inner">
-        <div className="page-head">
-          <h1>위시리스트</h1>
-          <p>찜한 작품 {items.length}개</p>
+    <div className="wishlist-page">
+      <div className="wishlist-inner">
+        {/* ── 헤더 ──────────────────────────────────────────────────────── */}
+        <div className="wishlist-header">
+          <h1 className="wishlist-title">위시리스트</h1>
+          <p className="wishlist-subtitle">내가 찜한 모든 작품</p>
         </div>
 
-        <div className="filter-row">
-          <div className="filter-chips">
-            <button
-              className={filter === "all" ? "chip active" : "chip"}
-              onClick={() => setFilter("all")}
-            >
-              전체 {movieItems.length + tvItems.length}
-            </button>
-            <button
-              className={filter === "movie" ? "chip active" : "chip"}
-              onClick={() => setFilter("movie")}
-            >
-              영화 {movieItems.length}
-            </button>
-            <button
-              className={filter === "tv" ? "chip active" : "chip"}
-              onClick={() => setFilter("tv")}
-            >
-              시리즈 {tvItems.length}
-            </button>
-          </div>
-          <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value as SortType)}>
-            <option value="recent">최근 찜한 순</option>
-            <option value="title">제목순</option>
-            <option value="rating">평점 높은순</option>
-          </select>
-        </div>
-
-        {items.length > 0 ? (
-          <div className="poster-grid">
-            {items.map((item) => (
-              <Link
-                key={`${item.type}-${item.id}`}
-                href={`/detail/${item.type}/${item.id}`}
-                className="poster-card"
+        {/* ── 탭 + 정렬 ─────────────────────────────────────────────────── */}
+        <div className="wishlist-toolbar">
+          <div className="wishlist-tabs">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={`tab-btn${filter === tab.key ? " is-active" : ""}`}
+                onClick={() => setFilter(tab.key)}
               >
-                <div className="poster">
-                  {item.poster_path && (
-                    <img src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} alt={item.title} />
-                  )}
-                  <span className="type-tag">{item.type === "movie" ? "영화" : "TV"}</span>
-                </div>
-                <h3>{item.title}</h3>
-                <p className="rating">★ {item.vote_average.toFixed(1)}</p>
-              </Link>
+                {tab.label}
+                <span className="tab-count">{getCount(tab.key)}</span>
+              </button>
             ))}
           </div>
+
+          {/* 정렬 드롭다운 */}
+          <div className="wishlist-sort">
+            <button
+              type="button"
+              className="sort-btn"
+              onClick={() => setSortOpen((v) => !v)}
+            >
+              {currentSortLabel}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                className={`sort-arrow${sortOpen ? " is-open" : ""}`}
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {sortOpen && (
+              <ul className="sort-menu">
+                {SORT_OPTIONS.map((opt) => (
+                  <li key={opt.key}>
+                    <button
+                      type="button"
+                      className={`sort-option${sort === opt.key ? " is-selected" : ""}`}
+                      onClick={() => {
+                        setSort(opt.key);
+                        setSortOpen(false);
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* ── 컨텐츠 ────────────────────────────────────────────────────── */}
+        {isLoading ? (
+          // 로딩 중 스켈레톤
+          <ul className="wishlist-grid">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li key={i} className="wish-card">
+                <div className="wish-poster wish-poster-skeleton" />
+                <div className="wish-info">
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line short" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : !user ? (
+          // 비로그인 상태
+          <div className="wishlist-empty">
+            <p className="empty-text">로그인하고 찜한 작품을 확인하세요</p>
+            <Link href="/login" className="empty-cta">로그인하기</Link>
+          </div>
+        ) : sorted.length > 0 ? (
+          // 찜 목록 표시
+          <ul className="wishlist-grid">
+            {sorted.map((item) => (
+              <li key={`${item.mediaType}-${item.id}`} className="wish-card">
+                <Link href={`/detail/${item.mediaType}/${item.id}`} className="wish-card-link">
+                  <div className="wish-poster">
+                    {item.poster_path ? (
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                        alt={item.title}
+                      />
+                    ) : (
+                      <div className="wish-poster-empty" />
+                    )}
+                    {/* 호버 시 나타나는 찜 해제 버튼 */}
+                    <button
+                      type="button"
+                      className="wish-remove"
+                      aria-label="찜 해제"
+                      onClick={(e) => handleRemove(e, item.id)}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="wish-info">
+                    <h3 className="wish-card-title">{item.title}</h3>
+                    {formatAddedTime(item.addedAt) && (
+                      <p className="wish-added">{formatAddedTime(item.addedAt)}</p>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <div className="empty">
-            <p>아직 찜한 작품이 없어요</p>
-            <Link href="/" className="btn-primary">작품 둘러보기</Link>
+          // 찜한 작품이 없을 때
+          <div className="wishlist-empty">
+            <p className="empty-text">아직 찜한 작품이 없어요</p>
+            <Link href="/" className="empty-cta">작품 둘러보기</Link>
           </div>
         )}
       </div>

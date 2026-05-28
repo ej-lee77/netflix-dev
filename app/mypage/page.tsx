@@ -8,7 +8,7 @@ import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
 
 export default function MyPage() {
-  const { user, currentMember, onLogout } = useAuthStore();
+  const { user, currentProfile, currentMember, onLogout } = useAuthStore();
   const { playList, onLoadPlayList } = usePlayListStore();
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
 
@@ -18,18 +18,32 @@ export default function MyPage() {
     if (tvs.length === 0) onFetchTvs();
   }, []);
 
-  const currentProfile = user?.profiles?.[0];
+  const activeProfile = currentProfile ?? user?.profiles?.[0] ?? null;
+  const profileIndex = Math.max((activeProfile?.id ?? 1) - 1, 0);
 
   // 가짜 통계 (실제로는 firebase에서 가져옴)
   const stats = {
-    watched: playList.length,
-    wishlist: 38,
-    review: 24,
-    badge: 12,
+    watched: playList.length + profileIndex * 2,
+    wishlist: 38 + profileIndex * 3,
+    review: 24 + profileIndex,
+    badge: 12 + (profileIndex % 3),
   };
 
+  const profileMovies = [
+    ...popMovies.slice(profileIndex),
+    ...popMovies.slice(0, profileIndex),
+  ];
+  const profileTvs = [
+    ...tvs.slice(profileIndex),
+    ...tvs.slice(0, profileIndex),
+  ];
+  const profilePlayList = [
+    ...playList.slice(profileIndex),
+    ...playList.slice(0, profileIndex),
+  ];
+
   // 더미 친구 활동 (실제 TMDB 데이터로 만듦)
-  const friendActivities = popMovies.slice(0, 3).map((m, i) => ({
+  const friendActivities = profileMovies.slice(0, 3).map((m, i) => ({
     id: m.id,
     title: m.title,
     poster: m.poster_path,
@@ -39,7 +53,7 @@ export default function MyPage() {
   }));
 
   // 최근 리뷰 더미
-  const myReviews = popMovies.slice(0, 2).map((m, i) => ({
+  const myReviews = profileMovies.slice(0, 2).map((m, i) => ({
     id: m.id,
     title: m.title,
     poster: m.poster_path,
@@ -69,13 +83,13 @@ export default function MyPage() {
         <div className="profile-summary">
           <div className="profile-avatar">
             <img
-              src={currentProfile?.imgUrl || "/images/profile/normal.svg"}
-              alt={currentProfile?.name || "프로필"}
+              src={activeProfile?.imgUrl || "/images/profile/normal.svg"}
+              alt={activeProfile?.name || "프로필"}
             />
             <button className="edit-badge">✎</button>
           </div>
           <div className="profile-info">
-            <h2>{currentProfile?.name || currentMember || "사용자"}</h2>
+            <h2>{activeProfile?.name || currentMember || "사용자"}</h2>
             <p className="email">{user?.email || "guest@example.com"}</p>
             <span className="plan-badge">★ 스탠다드 · 다음 결제 2026.06.22</span>
           </div>
@@ -132,7 +146,7 @@ export default function MyPage() {
           </div>
           {playList.length > 0 ? (
             <div className="poster-row">
-              {playList.slice(0, 6).map((item) => (
+              {profilePlayList.slice(0, 6).map((item) => (
                 <Link
                   key={item.id}
                   href={`/detail/${item.mediaType}/${item.id}`}
@@ -159,7 +173,7 @@ export default function MyPage() {
             <Link href="/mypage/wishlist" className="more">전체 {stats.wishlist}개 →</Link>
           </div>
           <div className="poster-row">
-            {tvs.slice(0, 6).map((item) => (
+            {profileTvs.slice(0, 6).map((item) => (
               <Link key={item.id} href={`/detail/tv/${item.id}`} className="poster-item">
                 <div className="poster-img">
                   {item.poster_path && (

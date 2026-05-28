@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
 import "./detail.module.scss";
 
@@ -12,6 +14,7 @@ interface DetailClientProps {
 }
 
 type DetailMedia = (Movie | TV) & {
+  adult?: boolean;
   created_by?: { id: number; name: string }[];
   first_air_date?: string;
   genres?: { id: number; name: string }[];
@@ -100,6 +103,8 @@ function getMoodTags(genres?: { id: number; name: string }[]) {
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
+  const searchParams = useSearchParams();
+  const shouldAutoPlay = searchParams.get("play") === "1";
 
   const {
     tvs, tvVideos, onFetchTvs, onFetchTvVideos,
@@ -110,6 +115,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     casts, onFetchCredits,
     recommended, onFetchRecommended,
     movieImages, onFetchMovieImages,
+    certifications, onFetchCertification,
   } = useMovieStore();
 
   const { onAddPlayList, onAddMyList } = usePlayListStore();
@@ -134,6 +140,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const stillsRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const hasAutoPlayed = useRef(false);
 
   const onStillsMouseDown = () => { isDragging.current = true; };
   const onStillsMouseMove = (e: React.MouseEvent) => {
@@ -141,6 +148,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     stillsRef.current.scrollLeft -= e.movementX;
   };
   const onStillsMouseUp = () => { isDragging.current = false; };
+
+  // 찜 버튼 상태 표시를 위해 위시리스트 로드
+  useEffect(() => {
+    onLoadWishlist();
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -215,6 +227,14 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const moodTags = getMoodTags(mediaItem?.genres);
   const castKey = `${type}-${mediaId}`;
   const castList: CastMember[] = casts[castKey] ?? [];
+
+  const rawCert = certifications[castKey] ?? "";
+  const ageBadge = ((): "ALL" | "12+" | "15+" | "19+" => {
+    if (rawCert === "12") return "12+";
+    if (rawCert === "15") return "15+";
+    if (rawCert === "19" || rawCert === "Restricted Screening") return "19+";
+    return "ALL";
+  })();
   const directorList = isTv
     ? mediaItem?.created_by ?? []
     : castList.filter((m) => m.order <= 2).slice(0, 3);
@@ -322,6 +342,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     setHoverStar(0);
     setReviewPage(1);
   };
+
+  useEffect(() => {
+    if (!shouldAutoPlay || hasAutoPlayed.current || !mediaItem || !videos) return;
+
+    hasAutoPlayed.current = true;
+    handlePlay();
+  }, [shouldAutoPlay, mediaItem, videos]);
 
   // ─── Render sections ────────────────────────────────────────────────────────
 
@@ -522,9 +549,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button style={{ borderRadius: 100, padding: "8px 14px", background: "rgba(229,9,20,0.12)", border: "1px solid #e50914", color: "#e50914", fontSize: 12, cursor: "pointer" }}>
-            ♡ 찜
-          </button>
           <button style={{ borderRadius: 100, padding: "8px 14px", background: "transparent", border: "1px solid #3a3a48", color: "#888", fontSize: 12, cursor: "pointer" }}>
             ＋ 플레이리스트
           </button>
@@ -750,7 +774,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   gap: 5,
                 }}>
                   <span style={{ fontSize: 12, padding: "2px 7px", borderRadius: 3, background: "rgba(255,255,255,0.15)", color: "#ccc", alignSelf: "flex-start" }}>
-                    {item.media_type === "tv" ? "드라마" : "영화"}
+                    {item.media_type === "tv" ? "시리즈" : "영화"}
                   </span>
                   <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.5 }}>
                     {item.title}
@@ -921,7 +945,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 8 }}>
             <div style={{ display: "none" }}>
               <span style={{ background: "rgba(255, 255, 255, 0.1)", padding: "3px 8px", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "rgba(255, 255, 255, 0.5)" }}>
-                {isTv ? "드라마" : "영화"}
+                {isTv ? "시리즈" : "영화"}
                 {mediaItem?.number_of_seasons ? ` · 시즌 ${mediaItem.number_of_seasons} 진행중` : ""}
               </span>
             </div>
@@ -961,7 +985,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 <>
                   <span style={{ color: "#444" }}>·</span>
                   <span style={{ fontSize: 14, color: "#888" }}>
-                    시즌 {mediaItem.number_of_seasons} / {mediaItem.number_of_episodes}부작
+                    시즌 {mediaItem.number_of_seasons}
                   </span>
                 </>
               )}
@@ -973,7 +997,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               )}
               {mediaItem?.genres && mediaItem.genres.length > 0 && (
                 <>
-                  <span style={{ color: "#444" }}>·</span>
+                  {/* <span style={{ color: "#444" }}>·</span> */}
                   {mediaItem.genres.slice(0, 3).map((g) => (
                     <span key={g.id} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid #555", fontSize: 11, color: "#999" }}>
                       {g.name}
@@ -981,30 +1005,27 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   ))}
                 </>
               )}
-              {countryText && (
+              {/* {countryText && (
                 <>
                   <span style={{ color: "#444" }}>·</span>
                   <span style={{ fontSize: 14, color: "#888" }}>{countryText}</span>
                 </>
-              )}
+              )} */}
             </div>
 
             {/* Score */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontWeight: 700, fontSize: 32, color: "#fff", letterSpacing: -1.5 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ color: "#e50914", fontSize: 16, letterSpacing: -7 }}>★</span>
+              <span style={{ fontWeight: 500, fontSize: 16, color: "#fff" }}>
                 {mediaItem?.vote_average?.toFixed(1) ?? "-"}
               </span>
-              <span style={{ fontSize: 16, color: "#888" }}>/ 10</span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ color: "#e50914", fontSize: 14, letterSpacing: 2 }}>★★★★★</span>
-                {mediaItem?.vote_count && (
-                  <span style={{ fontSize: 12, color: "#888" }}>{mediaItem.vote_count.toLocaleString()}명 평가</span>
-                )}
-              </div>
+              {mediaItem?.vote_count && (
+                <span style={{ fontSize: 14, color: "#888" }}>{mediaItem.vote_count.toLocaleString()}명 평가</span>
+              )}
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
               <button
                 className="detail-primary-hover"
                 onClick={handlePlay}
