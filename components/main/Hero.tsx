@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -37,6 +36,15 @@ type VideoItem = {
 
 type VideosResponse = {
   results?: VideoItem[];
+};
+
+type LogoItem = {
+  file_path: string;
+  iso_639_1: string | null;
+};
+
+type ImagesResponse = {
+  logos?: LogoItem[];
 };
 
 type LoadState = "loading" | "ready" | "error";
@@ -97,32 +105,48 @@ async function fetchHeroItems() {
     throw new Error("TMDB API key is missing.");
   }
 
-  const params = new URLSearchParams({
+  const base = new URLSearchParams({
     api_key: TMDB_KEY,
     language: "ko-KR",
+    with_original_language: "ko",
+    sort_by: "popularity.desc",
+    page: "1",
   });
 
-  const res = await fetch(
-    `${TMDB_BASE}/trending/all/week?${params.toString()}`,
-  );
+  const [movieRes, tvRes] = await Promise.all([
+    fetch(`${TMDB_BASE}/discover/movie?${base.toString()}`),
+    fetch(`${TMDB_BASE}/discover/tv?${base.toString()}`),
+  ]);
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch TMDB trending data.");
+  if (!movieRes.ok || !tvRes.ok) {
+    throw new Error("Failed to fetch TMDB data.");
   }
 
-  const data = (await res.json()) as TrendingResponse;
+  const [movieData, tvData] = await Promise.all([
+    movieRes.json() as Promise<TrendingResponse>,
+    tvRes.json() as Promise<TrendingResponse>,
+  ]);
 
-  return (
-    data.results
-      ?.filter(
-        (item) =>
-          item.overview &&
-          item.backdrop_path &&
-          item.poster_path &&
-          (item.media_type === "movie" || item.media_type === "tv"),
-      )
-      .slice(0, 8) ?? []
-  );
+  const validItem = (item: HeroItem) =>
+    item.overview && item.backdrop_path && item.poster_path;
+
+  const movies = (movieData.results ?? [])
+    .filter(validItem)
+    .slice(0, 5)
+    .map((item) => ({ ...item, media_type: "movie" as MediaType }));
+
+  const tvs = (tvData.results ?? [])
+    .filter(validItem)
+    .slice(0, 5)
+    .map((item) => ({ ...item, media_type: "tv" as MediaType }));
+
+  const combined: HeroItem[] = [];
+  for (let i = 0; i < Math.max(movies.length, tvs.length); i++) {
+    if (movies[i]) combined.push(movies[i]);
+    if (tvs[i]) combined.push(tvs[i]);
+  }
+
+  return combined.slice(0, 8);
 }
 
 async function fetchHeroVideo(item: HeroItem) {
@@ -130,10 +154,7 @@ async function fetchHeroVideo(item: HeroItem) {
   const apiKey = TMDB_KEY;
 
   async function requestVideo(language: string) {
-    const params = new URLSearchParams({
-      api_key: apiKey,
-      language,
-    });
+    const params = new URLSearchParams({ api_key: apiKey, language });
 
     const res = await fetch(
       `${TMDB_BASE}/${item.media_type}/${item.id}/videos?${params.toString()}`,
@@ -154,9 +175,36 @@ async function fetchHeroVideo(item: HeroItem) {
   return (await requestVideo("ko-KR")) || (await requestVideo("en-US"));
 }
 
+async function fetchHeroLogo(item: HeroItem): Promise<string> {
+  if (!TMDB_KEY || !item.media_type) return "";
+
+  const params = new URLSearchParams({
+    api_key: TMDB_KEY,
+    include_image_language: "ko,en,null",
+  });
+
+  const res = await fetch(
+    `${TMDB_BASE}/${item.media_type}/${item.id}/images?${params.toString()}`,
+  );
+
+  if (!res.ok) return "";
+
+  const data = (await res.json()) as ImagesResponse;
+  const logos = data.logos ?? [];
+
+  const logo =
+    logos.find((l) => l.iso_639_1 === "ko") ??
+    logos.find((l) => l.iso_639_1 === "en") ??
+    logos.find((l) => l.iso_639_1 === null) ??
+    logos[0];
+
+  return logo ? `${IMG_BASE}w500${logo.file_path}` : "";
+}
+
 export default function Hero() {
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeLogoUrl, setActiveLogoUrl] = useState("");
   const [activeVideoKey, setActiveVideoKey] = useState("");
   const [currentVideoKey, setCurrentVideoKey] = useState("");
   const [previousVideoKey, setPreviousVideoKey] = useState("");
@@ -197,6 +245,27 @@ export default function Hero() {
 
   useEffect(() => {
     if (!activeItem) {
+      setActiveLogoUrl("");
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadLogo() {
+      const url = await fetchHeroLogo(activeItem);
+      if (!ignore) setActiveLogoUrl(url);
+    }
+
+    setActiveLogoUrl("");
+    loadLogo();
+
+    return () => {
+      ignore = true;
+    };
+  }, [activeItem]);
+
+  useEffect(() => {
+    if (!activeItem) {
       setActiveVideoKey("");
       setIsVideoVisible(false);
       return;
@@ -210,9 +279,7 @@ export default function Hero() {
       if (!ignore) {
         if (videoKey && videoKey === currentVideoKeyRef.current) {
           window.setTimeout(() => {
-            if (!ignore) {
-              setIsVideoVisible(true);
-            }
+            if (!ignore) setIsVideoVisible(true);
           }, 120);
         } else {
           setActiveVideoKey(videoKey);
@@ -232,9 +299,7 @@ export default function Hero() {
     const currentKey = currentVideoKeyRef.current;
 
     if (!activeVideoKey) {
-      if (currentKey) {
-        setPreviousVideoKey(currentKey);
-      }
+      if (currentKey) setPreviousVideoKey(currentKey);
 
       currentVideoKeyRef.current = "";
       setCurrentVideoKey("");
@@ -252,9 +317,7 @@ export default function Hero() {
       return;
     }
 
-    if (currentKey) {
-      setPreviousVideoKey(currentKey);
-    }
+    if (currentKey) setPreviousVideoKey(currentKey);
 
     currentVideoKeyRef.current = activeVideoKey;
     setCurrentVideoKey(activeVideoKey);
@@ -291,15 +354,6 @@ export default function Hero() {
     setActiveIndex(index);
   };
 
-  const handlePrev = () => {
-    if (!items.length) return;
-    setActiveIndex((index) => (index - 1 + items.length) % items.length);
-  };
-
-  const handleNext = () => {
-    if (!items.length) return;
-    setActiveIndex((index) => (index + 1) % items.length);
-  };
 
   if (loadState === "loading") {
     return (
@@ -331,19 +385,12 @@ export default function Hero() {
   }
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
-  const detailHref = `/detail/${activeItem.media_type}/${activeItem.id}`;
-  const playHref = `${detailHref}?play=1`;
   const getVideoSrc = (videoKey: string) =>
     `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1`;
   const visiblePosters = [-2, -1, 0, 1, 2]
     .map((offset) => {
       const index = (activeIndex + offset + items.length) % items.length;
-
-      return {
-        item: items[index],
-        index,
-        offset,
-      };
+      return { item: items[index], index, offset };
     })
     .filter(
       (poster, position, posters) =>
@@ -410,30 +457,17 @@ export default function Hero() {
         })}
       </div>
 
-      <div className="hero-nav" aria-label="히어로 슬라이드 이동">
-        <button
-          className="hero-nav-btn"
-          onClick={handlePrev}
-          type="button"
-          aria-label="이전"
-        >
-          ←
-        </button>
-        <button
-          className="hero-nav-btn"
-          onClick={handleNext}
-          type="button"
-          aria-label="다음"
-        >
-          →
-        </button>
-      </div>
 
       <div className="hero-content">
-        <div className="hero-badge">
-          {activeItem.media_type === "tv" ? "N SERIES" : "N FILM"}
-        </div>
-        <h2 className="hero-logo-text">{getTitle(activeItem)}</h2>
+        {activeLogoUrl ? (
+          <img
+            className="hero-logo-img"
+            src={activeLogoUrl}
+            alt={getTitle(activeItem)}
+          />
+        ) : (
+          <h2 className="hero-logo-text">{getTitle(activeItem)}</h2>
+        )}
         <div className="hero-meta">
           <span className="hero-rating-stars">{meta.stars}</span>
           <span className="hero-rating-val">{meta.rating}</span>
@@ -453,38 +487,23 @@ export default function Hero() {
         </div>
         <p className="hero-desc">{activeItem.overview}</p>
         <div className="hero-btns">
-          <Link
-            className="btn-play"
-            href={playHref}
-            aria-label={`${getTitle(activeItem)} 재생`}
-          >
+          <button className="btn-play" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            <button className="btn-info" type="button">
-              재생하기
-            </button>
+            재생하기
+          </button>
+          <button className="btn-info" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
             상세정보
-          </Link>
+          </button>
         </div>
       </div>
 
-      <div className="hero-dots" aria-label="히어로 슬라이드 선택">
-        {items.map((item, index) => (
-          <button
-            aria-label={`${index + 1}번째 콘텐츠 보기`}
-            className={`hero-dot${index === activeIndex ? " active" : ""}`}
-            key={`${item.media_type}-${item.id}-dot`}
-            onClick={() => selectHeroIndex(index)}
-            type="button"
-          />
-        ))}
-      </div>
     </section>
   );
 }

@@ -110,7 +110,7 @@ export default function MyPage() {
             <h3>재생목록</h3>
             <p>최근 시청 작품</p>
           </Link>
-          <Link href="/mypage/wishlist" className="quick-card">
+          <Link href="/mypage/playlist?tab=wishlist" className="quick-card">
             <div className="icon">♥</div>
             <h3>위시리스트</h3>
             <p>찜한 작품 모음</p>
@@ -160,7 +160,7 @@ export default function MyPage() {
         <section className="section-block">
           <div className="section-h">
             <h2>찜 목록</h2>
-            <Link href="/mypage/wishlist" className="more">전체 {stats.wishlist}개 →</Link>
+            <Link href="/mypage/playlist?tab=wishlist" className="more">전체 {stats.wishlist}개 →</Link>
           </div>
           <div className="poster-row">
             {tvs.slice(0, 6).map((item) => (

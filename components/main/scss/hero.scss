@@ -126,8 +126,8 @@
     right: 48px;
     bottom: 54px;
     z-index: 10;
-    width: min(48vw, 620px);
-    height: 250px;
+    width: min(56vw, 760px);
+    height: 325px;
     pointer-events: none;
   }
 
@@ -136,8 +136,8 @@
     top: 20px;
     left: 50%;
     display: block;
-    width: 148px;
-    height: 210px;
+    width: 190px;
+    height: 275px;
     overflow: hidden;
     color: #fff;
     background: rgba(224, 224, 224, 0.5);
@@ -162,10 +162,10 @@
 
   .hero-poster.before-2,
   .hero-poster.after-2 {
-    top: 36px;
+    top: 42px;
     z-index: 1;
-    width: 132px;
-    height: 186px;
+    width: 170px;
+    height: 242px;
     opacity: 0.42;
   }
 
@@ -177,16 +177,16 @@
   .hero-poster.before-1 {
     left: 29%;
     z-index: 3;
-    width: 148px;
-    height: 222px;
+    width: 190px;
+    height: 290px;
     transform: translateX(-50%);
   }
 
   .hero-poster.active {
     top: 0;
     z-index: 6;
-    width: 172px;
-    height: 250px;
+    width: 220px;
+    height: 325px;
     opacity: 1;
     transform: translateX(-50%);
     box-shadow: 0 22px 46px rgba(0, 0, 0, 0.48);
@@ -196,8 +196,8 @@
     right: auto;
     left: 71%;
     z-index: 3;
-    width: 148px;
-    height: 222px;
+    width: 190px;
+    height: 290px;
     transform: translateX(-50%);
   }
 
@@ -306,6 +306,15 @@
     text-transform: uppercase;
     background: rgba(255, 255, 255, 0.10);
     border-radius: 4px;
+  }
+
+  .hero-logo-img {
+    display: block;
+    max-width: 460px;
+    max-height: 160px;
+    margin-bottom: 16px;
+    object-fit: contain;
+    object-position: left center;
   }
 
   .hero-logo-text {

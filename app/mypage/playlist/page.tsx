@@ -1,13 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { usePlayListStore } from "@/store/usePlayListStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv";
+type WishFilterType = "all" | "movie" | "drama" | "animation";
+type WishSortType = "recent" | "title" | "rating";
 
 interface CustomPlaylist {
   id: string;
@@ -39,6 +44,24 @@ const tabs: { id: ActivityTab; label: string }[] = [
   { id: "wishlist", label: "찜하기" },
   { id: "reviews", label: "리뷰" },
   { id: "playlists", label: "플레이리스트" },
+];
+
+// URL ?tab= 값이 유효한 탭인지 확인
+const isActivityTab = (value: string | null): value is ActivityTab =>
+  value === "watching" || value === "history" || value === "wishlist" ||
+  value === "reviews" || value === "playlists";
+
+const wishTabs: { key: WishFilterType; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "movie", label: "영화" },
+  { key: "drama", label: "드라마" },
+  { key: "animation", label: "애니메이션" },
+];
+
+const wishSortOptions: { key: WishSortType; label: string }[] = [
+  { key: "recent", label: "최근 찜한 순" },
+  { key: "title", label: "제목순" },
+  { key: "rating", label: "평점순" },
 ];
 
 const getItemKey = (item: Pick<PlayListItem, "id" | "mediaType">) => `${item.mediaType}-${item.id}`;
@@ -83,6 +106,14 @@ const loadUserReviews = () => {
 };
 
 export default function PlaylistPage() {
+  return (
+    <Suspense fallback={null}>
+      <ActivityContent />
+    </Suspense>
+  );
+}
+
+function ActivityContent() {
   const {
     playList,
     myList,
@@ -91,13 +122,29 @@ export default function PlaylistPage() {
     onRemovePlayList,
     onRemoveMyList,
   } = usePlayListStore();
+  const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
+  const { user } = useAuthStore();
+  const searchParams = useSearchParams();
+
   const [activeTab, setActiveTab] = useState<ActivityTab>("watching");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [wishFilter, setWishFilter] = useState<WishFilterType>("all");
+  const [wishSort, setWishSort] = useState<WishSortType>("recent");
+  const [wishSortOpen, setWishSortOpen] = useState(false);
+  const [wishLoading, setWishLoading] = useState(true);
   const [playlistTitle, setPlaylistTitle] = useState("");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionPage, setSelectionPage] = useState(1);
   const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
   const [reviews, setReviews] = useState<ActivityReview[]>(loadUserReviews);
+
+  // 헤더 메뉴에서 ?tab=wishlist / ?tab=playlists 로 들어오면 해당 탭 열기
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (isActivityTab(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     onLoadPlayList();
@@ -109,12 +156,49 @@ export default function PlaylistPage() {
     return () => window.clearTimeout(timeoutId);
   }, [onLoadPlayList, onLoadMyList]);
 
+  // 찜 목록 불러오기
+  useEffect(() => {
+    const load = async () => {
+      setWishLoading(true);
+      await onLoadWishlist();
+      setWishLoading(false);
+    };
+    load();
+  }, [user]);
+
   const watchItems = playList;
   const listItems = myList;
   const watchingItems = watchItems.slice(0, 6);
   const filteredHistory = filter === "all" ? watchItems : watchItems.filter((item) => item.mediaType === filter);
   const movieCount = watchItems.filter((item) => item.mediaType === "movie").length;
   const tvCount = watchItems.filter((item) => item.mediaType === "tv").length;
+
+  // ── 찜하기 필터/정렬 ──────────────────────────────────────────────────
+  const wishCount = (key: WishFilterType) => {
+    if (key === "all") return wishlist.length;
+    if (key === "movie") return wishlist.filter((i) => i.genre === "movie").length;
+    if (key === "drama") return wishlist.filter((i) => i.genre === "drama").length;
+    if (key === "animation") return wishlist.filter((i) => i.genre === "animation").length;
+    return 0;
+  };
+
+  const filteredWish = wishlist.filter((item) => {
+    if (wishFilter === "all") return true;
+    return item.genre === wishFilter;
+  });
+
+  const sortedWish = [...filteredWish].sort((a, b) => {
+    if (wishSort === "title") return a.title.localeCompare(b.title);
+    if (wishSort === "rating") return b.vote_average - a.vote_average;
+    return 0; // recent: 배열 순서 유지 (맨 앞이 최근)
+  });
+
+  const currentWishSortLabel = wishSortOptions.find((o) => o.key === wishSort)?.label;
+
+  const handleRemoveWish = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault();
+    await onRemoveWish(id);
+  };
 
   const selectedItems = listItems.filter((item) => selectedKeys.includes(getItemKey(item)));
   const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
@@ -274,15 +358,102 @@ export default function PlaylistPage() {
     </section>
   );
 
+  // ── 찜하기 (위시리스트 통합) ──────────────────────────────────────────
   const renderWishlist = () => (
     <section className="activity-section">
       <div className="section-head">
         <h2>찜하기</h2>
-        <span>0개</span>
+        <span>{wishlist.length}개</span>
       </div>
-      <div className="empty">
-        <p>찜하기 기능은 준비 중이에요.</p>
+
+      <div className="wish-toolbar">
+        <div className="wish-chips">
+          {wishTabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.key}
+              className={wishFilter === tab.key ? "chip active" : "chip"}
+              onClick={() => setWishFilter(tab.key)}
+            >
+              {tab.label} {wishCount(tab.key)}
+            </button>
+          ))}
+        </div>
+
+        <div className="wish-sort">
+          <button
+            type="button"
+            className="wish-sort-btn"
+            onClick={() => setWishSortOpen((v) => !v)}
+          >
+            {currentWishSortLabel}
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className={`wish-sort-arrow${wishSortOpen ? " is-open" : ""}`}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          {wishSortOpen && (
+            <ul className="wish-sort-menu">
+              {wishSortOptions.map((opt) => (
+                <li key={opt.key}>
+                  <button
+                    type="button"
+                    className={`wish-sort-option${wishSort === opt.key ? " is-selected" : ""}`}
+                    onClick={() => {
+                      setWishSort(opt.key);
+                      setWishSortOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
+
+      {wishLoading ? (
+        <div className="history-poster-grid">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <article className="mini-poster-card" key={i}>
+              <div className="mini-poster">
+                <div className="mini-poster__image wish-skeleton" />
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : !user ? (
+        <div className="empty">
+          <p>로그인하고 찜한 작품을 확인하세요.</p>
+          <Link href="/login" className="btn-primary">로그인하기</Link>
+        </div>
+      ) : sortedWish.length > 0 ? (
+        <div className="history-poster-grid">
+          {sortedWish.map((item) => (
+            <article className="mini-poster-card" key={`${item.mediaType}-${item.id}`}>
+              <button
+                type="button"
+                className="mini-delete-btn"
+                onClick={(e) => handleRemoveWish(e, item.id)}
+                aria-label={`${item.title} 찜 해제`}
+              >
+                삭제
+              </button>
+              <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
+                <div className="mini-poster__image">
+                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
+                </div>
+                <h3>{item.title}</h3>
+                <p>★ {item.vote_average.toFixed(1)}</p>
+              </Link>
+            </article>
+          ))}
+        </div>
+      ) : renderEmpty("아직 찜한 작품이 없어요.")}
     </section>
   );
 
@@ -451,7 +622,7 @@ export default function PlaylistPage() {
         <div className="activity-hero">
           <div className="page-head">
             <h1>콘텐츠 활동</h1>
-            <p>내가 시청하고 기록한 모든 작품</p>
+            <p>내가 찜·시청하고 기록한 모든 작품</p>
           </div>
 
           <nav className="activity-tabs" aria-label="콘텐츠 활동 탭">
