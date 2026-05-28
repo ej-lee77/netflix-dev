@@ -159,7 +159,7 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      const defaultProfiles = [{ id: 1, name: nickname, imgUrl: "/images/profile/1.png" }];
+      const defaultProfiles = [{ id: 1, name: nickname, imgUrl: "/images/profile/normal.svg" }];
       onLogin({ ...result.user, profiles: defaultProfiles });
       router.push("/payment");
     } catch (err: any) {

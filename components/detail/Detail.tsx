@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
 
 interface DetailClientProps {
@@ -54,6 +55,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   } = useMovieStore();
 
   const { onAddPlayList } = usePlayListStore();
+  const { onAddWish, onRemoveWish, isWished, onLoadWishlist } = useWishlistStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -80,6 +82,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const onStillClick = (src: string) => {
     if (!isDragging.current) setLightboxSrc(src);
   };
+
+  // 찜 버튼 상태 표시를 위해 위시리스트 로드
+  useEffect(() => {
+    onLoadWishlist();
+  }, []);
 
   useEffect(() => {
     setActiveTab(isTv ? "episodes" : "info");
@@ -399,9 +406,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button style={{ borderRadius: 100, padding: "8px 14px", background: "rgba(229,9,20,0.12)", border: "1px solid #e50914", color: "#e50914", fontSize: 12, cursor: "pointer" }}>
-            ♡ 찜
-          </button>
           <button style={{ borderRadius: 100, padding: "8px 14px", background: "transparent", border: "1px solid #3a3a48", color: "#888", fontSize: 12, cursor: "pointer" }}>
             ＋ 플레이리스트
           </button>
@@ -689,8 +693,25 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               <button style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: "pointer" }}>
                 ＋ 내 리스트
               </button>
-              <button style={{ background: "rgba(229,9,20,0.1)", border: "1px solid #e50914", color: "#e50914", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                ♡
+              <button
+                onClick={() => {
+                  if (!mediaItem) return;
+                  if (isWished(mediaItem.id)) {
+                    onRemoveWish(mediaItem.id);
+                  } else {
+                    onAddWish(mediaItem);
+                  }
+                }}
+                style={{
+                  background: mediaItem && isWished(mediaItem.id) ? "#e50914" : "rgba(229,9,20,0.1)",
+                  border: "1px solid #e50914",
+                  color: mediaItem && isWished(mediaItem.id) ? "#fff" : "#e50914",
+                  width: 40, height: 40, borderRadius: "50%", cursor: "pointer",
+                  fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+                title={mediaItem && isWished(mediaItem.id) ? "찜 해제" : "찜하기"}
+              >
+                {mediaItem && isWished(mediaItem.id) ? "♥" : "♡"}
               </button>
               <button style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 ↗
