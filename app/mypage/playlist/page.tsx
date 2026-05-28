@@ -41,7 +41,7 @@ const SELECTABLE_PAGE_SIZE = 5;
 const tabs: { id: ActivityTab; label: string }[] = [
   { id: "watching", label: "시청중" },
   { id: "history", label: "시청기록" },
-  { id: "wishlist", label: "찜하기" },
+  { id: "wishlist", label: "위시리스트" },
   { id: "reviews", label: "리뷰" },
   { id: "playlists", label: "플레이리스트" },
 ];
@@ -362,7 +362,7 @@ function ActivityContent() {
   const renderWishlist = () => (
     <section className="activity-section">
       <div className="section-head">
-        <h2>찜하기</h2>
+        <h2>위시리스트</h2>
         <span>{wishlist.length}개</span>
       </div>
 
