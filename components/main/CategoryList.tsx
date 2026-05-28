@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -16,11 +17,22 @@ interface MediaListProps {
 
 export default function CategoryList({ category }: MediaListProps) {
   const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos } = useMovieStore();
+  const { currentProfile } = useAuthStore();
   const [hover, setHover] = useState<number | null>(null);
+  const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
+
+  const movieSource = [
+    ...popMovies.slice(profileOffset),
+    ...popMovies.slice(0, profileOffset),
+  ];
+  const tvSource = [
+    ...tvs.slice(profileOffset),
+    ...tvs.slice(0, profileOffset),
+  ];
 
   const currentList =
     category === "movie"
-      ? popMovies.slice(0, 18).map((movie) => ({
+      ? movieSource.slice(0, 18).map((movie) => ({
           id: movie.id,
           title: movie.title,
           backdrop_path: movie.backdrop_path,
@@ -28,7 +40,7 @@ export default function CategoryList({ category }: MediaListProps) {
           videos: popVideos[movie.id],
           fetchVideo: () => onFetchVideo(movie.id),
         }))
-      : tvs.slice(0, 18).map((tv) => ({
+      : tvSource.slice(0, 18).map((tv) => ({
           id: tv.id,
           title: tv.name,
           backdrop_path: tv.backdrop_path,
