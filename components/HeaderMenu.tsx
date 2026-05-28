@@ -4,10 +4,20 @@ import { mainMenus, customMenus } from '@/data/mainMenu'
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export default function HeaderMenu() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // 현재 경로 + 쿼리 (예: /mypage/playlist?tab=wishlist)
+    const queryString = searchParams.toString();
+    const currentUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+    // 메뉴 path가 쿼리를 포함하면 전체 URL로, 아니면 경로만 비교
+    const isMenuActive = (menuPath: string) => (
+        menuPath.includes("?") ? currentUrl === menuPath : pathname === menuPath
+    );
 
     // 🌟 랜덤으로 뽑힌 3개의 메뉴를 저장할 상태(State)
     const [randomMenus, setRandomMenus] = useState<typeof customMenus>([]);
@@ -25,7 +35,7 @@ export default function HeaderMenu() {
         <nav>
             <div className="main-menu sidebar-icons">
                 {mainMenus.map((menu)=>{
-                    const isActive = pathname === menu.path;
+                    const isActive = isMenuActive(menu.path);
                     return(
                     <div key={menu.title} className={`sb-icon ${isActive ? 'active' : ''}`}>
                         <Link href={menu.path}>
@@ -36,7 +46,7 @@ export default function HeaderMenu() {
                 )})}
                 <div className="sb-divider"></div>
                 {randomMenus.map((menu)=>{
-                    const isActive = pathname === menu.path;
+                    const isActive = isMenuActive(menu.path);
                     return(
                     <div key={menu.title} className={`sb-icon ${isActive ? 'active' : ''}`}>
                         <Link href={menu.path}>

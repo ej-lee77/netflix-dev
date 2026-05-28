@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -137,7 +137,9 @@ export default function Header() {
         </div>
       </header>
 
-      <HeaderMenu />
+      <Suspense fallback={null}>
+        <HeaderMenu />
+      </Suspense>
 
       {shouldShowProfileSelect && (
         <section className="profile-select-screen" aria-label="프로필 선택">
