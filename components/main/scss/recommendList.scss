@@ -76,7 +76,7 @@
   .recommend-slide {
     position: relative;
     aspect-ratio: 2 / 1.8;
-    border-radius: 16px;
+    border-radius: 5px;
     overflow: hidden;
     background-color: rgba(g.$d-color, 0.4);
     box-shadow: 0 12px 40px rgba(g.$d-color, 0.5);
@@ -159,9 +159,10 @@
   gap: 8px;
   background-color: rgba(g.$w-color, 0.95);
   color: g.$d-color;
-  padding: 10px 22px;
-  border-radius: 100px;
-  font-size: g.$text-12;
+  padding: 0 18px;
+  height: 46px;
+  border-radius: 4px;
+  font-size: g.$text-16;
   font-weight: 700;
   letter-spacing: 1px;
   border: none;

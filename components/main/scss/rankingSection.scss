@@ -15,9 +15,7 @@
 
   .ranking-swiper-wrap {
     position: relative;
-    // width: min(1600px, calc(100vw - 96px));
-    padding-left: max(1rem, calc((100vw - g.$main-menu-width - 1600px) / 2)) !important;
-    margin: 0 auto;
+    padding-left: clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
     overflow: hidden;
   }
 
@@ -138,13 +136,11 @@
 
       height: 62%;
 
-      background: linear-gradient(
-        to top,
-        rgba(21, 20, 38, 1) 0%,
-        rgba(31, 29, 52, 0.98) 34%,
-        rgba(31, 29, 52, 0.66) 66%,
-        transparent
-      );
+      background: linear-gradient(to top,
+          rgba(21, 20, 38, 1) 0%,
+          rgba(31, 29, 52, 0.98) 34%,
+          rgba(31, 29, 52, 0.66) 66%,
+          transparent);
 
       pointer-events: none;
 
@@ -201,37 +197,44 @@
 
         height: 54%;
 
-        background: linear-gradient(
-          to top,
-          rgba(20, 20, 20, 0.86),
-          transparent
-        );
+        background: linear-gradient(to top,
+            rgba(20, 20, 20, 0.86),
+            transparent);
       }
 
-      > * {
+      >* {
         position: relative;
         z-index: 1;
       }
 
       .ranking-detail-rank {
-        margin-bottom: 8px;
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
 
-        color: #ffffff;
-        font-size: 1rem;
-        font-weight: 800;
+        margin-bottom: 13px;
+        padding: 3px 8px;
+
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 12px;
+        font-weight: 500;
+
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
       }
 
       .ranking-detail-title {
         max-width: 360px;
 
-        margin-bottom: 14px;
+        margin-bottom: 13px;
 
         overflow: hidden;
 
         color: #ffffff;
-        font-size: 1.45rem;
+        font-size: 1.9rem;
         font-weight: 900;
-        line-height: 1.25;
+        line-height: 1.05;
+        letter-spacing: -0.5px;
 
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -239,23 +242,27 @@
 
       .ranking-detail-score {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
 
-        margin-bottom: 18px;
+        margin-bottom: 10px;
+
+        color: rgba(255, 255, 255, 0.65);
+        font-size: 14px;
 
         em {
-          color: g.$main-color;
-          font-size: 3rem;
+          color: #fff;
+          font-size: 14px;
           font-style: normal;
-          font-weight: 900;
+          font-weight: 500;
           line-height: 1;
         }
 
         span {
           color: g.$main-color;
-          font-size: 1rem;
-          letter-spacing: 2px;
+          font-size: 14px;
+          letter-spacing: 0;
         }
       }
 
@@ -264,39 +271,66 @@
 
         max-width: 380px;
 
-        margin-bottom: 24px;
+        margin-bottom: 20px;
 
         overflow: hidden;
 
-        color: rgba(255, 255, 255, 0.68);
-        font-size: 0.9rem;
-        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 14px;
+        line-height: 1.72;
 
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3;
+        line-clamp: 3;
       }
 
       .ranking-detail-actions {
         display: flex;
-        gap: 12px;
+        align-items: center;
+        gap: 10px;
         pointer-events: auto;
 
         button {
-          min-width: 100px;
-          padding: 11px 18px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          height: 46px;
+          padding: 0 22px;
           border: 0;
 
-          color: #ffffff;
-          font-size: 0.875rem;
+          color: #fff;
+          font-size: 16px;
           font-weight: 700;
-          text-align: center;
+          letter-spacing: 0.3px;
 
-          background: rgba(255, 255, 255, 0.12);
           border-radius: 4px;
           cursor: pointer;
+          transition:
+            background 0.15s ease,
+            transform 0.1s ease;
+
+          svg {
+            flex-shrink: 0;
+          }
 
           &:first-child {
-            background: #e50914;
+            background: g.$main-color;
+
+            &:hover {
+              background: #b80710;
+              transform: scale(1.02);
+            }
+          }
+
+          &:last-child {
+            padding: 0 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(4px);
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.2);
+            }
           }
         }
       }
@@ -363,9 +397,10 @@
 
   .ranking-progress {
     position: relative;
-    // width: min(1600px, calc(100vw - 96px));
     height: 4px;
-    margin-top: 18px;
+    margin: 18px clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px) 0;
+    max-width: none;
+    width: auto;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.14);
     border-radius: 999px;

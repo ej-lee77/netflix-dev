@@ -454,7 +454,7 @@ export default function Hero() {
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            Watch Now
+            재생하기
           </button>
           <button className="btn-info" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true">

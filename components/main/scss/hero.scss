@@ -3,9 +3,8 @@
 .hero {
   position: relative;
   width: 100%;
-  height: 50vw;
-  max-height: 800px;
-  min-height: 300px;
+  height: 80vh;
+  min-height: 480px;
   margin-top: 0 !important;
   overflow: hidden;
   background: #141414;
@@ -80,22 +79,15 @@
     cursor: default;
   }
 
-  .hero::after {
+  &::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: 5;
     pointer-events: none;
     background:
-      linear-gradient(
-        to right,
-        rgba(10, 12, 18, 0.68) 0%,
-        rgba(10, 12, 18, 0.18) 42%,
-        rgba(10, 12, 18, 0.04) 72%,
-        rgba(10, 12, 18, 0.22) 100%
-      ),
-      linear-gradient(to top, rgba(10, 12, 18, 0.42) 0%, transparent 34%),
-      linear-gradient(to bottom, rgba(10, 12, 18, 0.24) 0%, transparent 18%);
+      linear-gradient(90deg, rgba(20, 20, 20, 0.55) 0%, rgba(20, 20, 20, 0.25) 45%, transparent 80%),
+      linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.3) 35%, transparent 60%);
   }
 
   .hero-backdrop::after {
@@ -103,26 +95,17 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(
-        to right,
-        rgba(10, 12, 18, 0.72) 0%,
-        rgba(10, 12, 18, 0.24) 40%,
-        rgba(10, 12, 18, 0.04) 70%,
-        transparent 100%
-      ),
-      linear-gradient(to top, rgba(10, 12, 18, 0.42) 0%, transparent 30%),
-      linear-gradient(to bottom, rgba(10, 12, 18, 0.24) 0%, transparent 18%);
+      linear-gradient(90deg, rgba(20, 20, 20, 0.55) 0%, rgba(20, 20, 20, 0.25) 45%, transparent 80%),
+      linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.3) 35%, transparent 60%);
   }
 
   .hero-backdrop.no-img {
-    background: linear-gradient(
-      125deg,
-      #0d1525 0%,
-      #1a2540 30%,
-      #0f1e35 55%,
-      #1a1030 80%,
-      #0d0d1a 100%
-    );
+    background: linear-gradient(125deg,
+        #0d1525 0%,
+        #1a2540 30%,
+        #0f1e35 55%,
+        #1a1030 80%,
+        #0d0d1a 100%);
   }
 
   .hero-backdrop.no-img::before {
@@ -130,16 +113,12 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(
-        ellipse at 62% 38%,
+      radial-gradient(ellipse at 62% 38%,
         rgba(30, 80, 160, 0.32) 0%,
-        transparent 52%
-      ),
-      radial-gradient(
-        ellipse at 82% 18%,
+        transparent 52%),
+      radial-gradient(ellipse at 82% 18%,
         rgba(120, 20, 50, 0.2) 0%,
-        transparent 44%
-      );
+        transparent 44%);
   }
 
   .hero-posters {
@@ -266,11 +245,9 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.88) 0%,
-      transparent 100%
-    );
+    background: linear-gradient(to top,
+        rgba(0, 0, 0, 0.88) 0%,
+        transparent 100%);
   }
 
   .hero-nav {
@@ -311,7 +288,7 @@
   .hero-content {
     position: absolute;
     bottom: 28px;
-    left: 48px;
+    left: clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
     z-index: 10;
     max-width: 520px;
   }
@@ -321,22 +298,22 @@
     align-items: center;
     gap: 5px;
     margin-bottom: 13px;
-    padding: 3px 9px;
-    color: #000;
-    font-size: 9.5px;
-    font-weight: 900;
-    letter-spacing: 1.2px;
+    padding: 3px 8px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
     text-transform: uppercase;
-    background: #f5a623;
-    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 4px;
   }
 
   .hero-logo-text {
     margin-bottom: 13px;
-    font-size: 54px;
+    font-size: 40px;
+    font-weight: 900;
     line-height: 1.05;
-    letter-spacing: 1px;
-    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.85);
+    letter-spacing: -0.8px;
   }
 
   .hero-meta {
@@ -346,7 +323,7 @@
     gap: 10px;
     margin-bottom: 10px;
     color: rgba(255, 255, 255, 0.65);
-    font-size: 11.5px;
+    font-size: 14px;
   }
 
   .hero-meta-sep {
@@ -354,14 +331,14 @@
   }
 
   .hero-rating-stars {
-    color: #f5c518;
-    font-size: 13px;
+    color: #E50914;
+    font-size: 14px;
   }
 
   .hero-rating-val {
     color: #fff;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 500;
   }
 
   .hero-age-badge {
@@ -377,7 +354,7 @@
     margin-bottom: 20px;
     overflow: hidden;
     color: rgba(255, 255, 255, 0.72);
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.72;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
@@ -402,9 +379,10 @@
 
   .btn-play {
     gap: 8px;
-    padding: 11px 28px;
+    height: 46px;
+    padding: 0 22px;
     color: #fff;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.3px;
     background: g.$main-color;
@@ -423,12 +401,13 @@
 
   .btn-info {
     gap: 7px;
-    padding: 11px 22px;
+    height: 46px;
+    padding: 0 18px;
     color: #fff;
-    font-size: 14px;
-    font-weight: 500;
-    background: rgba(255, 255, 255, 0.11);
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    font-size: 16px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(4px);
   }
 
