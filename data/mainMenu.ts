@@ -14,12 +14,12 @@ export const mainMenus: mainMenu[] = [
   {
     title: "재생목록",
     imgUrl: "/images/header/menu/playlist.svg",
-    path: "/mypage/playlist",
+    path: "/mypage/playlist?tab=playlists",
   },
   {
     title: "위시리스트",
     imgUrl: "/images/header/menu/wishlist.svg",
-    path: "/mypage/wishlist",
+    path: "/mypage/playlist?tab=wishlist",
   },
   // {
   //     title: "시청이력",
