@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useMovieStore } from '@/store/useMovieStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import type { Swiper as SwiperClass } from 'swiper';
@@ -19,28 +20,34 @@ import SectionTitle from '../common/SectionTitle';
  */
 export default function RecommendList() {
   const { recommended, onFetchRecommended } = useMovieStore();
+  const { currentProfile } = useAuthStore();
   const [activeBackdrop, setActiveBackdrop] = useState<{ id: number; backdropPath: string } | null>(null);
+  const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 2;
+  const profileRecommended = [
+    ...recommended.slice(profileOffset),
+    ...recommended.slice(0, profileOffset),
+  ];
 
   useEffect(() => {
     onFetchRecommended();
   }, []);
 
   useEffect(() => {
-    if (recommended.length > 0 && !activeBackdrop) {
-      const first = recommended[0];
+    if (profileRecommended.length > 0) {
+      const first = profileRecommended[0];
       setActiveBackdrop({ id: first.id, backdropPath: first.backdrop_path });
     }
-  }, [recommended]);
+  }, [currentProfile?.id, recommended]);
 
   const handleSlideChange = (swiper: SwiperClass) => {
     const idx = swiper.realIndex;
-    const item = recommended[idx];
+    const item = profileRecommended[idx];
     if (item) {
       setActiveBackdrop({ id: item.id, backdropPath: item.backdrop_path });
     }
   };
 
-  if (recommended.length === 0) return null;
+  if (profileRecommended.length === 0) return null;
 
   const sectionBg = activeBackdrop?.backdropPath
     ? `https://image.tmdb.org/t/p/original${activeBackdrop.backdropPath}`
@@ -84,7 +91,7 @@ export default function RecommendList() {
             1700: { slidesPerView: 3, spaceBetween: 100 },
           }}
         >
-          {recommended.map((item) => (
+          {profileRecommended.map((item) => (
             <SwiperSlide key={`${item.media_type}-${item.id}`}>
               <div className="recommend-slide">
                 {/* 상단 - 포스터 영역 */}
