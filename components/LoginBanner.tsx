@@ -11,12 +11,12 @@ import "./scss/loginBanner.scss";
  * - 로그인 상태면 표시 안 함
  * - 로그인/회원가입/결제 등 인증 관련 페이지에서는 표시 안 함
  * - 닫기 버튼으로 한 번 닫으면 세션 동안 다시 안 뜸
- * - "구독 시작하기" → /signup
+ * - "구독 시작하기" → /signin
  * - "플랜 소개" → /plan
  */
 
 // 배너를 표시하지 않을 경로들
-const HIDDEN_PATHS = ["/login", "/signup", "/payment", "/forgot-password"];
+const HIDDEN_PATHS = ["/login", "/signin", "/payment", "/forgot-password"];
 
 export default function LoginBanner() {
   const { user } = useAuthStore();
@@ -44,7 +44,7 @@ export default function LoginBanner() {
           <Link href="/plan" className="banner-btn banner-btn-ghost">
             플랜 소개
           </Link>
-          <Link href="/signup" className="banner-btn banner-btn-primary">
+          <Link href="/signin" className="banner-btn banner-btn-primary">
             구독 시작하기
           </Link>
         </div>
