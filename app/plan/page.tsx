@@ -226,7 +226,7 @@ export default function PlanPage() {
           <p className="cta-desc">
             지금 가입하고 다양한 콘텐츠를 무제한으로 즐겨보세요
           </p>
-          <Link href="/signup" className="cta-btn">
+          <Link href="/signin" className="cta-btn">
             구독 시작하기
           </Link>
         </div>
