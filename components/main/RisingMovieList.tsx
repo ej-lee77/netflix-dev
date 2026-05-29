@@ -10,8 +10,10 @@ export default function RisingMovieList() {
     if (!mainMovie) return null;
     return (
         <section>
-            <div className="inner">
+            <div className="section-title-outer">
                 <SectionTitle title='급상승' subTitle='지금 떠오르는 작품들을 시청해보세요' />
+            </div>
+            <div className="inner">
                 <div className="grid grid-cols-[1.1fr_1.6fr] gap-4">
                     {/* 왼쪽 큰 카드 */}
                     <div className="group relative h-[448px] overflow-hidden rounded-md bg-zinc-800">

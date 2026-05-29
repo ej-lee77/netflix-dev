@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -21,6 +22,8 @@ type HeroItem = {
   release_date?: string;
   first_air_date?: string;
   genre_ids?: number[];
+  logoUrl: string;
+  videoKey: string;
 };
 
 type TrendingResponse = {
@@ -45,6 +48,29 @@ type LogoItem = {
 
 type ImagesResponse = {
   logos?: LogoItem[];
+};
+
+type ReleaseDateEntry = {
+  certification: string;
+  type: number;
+};
+
+type ReleaseDateResult = {
+  iso_3166_1: string;
+  release_dates: ReleaseDateEntry[];
+};
+
+type ReleaseDatesResponse = {
+  results?: ReleaseDateResult[];
+};
+
+type ContentRatingResult = {
+  iso_3166_1: string;
+  rating: string;
+};
+
+type ContentRatingsResponse = {
+  results?: ContentRatingResult[];
 };
 
 type LoadState = "loading" | "ready" | "error";
@@ -105,17 +131,27 @@ async function fetchHeroItems() {
     throw new Error("TMDB API key is missing.");
   }
 
-  const base = new URLSearchParams({
+  const commonParams = {
     api_key: TMDB_KEY,
     language: "ko-KR",
     with_original_language: "ko",
     sort_by: "popularity.desc",
     page: "1",
+  };
+
+  const movieParams = new URLSearchParams({
+    ...commonParams,
+    "primary_release_date.gte": "2026-01-01",
+  });
+
+  const tvParams = new URLSearchParams({
+    ...commonParams,
+    "first_air_date.gte": "2026-01-01",
   });
 
   const [movieRes, tvRes] = await Promise.all([
-    fetch(`${TMDB_BASE}/discover/movie?${base.toString()}`),
-    fetch(`${TMDB_BASE}/discover/tv?${base.toString()}`),
+    fetch(`${TMDB_BASE}/discover/movie?${movieParams.toString()}`),
+    fetch(`${TMDB_BASE}/discover/tv?${tvParams.toString()}`),
   ]);
 
   if (!movieRes.ok || !tvRes.ok) {
@@ -133,12 +169,12 @@ async function fetchHeroItems() {
   const movies = (movieData.results ?? [])
     .filter(validItem)
     .slice(0, 5)
-    .map((item) => ({ ...item, media_type: "movie" as MediaType }));
+    .map((item) => ({ ...item, media_type: "movie" as MediaType, logoUrl: "" }));
 
   const tvs = (tvData.results ?? [])
     .filter(validItem)
     .slice(0, 5)
-    .map((item) => ({ ...item, media_type: "tv" as MediaType }));
+    .map((item) => ({ ...item, media_type: "tv" as MediaType, logoUrl: "" }));
 
   const combined: HeroItem[] = [];
   for (let i = 0; i < Math.max(movies.length, tvs.length); i++) {
@@ -146,7 +182,16 @@ async function fetchHeroItems() {
     if (tvs[i]) combined.push(tvs[i]);
   }
 
-  return combined.slice(0, 8);
+  const candidates = combined.slice(0, 8);
+
+  const [logos, videos] = await Promise.all([
+    Promise.all(candidates.map(fetchHeroLogo)),
+    Promise.all(candidates.map(fetchHeroVideo)),
+  ]);
+
+  return candidates
+    .map((item, i) => ({ ...item, logoUrl: logos[i], videoKey: videos[i] }))
+    .filter((item) => item.logoUrl !== "" && item.videoKey !== "");
 }
 
 async function fetchHeroVideo(item: HeroItem) {
@@ -173,6 +218,34 @@ async function fetchHeroVideo(item: HeroItem) {
   }
 
   return (await requestVideo("ko-KR")) || (await requestVideo("en-US"));
+}
+
+async function fetchHeroCertification(item: HeroItem): Promise<string> {
+  if (!TMDB_KEY || !item.media_type) return "";
+
+  const params = new URLSearchParams({ api_key: TMDB_KEY });
+
+  if (item.media_type === "movie") {
+    const res = await fetch(
+      `${TMDB_BASE}/movie/${item.id}/release_dates?${params.toString()}`,
+    );
+    if (!res.ok) return "";
+
+    const data = (await res.json()) as ReleaseDatesResponse;
+    const kr = data.results?.find((r) => r.iso_3166_1 === "KR");
+    const cert = kr?.release_dates?.find((d) => d.certification)?.certification ?? "";
+    return cert ? `${cert}+` : "";
+  } else {
+    const res = await fetch(
+      `${TMDB_BASE}/tv/${item.id}/content_ratings?${params.toString()}`,
+    );
+    if (!res.ok) return "";
+
+    const data = (await res.json()) as ContentRatingsResponse;
+    const kr = data.results?.find((r) => r.iso_3166_1 === "KR");
+    const rating = kr?.rating ?? "";
+    return rating ? `${rating}+` : "";
+  }
 }
 
 async function fetchHeroLogo(item: HeroItem): Promise<string> {
@@ -202,15 +275,17 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
 }
 
 export default function Hero() {
+  const router = useRouter();
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [activeLogoUrl, setActiveLogoUrl] = useState("");
+  const [activeCertification, setActiveCertification] = useState("");
   const [activeVideoKey, setActiveVideoKey] = useState("");
   const [currentVideoKey, setCurrentVideoKey] = useState("");
   const [previousVideoKey, setPreviousVideoKey] = useState("");
   const [isVideoVisible, setIsVideoVisible] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const currentVideoKeyRef = useRef("");
+  const itemsRef = useRef<HeroItem[]>([]);
 
   useEffect(() => {
     let ignore = false;
@@ -241,23 +316,78 @@ export default function Hero() {
     };
   }, []);
 
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    let playbackTimer: number | null = null;
+
+    function removeCurrentVideo() {
+      const failedKey = currentVideoKeyRef.current;
+      if (!failedKey) return;
+      const next = itemsRef.current.filter((item) => item.videoKey !== failedKey);
+      setItems(next);
+      setActiveIndex((prev) => Math.min(prev, Math.max(0, next.length - 1)));
+    }
+
+    function resetPlaybackTimer() {
+      if (playbackTimer) window.clearTimeout(playbackTimer);
+      playbackTimer = window.setTimeout(removeCurrentVideo, 8000);
+    }
+
+    function handleYouTubeMessage(event: MessageEvent) {
+      if (event.origin !== "https://www.youtube.com") return;
+
+      try {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+
+        if (data.event === "onError" && [100, 101, 150].includes(data.info)) {
+          if (playbackTimer) window.clearTimeout(playbackTimer);
+          removeCurrentVideo();
+          return;
+        }
+
+        if (data.event === "onStateChange") {
+          if (data.info === 1) {
+            // playing — video is fine, cancel the timer
+            if (playbackTimer) window.clearTimeout(playbackTimer);
+            playbackTimer = null;
+          } else if (data.info === -1 || data.info === 3) {
+            // unstarted or buffering — (re)start the watchdog
+            resetPlaybackTimer();
+          }
+        }
+      } catch {
+        // ignore non-JSON messages
+      }
+    }
+
+    window.addEventListener("message", handleYouTubeMessage);
+    return () => {
+      window.removeEventListener("message", handleYouTubeMessage);
+      if (playbackTimer) window.clearTimeout(playbackTimer);
+    };
+  }, []);
+
   const activeItem = items[activeIndex];
 
   useEffect(() => {
     if (!activeItem) {
-      setActiveLogoUrl("");
+      setActiveCertification("");
       return;
     }
 
     let ignore = false;
 
-    async function loadLogo() {
-      const url = await fetchHeroLogo(activeItem);
-      if (!ignore) setActiveLogoUrl(url);
+    async function loadCertification() {
+      const cert = await fetchHeroCertification(activeItem);
+      if (!ignore) setActiveCertification(cert);
     }
 
-    setActiveLogoUrl("");
-    loadLogo();
+    setActiveCertification("");
+    loadCertification();
 
     return () => {
       ignore = true;
@@ -271,28 +401,16 @@ export default function Hero() {
       return;
     }
 
-    let ignore = false;
-
-    async function loadVideo() {
-      const videoKey = await fetchHeroVideo(activeItem);
-
-      if (!ignore) {
-        if (videoKey && videoKey === currentVideoKeyRef.current) {
-          window.setTimeout(() => {
-            if (!ignore) setIsVideoVisible(true);
-          }, 120);
-        } else {
-          setActiveVideoKey(videoKey);
-        }
-      }
-    }
+    const videoKey = activeItem.videoKey;
 
     setIsVideoVisible(false);
-    loadVideo();
 
-    return () => {
-      ignore = true;
-    };
+    if (videoKey && videoKey === currentVideoKeyRef.current) {
+      const timer = window.setTimeout(() => setIsVideoVisible(true), 120);
+      return () => window.clearTimeout(timer);
+    } else {
+      setActiveVideoKey(videoKey);
+    }
   }, [activeItem]);
 
   useEffect(() => {
@@ -385,8 +503,9 @@ export default function Hero() {
   }
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
+  const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
-    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1`;
+    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
   const visiblePosters = [-2, -1, 0, 1, 2]
     .map((offset) => {
       const index = (activeIndex + offset + items.length) % items.length;
@@ -459,15 +578,16 @@ export default function Hero() {
 
 
       <div className="hero-content">
-        {activeLogoUrl ? (
-          <img
-            className="hero-logo-img"
-            src={activeLogoUrl}
-            alt={getTitle(activeItem)}
-          />
-        ) : (
-          <h2 className="hero-logo-text">{getTitle(activeItem)}</h2>
-        )}
+        <img
+          className="hero-logo-img"
+          src={activeItem.logoUrl}
+          alt={getTitle(activeItem)}
+          onError={() => {
+            const next = items.filter((item) => item.id !== activeItem.id);
+            setItems(next);
+            setActiveIndex((prev) => Math.min(prev, Math.max(0, next.length - 1)));
+          }}
+        />
         <div className="hero-meta">
           <span className="hero-rating-stars">{meta.stars}</span>
           <span className="hero-rating-val">{meta.rating}</span>
@@ -483,17 +603,27 @@ export default function Hero() {
               <span>{meta.genres}</span>
             </>
           )}
-          <span className="hero-age-badge">15+</span>
+          {activeCertification && (
+            <span className="hero-age-badge">{activeCertification}</span>
+          )}
         </div>
         <p className="hero-desc">{activeItem.overview}</p>
         <div className="hero-btns">
-          <button className="btn-play" type="button">
+          <button
+            className="btn-play"
+            type="button"
+            onClick={() => router.push(`/detail/${activeItem.media_type}/${activeItem.id}?play=1`)}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
             재생하기
           </button>
-          <button className="btn-info" type="button">
+          <button
+            className="btn-info"
+            type="button"
+            onClick={() => router.push(`/detail/${activeItem.media_type}/${activeItem.id}`)}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="16" x2="12" y2="12" />

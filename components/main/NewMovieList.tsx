@@ -12,7 +12,7 @@ export default function NewMovieList() {
 
     return (
         <section className="new-movie-section">
-            <div className="inner">
+            <div className="section-title-outer">
                 <SectionTitle title='신작' subTitle='새로운 작품들을 시청해보세요' />
             </div>
             
