@@ -73,7 +73,7 @@ export default function MyPage() {
         <div className="profile-summary">
           <div className="profile-avatar">
             <img
-              src={activeProfile?.imgUrl || "/images/profile/normal.svg"}
+              src={activeProfile?.imgUrl || "/images/profile/image/default_icons/17.png"}
               alt={activeProfile?.name || "프로필"}
             />
             <button className="edit-badge">✎</button>
@@ -240,7 +240,7 @@ export default function MyPage() {
         <section className="section-block">
           <div className="section-h">
             <h2>획득한 뱃지</h2>
-            <span className="more">전체 {stats.badge}개 →</span>
+            <span className="more"><Link href="/goods">전체 {stats.badge}개 →</Link></span>
           </div>
           <div className="badge-grid">
             {badges.map((b) => (
