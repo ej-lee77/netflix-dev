@@ -52,7 +52,7 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "images/profile/1.png" }];
+  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "/images/profile/image/default_icons/17.png" }];
 
   // ── 카드 번호 자동 포맷 (4자리마다 공백) ────────────────────────────────────
   const handleCardNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
