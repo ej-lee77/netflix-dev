@@ -1,17 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "../scss/goods.scss";
+import { BADGE_LIST } from "@/data/badge";
+import { useAuthStore } from "@/store/useAuthStore";
+import { mockUserData } from "@/data/mockUserData";
 
 type TabType = "badge" | "limited" | "event" | "collection";
-
-const badges = [
-  { id: 1, icon: "🏆", name: "100편 클럽", title: "★ 영화광", desc: "100편 이상 시청 완료한 회원에게 주어지는 뱃지입니다", unlocked: true, mainTitle: false },
-  { id: 2, icon: "🎬", name: "한국 영화 마니아", title: "★ 한국영화 전문가", desc: "한국 영화 50편 이상 시청한 회원에게 주어지는 뱃지입니다", unlocked: true, mainTitle: true },
-  { id: 3, icon: "📝", name: "리뷰어", title: "★ 신뢰받는 평론가", desc: "리뷰 20개 작성 + 평균 좋아요 50개 이상 받기", progress: 15, total: 20 },
-  { id: 4, icon: "🌙", name: "올빼미", title: "★ 야간 시청자", desc: "자정 ~ 새벽 4시 사이에 10편 시청하기", progress: 6, total: 10 },
-  { id: 5, icon: "🔒", name: "???", title: "★ ???", desc: "조건 미공개 · 특정 조합으로 시청 시 자동 해금", locked: true },
-  { id: 6, icon: "🔒", name: "평론가의 길", title: "★ 마스터", desc: "모든 장르에서 5편 이상 시청 + 별점 5점 평가 5회", locked: true },
-];
 
 const limitedGoods = [
   { id: 1, name: "오리지널 시리즈 포스터 (A2 사이즈)", desc: "시즌2 메인 비주얼 · 액자 별매", price: 3500, stock: 234, type: "LIMITED" as const },
@@ -29,6 +23,36 @@ const events = [
 
 export default function GoodsPage() {
   const [tab, setTab] = useState<TabType>("badge");
+  // const {user} = useAuthStore();
+
+  const displayBadges = useMemo(() => {
+    if (!mockUserData || !mockUserData.bages) return [];
+
+    const { earnedBadges, equippedBadges } = mockUserData.bages;
+
+    return BADGE_LIST.map((masterBadge) => {
+      // 유저의 뱃지 정보 배열에서 현재 마스터 뱃지와 ID가 일치하는 데이터 찾기
+      const userBadgeInfo = earnedBadges?.find((b) => b.id === masterBadge.id);
+
+      // 1. 획득 유무 (유저 정보에 기록된 완료 여부 사용, 없으면 false)
+      const unlocked = userBadgeInfo ? userBadgeInfo.isComplete : false;
+      
+      // 2. 장착 유무 (대표 칭호)
+      const mainTitle = equippedBadges === masterBadge.id;
+
+      // 3. 진행도 (유저 정보에 실시간으로 찍힌 progress 값)
+      const progress = userBadgeInfo ? userBadgeInfo.progress : 0;
+
+      return {
+        ...masterBadge,
+        unlocked,
+        locked: !unlocked,
+        mainTitle,
+        progress, // 유저 데이터에서 실시간으로 갱신되는 값
+        // total(목표치)은 마스터 데이터(BADGE_LIST)에 적어둔 기준값을 사용합니다.
+      };
+    });
+  }, [mockUserData]);
 
   return (
     <div className="goods-page">
@@ -67,6 +91,26 @@ export default function GoodsPage() {
           </div>
         </div>
 
+        {/* <h2 className="section-h">수집 시스템</h2> */}
+        <div className="collection-info mb-2">
+          <div className="info-card">
+            <h3>🎯 뱃지 시스템</h3>
+            <p>시청 활동에 따라 자동으로 뱃지가 해금됩니다. 획득한 뱃지는 프로필에 표시됩니다.</p>
+          </div>
+          <div className="info-card">
+            <h3>👑 칭호 시스템</h3>
+            <p>뱃지마다 고유한 칭호가 있어요. 대표 칭호를 선택해 친구들에게 보여줄 수 있습니다.</p>
+          </div>
+          <div className="info-card">
+            <h3>💎 포인트 시스템</h3>
+            <p>결제·리뷰·시청 활동으로 포인트를 적립하고, 한정 굿즈 교환에 사용하세요.</p>
+          </div>
+          <div className="info-card">
+            <h3>🎁 한정 이벤트</h3>
+            <p>매월 새로운 이벤트와 한정 굿즈가 공개됩니다. 알림을 켜두면 놓치지 않아요.</p>
+          </div>
+        </div>
+
         {/* 탭 */}
         <div className="goods-tabs">
           <button className={tab === "badge" ? "active" : ""} onClick={() => setTab("badge")}>
@@ -78,9 +122,9 @@ export default function GoodsPage() {
           <button className={tab === "event" ? "active" : ""} onClick={() => setTab("event")}>
             이벤트
           </button>
-          <button className={tab === "collection" ? "active" : ""} onClick={() => setTab("collection")}>
+          {/* <button className={tab === "collection" ? "active" : ""} onClick={() => setTab("collection")}>
             수집 시스템
-          </button>
+          </button> */}
         </div>
 
         {/* 뱃지 탭 */}
@@ -88,24 +132,36 @@ export default function GoodsPage() {
           <>
             <h2 className="section-h">뱃지 보상 — 칭호 시스템</h2>
             <div className="badge-grid">
-              {badges.map((b) => (
+              {displayBadges.map((b) => (
                 <article
-                  key={b.id}
-                  className={`badge-card ${b.unlocked ? "unlocked" : ""} ${b.locked ? "locked" : ""}`}
+                key={b.id}
+                className={`badge-card ${b.unlocked ? "unlocked" : ""} ${b.locked ? "locked" : ""}`}
                 >
-                  <div className="badge-icon">{b.icon}</div>
-                  <h3>{b.name}</h3>
-                  <div className="title-tag">{b.title}</div>
-                  <p>{b.desc}</p>
+                  {/* 뱃지 아이콘 */}
+                  <div className="badge-icon">
+                    <img src={b.imgUrl} alt={b.name} />
+                  </div>
+
+                  {/* 뱃지 타이틀 및 칭호 */}
+                  <h3>{b.title}</h3>
+                  <div className="title-tag">{b.name}</div>
+                  <p>{b.content}</p>
+                  
+                  {/* 1. 획득 완료 상태 렌더링 */}
                   {b.unlocked && (
                     <div className="status-done">
                       ✓ 획득 완료{b.mainTitle && " · 대표 칭호"}
                     </div>
                   )}
-                  {b.progress !== undefined && b.total !== undefined && (
+                  
+                  {/* 2. 미획득 상태일 때만 게이지바 및 진행도 렌더링 (목표치 total이 설정되어 있을 때만) */}
+                  {!b.unlocked && b.total !== undefined && (
                     <>
                       <div className="progress-bar">
-                        <div className="fill" style={{ width: `${(b.progress / b.total) * 100}%` }}></div>
+                        <div 
+                          className="fill" 
+                          style={{ width: `${Math.min((b.progress / b.total) * 100, 100)}%` }}
+                        ></div>
                       </div>
                       <div className="progress-text">
                         {b.progress} / {b.total} 진행 중
@@ -174,7 +230,7 @@ export default function GoodsPage() {
         )}
 
         {/* 수집 시스템 탭 */}
-        {tab === "collection" && (
+        {/* {tab === "collection" && (
           <>
             <h2 className="section-h">수집 시스템</h2>
             <div className="collection-info">
@@ -196,7 +252,7 @@ export default function GoodsPage() {
               </div>
             </div>
           </>
-        )}
+        )} */}
       </div>
     </div>
   );

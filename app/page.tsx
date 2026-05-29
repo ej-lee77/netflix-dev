@@ -13,13 +13,15 @@ import TopCast from "@/components/main/TopCast";
 import RankingSection from "@/components/main/RankingSection";
 
 export default function Home() {
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending } = useMovieStore();
-  
+  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending, onFetchNetflixOriginals, onFetchKoreanMovies } = useMovieStore();
+
   useEffect(() => {
     onFetchPopular();
     onFetchTvs();
     onFetchNewest();
     onFetchTrending();
+    onFetchNetflixOriginals();
+    onFetchKoreanMovies();
   }, []);
 
   return (
@@ -30,11 +32,13 @@ export default function Home() {
       {/* 시청중 */}
       <WatchingList />
       {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
-      <NetflixOriginal />
+      {/* <NetflixOriginal /> */}
+      {/* 넷플릭스 시리즈 */}
+      <CategoryList category="netflix" />
       {/* 신작 */}
-      <NewMovieList />
+      {/* <NewMovieList /> */}
       {/* 급상승 */}
-      <RisingMovieList />
+      {/* <RisingMovieList /> */}
       {/* 추천 */}
       <RecommendList />
       {/* <TopCast /> */}

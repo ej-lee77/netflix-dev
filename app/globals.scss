@@ -100,9 +100,17 @@ main {
     margin-top: $section-gap;
 
     .inner {
+      width: min(1600px, calc(100vw - #{$main-menu-width}));
       margin-left: 0;
       margin-right: 0;
       padding-left: clamp(24px, calc((100vw - $main-menu-width - 1600px) / 2), 80px);
+
+    }
+
+    .section-title-outer {
+      width: calc(100vw - #{$main-menu-width});
+      padding-left: clamp(24px, calc((100vw - #{$main-menu-width} - 1600px) / 2), 80px);
+      padding-right: clamp(24px, calc((100vw - #{$main-menu-width} - 1600px) / 2), 80px);
     }
   }
 }

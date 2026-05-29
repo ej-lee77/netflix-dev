@@ -13,27 +13,28 @@
     background-size: cover;
     background-position: center 30%;
     background-repeat: no-repeat;
-    opacity: 1;
-    filter: blur(4px);
+    opacity: 0.5;
+    filter: blur(4px) grayscale(100%);
     transform: scale(1.05);
     animation: bgFadeIn 0.8s ease forwards;
     z-index: 0;
   }
 
-  /* 배경 위 얇은 오버레이 - 상하단만 살짝 어둡게 */
+  /* 배경 위 오버레이 - 상하단 그라데이션 */
   .recommend-bg-overlay {
     position: absolute;
     inset: 0;
     background: linear-gradient(180deg,
-        rgba(g.$bg-color, 0.3) 0%,
-        transparent 30%,
-        transparent 70%,
-        rgba(g.$bg-color, 0.6) 100%);
+        rgba(#141414, 1) 0%,
+        rgba(#141414, 0.2) 30%,
+        rgba(#141414, 0.2) 70%,
+        rgba(#141414, 1) 100%);
     z-index: 0;
   }
 
   /* 안쪽 컨텐츠는 배경 위로 */
-  .inner {
+  .inner,
+  .section-title-outer {
     position: relative;
     z-index: 1;
   }
@@ -42,28 +43,47 @@
   .recommend-swiper {
     width: 100%;
     overflow: visible;
-    padding: 20px 0 40px;
+    padding: 20px clamp(24px, calc((100vw - 80px - 1600px) / 2), 80px) 40px;
+  }
 
-    .swiper-button-next,
-    .swiper-button-prev {
-      color: g.$w-color;
-      width: 50px;
-      height: 50px;
-      background-color: rgba(g.$d-color, 0.4);
-      border-radius: 50%;
+  /* 페이징 버튼 — 카테고리 섹션과 동일 */
+  .swiper-button-prev,
+  .swiper-button-next {
+    background: none;
+    border: none;
+    color: g.$w-color;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 
-      &::after {
-        font-size: g.$text-20;
-        font-weight: 700;
+    &::after {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    &.swiper-button-disabled {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+  }
+
+  &:hover {
+
+    .swiper-button-prev,
+    .swiper-button-next {
+      opacity: 1;
+
+      &:hover {
+        opacity: 0.7;
       }
     }
   }
 
-  /* Swiper 슬라이드: 좌우는 작게, 가운데(active)는 크게 */
+  /* 좌우 슬라이드는 작게, 가운데(active)만 크게 */
   .swiper-slide {
     transition: transform 0.4s ease, opacity 0.4s ease;
-    transform: scale(0.82);
-    opacity: 0.5;
+    transform: scale(0.92);
+    opacity: 0.9;
   }
 
   .swiper-slide-active {
@@ -76,23 +96,23 @@
   .recommend-slide {
     position: relative;
     aspect-ratio: 2 / 1.8;
+    max-height: clamp(420px, 30vw, 520px);
     border-radius: 5px;
     overflow: hidden;
-    background-color: rgba(g.$d-color, 0.4);
-    box-shadow: 0 12px 40px rgba(g.$d-color, 0.5);
+    background-color: rgba(20, 20, 20, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    backdrop-filter: blur(10px);
     border: 1px solid rgba(g.$w-color, 0.08);
   }
 
-  /* 상단 - 포스터/백드롭 영역 (65%) */
+  /* 상단 - 포스터/백드롭 영역 (45%) */
   .slide-poster {
     position: relative;
-    flex: 0 0 65%;
+    flex: 0 0 45%;
     overflow: hidden;
-    border-radius: 16px;
-    margin: 12px 12px 0;
 
     img {
       width: 100%;
@@ -100,156 +120,222 @@
       object-fit: cover;
       display: block;
     }
+
+    /* 하단 그라디언트로 정보 영역과 자연스럽게 연결 */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(20, 20, 20, 0.92) 0%, transparent 100%);
+      pointer-events: none;
+    }
   }
 
-  /* 좌상단 플랫폼 뱃지 */
+  /* 미디어 타입 뱃지 - DS 4-3 기준 */
   .slide-platform {
     position: absolute;
     top: 16px;
     left: 16px;
-    padding: 6px 14px;
-    background: g.$w-color;
-    color: g.$main-color;
+    padding: 3px 8px;
+    background: rgba(g.$w-color, 0.10);
+    color: rgba(g.$w-color, 0.50);
     font-size: g.$text-12;
-    font-weight: 800;
-    border-radius: 6px;
+    font-weight: 500;
+    border-radius: 4px;
     letter-spacing: 1px;
     z-index: 1;
   }
 
-  /* PLAY NOW 버튼 (제목과 같은 줄, 우측) */
-  .play-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: rgba(g.$w-color, 0.95);
-    color: g.$d-color;
-    padding: 0 18px;
-    height: 46px;
-    border-radius: 4px;
-    font-size: g.$text-16;
-    font-weight: 700;
-    letter-spacing: 1px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(g.$d-color, 0.4);
-    flex-shrink: 0;
-
-    &:hover {
-      background-color: g.$w-color;
-      transform: translateY(-2px);
-    }
-
-    .play-icon {
-      font-size: 10px;
-    }
-  }
-
-  /* 제목 + PLAY 버튼 (한 줄, 양 끝 정렬) */
-  .slide-info-head {
+  /* 하단 정보 영역 - 랭킹 active 패널과 동일한 레이아웃 */
+  .slide-info {
+    flex: 1;
+    background: rgba(20, 20, 20, 0.92);
+    padding: clamp(10px, 1.1vw, 16px) clamp(20px, 2.4vw, 40px);
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 10px;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(4px, 0.45vw, 6px);
+    overflow: hidden;
   }
 
+  /* 타이틀 - 랭킹 .ranking-detail-title 기준 */
   .slide-title {
-    font-size: g.$text-24;
-    font-weight: 700;
-    letter-spacing: 1px;
-    line-height: 1.2;
-    text-align: left;
+    max-width: 100%;
+    color: #ffffff;
+    font-size: clamp(1.2rem, 1.6vw, 1.9rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
-    flex: 1;
   }
 
-  /* PLAY NOW 버튼 (제목과 같은 줄, 우측) */
-  .play-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: rgba(g.$w-color, 0.95);
-    color: g.$d-color;
-    padding: 10px 22px;
-    border-radius: 100px;
-    font-size: g.$text-12;
-    font-weight: 700;
-    letter-spacing: 1px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(g.$d-color, 0.4);
-    flex-shrink: 0;
-
-    &:hover {
-      background-color: g.$w-color;
-      transform: translateY(-2px);
-    }
-
-    .play-icon {
-      font-size: 10px;
-    }
-  }
-
+  /* 정보 바 - 스크린샷 레이아웃 */
   .slide-meta {
     display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 10px;
-    font-size: g.$text-12;
-    color: rgba(g.$w-color, 0.75);
-
-    li {
-      list-style: none;
-    }
-
-    .rating {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-
-      strong {
-        color: g.$w-color;
-        font-weight: 600;
-      }
-
-      .star {
-        color: #f5c518;
-      }
-    }
-  }
-
-  .slide-overview {
-    font-size: g.$text-12;
-    line-height: 1.5;
-    color: rgba(g.$w-color, 0.7);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
     overflow: hidden;
   }
 
-  /* active 아닌 슬라이드: 정보 영역 텍스트 숨기기 */
+  /* 별점 */
+  .meta-stars {
+    display: inline-flex;
+    gap: 2px;
+    flex-shrink: 0;
+
+    .star {
+      font-size: 14px;
+      line-height: 1;
+
+      &.filled {
+        color: g.$main-color;
+      }
+
+      &.empty {
+        color: rgba(g.$w-color, 0.25);
+      }
+    }
+  }
+
+  /* 점수 숫자 */
+  .meta-score {
+    color: g.$w-color;
+    font-size: g.$text-14;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* 구분선 */
+  .meta-sep {
+    color: rgba(g.$w-color, 0.3);
+    font-size: g.$text-14;
+    flex-shrink: 0;
+  }
+
+  /* 연도 */
+  .meta-year {
+    color: rgba(g.$w-color, 0.85);
+    font-size: g.$text-14;
+    flex-shrink: 0;
+  }
+
+  /* 장르 */
+  .meta-genres {
+    color: rgba(g.$w-color, 0.85);
+    font-size: g.$text-14;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 연령 등급 뱃지 */
+  .meta-cert {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border: 1px solid rgba(g.$w-color, 0.4);
+    border-radius: 3px;
+    color: rgba(g.$w-color, 0.85);
+    font-size: g.$text-12;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  /* 개요 텍스트 - 랭킹 .ranking-detail-overview 기준 */
+  .slide-overview {
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    color: rgba(g.$w-color, 0.72);
+    font-size: g.$text-14;
+    line-height: 1.72;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  /* 버튼 영역 - 랭킹 .ranking-detail-actions 기준 */
+  .slide-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: clamp(6px, 0.7vw, 14px);
+  }
+
+  /* 버튼 공통 — 히어로 .btn-play / .btn-info 와 동일 */
+  .btn-play,
+  .btn-info {
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    font-size: g.$text-16;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: g.$w-color;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn-play {
+    gap: 8px;
+    height: 46px;
+    padding: 0 22px;
+    background: g.$main-color;
+
+    &:hover {
+      background: #B00710;
+      transform: scale(1.02);
+    }
+  }
+
+  .btn-info {
+    gap: 7px;
+    height: 46px;
+    padding: 0 18px;
+    background: rgba(g.$w-color, 0.10);
+    border: 1px solid rgba(g.$w-color, 0.25);
+    backdrop-filter: blur(4px);
+
+    &:hover {
+      background: rgba(g.$w-color, 0.2);
+    }
+  }
+
+  /* active 아닌 슬라이드: 텍스트는 보이되 흐리게 */
   .swiper-slide:not(.swiper-slide-active) {
 
-    .slide-meta,
-    .slide-overview,
-    .play-btn {
-      opacity: 0;
+    .slide-actions {
       pointer-events: none;
     }
 
     .slide-info {
-      opacity: 0.5;
+      opacity: 0.6;
     }
   }
 }
+
+/* ~1920px: 설명 1줄 (카드 높이 부족) */
+@media (max-width: 1920px) {
+  .recommend-section {
+    .slide-overview {
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
+    }
+  }
+}
+
+/* 1921px+: 공간 확보되면 2줄 */
+@media (min-width: 1921px) {
+  .recommend-section {
+    .slide-overview {
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+  }
+}
+
 
 /* 배경 페이드 인 애니메이션 */
 @keyframes bgFadeIn {
@@ -258,6 +344,6 @@
   }
 
   to {
-    opacity: 1;
+    opacity: 0.3;
   }
 }

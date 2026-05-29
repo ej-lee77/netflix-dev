@@ -1,24 +1,36 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from 'swiper/modules';
+import { Navigation } from "swiper/modules";
 
 import "swiper/css";
+import "swiper/css/navigation";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
 
+const GENRE_MAP: Record<number, string> = {
+  28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
+  99: "다큐", 18: "드라마", 10751: "가족", 14: "판타지", 36: "역사",
+  27: "공포", 10402: "음악", 9648: "미스터리", 10749: "로맨스", 878: "SF",
+  53: "스릴러", 10752: "전쟁", 37: "서부",
+  10759: "액션", 10762: "어린이", 10765: "SF", 10768: "전쟁",
+};
+
 interface MediaListProps {
-  category: "movie" | "tv";
+  category: "movie" | "tv" | "netflix";
 }
 
 export default function CategoryList({ category }: MediaListProps) {
-  const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos } = useMovieStore();
+  const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos, netflixOriginals, certifications, onFetchCertification } = useMovieStore();
   const { currentProfile } = useAuthStore();
   const [hover, setHover] = useState<number | null>(null);
+  const [videoReady, setVideoReady] = useState<number | null>(null);
+  const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
 
   const movieSource = [
@@ -33,44 +45,79 @@ export default function CategoryList({ category }: MediaListProps) {
   const currentList =
     category === "movie"
       ? movieSource.slice(0, 18).map((movie) => ({
-          id: movie.id,
-          title: movie.title,
-          backdrop_path: movie.backdrop_path,
-          vote_average: movie.vote_average,
-          videos: popVideos[movie.id],
-          fetchVideo: () => onFetchVideo(movie.id),
-        }))
+        id: movie.id,
+        title: movie.title,
+        poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path,
+        vote_average: movie.vote_average,
+        overview: movie.overview,
+        release_date: movie.release_date,
+        genre_ids: movie.genre_ids ?? [],
+        videos: popVideos[movie.id],
+        fetchVideo: () => onFetchVideo(movie.id),
+      }))
+      : category === "netflix"
+      ? netflixOriginals.slice(0, 18).map((tv) => ({
+        id: tv.id,
+        title: tv.name,
+        poster_path: tv.poster_path,
+        backdrop_path: tv.backdrop_path,
+        vote_average: tv.vote_average,
+        overview: tv.overview,
+        release_date: undefined as string | undefined,
+        genre_ids: tv.genre_ids ?? [],
+        videos: tvVideos[tv.id],
+        fetchVideo: () => onFetchTvVideos(tv.id),
+      }))
       : tvSource.slice(0, 18).map((tv) => ({
-          id: tv.id,
-          title: tv.name,
-          backdrop_path: tv.backdrop_path,
-          vote_average: tv.vote_average,
-          videos: tvVideos[tv.id],
-          fetchVideo: () => onFetchTvVideos(tv.id),
-        }));
+        id: tv.id,
+        title: tv.name,
+        poster_path: tv.poster_path,
+        backdrop_path: tv.backdrop_path,
+        vote_average: tv.vote_average,
+        overview: tv.overview,
+        release_date: undefined as string | undefined,
+        genre_ids: tv.genre_ids ?? [],
+        videos: tvVideos[tv.id],
+        fetchVideo: () => onFetchTvVideos(tv.id),
+      }));
 
-  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>) => {
+  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
     setHover(id);
-    await fetchVideo();
+    setVideoReady(null);
+    if (videoTimer.current) clearTimeout(videoTimer.current);
+    videoTimer.current = setTimeout(() => setVideoReady(id), 2000);
+    await Promise.all([fetchVideo(), onFetchCertification(id, mediaType)]);
   };
 
   const handleMouseLeave = () => {
     setHover(null);
+    setVideoReady(null);
+    if (videoTimer.current) clearTimeout(videoTimer.current);
   };
 
   return (
     <section className="category-section">
-      <div className="inner">
-        <SectionTitle title="카테고리" subTitle="새로운 작품들을 시청해보세요" />
-        
+      <div className="section-title-outer">
+        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} />
+      </div>
+
+      <div className="swiper-outer">
         <Swiper
           modules={[Navigation]}
           navigation
           spaceBetween={12}
-          slidesPerView={"auto"}
+          slidesPerView={2.5}
+          breakpoints={{
+            640: { slidesPerView: 3.5 },
+            1024: { slidesPerView: 6.5 },
+            1280: { slidesPerView: 8.5 },
+          }}
+          onSwiper={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
+          onSlideChange={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
           className="media-swiper"
         >
-          {currentList.map((item) => {
+          {currentList.map((item, index) => {
             const trailer = item.videos?.find((v) => v.type === "Trailer" || v.type === "Teaser");
             const trailerKey = trailer?.key || null;
 
@@ -78,55 +125,85 @@ export default function CategoryList({ category }: MediaListProps) {
               <SwiperSlide key={item.id} className="category-slide">
                 <li
                   className="category-item"
-                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo)}
+                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo, category === "netflix" ? "tv" : category)}
                   onMouseLeave={handleMouseLeave}
                 >
-                  {/* 카드 메인 포스터 영역 */}
+                  {/* 기본 포스터 */}
                   <div className="img-box">
                     <img
                       className="poster-img"
-                      src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`}
+                      src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
                     />
+                  </div>
 
-                    {/* 하단 그라데이션 오버레이 */}
-                    <div className="overlay-gradient" />
-
-                    {/* 호버 시 트레일러 플레이어 박스 */}
-                    {hover === item.id && trailerKey && (
-                      <div className="trailer-box animate-fade-in">
-                        <iframe
-                          className="trailer-iframe"
-                          src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1`}
-                          title="트레일러"
-                        />
-                        <div className="trailer-info">
-                          <h3 className="trailer-title">{item.title}</h3>
-                          <p className="trailer-sub">
-                            {category === "movie" ? "영화 트레일러" : "TV 프로그램"}
-                          </p>
-                          <div className="btn-group">
-                            <button type="button" className="action-btn">
-                              <img src="/images/icons/icon-play-sm.svg" alt="재생" />
-                            </button>
-                            <Link href={`/detail/${category}/${item.id}`} className="action-btn">
-                              <img src="/images/icons/arrow-circle.svg" alt="상세" />
-                            </Link>
-                          </div>
+                  {/* 호버 팝업 카드 */}
+                  {hover === item.id && (
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}`}>
+                      <div className="hover-video">
+                        {trailerKey && videoReady === item.id ? (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1`}
+                            title="트레일러"
+                            allow="autoplay"
+                          />
+                        ) : (
+                          <img
+                            src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`}
+                            alt={item.title}
+                            className="fallback-img"
+                          />
+                        )}
+                      </div>
+                      <div className="hover-info">
+                        <div className="hover-title-row">
+                          <h3 className="hover-title">{item.title}</h3>
+                          {certifications[`${category === "netflix" ? "tv" : category}-${item.id}`] && (
+                            <span className="hover-age">{certifications[`${category === "netflix" ? "tv" : category}-${item.id}`]}</span>
+                          )}
+                        </div>
+                        <div className="hover-meta">
+                          {item.vote_average > 0 && (
+                            <>
+                              <span className="meta-star">★</span>
+                              <span className="meta-score">{item.vote_average.toFixed(1)}</span>
+                              <span className="meta-sep">|</span>
+                            </>
+                          )}
+                          {item.release_date && (
+                            <>
+                              <span className="meta-year">{item.release_date.slice(0, 4)}</span>
+                              {item.genre_ids.length > 0 && <span className="meta-sep">|</span>}
+                            </>
+                          )}
+                          {item.genre_ids.length > 0 && (
+                            <span className="meta-genre">
+                              {item.genre_ids.slice(0, 2).map((id) => GENRE_MAP[id]).filter(Boolean).join(" • ")}
+                            </span>
+                          )}
+                        </div>
+                        {item.overview && (
+                          <p className="hover-overview">{item.overview}</p>
+                        )}
+                        <div className="hover-actions">
+                          <button type="button" className="btn-play">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            재생하기
+                          </button>
+                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`} className="btn-detail">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="12" y1="16" x2="12" y2="12" />
+                              <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            상세정보
+                          </Link>
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  {/* 카드 하단 기본 텍스트 정보 영역 */}
-                  <div className="text-box">
-                    <Link href={`/detail/${category}/${item.id}`}>
-                      <h3 className="item-title">{item.title}</h3>
-                      <div className="item-rating">
-                        <span>★ {item.vote_average.toFixed(1)}</span>
-                      </div>
-                    </Link>
-                  </div>
+                    </div>
+                  )}
                 </li>
               </SwiperSlide>
             );
