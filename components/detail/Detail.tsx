@@ -30,6 +30,7 @@ type DetailMedia = (Movie | TV) & {
 type DetailTab = "episodes" | "info" | "cast" | "director" | "review" | "related";
 
 const REVIEW_PAGE_SIZE = 5;
+const REPORT_REASONS = ["내용이 부적절해요", "스포일러가 포함되어 있어요", "욕설 또는 혐오 표현이에요", "도배성 리뷰예요", "기타"];
 
 interface RegisteredReview {
   id: number;
@@ -126,7 +127,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     certifications, onFetchCertification,
   } = useMovieStore();
 
-  const { onAddPlayList, onAddMyList } = usePlayListStore();
+  const { myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
 
   const [showPopup, setShowPopup] = useState(false);
@@ -146,9 +147,16 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [reviewText, setReviewText] = useState("");
   const [reviewHasSpoiler, setReviewHasSpoiler] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
+  const [reportedReviewIds, setReportedReviewIds] = useState<number[]>([]);
+  const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<number[]>([]);
+  const [likedReviewIds, setLikedReviewIds] = useState<number[]>([]);
+  const [reportTargetReviewId, setReportTargetReviewId] = useState<number | null>(null);
+  const [selectedReportReason, setSelectedReportReason] = useState("");
   const [submittedReviews, setSubmittedReviews] = useState<RegisteredReview[]>([]);
+  const [canExpandSynopsis, setCanExpandSynopsis] = useState(false);
 
   const stillsRef = useRef<HTMLDivElement>(null);
+  const synopsisRef = useRef<HTMLParagraphElement>(null);
   const isDragging = useRef(false);
   const hasAutoPlayed = useRef(false);
 
@@ -162,7 +170,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   // 찜 버튼 상태 표시를 위해 위시리스트 로드
   useEffect(() => {
     onLoadWishlist();
-  }, []);
+    onLoadMyList();
+  }, [onLoadMyList, onLoadWishlist]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -184,12 +193,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (!mediaId) return;
     onFetchMediaDetail(mediaId, type);
     onFetchCredits(mediaId, type);
+    onFetchCertification(mediaId, type);
     if (isTv) {
       onFetchTvVideos(mediaId);
     } else {
       onFetchVideo(mediaId);
     }
-  }, [type, isTv, mediaId, onFetchMediaDetail, onFetchCredits, onFetchTvVideos, onFetchVideo]);
+  }, [type, isTv, mediaId, onFetchMediaDetail, onFetchCredits, onFetchCertification, onFetchTvVideos, onFetchVideo]);
 
   useEffect(() => {
     if (mediaId) onFetchMediaRecommended(mediaId, type);
@@ -227,16 +237,39 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const title = getTitle(mediaItem);
   const releaseDate = isTv ? mediaItem?.first_air_date : (mediaItem as Movie | undefined)?.release_date;
   const releaseYear = releaseDate?.split("-")[0] ?? "";
-  const countryText = mediaItem?.production_countries?.slice(0, 2).map((c) => c.name).join(", ") ?? "";
+  const countryText = mediaItem?.production_countries?.slice(0, 2).map(getKoreanCountryName).join(", ") ?? "";
   const seasonOrRuntimeText = isTv
     ? [
       mediaItem?.number_of_seasons ? `시즌 ${mediaItem.number_of_seasons}` : null,
       mediaItem?.number_of_episodes ? `${mediaItem.number_of_episodes}부작` : null,
     ].filter(Boolean).join(" / ")
     : mediaItem?.runtime ? `${mediaItem.runtime}분` : "";
+  const primaryGenreName = mediaItem?.genres?.[0]?.name ?? "";
+  const tvStatusText = mediaItem?.status === "Ended" || mediaItem?.status === "Canceled" ? "완결" : "진행중";
+  const heroTypeBadgeText = isTv
+    ? `${primaryGenreName || "시리즈"}${mediaItem?.number_of_seasons ? ` · 시즌 ${mediaItem.number_of_seasons} ${tvStatusText}` : ""}`
+    : "영화";
   const moodTags = getMoodTags(mediaItem?.genres);
   const castKey = `${type}-${mediaId}`;
   const castList: CastMember[] = casts[castKey] ?? [];
+
+  useEffect(() => {
+    const measureSynopsis = () => {
+      const synopsisNode = synopsisRef.current;
+      if (!synopsisNode) return;
+
+      const lineHeight = Number.parseFloat(window.getComputedStyle(synopsisNode).lineHeight);
+      setCanExpandSynopsis(synopsisNode.scrollHeight > lineHeight * 3 + 1);
+    };
+
+    const timeoutId = window.setTimeout(measureSynopsis, 0);
+    window.addEventListener("resize", measureSynopsis);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureSynopsis);
+    };
+  }, [mediaItem?.overview, activeTab, isTv]);
 
   const rawCert = certifications[castKey] ?? "";
   const ageBadge = ((): "ALL" | "12+" | "15+" | "19+" => {
@@ -245,6 +278,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (rawCert === "19" || rawCert === "Restricted Screening") return "19+";
     return "ALL";
   })();
+  const heroMetaItems = [releaseYear, seasonOrRuntimeText, countryText].filter(Boolean);
   const directorList = isTv
     ? mediaItem?.created_by ?? []
     : castList.filter((m) => m.order <= 2).slice(0, 3);
@@ -262,6 +296,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     imageUrl(mediaItem?.poster_path, "original");
   const posterUrl = imageUrl(mediaItem?.poster_path, "w500");
   const relatedItems = (mediaRecommended[`${type}-${mediaId}`] ?? []).slice(0, 6);
+  const isMyListAdded = myList.some((item) => item.id === mediaId && item.mediaType === type);
   const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1,
     author: ["민지", "준호", "서연", "도윤", "하린", "지우"][index % 6],
@@ -281,7 +316,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const tabItems: { id: DetailTab; label: string; meta?: string }[] = [
     ...(isTv ? [{ id: "episodes" as const, label: "회차", meta: episodes.length ? `${episodes.length}` : undefined }] : []),
-    { id: "info", label: "작품 정보" },
+    ...(!isTv ? [{ id: "info" as const, label: "작품 정보" }] : []),
     { id: "cast", label: "출연진", meta: castList.length ? `${castList.length}` : undefined },
     { id: "director", label: "감독" },
     { id: "review", label: "리뷰", meta: isTv ? "12.8k" : "4.2k" },
@@ -319,7 +354,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
     setIsAddingMyList(true);
     try {
-      await onAddMyList(mediaItem);
+      if (isMyListAdded) {
+        await onRemoveMyList(mediaId, type);
+      } else {
+        await onAddMyList(mediaItem);
+      }
     } finally {
       setIsAddingMyList(false);
     }
@@ -367,6 +406,30 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     setReviewPage(1);
   };
 
+  const handleOpenReportReview = (reviewId: number) => {
+    setReportTargetReviewId((currentId) => currentId === reviewId ? null : reviewId);
+    setSelectedReportReason("");
+  };
+
+  const handleSubmitReportReview = () => {
+    if (!reportTargetReviewId || !selectedReportReason) return;
+
+    setReportedReviewIds((prev) => (
+      prev.includes(reportTargetReviewId) ? prev : [...prev, reportTargetReviewId]
+    ));
+    setReportTargetReviewId(null);
+    setSelectedReportReason("");
+    window.alert("신고되었습니다.");
+  };
+
+  const toggleReviewLike = (reviewId: number) => {
+    setLikedReviewIds((prev) => (
+      prev.includes(reviewId)
+        ? prev.filter((id) => id !== reviewId)
+        : [...prev, reviewId]
+    ));
+  };
+
   useEffect(() => {
     if (!shouldAutoPlay || hasAutoPlayed.current || !mediaItem || !videos) return;
 
@@ -380,13 +443,29 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     const PAGE_SIZE = 6;
     const totalPages = Math.ceil(episodes.length / PAGE_SIZE);
     const paged = episodes.slice((episodePage - 1) * PAGE_SIZE, episodePage * PAGE_SIZE);
+    const getVisibleEpisodePages = () => {
+      const maxVisible = 5;
+      if (totalPages <= maxVisible) return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+      const half = Math.floor(maxVisible / 2);
+      let start = Math.max(1, episodePage - half);
+      const endOverflow = start + maxVisible - 1 - totalPages;
+
+      if (endOverflow > 0) {
+        start = Math.max(1, start - endOverflow);
+      }
+
+      return Array.from({ length: maxVisible }, (_, index) => start + index);
+    };
+    const visibleEpisodePages = getVisibleEpisodePages();
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "48px 40px 0" }}>
+        {isTv && renderSynopsis({ compact: true })}
 
         {/* Header row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
             {seasons.map((season) => {
               const isSelected = selectSeason === season.season_number;
               return (
@@ -410,7 +489,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               );
             })}
           </div>
-          <button style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", color: "#888", fontSize: 13, cursor: "pointer" }}>
+          <button style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, marginTop: 8, background: "none", border: "none", color: "#888", fontSize: 13, cursor: "pointer" }}>
             <span style={{ fontSize: 14 }}>↕</span> 오래된순
           </button>
         </div>
@@ -479,13 +558,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         {totalPages > 1 && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 8 }}>
             <button
+              onClick={() => setEpisodePage(1)}
+              disabled={episodePage === 1}
+              style={{ background: "none", border: "1px solid #3a3a48", color: episodePage === 1 ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: episodePage === 1 ? "default" : "pointer", fontSize: 13, letterSpacing: -3 }}
+            >
+              {"<<"}
+            </button>
+            <button
               onClick={() => setEpisodePage((p) => Math.max(1, p - 1))}
               disabled={episodePage === 1}
               style={{ background: "none", border: "1px solid #3a3a48", color: episodePage === 1 ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: episodePage === 1 ? "default" : "pointer", fontSize: 14 }}
             >
-              ‹
+              {"<"}
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            {visibleEpisodePages.map((page) => (
               <button
                 key={page}
                 onClick={() => setEpisodePage(page)}
@@ -505,7 +591,14 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               disabled={episodePage === totalPages}
               style={{ background: "none", border: "1px solid #3a3a48", color: episodePage === totalPages ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: episodePage === totalPages ? "default" : "pointer", fontSize: 14 }}
             >
-              ›
+              {">"}
+            </button>
+            <button
+              onClick={() => setEpisodePage(totalPages)}
+              disabled={episodePage === totalPages}
+              style={{ background: "none", border: "1px solid #3a3a48", color: episodePage === totalPages ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: episodePage === totalPages ? "default" : "pointer", fontSize: 13, letterSpacing: -3 }}
+            >
+              {">>"}
             </button>
           </div>
         )}
@@ -513,30 +606,24 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     );
   };
 
-  const renderSynopsis = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "56px 40px 0" }}>
+  const renderSynopsis = ({ compact = false }: { compact?: boolean } = {}) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: compact ? "0 0 24px" : "56px 40px 0" }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
         {isTv ? "시리즈 줄거리" : "영화 줄거리"}
       </h2>
       <div style={{ position: "relative" }}>
-        <p style={{
+        <p ref={synopsisRef} style={{
           fontSize: 16, color: "#ccc", lineHeight: 1.72, margin: 0,
           overflow: "hidden",
-          whiteSpace: synopsisExpanded ? "normal" : "nowrap",
-          textOverflow: synopsisExpanded ? "clip" : "ellipsis",
-          maxWidth: synopsisExpanded ? "100%" : "50%",
+          display: synopsisExpanded ? "block" : "-webkit-box",
+          WebkitBoxOrient: "vertical",
+          WebkitLineClamp: synopsisExpanded ? "unset" : 3,
+          maxWidth: "100%",
         }}>
           {mediaItem?.overview}
         </p>
-        {!synopsisExpanded && (
-          <div style={{
-            position: "absolute", top: 0, right: 0, bottom: 0, width: "50%",
-            background: "linear-gradient(to right, transparent 0%, #141414 100%)",
-            pointerEvents: "none",
-          }} />
-        )}
       </div>
-      {mediaItem?.overview && (
+      {mediaItem?.overview && canExpandSynopsis && (
         <button
           onClick={() => setSynopsisExpanded(!synopsisExpanded)}
           style={{ fontSize: 14, color: "#e50914", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", width: "fit-content" }}
@@ -614,13 +701,16 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           </div>
         </div>
         <textarea
+          className="detail-review-textarea"
           value={reviewText}
           onChange={(event) => setReviewText(event.target.value)}
           placeholder="이 작품에 대한 감상을 남겨보세요."
           style={{
             width: "100%",
-            minHeight: 130,
-            resize: "vertical",
+            height: 130,
+            resize: "none",
+            overflowY: "auto",
+            boxSizing: "border-box",
             border: "1px solid #3a3a48",
             borderRadius: 6,
             background: "#111",
@@ -647,7 +737,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               fontWeight: 700,
             }}
           >
-            {reviewHasSpoiler ? "스포일러 포함" : "스포일러 없음"}
+            {/* {reviewHasSpoiler ? "스포일러 포함" : "스포일러 없음"} */}
+            스포일러
           </button>
           <button
             type="button"
@@ -677,46 +768,207 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           <span style={{ color: "#888", fontSize: 13 }}>{registeredReviews.length}개</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {pagedReviews.map((review) => (
-            <article
-              key={review.id}
-              style={{
-                border: "1px solid #2a2a35",
-                borderRadius: 8,
-                background: "rgba(255,255,255,0.025)",
-                padding: 18,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-                <div>
-                  <strong style={{ color: "#fff", fontSize: 15 }}>{review.author}</strong>
-                  <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>★★★★★</span>
-                  <span style={{ color: "#aaa", marginLeft: 8, fontSize: 12 }}>{review.rating.toFixed(1)} / 5.0</span>
-                  {review.spoiler && (
-                    <span style={{ marginLeft: 8, padding: "2px 7px", borderRadius: 4, border: "1px solid rgba(229,9,20,0.45)", color: "#e50914", fontSize: 11 }}>
-                      스포일러
-                    </span>
+          {pagedReviews.map((review) => {
+            const isReported = reportedReviewIds.includes(review.id);
+            const isLiked = likedReviewIds.includes(review.id);
+            const shouldBlurSpoiler = review.spoiler && !visibleSpoilerReviewIds.includes(review.id);
+
+            return (
+              <article
+                key={review.id}
+                style={{
+                  border: "1px solid #2a2a35",
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.025)",
+                  padding: 18,
+                }}
+              >
+                <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
+                  <div>
+                    <strong style={{ color: "#fff", fontSize: 15 }}>{review.author}</strong>
+                    <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>★★★★★</span>
+                    <span style={{ color: "#aaa", marginLeft: 8, fontSize: 12 }}>{review.rating.toFixed(1)} / 5.0</span>
+                    {review.spoiler && (
+                      <span style={{ marginLeft: 8, padding: "2px 7px", borderRadius: 4, border: "1px solid rgba(229,9,20,0.45)", color: "#e50914", fontSize: 11 }}>
+                        스포일러
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className={`detail-outline-hover${isReported ? " detail-report-active" : ""}`}
+                    onClick={() => handleOpenReportReview(review.id)}
+                    aria-pressed={isReported}
+                    style={{
+                      border: `1px solid ${isReported ? "rgba(229,9,20,0.7)" : "#3a3a48"}`,
+                      borderRadius: 4,
+                      background: isReported ? "rgba(229,9,20,0.16)" : "transparent",
+                      color: isReported ? "#e50914" : "#888",
+                      height: 30,
+                      padding: "0 10px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: isReported ? 700 : 400,
+                    }}
+                  >
+                    {/* {isReported ? "신고됨" : "신고"} */}
+                    신고
+                  </button>
+                  {reportTargetReviewId === review.id && (
+                    <div style={{
+                      position: "absolute",
+                      top: 36,
+                      right: 0,
+                      zIndex: 20,
+                      width: 260,
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 8,
+                      background: "#191919",
+                      padding: 12,
+                      boxShadow: "0 14px 42px rgba(0,0,0,0.42)",
+                    }}>
+                      <p style={{ margin: "0 0 10px", color: "#d8d8d8", fontSize: 13, fontWeight: 800 }}>신고 사유</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {REPORT_REASONS.map((reason) => (
+                          <button
+                            type="button"
+                            key={reason}
+                            onClick={() => setSelectedReportReason(reason)}
+                            style={{
+                              minHeight: 34,
+                              padding: "0 10px",
+                              border: `1px solid ${selectedReportReason === reason ? "rgba(229,9,20,0.7)" : "#333"}`,
+                              borderRadius: 6,
+                              background: selectedReportReason === reason ? "rgba(229,9,20,0.14)" : "rgba(255,255,255,0.03)",
+                              color: selectedReportReason === reason ? "#fff" : "#aaa",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {reason}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 10 }}>
+                        <button
+                          type="button"
+                          onClick={() => setReportTargetReviewId(null)}
+                          style={{ height: 30, padding: "0 10px", border: "1px solid #333", borderRadius: 5, background: "transparent", color: "#888", cursor: "pointer", fontSize: 12 }}
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSubmitReportReview}
+                          disabled={!selectedReportReason}
+                          style={{ height: 30, padding: "0 10px", border: "none", borderRadius: 5, background: "#e50914", color: "#fff", cursor: selectedReportReason ? "pointer" : "default", opacity: selectedReportReason ? 1 : 0.45, fontSize: 12, fontWeight: 800 }}
+                        >
+                          신고
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
+                <div style={{
+                  position: "relative",
+                  overflow: "hidden",
+                  borderRadius: 6,
+                  minHeight: shouldBlurSpoiler ? 96 : "auto",
+                }}>
+                  <div style={{
+                    minHeight: shouldBlurSpoiler ? 96 : "auto",
+                    filter: shouldBlurSpoiler ? "blur(6px)" : "none",
+                    opacity: shouldBlurSpoiler ? 0.72 : 1,
+                    userSelect: shouldBlurSpoiler ? "none" : "auto",
+                    transition: "filter 0.18s ease, opacity 0.18s ease",
+                  }}>
+                    <p style={{
+                      margin: 0,
+                      color: "#cfcfcf",
+                      lineHeight: 1.7,
+                      fontSize: 14,
+                    }}>
+                      {review.content}
+                    </p>
+                  </div>
+                  {shouldBlurSpoiler && (
+                    <div style={{
+                      position: "absolute",
+                      inset: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "radial-gradient(circle at center, rgba(20,20,20,0.72) 0%, rgba(20,20,20,0.58) 46%, rgba(20,20,20,0.32) 100%)",
+                      backdropFilter: "blur(3px)",
+                    }}>
+                      <button
+                        type="button"
+                        className="detail-secondary-hover"
+                        onClick={() => setVisibleSpoilerReviewIds((prev) => [...prev, review.id])}
+                        style={{
+                          height: 34,
+                          padding: "0 16px",
+                          border: "1px solid rgba(255,255,255,0.28)",
+                          borderRadius: 6,
+                          background: "rgba(255,255,255,0.12)",
+                          color: "#fff",
+                          cursor: "pointer",
+                          fontSize: 13,
+                          fontWeight: 800,
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.26)",
+                        }}
+                      >
+                        그래도 리뷰 보기
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>{review.createdAt}</time>
                 <button
                   type="button"
-                  className="detail-outline-hover"
-                  style={{ border: "1px solid #3a3a48", borderRadius: 4, background: "transparent", color: "#888", height: 30, padding: "0 10px", cursor: "pointer", fontSize: 12 }}
+                  className="detail-secondary-hover"
+                  onClick={() => toggleReviewLike(review.id)}
+                  aria-pressed={isLiked}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    height: 32,
+                    marginTop: 10,
+                    padding: "0 10px",
+                    border: `1px solid ${isLiked ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.24)"}`,
+                    borderRadius: 999,
+                    background: isLiked ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.08)",
+                    color: isLiked ? "#111" : "#d6d6d6",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
                 >
-                  신고
+                  <img
+                    src={isLiked ? "/images/detail/review/review-thumbup-black.svg" : "/images/detail/review/review-thumbup.svg"}
+                    alt=""
+                    style={{
+                      width: 14,
+                      height: 14,
+                      objectFit: "contain",
+                      opacity: isLiked ? 1 : 0.86,
+                      filter: isLiked ? "none" : "invert(1)",
+                    }}
+                  />
+                  좋아요
                 </button>
-              </div>
-              <p style={{ margin: 0, color: "#cfcfcf", lineHeight: 1.7, fontSize: 14 }}>{review.content}</p>
-              <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>{review.createdAt}</time>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         {totalReviewPages > 1 && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 8 }}>
             <button
               type="button"
-              className="detail-page-hover"
               onClick={() => setReviewPage((page) => Math.max(1, page - 1))}
               disabled={reviewPage === 1}
               style={{ background: "none", border: "1px solid #3a3a48", color: reviewPage === 1 ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: reviewPage === 1 ? "default" : "pointer", fontSize: 14 }}
@@ -727,7 +979,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               <button
                 type="button"
                 key={page}
-                className="detail-page-hover"
                 onClick={() => setReviewPage(page)}
                 style={{
                   width: 34,
@@ -746,7 +997,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             ))}
             <button
               type="button"
-              className="detail-page-hover"
               onClick={() => setReviewPage((page) => Math.min(totalReviewPages, page + 1))}
               disabled={reviewPage === totalReviewPages}
               style={{ background: "none", border: "1px solid #3a3a48", color: reviewPage === totalReviewPages ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: reviewPage === totalReviewPages ? "default" : "pointer", fontSize: 14 }}
@@ -994,10 +1244,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
           {/* Metadata */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 8 }}>
-            <div style={{ display: "none" }}>
-              <span style={{ background: "rgba(255, 255, 255, 0.1)", padding: "3px 8px", borderRadius: 4, fontSize: 12, fontWeight: 500, color: "rgba(255, 255, 255, 0.5)" }}>
-                {isTv ? "시리즈" : "영화"}
-                {mediaItem?.number_of_seasons ? ` · 시즌 ${mediaItem.number_of_seasons} 진행중` : ""}
+            <div>
+              <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                height: 30,
+                padding: "0 11px",
+                borderRadius: 5,
+                background: "rgba(255,255,255,0.14)",
+                color: "rgba(255,255,255,0.72)",
+                fontSize: 13,
+                fontWeight: 800,
+                letterSpacing: 0,
+              }}>
+                {heroTypeBadgeText}
               </span>
             </div>
 
@@ -1007,13 +1267,29 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                {releaseYear && <span style={{ fontSize: 14, color: "#888" }}>{releaseYear}</span>}
-                {seasonOrRuntimeText && (
-                  <>
-                    {releaseYear && <span style={{ color: "#444" }}>·</span>}
-                    <span style={{ fontSize: 14, color: "#888" }}>{seasonOrRuntimeText}</span>
-                  </>
-                )}
+                {heroMetaItems.map((item, index) => (
+                  <React.Fragment key={item}>
+                    {index > 0 && <span style={{ color: "#444" }}>·</span>}
+                    <span style={{ fontSize: 14, color: "#888" }}>{item}</span>
+                  </React.Fragment>
+                ))}
+                {heroMetaItems.length > 0 && <span style={{ color: "#444" }}>·</span>}
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: 38,
+                  height: 24,
+                  padding: "0 8px",
+                  border: "1px solid rgba(255,255,255,0.35)",
+                  borderRadius: 3,
+                  color: "rgba(255,255,255,0.78)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}>
+                  {ageBadge}
+                </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 {mediaItem?.genres?.slice(0, 3).map((g) => (
@@ -1022,11 +1298,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   </span>
                 ))}
                 {moodTags.map((mood) => (
-                  <span key={mood} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.06)", fontSize: 11, color: "#bbb" }}>
+                  <span key={mood} style={{ padding: "2px 10px", borderRadius: 100, border: "1px solid #555", fontSize: 11, color: "#999" }}>
                     {mood}
                   </span>
                 ))}
-                {countryText && <span style={{ fontSize: 14, color: "#888" }}>{countryText}</span>}
+                {/* {countryText && <span style={{ fontSize: 14, color: "#888" }}>{countryText}</span>} */}
               </div>
             </div>
 
@@ -1086,12 +1362,24 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 {isAddingPlayList ? "추가 중..." : `▶ ${isTv ? "이어보기" : "재생하기"}`}
               </button>
               <button
-                className="detail-secondary-hover"
+                className={`detail-secondary-hover${isMyListAdded ? " detail-my-list-added" : ""}`}
                 onClick={handleMyList}
                 disabled={isAddingMyList}
-                style={{ background: "rgba(255,255,255,0.1)", color: "#fff", height: 46, padding: "0 18px", fontSize: 16, fontWeight: 700, border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4, cursor: isAddingMyList ? "default" : "pointer", opacity: isAddingMyList ? 0.7 : 1 }}
+                aria-pressed={isMyListAdded}
+                style={{
+                  background: isMyListAdded ? "rgba(229,9,20,0.24)" : "rgba(255,255,255,0.1)",
+                  color: "#fff",
+                  height: 46,
+                  padding: "0 18px",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  border: `1px solid ${isMyListAdded ? "rgba(229,9,20,0.72)" : "rgba(255,255,255,0.25)"}`,
+                  borderRadius: 4,
+                  cursor: isAddingMyList ? "default" : "pointer",
+                  opacity: isAddingMyList ? 0.7 : 1,
+                }}
               >
-                {isAddingMyList ? "담는 중..." : "＋ 내 리스트"}
+                {isMyListAdded ? "✓ 내 리스트" : "＋ 내 리스트"}
               </button>
               <button
                 className="detail-circle-hover"
@@ -1116,9 +1404,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               >
                 {mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "♥" : "♡"}
               </button>
-              <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 🔔
-              </button>
+              </button>   */}
             </div>
           </div>
         </div>
@@ -1154,9 +1442,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       <div style={{ paddingBottom: 80 }}>
         {activeTab === "episodes" && isTv && renderEpisodesTab()}
         {activeTab === "info" && !isTv && renderStills()}
-        {activeTab === "info" && renderSynopsis()}
-        {activeTab === "info" && renderRelated()}
-        {activeTab === "info" && renderCast()}
+        {activeTab === "info" && !isTv && renderSynopsis()}
+        {activeTab === "info" && !isTv && renderRelated()}
         {activeTab === "cast" && renderCast()}
         {activeTab === "director" && renderDirector()}
         {activeTab === "review" && renderReviewTab()}
@@ -1202,6 +1489,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           </div>
         </div>
       )}
+
     </div>
   );
 }
