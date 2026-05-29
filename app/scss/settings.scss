@@ -139,6 +139,12 @@
   color: g.$main-menu-color;
 }
 
+.acset-error {
+  padding: 12px 0 4px;
+  color: #ff7777;
+  font-size: g.$text-13;
+}
+
 // ─── 버튼 ─────────────────────────────────────────────────────────────────────
 
 .acset-btn {
@@ -306,9 +312,11 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  border: 0;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  background: transparent;
 }
 
 .acset-profile-avatar {
@@ -337,4 +345,142 @@
 
 .acset-profile-name {
   font-size: g.$text-13;
+}
+
+.acset-profile-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.acset-profile-modal {
+  width: min(100%, 460px);
+  border: 1px solid #2e2e2e;
+  border-radius: g.$radius-md;
+  background: #1c1c1c;
+  color: g.$w-color;
+  overflow: hidden;
+}
+
+.acset-profile-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid #2e2e2e;
+
+  h2 {
+    font-size: g.$text-18;
+    font-weight: 700;
+  }
+
+  button {
+    border: 0;
+    background: transparent;
+    color: g.$main-menu-color;
+    font-size: g.$text-24;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      color: g.$w-color;
+    }
+  }
+}
+
+.acset-profile-modal-body {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.acset-profile-modal-avatar {
+  width: 92px;
+  height: 92px;
+  border-radius: g.$radius-md;
+  object-fit: cover;
+}
+
+.acset-profile-field {
+  display: grid;
+  gap: 8px;
+
+  span {
+    color: g.$main-menu-color;
+    font-size: g.$text-13;
+  }
+
+  input {
+    width: 100%;
+    border: 1px solid #3a3a3a;
+    border-radius: g.$radius-md;
+    padding: 11px 12px;
+    background: g.$bg-color;
+    color: g.$w-color;
+    font-size: g.$text-14;
+    outline: none;
+
+    &:focus {
+      border-color: g.$w-color;
+    }
+  }
+}
+
+.acset-profile-avatar-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  button {
+    width: 54px;
+    height: 54px;
+    border: 2px solid transparent;
+    border-radius: g.$radius-md;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+    cursor: pointer;
+
+    &.is-selected {
+      border-color: g.$w-color;
+    }
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.acset-profile-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 22px;
+  border-top: 1px solid #2e2e2e;
+
+  button {
+    border: 1px solid #3a3a3a;
+    border-radius: g.$radius-md;
+    padding: 9px 18px;
+    background: transparent;
+    color: g.$w-color;
+    font-size: g.$text-13;
+    cursor: pointer;
+
+    &:hover {
+      background: #2a2a2a;
+    }
+
+    &.is-primary {
+      border-color: g.$main-color;
+      background: g.$main-color;
+    }
+  }
 }
