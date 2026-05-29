@@ -4,7 +4,6 @@
 
 .signin-page {
   min-height: calc(100vh - $header-height);
-  // globals의 main { padding-left: 60px } 을 상쇄해서 진짜 중앙 정렬
   margin-left: -$main-menu-width;
   width: calc(100% + $main-menu-width);
   display: flex;
@@ -21,6 +20,8 @@
   display: flex;
   align-items: center;
   margin-bottom: 48px;
+  width: 100%;
+  max-width: 480px;
 }
 
 .step-node {
@@ -80,13 +81,14 @@
 }
 
 .step-connector {
+  flex: 1;
   display: flex;
   align-items: center;
   padding-bottom: 24px;
 }
 
 .step-line {
-  width: 64px;
+  width: 100%;
   height: 2px;
   background-color: #333;
 
@@ -474,7 +476,6 @@
   line-height: 1.6;
 }
 
-// 점 3개 로딩 스피너
 .verify-spinner {
   display: flex;
   gap: 6px;
@@ -580,7 +581,6 @@
   margin-bottom: 28px;
 }
 
-// 결제 주기 탭
 .billing-tab-wrap {
   display: flex;
   justify-content: center;
@@ -627,7 +627,6 @@
   white-space: nowrap;
 }
 
-// 플랜 그리드
 .plan-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -791,7 +790,6 @@
   }
 }
 
-// 상세 비교
 .section-title {
   font-size: $text-18;
   font-weight: 700;
@@ -849,7 +847,6 @@
   }
 }
 
-// FAQ
 .faq-list {
   display: flex;
   flex-direction: column;
@@ -890,7 +887,6 @@
   }
 }
 
-// 다음 버튼
 .plan-next-wrap {
   display: flex;
   justify-content: center;
@@ -944,7 +940,6 @@
   margin-bottom: 24px;
 }
 
-// 플랜 요약
 .payment-plan-summary {
   background-color: #1e1e1e;
   border: 1px solid #3a3a3a;
@@ -1013,7 +1008,6 @@
   }
 }
 
-// 결제수단 탭
 .payment-tabs {
   display: flex;
   border-bottom: 1px solid #2e2e2e;
@@ -1055,7 +1049,6 @@
   line-height: 1.6;
 }
 
-// 카드 폼
 .payment-card-form {
   display: flex;
   flex-direction: column;
@@ -1105,13 +1098,11 @@
     box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
   }
 
-  // select 스타일
   option {
     background-color: #1e1e1e;
   }
 }
 
-// 동의 체크
 .payment-agree-list {
   display: flex;
   flex-direction: column;
@@ -1165,24 +1156,44 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .payment-quick-btn {
-  background-color: #1e1e1e;
-  border: 1px solid #3a3a3a;
+  border: none;
   border-radius: $radius-md;
-  padding: 22px 8px;
-  font-size: $text-14;
-  font-weight: 500;
-  color: #ccc;
+  padding: 18px 16px;
+  font-size: $text-16;
+  font-weight: 700;
   cursor: pointer;
-  text-align: center;
-  transition: border-color 0.15s, background-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: opacity 0.15s, transform 0.15s;
+  background-repeat: no-repeat;
+  background-position: 20% center;
 
   &:hover {
-    border-color: #666;
-    background-color: #242424;
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+
+  &.kakao {
+    background-color: #fee500;
+    color: #3a1d1d;
+    background-image: url(/images/social/kakao_login.svg);
+  }
+
+  &.naver {
+    background-color: #03c75a;
+    color: #fff;
+    background-image: url(/images/social/naver_login.svg);
+  }
+
+  &.selected {
+    outline: 2px solid $main-color;
+    // outline-offset: 2px;
   }
 }
 
@@ -1209,6 +1220,13 @@
   &:hover {
     border-color: #666;
     background-color: #242424;
+  }
+
+  &.selected {
+    border-color: $main-color;
+    background-color: rgba(229, 9, 20, 0.06);
+    color: $w-color;
+    font-weight: 700;
   }
 }
 
@@ -1265,7 +1283,6 @@
   color: $main-color;
 }
 
-// 안내 문구
 .payment-notice {
   font-size: 12px;
   color: #555;
@@ -1389,7 +1406,6 @@
   margin-bottom: 36px;
 }
 
-// 영수증 카드
 .complete-receipt {
   width: 100%;
   background-color: #1e1e1e;
@@ -1469,17 +1485,20 @@
   color: $w-color;
 }
 
-// 메인으로 버튼
 .complete-home-btn {
   width: 100%;
   padding: 14px;
-  background-color: #f40612;
-  color: #fff;
+  background-color: $main-color;
+  color: $w-color;
   font-size: $text-14;
-  font-weight: 500;
-  border: 1px solid #3a3a3a;
+  font-weight: 700;
+  border: none;
   border-radius: $radius-md;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background-color 0.15s, transform 0.15s;
 
+  &:hover {
+    background-color: #f40612;
+    transform: translateY(-1px);
+  }
 }

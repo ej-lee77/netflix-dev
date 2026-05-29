@@ -27,7 +27,8 @@ interface StepPaymentProps {
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
 
 const BANKS = ["국민은행", "신한은행", "우리은행", "하나은행", "카카오뱅크", "토스뱅크"];
-const QUICK_PAYS = ["카카오페이", "네이버페이", "토스", "페이코"];
+const QUICK_PAYS = ["카카오페이", "네이버페이"];
+const PayColor = ["kakao", "naver"]
 
 // ─── 숫자 포맷 ────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,8 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   const [agreeSave, setAgreeSave] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [carrier, setCarrier] = useState("");
+  const [selectedBank, setSelectedBank] = useState<string>("");
+  const [selectedQuickPay, setSelectedQuickPay] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -214,8 +217,15 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
         <div className="payment-tab-content">
           <p className="payment-tab-desc">간편결제 수단을 선택하면 해당 앱으로 연결돼요.</p>
           <div className="payment-quick-grid">
-            {QUICK_PAYS.map((name) => (
-              <button key={name} type="button" className="payment-quick-btn">{name}</button>
+            {QUICK_PAYS.map((name, id) => (
+              <button
+                key={name}
+                type="button"
+                className={`payment-quick-btn ${PayColor[id]}${selectedQuickPay === name ? " selected" : ""}`}
+                onClick={() => setSelectedQuickPay(name)}
+              >
+                {name}
+              </button>
             ))}
           </div>
         </div>
@@ -227,7 +237,14 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
           <p className="payment-tab-desc">은행을 선택하면 계좌이체 화면으로 연결돼요.</p>
           <div className="payment-bank-grid">
             {BANKS.map((bank) => (
-              <button key={bank} type="button" className="payment-bank-btn">{bank}</button>
+              <button
+                key={bank}
+                type="button"
+                className={`payment-bank-btn${selectedBank === bank ? " selected" : ""}`}
+                onClick={() => setSelectedBank(bank)}
+              >
+                {bank}
+              </button>
             ))}
           </div>
         </div>

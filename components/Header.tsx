@@ -9,7 +9,7 @@ import { DEFAULT_PROFILES, useAuthStore } from "@/store/useAuthStore";
 import type { Profile } from "@/types/auth";
 import "./scss/header.scss";
 
-const AUTH_PATHS = ["/login", "/signup", "/forgot-password", "/payment"];
+const AUTH_PATHS = ["/login", "/signin", "/forgot-password", "/payment"];
 
 export default function Header() {
   const pathname = usePathname();
