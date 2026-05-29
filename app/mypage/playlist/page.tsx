@@ -3,6 +3,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { customMenus } from "@/data/mainMenu";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -17,6 +18,9 @@ type WishSortType = "recent" | "title" | "rating";
 interface CustomPlaylist {
   id: string;
   title: string;
+  description?: string;
+  moodTags?: string[];
+  isPublic?: boolean;
   itemKeys: string[];
   createdAt: string;
 }
@@ -37,6 +41,8 @@ interface ActivityReview {
 const CUSTOM_PLAYLIST_KEY = "netflix-custom-playlists";
 const USER_REVIEWS_KEY = "netflix-user-reviews";
 const SELECTABLE_PAGE_SIZE = 5;
+const PLAYLIST_MOOD_TAGS = customMenus.filter((menu) => menu.path.startsWith("/mood/"));
+const getMoodIcon = (tag: string) => PLAYLIST_MOOD_TAGS.find((mood) => mood.title === tag)?.imgUrl;
 
 const tabs: { id: ActivityTab; label: string }[] = [
   { id: "watching", label: "시청중" },
@@ -133,6 +139,9 @@ function ActivityContent() {
   const [wishSortOpen, setWishSortOpen] = useState(false);
   const [wishLoading, setWishLoading] = useState(true);
   const [playlistTitle, setPlaylistTitle] = useState("");
+  const [playlistDescription, setPlaylistDescription] = useState("");
+  const [selectedMoodTags, setSelectedMoodTags] = useState<string[]>([]);
+  const [playlistIsPublic, setPlaylistIsPublic] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionPage, setSelectionPage] = useState(1);
   const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
@@ -142,7 +151,11 @@ function ActivityContent() {
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (isActivityTab(tabParam)) {
-      setActiveTab(tabParam);
+      const timeoutId = window.setTimeout(() => {
+        setActiveTab(tabParam);
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
     }
   }, [searchParams]);
 
@@ -164,7 +177,7 @@ function ActivityContent() {
       setWishLoading(false);
     };
     load();
-  }, [user]);
+  }, [onLoadWishlist, user]);
 
   const watchItems = playList;
   const listItems = myList;
@@ -216,14 +229,26 @@ function ActivityContent() {
     ));
   };
 
+  const toggleMoodTag = (tag: string) => {
+    setSelectedMoodTags((prev) => (
+      prev.includes(tag)
+        ? prev.filter((item) => item !== tag)
+        : [...prev, tag]
+    ));
+  };
+
   const handleCreatePlaylist = () => {
     const title = playlistTitle.trim();
+    const description = playlistDescription.trim();
     if (!title || selectedKeys.length === 0) return;
 
     const nextPlaylists = [
       {
         id: `${Date.now()}`,
         title,
+        description,
+        moodTags: selectedMoodTags,
+        isPublic: playlistIsPublic,
         itemKeys: selectedKeys,
         createdAt: new Date().toISOString(),
       },
@@ -233,6 +258,9 @@ function ActivityContent() {
     setCustomPlaylists(nextPlaylists);
     saveCustomPlaylists(nextPlaylists);
     setPlaylistTitle("");
+    setPlaylistDescription("");
+    setSelectedMoodTags([]);
+    setPlaylistIsPublic(false);
     setSelectedKeys([]);
     setSelectionPage(1);
   };
@@ -286,7 +314,7 @@ function ActivityContent() {
                 onClick={() => handleDeleteWatchingItem(item)}
                 aria-label={`${item.title} 시청중 콘텐츠 삭제`}
               >
-                삭제
+                -
               </button>
               <Link href={`/detail/${item.mediaType}/${item.id}`}>
                 <div className="watch-thumb">
@@ -342,7 +370,7 @@ function ActivityContent() {
                 onClick={() => handleDeleteWatchingItem(item)}
                 aria-label={`${item.title} 시청기록 삭제`}
               >
-                삭제
+                -
               </button>
               <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
                 <div className="mini-poster__image">
@@ -502,7 +530,7 @@ function ActivityContent() {
           onClick={() => handleDeletePlaylist(playlist.id)}
           aria-label={`${playlist.title} 플레이리스트 삭제`}
         >
-          삭제
+          -
         </button>
         <div className="playlist-mosaic">
           {previewItems.map((item) => (
@@ -513,6 +541,24 @@ function ActivityContent() {
           {playlistItems.length > 4 && <span>+{playlistItems.length - 4}</span>}
         </div>
         <h3>{playlist.title}</h3>
+        {playlist.description && <p className="playlist-description">{playlist.description}</p>}
+        {playlist.moodTags && playlist.moodTags.length > 0 && (
+          <div className="playlist-tag-row">
+            {playlist.moodTags.map((tag) => {
+              const icon = getMoodIcon(tag);
+
+              return (
+                <span key={tag}>
+                  {icon && <img src={icon} alt="" />}
+                  {tag}
+                </span>
+              );
+            })}
+          </div>
+        )}
+        <span className={playlist.isPublic ? "playlist-visibility public" : "playlist-visibility"}>
+          {playlist.isPublic ? "피드 공개" : "비공개"}
+        </span>
         <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
       </article>
     );
@@ -525,9 +571,12 @@ function ActivityContent() {
         <span>{customPlaylists.length}개</span>
       </div>
 
-      <div className="playlist-builder">
+      <div className="playlist-builder" id="playlist-builder">
         <div className="builder-panel">
-          <div className="builder-plus">＋</div>
+          {/* <div className="builder-plus">＋</div> */}
+          <div className="builder-plus">
+            <img src="/images/playlist/playlist-icon.svg" alt="" />
+          </div>
           <h3>플레이리스트 만들기</h3>
           <input
             type="text"
@@ -535,6 +584,33 @@ function ActivityContent() {
             onChange={(event) => setPlaylistTitle(event.target.value)}
             placeholder="플레이리스트 이름"
           />
+          <textarea
+            value={playlistDescription}
+            onChange={(event) => setPlaylistDescription(event.target.value)}
+            placeholder="플레이리스트 설명"
+          />
+          <div className="playlist-mood-tags" aria-label="플레이리스트 무드 선택">
+            {PLAYLIST_MOOD_TAGS.map((mood) => (
+              <button
+                type="button"
+                key={mood.path}
+                className={selectedMoodTags.includes(mood.title) ? "active" : ""}
+                onClick={() => toggleMoodTag(mood.title)}
+              >
+                <img src={mood.imgUrl} alt="" />
+                {mood.title}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className={playlistIsPublic ? "visibility-toggle active" : "visibility-toggle"}
+            onClick={() => setPlaylistIsPublic((value) => !value)}
+            aria-pressed={playlistIsPublic}
+          >
+            {/* {playlistIsPublic ? "피드에 공개" : "피드 비공개"} */}
+            피드에 공개
+          </button>
           <button type="button" onClick={handleCreatePlaylist} disabled={!playlistTitle.trim() || selectedKeys.length === 0}>
             선택한 작품으로 만들기
           </button>
@@ -556,16 +632,18 @@ function ActivityContent() {
                   >
                     <span className="select-check">{isSelected ? "✓" : "+"}</span>
                     {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+                  </button>
+                  <div className="select-card-title-row">
                     <strong>{item.title}</strong>
-                  </button>
-                  <button
-                    type="button"
-                    className="select-delete-btn"
-                    onClick={() => handleDeleteMyListItem(item)}
-                    aria-label={`${item.title} 내 리스트 삭제`}
-                  >
-                    삭제
-                  </button>
+                    <button
+                      type="button"
+                      className="select-delete-btn"
+                      onClick={() => handleDeleteMyListItem(item)}
+                      aria-label={`${item.title} 내 리스트 삭제`}
+                    >
+                      -
+                    </button>
+                  </div>
                 </article>
               );
             })}
@@ -608,9 +686,20 @@ function ActivityContent() {
         </div>
       </div>
 
-      {customPlaylists.length > 0 && (
+      <div className="playlist-section-divider" aria-hidden="true" />
+
+      {customPlaylists.length > 0 ? (
         <div className="custom-playlist-grid">
           {customPlaylists.map(renderPlaylistMosaic)}
+        </div>
+      ) : (
+        <div className="playlist-empty-state">
+          <img src="/images/playlist/empty-playlist.png" alt="" />
+          <h3>아직 플레이리스트가 없어요</h3>
+          <p>
+            Your archive is empty.<br />
+            Start your collection.
+          </p>
         </div>
       )}
     </section>
