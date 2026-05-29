@@ -35,8 +35,8 @@ const PLANS: PlanData[] = [
     id: "basic",
     name: "베이직",
     desc: "광고 포함 · 표준 화질",
-    monthly: { price: 5500 },
-    annual: { monthlyEquiv: 4583, total: 55000, originalTotal: 66000 },
+    monthly: { price: 7000 },
+    annual: { monthlyEquiv: 5810, total: 69720, originalTotal: 84000 },
     features: [
       { label: "HD 화질 (720p)", included: true },
       { label: "1개 기기 동시 시청", included: true },
@@ -229,13 +229,13 @@ export default function StepPlan({ onNext }: StepPlanProps) {
                 ))}
               </ul>
 
-              <button
+              {/* <button
                 type="button"
                 className={`plan-select-btn${isSelected ? " hot" : " default"}`}
                 onClick={(e) => { e.stopPropagation(); setSelected(plan.id); }}
               >
-                선택하기
-              </button>
+                선택 됨
+              </button> */}
             </div>
           );
         })}
