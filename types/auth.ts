@@ -37,7 +37,7 @@ export interface UserGenreStats {
 
 export interface PlayList{
   playlistVideos: string[]; // 플레이리스트 영상 ID 목록
-  customPlaylists: string[]; // 커스텀 플레이리스트 ID 목록
+  customPlaylists: string[]; // 커스텀 플레이리스트 ID 목록 - 필요없음
 }
 
 export interface MovieList{
@@ -47,16 +47,22 @@ export interface MovieList{
   genreStats: UserGenreStats; // 장르별 시청도 카운트
 }
 
-export interface CommunityList{
-  earnedBadges: string[];   // 획득 뱃지 ID 목록
-  equippedBadges: string;  // 장착 뱃지 ID 하나만
+export interface BadgeInfo{
+  id: string; //뱃지 아이디
+  progress: number; //진행도
+  isComplete: boolean; //획득유무
 }
 
 export interface BadgeList{
+  earnedBadges: BadgeInfo[];   // 획득 뱃지 ID 목록
+  equippedBadges: string;  // 장착 뱃지 ID 하나만
+}
+
+export interface CommunityList{
   followers: string[];   // 팔로워 유저 ID 목록
-  following: string[]; // 팔로잉 유저 ID 하나만
-  reviews: string[]; //리뷰 ID 목록
-  feeds: string[]; //피드 ID 목록
+  following: string[]; // 팔로잉 유저 ID 목록
+  reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
+  feeds: string[]; //피드 ID 목록 내 피드 말고 
 }
 
 // 최종 Firebase 'users' 컬렉션의 문서 구조
@@ -80,4 +86,5 @@ export interface UserDocument {
     headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
     bages: BadgeList;
 
+    alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
 }
