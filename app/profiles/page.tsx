@@ -1,76 +1,115 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
+import { DEFAULT_PROFILES, useAuthStore } from "@/store/useAuthStore";
 import type { Profile } from "@/types/auth";
 import "../scss/profileSelect.scss";
 
+const AVATAR_OPTIONS = [
+  "/images/profile/image/default_icons/17.png",
+  "/images/profile/image/default_icons/18.png",
+  "/images/profile/image/default_icons/19.png",
+  "/images/profile/image/default_icons/20.png",
+  "/images/profile/image/stranger_things/1.png",
+  "/images/profile/image/squid_game/1.png",
+  "/images/profile/image/arcane/1.png",
+  "/images/profile/image/wednesday/1.png",
+];
+
 export default function ProfileSelectPage() {
   const router = useRouter();
-  const { user, currentProfile, onSetProfile } = useAuthStore() as any;
-  const [editMode, setEditMode] = useState(false);
+  const { user, onSetProfile, onAddProfile, onUpdateProfile, onDeleteProfile } = useAuthStore();
+  const profiles = useMemo(
+    () => (user?.profiles?.length ? user.profiles : DEFAULT_PROFILES),
+    [user?.profiles]
+  );
+  const [manageMode, setManageMode] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [draftAvatar, setDraftAvatar] = useState(AVATAR_OPTIONS[0]);
 
-  // user.profiles가 없으면 기본 프로필 하나
-  const profiles: Profile[] = user?.profiles ?? [];
+  useEffect(() => {
+    setManageMode(false);
+  }, []);
+
+  const openEditor = (profile?: Profile) => {
+    const fallbackAvatar = AVATAR_OPTIONS[profiles.length % AVATAR_OPTIONS.length];
+    setEditingProfile(profile ?? { id: 0, name: "새 프로필", imgUrl: fallbackAvatar });
+    setDraftName(profile?.name ?? "새 프로필");
+    setDraftAvatar(profile?.imgUrl ?? fallbackAvatar);
+  };
+
+  const closeEditor = () => {
+    setEditingProfile(null);
+    setDraftName("");
+    setDraftAvatar(AVATAR_OPTIONS[0]);
+  };
 
   const handleSelect = (profile: Profile) => {
-    if (editMode) {
-      // 편집 모드: 프로필 설정으로 이동
-      router.push(`/profiles/settings`);
+    if (manageMode) {
+      openEditor(profile);
       return;
     }
-    // 일반 모드: 프로필 선택 후 메인으로
-    if (onSetProfile) onSetProfile(profile);
+
+    onSetProfile(profile);
     router.push("/");
   };
 
+  const handleSave = () => {
+    if (!editingProfile) return;
+
+    const nextProfile = {
+      ...editingProfile,
+      name: draftName.trim() || "프로필",
+      imgUrl: draftAvatar,
+    };
+
+    if (editingProfile.id === 0) {
+      onAddProfile({ name: nextProfile.name, imgUrl: nextProfile.imgUrl });
+    } else {
+      onUpdateProfile(nextProfile);
+    }
+    closeEditor();
+  };
+
+  const handleDelete = () => {
+    if (!editingProfile || editingProfile.id === 0) return;
+    onDeleteProfile(editingProfile.id);
+    closeEditor();
+  };
+
   return (
-    <div className="profile-select">
+    <section className="profile-select" aria-label="프로필 선택">
       <div className="profile-select-inner">
-        <h1 className="ps-title">누가 시청하나요?</h1>
+        <h1 className="ps-title">
+          {manageMode ? "프로필 관리" : "넷플릭스를 시청할 프로필을 선택하세요."}
+        </h1>
 
         <ul className="ps-grid">
           {profiles.map((profile) => (
             <li key={profile.id}>
               <button
                 type="button"
-                className={`ps-item${editMode ? " is-edit" : ""}`}
+                className={`ps-item${manageMode ? " is-edit" : ""}`}
                 onClick={() => handleSelect(profile)}
               >
                 <div className="ps-avatar">
                   <img
-                    src={profile.imgUrl || "/images/profile/normal.svg"}
+                    src={profile.imgUrl || "/images/profile/image/default_icons/17.png"}
                     alt={profile.name || "프로필"}
                   />
-                  {editMode && (
-                    <span className="ps-edit-icon">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </span>
-                  )}
+                  {manageMode && <span className="ps-edit-icon" aria-hidden="true">✎</span>}
                 </div>
                 <span className="ps-name">{profile.name}</span>
               </button>
             </li>
           ))}
 
-          {/* 프로필 추가 (최대 4개) */}
-          {profiles.length < 4 && (
+          {profiles.length < 6 && (
             <li>
-              <button
-                type="button"
-                className="ps-item"
-                onClick={() => router.push("/profiles/new")}
-              >
-                <div className="ps-avatar ps-avatar-add">
-                  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v8M8 12h8" />
-                  </svg>
-                </div>
+              <button type="button" className="ps-item" onClick={() => openEditor()}>
+                <div className="ps-avatar ps-avatar-add" aria-hidden="true">+</div>
                 <span className="ps-name">프로필 추가</span>
               </button>
             </li>
@@ -79,12 +118,61 @@ export default function ProfileSelectPage() {
 
         <button
           type="button"
-          className={`ps-manage${editMode ? " is-active" : ""}`}
-          onClick={() => setEditMode((v) => !v)}
+          className={`ps-manage${manageMode ? " is-active" : ""}`}
+          onClick={() => setManageMode((value) => !value)}
         >
-          {editMode ? "완료" : "프로필 관리"}
+          {manageMode ? "완료" : "프로필 관리"}
         </button>
       </div>
-    </div>
+
+      {editingProfile && (
+        <div className="profile-editor-backdrop" role="dialog" aria-modal="true" aria-label="프로필 편집">
+          <div className="profile-editor">
+            <div className="profile-editor-head">
+              <h2>{editingProfile.id === 0 ? "프로필 추가" : "프로필 편집"}</h2>
+              <button type="button" className="profile-editor-close" onClick={closeEditor} aria-label="닫기">
+                ×
+              </button>
+            </div>
+
+            <div className="profile-editor-body">
+              <img className="profile-editor-avatar" src={draftAvatar} alt="" />
+              <label className="profile-editor-field">
+                <span>프로필 이름</span>
+                <input
+                  value={draftName}
+                  maxLength={12}
+                  onChange={(event) => setDraftName(event.target.value)}
+                />
+              </label>
+
+              <div className="profile-avatar-options" aria-label="아바타 선택">
+                {AVATAR_OPTIONS.map((avatar) => (
+                  <button
+                    key={avatar}
+                    type="button"
+                    className={draftAvatar === avatar ? "is-selected" : ""}
+                    onClick={() => setDraftAvatar(avatar)}
+                    aria-label="아바타 선택"
+                  >
+                    <img src={avatar} alt="" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="profile-editor-actions">
+              {editingProfile.id !== 0 && profiles.length > 1 && (
+                <button type="button" className="profile-editor-delete" onClick={handleDelete}>
+                  삭제
+                </button>
+              )}
+              <button type="button" onClick={closeEditor}>취소</button>
+              <button type="button" className="is-primary" onClick={handleSave}>저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
