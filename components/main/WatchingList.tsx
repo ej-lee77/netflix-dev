@@ -48,7 +48,9 @@ export default function WatchingList() {
                                 <Link href={`/detail/${item.mediaType}/${item.id}`} className="watching-card">
                                     <div className="watching-thumb">
                                         <img
-                                            src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                                            src={item.backdrop_path
+                                                ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
+                                                : `https://image.tmdb.org/t/p/w500${item.poster_path}`}
                                             alt={item.title}
                                         />
                                         {/* 시청률 진행바 */}
