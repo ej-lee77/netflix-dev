@@ -1,11 +1,13 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
+import { mockUserData } from "@/data/mockUserData";
+import { BADGE_LIST } from "@/data/badge";
 
 export default function MyPage() {
   const { user, currentProfile, currentMember, onLogout } = useAuthStore();
@@ -17,6 +19,60 @@ export default function MyPage() {
     if (popMovies.length === 0) onFetchPopular();
     if (tvs.length === 0) onFetchTvs();
   }, []);
+
+    const profileData = useMemo(() => {
+      if (!mockUserData) {
+        return {
+          equippedBadgeName: null,
+          stats: { follower: 0, following: 0, review: 0, badge: 0, watched: 0 }
+        };
+      }
+
+      // 대표 칭호 찾기
+      const matchedBadge = BADGE_LIST.find((b) => b.id === mockUserData.bages?.equippedBadges);
+      
+      return {
+        equippedBadgeName: matchedBadge ? matchedBadge.name : null,
+        stats: {
+          follower: mockUserData.community?.followers?.length || 0,
+          following: mockUserData.community?.following?.length || 0,
+          review: mockUserData.community?.reviews?.length || 0,
+          // 실제 획득 성공한 뱃지 개수만 카운트
+          badge: mockUserData.bages?.earnedBadges?.filter(b => b.isComplete).length || 0,
+          // 시청 완료 영상 개수
+          watched: mockUserData.movies?.watchingVideos?.length || 0,
+        }
+      };
+    }, [mockUserData]); // 💡 mockUserData 대신 프롭스나 상태로 받는 user로 통일
+
+    // 2. 💡 하단 뱃지 섹션용: 획득한 뱃지 중 최대 5개 추출 및 정렬 (버그 수정 완료)
+    const displayBadgesSummary = useMemo(() => {
+      // 고정된 mockUserData 대신 동적 데이터인 user를 바라보도록 수정합니다.
+      if (!mockUserData || !mockUserData.bages) return [];
+
+      const { earnedBadges, equippedBadges } = mockUserData.bages;
+
+      // 1. 완전히 획득한 뱃지만 필터링
+      const completedUserBadges = earnedBadges?.filter((b) => b.isComplete) || [];
+
+      // 2. 마스터 데이터(BADGE_LIST)와 결합
+      const mapped = completedUserBadges.map((userBadge) => {
+        const master = BADGE_LIST.find((m) => m.id === userBadge.id);
+        return {
+          id: userBadge.id,
+          name: master ? master.name : "알 수 없는 뱃지",
+          title: master ? master.title : "",
+          imgUrl: master ? master.imgUrl : "/images/badge/default.png",
+          isEquipped: equippedBadges === userBadge.id
+        };
+      });
+
+      // 3. 장착 중인 배지가 제일 앞으로 오게 정렬 후 5개만 자르기
+      return mapped
+        .sort((a, b) => (b.isEquipped ? 1 : 0) - (a.isEquipped ? 1 : 0))
+        .slice(0, 5);
+
+    }, [mockUserData]);
 
   const activeProfile = currentProfile ?? user?.profiles?.[0] ?? null;
 
@@ -78,27 +134,42 @@ export default function MyPage() {
             />
             <button className="edit-badge">✎</button>
           </div>
+          
           <div className="profile-info">
-            <h2>{activeProfile?.name || currentMember || "사용자"}</h2>
+            <div className="name-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2>{activeProfile?.name || currentMember || "사용자"}</h2>
+              {/* 💡 가공된 대표 칭호 실시간 바인딩 */}
+              {profileData.equippedBadgeName && (
+                <span className="user-equipped-badge-tag">
+                  {profileData.equippedBadgeName}
+                </span>
+              )}
+            </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
             <span className="plan-badge">★ 스탠다드 · 다음 결제 2026.06.22</span>
           </div>
+          
+          {/* 💡 동적으로 카운트된 5대 스탯 영역 */}
           <div className="profile-stats">
             <div className="stat">
-              <div className="value">{stats.watched}</div>
-              <div className="label">시청 완료</div>
+              <div className="value">{profileData.stats.follower}</div>
+              <div className="label">팔로워</div>
             </div>
             <div className="stat">
-              <div className="value">{stats.wishlist}</div>
-              <div className="label">찜한 작품</div>
+              <div className="value">{profileData.stats.following}</div>
+              <div className="label">팔로잉</div>
             </div>
             <div className="stat">
-              <div className="value">{stats.review}</div>
+              <div className="value">{profileData.stats.review}</div>
               <div className="label">작성 리뷰</div>
             </div>
             <div className="stat">
-              <div className="value">{stats.badge}</div>
+              <div className="value">{profileData.stats.badge}</div>
               <div className="label">획득 뱃지</div>
+            </div>
+            <div className="stat">
+              <div className="value">{profileData.stats.watched}</div>
+              <div className="label">시청 완료</div>
             </div>
           </div>
         </div>
@@ -157,7 +228,7 @@ export default function MyPage() {
         </section>
 
         {/* 찜 목록 */}
-        <section className="section-block">
+        {/* <section className="section-block">
           <div className="section-h">
             <h2>찜 목록</h2>
             <Link href="/mypage/playlist?tab=wishlist" className="more">전체 {stats.wishlist}개 →</Link>
@@ -174,7 +245,7 @@ export default function MyPage() {
               </Link>
             ))}
           </div>
-        </section>
+        </section> */}
 
         {/* 2단: 친구 활동 + 최근 리뷰 */}
         <div className="two-col-section">
@@ -240,27 +311,39 @@ export default function MyPage() {
         <section className="section-block">
           <div className="section-h">
             <h2>획득한 뱃지</h2>
-            <span className="more"><Link href="/goods">전체 {stats.badge}개 →</Link></span>
+            {/* 전체 개수는 기존에 쓰고 계시던 stats.badge 값을 바인딩하거나 displayBadgesSummary.length 등으로 대체 가능합니다 */}
+            <span className="more">
+              <Link href="/goods">전체 {stats.badge}개 →</Link>
+            </span>
           </div>
-          <div className="badge-grid">
-            {badges.map((b) => (
-              <div key={b.name} className={`badge-card ${b.locked ? "locked" : ""}`}>
-                <div className="badge-icon">{b.icon}</div>
-                <h4>{b.name}</h4>
-                <p>{b.desc}</p>
+          
+          <div className="badge-grid summary-mode">
+            {displayBadgesSummary.length > 0 ? (
+              displayBadgesSummary.map((b) => (
+                <div 
+                  key={b.id} 
+                  className={`badge-card ${b.isEquipped ? "equipped-highlight" : ""}`}
+                  title={b.title} // 마우스 오버 시 전체 칭호 문장(짧은 한 문장) 툴팁 노출
+                >
+                  {/* 이미지 경로 매핑 및 장착 태그 추가 */}
+                  <div className="badge-icon">
+                    <img src={b.imgUrl} alt={b.name} style={{ width: '100%', height: 'auto' }} />
+                    {b.isEquipped && <span className="equipped-badge-tag">장착됨</span>}
+                  </div>
+                  
+                  {/* 기존 마크업 형태 유지 */}
+                  <h4>{b.name}</h4>
+                  <p>{b.title}</p>
+                </div>
+              ))
+            ) : (
+              /* 획득한 뱃지가 아예 없을 때 예외 화면 처리 */
+              <div className="empty-badge-block" style={{ gridColumn: '1 / -1', padding: '20px 0', color: '#666' }}>
+                아직 획득한 뱃지가 없습니다.
               </div>
-            ))}
+            )}
           </div>
         </section>
-
-        {/* 위험 영역 */}
-        <div className="danger-zone">
-          <div>
-            <h3>회원 탈퇴</h3>
-            <p>탈퇴 시 모든 시청 기록·리뷰·찜 목록·뱃지가 삭제되며 복구할 수 없습니다.</p>
-          </div>
-          <button className="btn-danger">회원 탈퇴</button>
-        </div>
 
         {/* 로그아웃 */}
         {user && (
