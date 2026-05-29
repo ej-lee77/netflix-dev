@@ -240,7 +240,7 @@ export default function MyPage() {
         <section className="section-block">
           <div className="section-h">
             <h2>획득한 뱃지</h2>
-            <span className="more">전체 {stats.badge}개 →</span>
+            <span className="more"><Link href="/goods">전체 {stats.badge}개 →</Link></span>
           </div>
           <div className="badge-grid">
             {badges.map((b) => (

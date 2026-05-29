@@ -174,13 +174,14 @@
       height: 72px;
       border-radius: 50%;
       background: rgba(251, 191, 36, 0.15);
-      border: 2px solid #fbbf24;
+      border: 2px solid #ffffff00;
       margin: 0 auto 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: g.$text-32;
       color: #fbbf24;
+      padding: 5px;
     }
 
     &.locked .badge-icon {
@@ -440,6 +441,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
+    margin-bottom: 20px;
 
     @media (max-width: 700px) {
       grid-template-columns: 1fr;

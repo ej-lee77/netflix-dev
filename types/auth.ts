@@ -36,9 +36,9 @@ export interface UserGenreStats {
   [genreName: string]: number;
 }
 
-export interface PlayList {
-  playlistVideos: string[];
-  customPlaylists: string[];
+export interface PlayList{
+  playlistVideos: string[]; // 플레이리스트 영상 ID 목록
+  customPlaylists: string[]; // 커스텀 플레이리스트 ID 목록 - 필요없음
 }
 
 export interface MovieList {
@@ -48,27 +48,43 @@ export interface MovieList {
   genreStats: UserGenreStats;
 }
 
-export interface CommunityList {
-  earnedBadges: string[];
-  equippedBadges: string;
+export interface BadgeInfo{
+  id: string; //뱃지 아이디
+  progress: number; //진행도
+  isComplete: boolean; //획득유무
 }
 
-export interface BadgeList {
-  followers: string[];
-  following: string[];
-  reviews: string[];
-  feeds: string[];
+export interface BadgeList{
+  earnedBadges: BadgeInfo[];   // 획득 뱃지 ID 목록
+  equippedBadges: string;  // 장착 뱃지 ID 하나만
+}
+
+export interface CommunityList{
+  followers: string[];   // 팔로워 유저 ID 목록
+  following: string[]; // 팔로잉 유저 ID 목록
+  reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
+  feeds: string[]; //피드 ID 목록 내 피드 말고 
 }
 
 export interface UserDocument {
-  userId: string;
-  email: string;
-  name: string;
-  phoneNumber: string;
-  planType: string;
-  profile: UserProfile;
-  movies: MovieList;
-  community: CommunityList;
-  headerMenus: string[];
-  bages: BadgeList;
+    userId: string; // 문서 ID로 사용됨
+    
+    // 기본정보
+    email: string;
+    name: string;
+    phoneNumber: string;
+    planType: string;
+    profile: UserProfile;
+
+    // 영상관련 (기본 필드 형태)
+    movies: MovieList;
+
+    // 커뮤니티관련
+    community: CommunityList;
+
+    // 메뉴 및 뱃지
+    headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
+    bages: BadgeList;
+
+    alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
 }
