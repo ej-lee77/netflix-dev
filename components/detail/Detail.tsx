@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
-import type { CastMember, Movie, TV, Video } from "@/types/movie";
+import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
 import "./detail.module.scss";
 
 interface DetailClientProps {
@@ -102,6 +102,40 @@ function getMoodTags(genres?: { id: number; name: string }[]) {
   return Array.from(new Set((genres ?? []).map((genre) => moodByGenreId[genre.id]).filter(Boolean))).slice(0, 2);
 }
 
+function getKoreanCountryName(country: { iso_3166_1: string; name: string }) {
+  const countryNameByCode: Record<string, string> = {
+    AR: "아르헨티나",
+    AU: "호주",
+    BE: "벨기에",
+    BR: "브라질",
+    CA: "캐나다",
+    CN: "중국",
+    DE: "독일",
+    DK: "덴마크",
+    ES: "스페인",
+    FI: "핀란드",
+    FR: "프랑스",
+    GB: "영국",
+    HK: "홍콩",
+    IE: "아일랜드",
+    IN: "인도",
+    IT: "이탈리아",
+    JP: "일본",
+    KR: "한국",
+    MX: "멕시코",
+    NL: "네덜란드",
+    NO: "노르웨이",
+    SE: "스웨덴",
+    TH: "태국",
+    TR: "튀르키예",
+    TW: "대만",
+    US: "미국",
+  };
+
+  return countryNameByCode[country.iso_3166_1] ?? country.name;
+}
+
+
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
   99: "다큐", 18: "드라마", 10751: "가족", 14: "판타지", 36: "역사",
@@ -122,7 +156,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     popMovies, popVideos, onFetchPopular, onFetchVideo,
     mediaDetails, onFetchMediaDetail,
     casts, onFetchCredits,
-    mediaRecommended, onFetchMediaRecommended,
+    recommended, onFetchRecommended,
     movieImages, onFetchMovieImages,
     certifications, onFetchCertification,
   } = useMovieStore();
@@ -167,7 +201,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
   const onStillsMouseUp = () => { isDragging.current = false; };
 
-  // 찜 버튼 상태 표시를 위해 위시리스트 로드
   useEffect(() => {
     onLoadWishlist();
     onLoadMyList();
@@ -202,8 +235,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   }, [type, isTv, mediaId, onFetchMediaDetail, onFetchCredits, onFetchCertification, onFetchTvVideos, onFetchVideo]);
 
   useEffect(() => {
-    if (mediaId) onFetchMediaRecommended(mediaId, type);
-  }, [mediaId, type, onFetchMediaRecommended]);
+    if (recommended.length === 0) onFetchRecommended();
+  }, [recommended.length, onFetchRecommended]);
 
   useEffect(() => {
     if (isTv && mediaId) onFetchSeasons(mediaId);
@@ -295,7 +328,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     imageUrl(selectedEpisode?.still_path, "original") ||
     imageUrl(mediaItem?.poster_path, "original");
   const posterUrl = imageUrl(mediaItem?.poster_path, "w500");
-  const relatedItems = (mediaRecommended[`${type}-${mediaId}`] ?? []).slice(0, 6);
+  const relatedItems = recommended
+    .filter((item: RecommendedItem) => item.id !== mediaId)
+    .slice(0, 6);
   const isMyListAdded = myList.some((item) => item.id === mediaId && item.mediaType === type);
   const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1,
