@@ -51,7 +51,7 @@ export default function Header() {
     <>
       <header>
         <div className="flex-item">
-          <div className="flex-item gap-4">
+          <div className="flex-item gap-6">
             <h1>
               <Link href="/">
                 <Image src="/images/logo-icon.svg" alt="Netflix" width={40} height={40} />
