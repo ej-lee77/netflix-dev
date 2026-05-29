@@ -1,63 +1,63 @@
 "use client";
 import { useMovieStore } from '@/store/useMovieStore';
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import "./scss/release.scss"
 import SectionTitle from '../common/SectionTitle';
 
+// 4-item 사이클: 어떤 컬럼 수에도 tall+short = 균등 높이 보장
+const SIZE_CYCLE = ['tall', 'short', 'short', 'tall'] as const;
+type CardSize = typeof SIZE_CYCLE[number];
+
+function getColCount(width: number): number {
+  if (width >= 2560) return 6;
+  if (width >= 1920) return 5;
+  if (width >= 1280) return 4;
+  if (width >= 768)  return 3;
+  if (width >= 640)  return 2;
+  return 1;
+}
+
 export default function Release() {
-    const {onFetchUpcoming, upcomings} = useMovieStore();
-    useEffect(()=>{
-        onFetchUpcoming();
-    }, []);
+  const { onFetchUpcoming, upcomings } = useMovieStore();
+  const [colCount, setColCount] = useState(3);
 
-    // 딱 6개만 잘라서 렌더링
-    const limitedUpcomings = upcomings.slice(0, 6);
+  useEffect(() => {
+    onFetchUpcoming();
+  }, []);
 
-    const reorderedUpcomings = [
-        limitedUpcomings[0], // 1열 상단: 옵세션 (Large)
-        limitedUpcomings[3], // 1열 하단: 마이클 (Small)
-        limitedUpcomings[1], // 2열 상단: 모탈컴뱃 (Small)
-        limitedUpcomings[4], // 2열 하단: 귀멸의 칼날 (Large)
-        limitedUpcomings[2], // 3열 상단: 만달로리안 (Large)
-        limitedUpcomings[5], // 3열 하단: 노멀 (Small)
-    ].filter(Boolean);
+  useEffect(() => {
+    const update = () => setColCount(getColCount(window.innerWidth));
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
-    return (
-        <section className="release-section">
-            <div className="release-container inner">
-                <SectionTitle title='공개예정 미리보기' subTitle='새로운 작품들을 시청해보세요' />
-                <div className="release-masonry">
-                {reorderedUpcomings.map((movie) => {
-                    const originalIndex = upcomings.findIndex(item => item.id === movie.id);
-                    const isLarge = originalIndex === 0 || originalIndex === 2 || originalIndex === 4;
-                    const cardSizeClass = isLarge ? 'card-large' : 'card-small';
+  const cards = upcomings.slice(0, colCount * 2);
 
-                    return (
-                    <div key={movie.id} className={`release-card ${cardSizeClass}`}>
-                        
-                        {/* 이미지 영역 */}
-                        <div className="card-image-wrap">
-                            <img 
-                            src={`https://image.tmdb.org/t/p/w500${movie.backdrop_path}`} 
-                            alt={movie.title}
-                            className="card-image"
-                            />
-                            <div className="card-overlay" />
-                        </div>
-
-                        {/* 텍스트 영역 */}
-                        <div className="card-info">
-                            <h3 className="card-title">
-                            {movie.title}
-                            </h3>
-                            <p className="card-overview">
-                            {movie.overview}
-                            </p>
-                        </div>
-                    </div>
-                )})}
-                </div>
+  return (
+    <section className="release-section">
+      <div className="section-title-outer">
+        <SectionTitle title='공개예정 미리보기' subTitle='새로운 작품들을 시청해보세요' />
+      </div>
+      <div className="release-masonry">
+        {cards.map((movie, index) => {
+          const size: CardSize = SIZE_CYCLE[index % SIZE_CYCLE.length];
+          return (
+            <div key={movie.id} className={`release-card card-${size}`}>
+              <img
+                src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}
+                alt={movie.title}
+                className="card-image"
+              />
+              <div className="card-overlay" />
+              <div className="card-info">
+                <h3 className="card-title">{movie.title}</h3>
+                <p className="card-overview">{movie.overview}</p>
+              </div>
             </div>
-        </section>
-    )
+          );
+        })}
+      </div>
+    </section>
+  );
 }

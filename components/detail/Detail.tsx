@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
-import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
+import type { CastMember, Movie, TV, Video } from "@/types/movie";
 import "./detail.module.scss";
 
 interface DetailClientProps {
@@ -102,38 +102,13 @@ function getMoodTags(genres?: { id: number; name: string }[]) {
   return Array.from(new Set((genres ?? []).map((genre) => moodByGenreId[genre.id]).filter(Boolean))).slice(0, 2);
 }
 
-function getKoreanCountryName(country: { iso_3166_1: string; name: string }) {
-  const countryNameByCode: Record<string, string> = {
-    AR: "아르헨티나",
-    AU: "호주",
-    BE: "벨기에",
-    BR: "브라질",
-    CA: "캐나다",
-    CN: "중국",
-    DE: "독일",
-    DK: "덴마크",
-    ES: "스페인",
-    FI: "핀란드",
-    FR: "프랑스",
-    GB: "영국",
-    HK: "홍콩",
-    IE: "아일랜드",
-    IN: "인도",
-    IT: "이탈리아",
-    JP: "일본",
-    KR: "한국",
-    MX: "멕시코",
-    NL: "네덜란드",
-    NO: "노르웨이",
-    SE: "스웨덴",
-    TH: "태국",
-    TR: "튀르키예",
-    TW: "대만",
-    US: "미국",
-  };
-
-  return countryNameByCode[country.iso_3166_1] ?? country.name;
-}
+const GENRE_MAP: Record<number, string> = {
+  28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
+  99: "다큐", 18: "드라마", 10751: "가족", 14: "판타지", 36: "역사",
+  27: "공포", 10402: "음악", 9648: "미스터리", 10749: "로맨스", 878: "SF",
+  53: "스릴러", 10752: "전쟁", 37: "서부",
+  10759: "액션", 10762: "어린이", 10765: "SF", 10768: "전쟁",
+};
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
@@ -147,7 +122,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     popMovies, popVideos, onFetchPopular, onFetchVideo,
     mediaDetails, onFetchMediaDetail,
     casts, onFetchCredits,
-    recommended, onFetchRecommended,
+    mediaRecommended, onFetchMediaRecommended,
     movieImages, onFetchMovieImages,
     certifications, onFetchCertification,
   } = useMovieStore();
@@ -227,8 +202,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   }, [type, isTv, mediaId, onFetchMediaDetail, onFetchCredits, onFetchCertification, onFetchTvVideos, onFetchVideo]);
 
   useEffect(() => {
-    if (recommended.length === 0) onFetchRecommended();
-  }, [recommended.length, onFetchRecommended]);
+    if (mediaId) onFetchMediaRecommended(mediaId, type);
+  }, [mediaId, type, onFetchMediaRecommended]);
 
   useEffect(() => {
     if (isTv && mediaId) onFetchSeasons(mediaId);
@@ -320,9 +295,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     imageUrl(selectedEpisode?.still_path, "original") ||
     imageUrl(mediaItem?.poster_path, "original");
   const posterUrl = imageUrl(mediaItem?.poster_path, "w500");
-  const relatedItems = recommended
-    .filter((item: RecommendedItem) => item.id !== mediaId)
-    .slice(0, 6);
+  const relatedItems = (mediaRecommended[`${type}-${mediaId}`] ?? []).slice(0, 6);
   const isMyListAdded = myList.some((item) => item.id === mediaId && item.mediaType === type);
   const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1,
@@ -1066,28 +1039,55 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   style={{ width: "100%", height: "100%", objectFit: "cover", opacity: isHovered ? 0.4 : 0.8, transition: "opacity 0.2s" }}
                 />
               )}
+              <span style={{
+                position: "absolute", top: 8, right: 8,
+                fontSize: 14, padding: "3px 9px", borderRadius: 3,
+                background: "rgba(0,0,0,0.7)", color: "#ccc",
+              }}>
+                {item.media_type === "tv" ? "시리즈" : "영화"}
+              </span>
               {isHovered && (
                 <div style={{
                   position: "absolute", inset: 0,
                   display: "flex", flexDirection: "column", justifyContent: "flex-end",
-                  padding: 12,
-                  background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
-                  gap: 5,
+                  padding: "20px 20px",
+                  background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)",
+                  gap: 8,
                 }}>
-                  <span style={{ fontSize: 12, padding: "2px 7px", borderRadius: 3, background: "rgba(255,255,255,0.15)", color: "#ccc", alignSelf: "flex-start" }}>
-                    {item.media_type === "tv" ? "시리즈" : "영화"}
-                  </span>
-                  <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.3 }}>
                     {item.title}
                   </p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {/* 별점 · 연도 · 장르 */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
                     {item.vote_average > 0 && (
-                      <span style={{ fontSize: 16, color: "#e50914", fontWeight: 700 }}>★ {item.vote_average.toFixed(1)}</span>
+                      <>
+                        <span style={{ fontSize: 12, color: "#e50914" }}>★</span>
+                        <span style={{ fontSize: 12, color: "#fff", fontWeight: 700 }}>{item.vote_average.toFixed(1)}</span>
+                        <span style={{ fontSize: 12, color: "#555" }}>|</span>
+                      </>
                     )}
                     {item.release_date && (
-                      <span style={{ fontSize: 16, color: "#888" }}>{item.release_date.slice(0, 4)}</span>
+                      <>
+                        <span style={{ fontSize: 12, color: "#bbb" }}>{item.release_date.slice(0, 4)}</span>
+                        {(item.genre_ids ?? []).length > 0 && <span style={{ fontSize: 14, color: "#555" }}>|</span>}
+                      </>
+                    )}
+                    {(item.genre_ids ?? []).length > 0 && (
+                      <span style={{ fontSize: 12, color: "#bbb" }}>
+                        {(item.genre_ids ?? []).slice(0, 2).map((id: number) => GENRE_MAP[id]).filter(Boolean).join(" • ")}
+                      </span>
                     )}
                   </div>
+                  {/* 줄거리 */}
+                  {item.overview && (
+                    <p style={{
+                      fontSize: 12, color: "#aaa", margin: 0, lineHeight: 1.55,
+                      overflow: "hidden", display: "-webkit-box",
+                      WebkitBoxOrient: "vertical", WebkitLineClamp: 2,
+                    } as CSSProperties}>
+                      {item.overview}
+                    </p>
+                  )}
                 </div>
               )}
             </a>
@@ -1214,7 +1214,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ background: "#141414", minHeight: "100vh" }}>
+    <div style={{ background: "#141414", minHeight: "100vh", marginTop: -56 }}>
 
       {/* Hero + Info Section (shared background) */}
       <div style={{ position: "relative" }}>

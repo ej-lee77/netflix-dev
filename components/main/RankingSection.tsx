@@ -27,30 +27,27 @@ function getStars(rating: number) {
 }
 
 export default function RankingSection() {
-  const { trendingMovies, onFetchTrending } = useMovieStore();
+  const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
 
   const [activeId, setActiveId] = useState<number | null>(null);
-  const [slideProgress, setSlideProgress] = useState(0);
-  const [isAutoPaused, setIsAutoPaused] = useState(false);
 
   const swiperRef = useRef<SwiperClass | null>(null);
   const pointerStartRef = useRef({ x: 0, y: 0 });
   const isDraggingRef = useRef(false);
   const isSwiperDraggingRef = useRef(false);
-  const isActiveHoverRef = useRef(false);
 
   useEffect(() => {
-    if (!trendingMovies.length) {
-      onFetchTrending();
+    if (!koreanMovies.length) {
+      onFetchKoreanMovies();
     }
-  }, [onFetchTrending, trendingMovies.length]);
+  }, [onFetchKoreanMovies, koreanMovies.length]);
 
   const rankingItems = useMemo(
     () =>
-      trendingMovies
-        .filter((movie) => movie.poster_path && movie.backdrop_path)
+      koreanMovies
+        .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
         .slice(0, 10),
-    [trendingMovies],
+    [koreanMovies],
   );
 
   useEffect(() => {
@@ -59,30 +56,6 @@ export default function RankingSection() {
     }
   }, [activeId, rankingItems]);
 
-  useEffect(() => {
-    if (rankingItems.length <= 1 || isAutoPaused) return;
-
-    const timer = window.setInterval(() => {
-      const currentIndex = rankingItems.findIndex((item) => item.id === activeId);
-      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % rankingItems.length : 0;
-      const nextItem = rankingItems[nextIndex];
-
-      if (!nextItem) return;
-
-      setActiveId(nextItem.id);
-
-      window.requestAnimationFrame(() => {
-        const swiper = swiperRef.current;
-
-        if (!swiper) return;
-
-        swiper.update();
-        swiper.slideTo(Math.max(nextIndex - 1, 0), 420);
-      });
-    }, 3000);
-
-    return () => window.clearInterval(timer);
-  }, [activeId, isAutoPaused, rankingItems]);
 
   const selectRankingItem = (id: number, index: number) => {
     if (isDraggingRef.current || isSwiperDraggingRef.current) {
@@ -116,7 +89,6 @@ export default function RankingSection() {
   };
 
   const handlePointerDown = (event: PointerEvent) => {
-    setIsAutoPaused(true);
     pointerStartRef.current = {
       x: event.clientX,
       y: event.clientY,
@@ -133,13 +105,7 @@ export default function RankingSection() {
     }
   };
 
-  const handlePointerEnd = () => {
-    window.setTimeout(() => {
-      if (!isSwiperDraggingRef.current && !isActiveHoverRef.current) {
-        setIsAutoPaused(false);
-      }
-    }, 0);
-  };
+  const handlePointerEnd = () => {};
 
   if (!rankingItems.length) {
     return (
@@ -157,8 +123,8 @@ export default function RankingSection() {
 
   return (
     <section className="ranking-section">
-      <div className="inner">
-        <SectionTitle title='방구석 TOP 10' subTitle='오늘 많이 보는 작품을 확인해보세요' />
+      <div className="section-title-outer">
+        <SectionTitle title='오늘의 넷플릭스 TOP 10' />
       </div>
 
       <div className="ranking-swiper-wrap">
@@ -180,44 +146,31 @@ export default function RankingSection() {
           }}
           onSliderMove={() => {
             isSwiperDraggingRef.current = true;
-            setIsAutoPaused(true);
-          }}
-          onTouchStart={() => {
-            setIsAutoPaused(true);
           }}
           onTouchMove={() => {
             isSwiperDraggingRef.current = true;
-            setIsAutoPaused(true);
           }}
           onTouchEnd={() => {
-            window.setTimeout(() => {
-              isSwiperDraggingRef.current = false;
-              setIsAutoPaused(false);
-            }, 0);
-          }}
-          onProgress={(_, progress) => {
-            setSlideProgress(progress);
-          }}
-          onSetTranslate={(swiper) => {
-            setSlideProgress(swiper.progress);
+            isSwiperDraggingRef.current = false;
           }}
         >
-          {rankingItems.map((movie, index) => {
+          {rankingItems.map((movie: Movie, index: number) => {
             const isActive = movie.id === activeId;
             const cardRoleProps = isActive
               ? {}
               : {
-                  role: "button",
-                  tabIndex: 0,
-                  onClick: () => selectRankingItem(movie.id, index),
-                  onKeyDown: (event: KeyboardEvent<HTMLDivElement>) =>
-                    handleCardKeyDown(event, movie.id, index),
-                };
+                role: "button",
+                tabIndex: 0,
+                onClick: () => selectRankingItem(movie.id, index),
+                onKeyDown: (event: KeyboardEvent<HTMLDivElement>) =>
+                  handleCardKeyDown(event, movie.id, index),
+              };
 
             return (
               <SwiperSlide
                 className={`ranking-slide ${isActive ? "expanded" : ""}`}
                 key={movie.id}
+                style={{ position: "relative" }}
               >
                 <div
                   className={`ranking-card ${isActive ? "active" : ""}`}
@@ -226,18 +179,6 @@ export default function RankingSection() {
                   onPointerUp={handlePointerEnd}
                   onPointerCancel={handlePointerEnd}
                   onPointerLeave={handlePointerEnd}
-                  onMouseEnter={() => {
-                    if (isActive) {
-                      isActiveHoverRef.current = true;
-                      setIsAutoPaused(true);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    if (isActive) {
-                      isActiveHoverRef.current = false;
-                      if (!isSwiperDraggingRef.current) setIsAutoPaused(false);
-                    }
-                  }}
                   {...cardRoleProps}
                 >
                   <span className="ranking-card-poster">
@@ -248,7 +189,6 @@ export default function RankingSection() {
                     />
                   </span>
 
-                  <span className="ranking-card-gradient" />
 
                   <span className="ranking-card-rank">{index + 1}</span>
 
@@ -282,42 +222,33 @@ export default function RankingSection() {
                     </span>
 
                     <span className="ranking-detail-actions">
-                      <button type="button">
+                      <Link href={`/detail/${(movie as Movie & { media_type?: string }).media_type ?? "movie"}/${movie.id}?play=1`} className="ranking-btn-play">
                         <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
                         재생
-                      </button>
-                      <button type="button">
+                      </Link>
+                      <Link href={`/detail/${(movie as Movie & { media_type?: string }).media_type ?? "movie"}/${movie.id}`} className="ranking-btn-info">
                         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" style={{ fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="16" x2="12" y2="12" />
                           <line x1="12" y1="8" x2="12.01" y2="8" />
                         </svg>
                         상세보기
-                      </button>
+                      </Link>
                     </span>
                   </span>
 
-                  <span className="ranking-card-compact">
-                    <span className="ranking-card-score">{index + 1}위</span>
-
-                    <span className="ranking-card-title">{movie.title}</span>
-                  </span>
                 </div>
+                <span className={`ranking-card-compact${isActive ? " hidden" : ""}`}>
+                  <span className="ranking-card-score">{index + 1}</span>
+                </span>
               </SwiperSlide>
             );
           })}
         </Swiper>
       </div>
 
-      <div className="ranking-progress inner">
-        <span
-          style={{
-            transform: `translateX(${slideProgress * 900}%)`,
-          }}
-        />
-      </div>
     </section>
   );
 }
