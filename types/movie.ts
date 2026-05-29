@@ -5,6 +5,7 @@ export interface MediaBase {
     backdrop_path: string;
     poster_path: string;
     vote_average: number;
+    genre_ids?: number[];
 }
 //영화타입
 export interface Movie extends MediaBase {
@@ -102,6 +103,7 @@ export interface MovieState {
     popMovies: Movie[],
     newMovies: Movie[],
     trendingMovies: Movie[],
+    koreanMovies: Movie[],
     // #####수정됨
     popVideos: { [movieId: number]: Video[] },
 
@@ -121,6 +123,8 @@ export interface MovieState {
 
     //추천작 (인기 영화 + 인기 TV 섞어서 랜덤)
     recommended: RecommendedItem[],
+    //작품별 연관 추천작 캐시: "movie-123" or "tv-456" 키
+    mediaRecommended: { [key: string]: RecommendedItem[] },
     mediaDetails: { [key: string]: Movie | TV },
     //작품별 출연진 캐시: "movie-123" or "tv-456" 키
     casts: { [key: string]: CastMember[] },
@@ -131,6 +135,7 @@ export interface MovieState {
     onFetchPopular: () => Promise<void>,
     onFetchNewest: () => Promise<void>,
     onFetchTrending: () => Promise<void>,
+    onFetchKoreanMovies: () => Promise<void>,
     onFetchVideo: (id: string | number) => Promise<void>,
 
     onFetchTvs: () => Promise<void>,
@@ -146,6 +151,7 @@ export interface MovieState {
     onFetchMovieImages: (id: string | number) => Promise<void>,
 
     onFetchRecommended: () => Promise<void>,
+    onFetchMediaRecommended: (id: number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchPopularPeople: () => Promise<void>,

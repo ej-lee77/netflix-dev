@@ -28,50 +28,50 @@ export default function NetflixOriginal() {
 
   return (
     <section className="netflix-original-section">
-      
-        {/* <SectionTitle title='오리지널' subTitle='새로운 작품들을 시청해보세요' /> */}
 
-        <div className="original-wrap">
-          {/* 좌측 고정 로고 영역 */}
-          <div className="original-logo">
-            <Image
-              src="/images/main/netflix-original-logo.png"
-              alt="NETFLIX ORIGINAL SERIES"
-              width={220}
-              height={180}
-              priority
-            />
-          </div>
+      {/* <SectionTitle title='오리지널' subTitle='새로운 작품들을 시청해보세요' /> */}
 
-          {/* 우측 Swiper */}
-          <div className="original-slider">
-            <Swiper
-              modules={[Navigation]}
-              navigation
-              slidesPerView={6}
-              spaceBetween={12}
-              slidesPerGroup={6}
-              className="original-swiper"
-            >
-              {netflixOriginals.map((tv) => (
-                <SwiperSlide key={tv.id}>
-                  <Link href={`/detail/tv/${tv.id}`} className="original-card">
-                    <div className="original-thumb">
-                      {tv.poster_path ? (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w500${tv.poster_path}`}
-                          alt={tv.name}
-                        />
-                      ) : (
-                        <div className="thumb-empty">이미지 없음</div>
-                      )}
-                    </div>
-                  </Link>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
+      <div className="original-wrap">
+        {/* 좌측 고정 로고 영역 */}
+        <div className="original-logo">
+          <Image
+            src="/images/main/netflix-original-logo.png"
+            alt="NETFLIX ORIGINAL SERIES"
+            width={220}
+            height={180}
+            priority
+          />
         </div>
+
+        {/* 우측 Swiper */}
+        <div className="original-slider">
+          <Swiper
+            modules={[Navigation]}
+            navigation
+            slidesPerView={6}
+            spaceBetween={12}
+            slidesPerGroup={6}
+            className="original-swiper"
+          >
+            {netflixOriginals.map((tv) => (
+              <SwiperSlide key={tv.id}>
+                <Link href={`/detail/tv/${tv.id}`} className="original-card">
+                  <div className="original-thumb">
+                    {tv.poster_path ? (
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${tv.poster_path}`}
+                        alt={tv.name}
+                      />
+                    ) : (
+                      <div className="thumb-empty">이미지 없음</div>
+                    )}
+                  </div>
+                </Link>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      </div>
       <div className="inner">
         {/* 하단 조각 배너: 단일 작품 + 그 작품의 여러 스틸컷 */}
         {bannerTv && <OriginalBanner tv={bannerTv} pieces={7} />}

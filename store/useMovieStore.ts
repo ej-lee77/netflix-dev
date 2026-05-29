@@ -37,6 +37,15 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         set({ trendingMovies: data.results });
     },
 
+    //==============한국 영화 (2026년 이후)==============
+    koreanMovies: [],
+    onFetchKoreanMovies: async () => {
+        const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=ko-KR&with_original_language=ko&primary_release_date.gte=2026-01-01&sort_by=popularity.desc&page=1`);
+        const data = await res.json();
+        console.log("한국 영화?", data.results);
+        set({ koreanMovies: data.results || [] });
+    },
+
     //==============급상승 영화 받아오기==============
 
     //티비
@@ -101,10 +110,35 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     },
     upcomings: [],
     onFetchUpcoming: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR`);
-        const data = await res.json();
-        console.log("공개예정", data.results);
-        set({ upcomings: data.results });
+        const today = new Date().toISOString().split('T')[0];
+        const [krMovieRes, krTvRes, globalMovieRes, globalTvRes] = await Promise.all([
+            fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR&region=KR&page=1`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_original_language=ko&first_air_date.gte=${today}&sort_by=popularity.desc&page=1`),
+            fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR&page=1`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&first_air_date.gte=${today}&sort_by=popularity.desc&page=1`),
+        ]);
+        const [krMovieData, krTvData, globalMovieData, globalTvData] = await Promise.all([
+            krMovieRes.json(), krTvRes.json(), globalMovieRes.json(), globalTvRes.json(),
+        ]);
+
+        const normalize = (items: any[], isTV = false) =>
+            (items || [])
+                .filter((i: any) => i.backdrop_path)
+                .map((i: any) => isTV ? { ...i, title: i.name, release_date: i.first_air_date } : i);
+
+        const krMovies = normalize(krMovieData.results);
+        const krTvs   = normalize(krTvData.results, true);
+        const globalMovies = normalize(globalMovieData.results);
+        const globalTvs    = normalize(globalTvData.results, true);
+
+        // 한국 콘텐츠 먼저, 중복 제거 후 해외 콘텐츠 추가
+        const korean = [...krMovies, ...krTvs].sort(() => Math.random() - 0.5);
+        const krIds  = new Set(korean.map((i: any) => i.id));
+        const global = [...globalMovies, ...globalTvs]
+            .filter((i: any) => !krIds.has(i.id))
+            .sort(() => Math.random() - 0.5);
+
+        set({ upcomings: [...korean, ...global] });
     },
     //넷플릭스 오리지널: TMDB discover 사용, with_networks=213 (Netflix)
     netflixOriginals: [],
@@ -151,6 +185,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     },
     //추천작: 인기 영화 + 인기 TV 를 합쳐서 셔플
     recommended: [],
+    mediaRecommended: {},
     mediaDetails: {},
     onFetchMediaDetail: async (id, mediaType) => {
         const mediaId = Number(id);
@@ -169,35 +204,61 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         }));
     },
     onFetchRecommended: async () => {
-        //영화/TV 인기 페이지를 랜덤으로 한 페이지씩 받아오기 (1~3)
-        const moviePage = Math.floor(Math.random() * 3) + 1;
-        const tvPage = Math.floor(Math.random() * 3) + 1;
+        // 넷플릭스(213) 한국 시리즈 위주로, 랜덤 페이지(1~3)
+        const tvPage1 = Math.floor(Math.random() * 3) + 1;
+        const tvPage2 = (tvPage1 % 3) + 1;
 
-        const [movieRes, tvRes] = await Promise.all([
-            fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=ko-KR&page=${moviePage}`),
-            fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&language=ko-KR&page=${tvPage}`)
+        const [tvRes1, tvRes2, movieRes] = await Promise.all([
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_networks=213&with_original_language=ko&sort_by=popularity.desc&page=${tvPage1}`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_networks=213&with_original_language=ko&sort_by=popularity.desc&page=${tvPage2}`),
+            fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=ko-KR&with_original_language=ko&sort_by=popularity.desc&page=1`),
         ]);
-        const movieData = await movieRes.json();
-        const tvData = await tvRes.json();
+        const [tvData1, tvData2, movieData] = await Promise.all([
+            tvRes1.json(), tvRes2.json(), movieRes.json()
+        ]);
 
-        //영화는 title/release_date 그대로, TV는 name->title / first_air_date->release_date 로 통일
-        const movies = (movieData.results || []).map((m: any) => ({
-            ...m,
-            media_type: "movie" as const,
-            title: m.title,
-            release_date: m.release_date
-        }));
-        const tvs = (tvData.results || []).map((t: any) => ({
-            ...t,
-            media_type: "tv" as const,
-            title: t.name,
-            release_date: t.first_air_date
-        }));
+        const tvs = [...(tvData1.results || []), ...(tvData2.results || [])]
+            .filter((t: any) => t.backdrop_path)
+            .map((t: any) => ({
+                ...t,
+                media_type: "tv" as const,
+                title: t.name,
+                release_date: t.first_air_date
+            }));
 
-        //영화/TV 합치고 셔플 후 상위 N개만 사용
-        const merged = [...movies, ...tvs].sort(() => Math.random() - 0.5).slice(0, 12);
-        console.log("추천작", merged);
+        const movies = (movieData.results || [])
+            .filter((m: any) => m.backdrop_path)
+            .map((m: any) => ({
+                ...m,
+                media_type: "movie" as const,
+                title: m.title,
+                release_date: m.release_date
+            }));
+
+        // 한국 시리즈 위주: TV 9개 + 영화 3개 섞기
+        const shuffledTvs = tvs.sort(() => Math.random() - 0.5).slice(0, 9);
+        const shuffledMovies = movies.sort(() => Math.random() - 0.5).slice(0, 3);
+        const merged = [...shuffledTvs, ...shuffledMovies].sort(() => Math.random() - 0.5);
+        console.log("추천작(한국 시리즈)", merged);
         set({ recommended: merged });
+    },
+    onFetchMediaRecommended: async (id, mediaType) => {
+        const key = `${mediaType}-${id}`;
+        const { mediaRecommended } = get();
+        if (mediaRecommended[key]) return;
+
+        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/recommendations?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const data = await res.json();
+        const items = (data.results || []).map((item: any) => ({
+            ...item,
+            media_type: item.media_type ?? mediaType,
+            title: item.title ?? item.name,
+            release_date: item.release_date ?? item.first_air_date,
+        })).slice(0, 6);
+
+        set((state) => ({
+            mediaRecommended: { ...state.mediaRecommended, [key]: items }
+        }));
     },
     //작품 출연진/감독 캐시
     casts: {},
