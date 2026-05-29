@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import "./scss/loginBanner.scss";
@@ -31,6 +32,15 @@ export default function LoginBanner() {
   return (
     <div className="login-banner" role="region" aria-label="로그인 안내">
       <div className="banner-inner">
+        {/* 넷플릭스 로고 */}
+        <Image
+          src="/images/logo/Netflix_Logo_RGB.png"
+          alt="Netflix"
+          width={90}
+          height={24}
+          className="banner-logo"
+        />
+
         {/* 좌측 안내 텍스트 */}
         <div className="banner-text">
           <h3 className="banner-title">매주 500편 이상 신작 업데이트!</h3>

@@ -3,9 +3,9 @@
 .hero {
   position: relative;
   width: 100%;
-  height: 80vh;
-  min-height: 480px;
-  margin-top: 0 !important;
+  height: calc(80vh + g.$header-height);
+  min-height: calc(480px + g.$header-height);
+  margin-top: -(g.$header-height) !important;
   overflow: hidden;
   background: #141414;
 
@@ -127,17 +127,17 @@
     bottom: 54px;
     z-index: 10;
     width: min(56vw, 760px);
-    height: 325px;
+    height: clamp(220px, 30vh, 325px);
     pointer-events: none;
   }
 
   .hero-poster {
     position: absolute;
-    top: 20px;
+    top: clamp(13px, 1.9vh, 20px);
     left: 50%;
     display: block;
-    width: 190px;
-    height: 275px;
+    width: clamp(130px, 12.5vw, 190px);
+    height: clamp(185px, 25.4vh, 275px);
     overflow: hidden;
     color: #fff;
     background: rgba(224, 224, 224, 0.5);
@@ -162,10 +162,10 @@
 
   .hero-poster.before-2,
   .hero-poster.after-2 {
-    top: 42px;
+    top: clamp(28px, 3.9vh, 42px);
     z-index: 1;
-    width: 170px;
-    height: 242px;
+    width: clamp(115px, 11.2vw, 170px);
+    height: clamp(163px, 22.4vh, 242px);
     opacity: 0.42;
   }
 
@@ -177,16 +177,16 @@
   .hero-poster.before-1 {
     left: 29%;
     z-index: 3;
-    width: 190px;
-    height: 290px;
+    width: clamp(130px, 12.5vw, 190px);
+    height: clamp(196px, 26.8vh, 290px);
     transform: translateX(-50%);
   }
 
   .hero-poster.active {
     top: 0;
     z-index: 6;
-    width: 220px;
-    height: 325px;
+    width: clamp(148px, 14.5vw, 220px);
+    height: clamp(220px, 30vh, 325px);
     opacity: 1;
     transform: translateX(-50%);
     box-shadow: 0 22px 46px rgba(0, 0, 0, 0.48);
@@ -196,8 +196,8 @@
     right: auto;
     left: 71%;
     z-index: 3;
-    width: 190px;
-    height: 290px;
+    width: clamp(130px, 12.5vw, 190px);
+    height: clamp(196px, 26.8vh, 290px);
     transform: translateX(-50%);
   }
 
@@ -522,7 +522,7 @@
 
   @media (max-width: 900px) {
     & {
-      height: calc(100svh - g.$header-height);
+      height: 100svh;
       min-height: 560px;
     }
 
@@ -600,7 +600,7 @@
 
   @media (max-width: 560px) {
     & {
-      height: calc(100svh - g.$header-height);
+      height: 100svh;
       min-height: 560px;
     }
 

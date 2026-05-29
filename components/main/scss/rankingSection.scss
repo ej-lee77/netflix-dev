@@ -1,7 +1,7 @@
 @use "@/app/globals" as g;
 
 .ranking-section {
-  // padding: 44px 0 56px;
+  padding-top: 10px;
   overflow: hidden;
 
   // .ranking-title {
@@ -88,16 +88,10 @@
         opacity: 1;
         transform: translateX(0);
       }
-
-      .ranking-card-compact {
-        opacity: 0;
-      }
     }
 
     &:not(.active) {
-      .ranking-card-poster img {
-        filter: grayscale(1) brightness(0.58);
-      }
+      // .ranking-card-poster img { filter: grayscale(1) brightness(0.58); }
 
       .ranking-card-rank {
         opacity: 0;
@@ -137,9 +131,9 @@
       height: 62%;
 
       background: linear-gradient(to top,
-          rgba(21, 20, 38, 1) 0%,
-          rgba(31, 29, 52, 0.98) 34%,
-          rgba(31, 29, 52, 0.66) 66%,
+          rgba(0, 0, 0, 0.9) 0%,
+          rgba(0, 0, 0, 0.8) 50%,
+          rgba(0, 0, 0, 0.6) 66%,
           transparent);
 
       pointer-events: none;
@@ -290,13 +284,15 @@
         gap: 10px;
         pointer-events: auto;
 
-        button {
+        .ranking-btn-play,
+        .ranking-btn-info {
           display: flex;
           align-items: center;
           gap: 8px;
           height: 46px;
           padding: 0 22px;
           border: 0;
+          text-decoration: none;
 
           color: #fff;
           font-size: 16px;
@@ -313,89 +309,60 @@
             flex-shrink: 0;
           }
 
-          &:first-child {
-            background: g.$main-color;
-
-            &:hover {
-              background: #b80710;
-              transform: scale(1.02);
-            }
-          }
-
-          &:last-child {
-            padding: 0 18px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(4px);
-
-            &:hover {
-              background: rgba(255, 255, 255, 0.2);
-            }
-          }
-
           &:hover {
             filter: brightness(1.08);
+          }
+        }
+
+        .ranking-btn-play {
+          background: g.$main-color;
+
+          &:hover {
+            background: #b80710;
+            transform: scale(1.02);
+          }
+        }
+
+        .ranking-btn-info {
+          padding: 0 18px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          backdrop-filter: blur(4px);
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.2);
           }
         }
       }
     }
 
-    .ranking-card-compact {
-      position: absolute;
-      z-index: 4;
-      right: 18px;
-      bottom: 24px;
-      left: 18px;
+  }
 
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
+  .ranking-card-compact {
+    position: absolute;
+    z-index: 5;
+    left: -18px;
+    bottom: 0;
 
-      opacity: 1;
+    display: flex;
+    pointer-events: none;
 
-      transition: opacity 0.2s ease;
-      pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.2s ease;
 
-      .ranking-card-score {
-        color: #ffffff;
-        font-size: 2.35rem;
-        font-weight: 900;
-        line-height: 1;
+    &.hidden {
+      opacity: 0;
+    }
 
-        text-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
-      }
-
-      .ranking-card-title {
-        width: 86%;
-
-        overflow: hidden;
-
-        color: rgba(255, 255, 255, 0.82);
-        font-size: 0.98rem;
-        font-weight: 700;
-        text-align: center;
-
-        text-overflow: ellipsis;
-        white-space: nowrap;
-
-        &::after {
-          content: "상세보기";
-
-          display: block;
-          width: fit-content;
-
-          margin: 18px auto 0;
-          padding: 10px 18px;
-
-          color: rgba(255, 255, 255, 0.86);
-          font-size: 0.78rem;
-          font-weight: 700;
-
-          background: rgba(255, 255, 255, 0.14);
-          border-radius: 3px;
-        }
-      }
+    .ranking-card-score {
+      color: #ffffff;
+      font-size: 6rem;
+      font-weight: 700;
+      font-style: italic;
+      line-height: 1;
+      text-shadow:
+        -3px 0 8px rgba(0, 0, 0, 0.6),
+        0 4px 14px rgba(0, 0, 0, 0.3);
     }
   }
 

@@ -14,7 +14,7 @@
 
 .section-title {
     font-size: g.$text-32;
-    font-weight: 700;
+    font-weight: 500;
     letter-spacing: 0.2px;
     color: g.$w-color;
     line-height: 1.2;
@@ -25,21 +25,41 @@
     font-size: g.$text-14;
     color: g.$g-color;
     line-height: 1.4;
+    display: none;
 }
 
 .see-all {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     gap: 3px;
     padding-bottom: 2px;
+    margin-right: 20px;
     background: none;
     border: none;
     font-size: g.$text-14;
     color: g.$g-color;
     cursor: pointer;
     transition: color 0.2s ease;
+    white-space: nowrap;
 
     &:hover {
         color: g.$w-color;
+    }
+}
+
+@media (max-width: 1280px) {
+    .section-title {
+        font-size: g.$text-24;
+    }
+}
+
+@media (max-width: 768px) {
+    .section-title {
+        font-size: g.$text-20;
+    }
+
+    .see-all {
+        font-size: g.$text-13;
     }
 }
