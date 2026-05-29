@@ -1,132 +1,89 @@
 @use "@/app/globals" as g;
 
-/* Release Section 전체 배경 및 레이아웃 */
 .release-section {
-
-  @media (min-width: 768px) {
-    .release-section {
-      padding: 3rem;
-    }
-  }
-
-  .release-container {
-    width: 100%;
-    padding-right: clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
-  }
-
-  /* 🌟 아래 칸 영화가 빈 곳으로 쏙 올라오게 만드는 다단 레이아웃 */
   .release-masonry {
     column-count: 1;
-    column-gap: 1.5rem; /* 카드 사이 가로 간격 */
+    column-gap: 12px;
     column-fill: balance;
+    padding: 0 clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
   }
 
-  @media (min-width: 640px) {
-    .release-masonry {
-      column-count: 2;
-    }
-  }
+  @media (min-width: 640px)  { .release-masonry { column-count: 2; } }
+  @media (min-width: 768px)  { .release-masonry { column-count: 3; } }
+  @media (min-width: 1280px) { .release-masonry { column-count: 4; } }
+  @media (min-width: 1920px) { .release-masonry { column-count: 5; } }
+  @media (min-width: 2560px) { .release-masonry { column-count: 6; } }
 
-  @media (min-width: 768px) {
-    .release-masonry {
-      column-count: 3; /* PC 화면에서 3열 배치 */
-    }
-  }
-
-  /* 개별 카드 구성 */
   .release-card {
-    break-inside: avoid; /* 카드가 다음 열로 쪼개져 넘어가는 현상 차단 */
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 1rem;
-    overflow: hidden;
     position: relative;
+    break-inside: avoid;
+    border-radius: 12px;
+    overflow: hidden;
     cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    margin-bottom: 1.5rem; /* 카드 사이의 세로 간격 */
-    display: block;
-  }
+    margin-bottom: 12px;
+    background: #1a1a1a;
 
-  /* 이미지 Wrap 처리 및 고정 비율 */
-  .card-image-wrap {
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* 작은 카드는 확실하게 가로형 비율 */
-  .card-small .card-image-wrap {
-    aspect-ratio: 4 / 1.8;
-  }
-
-  /* 큰 카드는 확실하게 세로 포스터 비율 */
-  .card-large .card-image-wrap {
-    aspect-ratio: 2 / 1.3;
+    &:hover .card-image {
+      transform: scale(1.05);
+    }
   }
 
   .card-image {
     width: 100%;
-    height: 100%;
     display: block;
     object-fit: cover;
-    filter: brightness(0.75);
+    filter: brightness(0.8);
     transition: transform 0.5s ease;
   }
 
-  .release-card:hover .card-image {
-    transform: scale(1.05);
-  }
+  /* 세 가지 세로 비율 */
+  .card-tall   .card-image { aspect-ratio: 4 / 3; }   /* 가장 길게 */
+  .card-medium .card-image { aspect-ratio: 3 / 2; }   /* 중간 */
+  .card-short  .card-image { aspect-ratio: 16 / 9; }  /* 짧게 */
 
-  /* 하단 그라데이션 오버레이 */
   .card-overlay {
     position: absolute;
     inset: 0;
     background: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.95) 0%,
-      rgba(0, 0, 0, 0.5) 50%,
+      rgba(0, 0, 0, 0.92) 0%,
+      rgba(0, 0, 0, 0.35) 45%,
       transparent 100%
     );
-    z-index: 1;
+    pointer-events: none;
   }
 
-  /* 텍스트 정보 처리 (Absolute) */
   .card-info {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 1.5rem;
-    color: g.$w-color;
+    padding: 20px 16px 16px;
     z-index: 2;
     box-sizing: border-box;
   }
 
   .card-title {
-    font-size: 1.25rem;
+    font-size: clamp(0.95rem, 1.1vw, 1.25rem);
     font-weight: 700;
     line-height: 1.3;
-    letter-spacing: -0.025em;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    transition: color 0.2s ease;
-  }
-
-  .release-card:hover .card-title {
-    color: #ffffff;
+    letter-spacing: -0.02em;
+    color: g.$w-color;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .card-overview {
-    font-size: 0.8rem;
-    color: #cccccc;
-    font-weight: 400;
+    font-size: clamp(0.72rem, 0.85vw, 0.85rem);
+    color: rgba(g.$w-color, 0.5);
     line-height: 1.5;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     display: -webkit-box;
     -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
     overflow: hidden;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
   }
-
 }

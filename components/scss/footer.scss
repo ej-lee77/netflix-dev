@@ -1,54 +1,158 @@
 @use "@/app/globals" as g;
 
 footer {
-  position: relative;
   padding-left: g.$main-menu-width;
-  background: g.$d-color;
-  padding-bottom: 50px;
+  background: g.$bg-color;
+  margin-top: 80px;
+  border-top: 1px solid #2a2a2a;
 
-  &::before {
-    content: "";
-    display: block;
-    width: 100%;
-    aspect-ratio: 1920 / 150;
-    background-color: g.$bg-color;
-    background-image: url("/images/footer/footer-logo.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
+  .footer-inner {
+    padding: 40px 80px 36px;
+  }
+
+  /* 로고 + SNS 행 */
+  .footer-sns-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .footer-logo {
+    object-fit: contain;
   }
 
   .footer-sns {
     display: flex;
-    /* justify-content: space-around; */
-    gap: 15px;
-    width: 60%;
-    margin: 0 auto;
-    margin-top: 50px;
-    margin-bottom: 20px;
+    gap: 12px;
 
-    img {
-      filter: brightness(0) invert(1);
+    .sns-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid #444;
+      transition: border-color 0.2s;
+
+      &:hover { border-color: #888; }
+
+      img { filter: brightness(0) invert(0.65); }
     }
   }
 
-  .footer-content {
-    display: flex;
-    justify-content: space-between;
-    width: 60%;
-    margin: 0 auto;
+  /* 구분선 */
+  .footer-divider {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 0 0 36px;
+  }
 
-    > div > p {
-      margin-bottom: 10px;
-      font-weight: 600;
-      color: g.$w-color;
+  /* 가로 1행 링크 */
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 28px;
+    margin-bottom: 32px;
+
+    .footer-link {
+      font-size: g.$text-13;
+      color: #808080;
+      transition: color 0.15s;
+
+      &:hover { color: #ccc; }
+    }
+  }
+
+  /* 사업자 정보 */
+  .footer-biz {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 28px;
+
+    p {
+      font-size: 11px;
+      color: #555;
+      line-height: 1.7;
+    }
+  }
+
+  /* 하단 바 */
+  .footer-bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .footer-copyright {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      p {
+        font-size: 11px;
+        color: #555;
+        line-height: 1.5;
+      }
     }
 
-    .content-list {
-      font-size: g.$text-14;
-      color: g.$main-menu-color;
-      > li {
-        margin-bottom: 5px;
+    /* 언어 선택 */
+    .lang-wrap {
+      position: relative;
+
+      .lang-dropdown {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        right: 0;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 4px;
+        overflow: hidden;
+        min-width: 130px;
+        z-index: 100;
+
+        li button {
+          display: block;
+          width: 100%;
+          padding: 10px 16px;
+          text-align: left;
+          background: transparent;
+          border: none;
+          color: #808080;
+          font-size: g.$text-13;
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
+
+          &:hover { background: #2a2a2a; color: #fff; }
+
+          &.active {
+            color: g.$main-color;
+            font-weight: 700;
+          }
+        }
+      }
+
+      .lang-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: transparent;
+        border: 1px solid #555;
+        border-radius: 3px;
+        color: #808080;
+        font-size: g.$text-13;
+        cursor: pointer;
+        transition: border-color 0.15s, color 0.15s;
+
+        &:hover {
+          border-color: #888;
+          color: #ccc;
+        }
+
+        .lang-globe { font-size: 14px; }
+        .lang-arrow { font-size: 10px; }
       }
     }
   }
