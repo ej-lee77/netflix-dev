@@ -73,7 +73,7 @@ export default function MyPage() {
         <div className="profile-summary">
           <div className="profile-avatar">
             <img
-              src={activeProfile?.imgUrl || "/images/profile/normal.svg"}
+              src={activeProfile?.imgUrl || "/images/profile/image/default_icons/17.png"}
               alt={activeProfile?.name || "프로필"}
             />
             <button className="edit-badge">✎</button>
