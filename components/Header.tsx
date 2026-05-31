@@ -8,6 +8,7 @@ import HeaderMenu from "./HeaderMenu";
 import { DEFAULT_PROFILES, useAuthStore } from "@/store/useAuthStore";
 import type { Profile } from "@/types/auth";
 import "./scss/header.scss";
+import HeaderSearchOverlay from "./HeaderSearchOverlay";
 
 const AUTH_PATHS = ["/login", "/signin", "/forgot-password", "/payment"];
 
@@ -17,6 +18,7 @@ export default function Header() {
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLLIElement>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const profiles = user?.profiles?.length ? user.profiles : DEFAULT_PROFILES;
   const activeProfile = currentProfile ?? profiles[0];
@@ -69,10 +71,10 @@ export default function Header() {
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
-            <li>
-              <Link href="/search">
+            <li onClick={() => setIsSearchOpen(true)}>
+              {/* <Link href="/search"> */}
                 <Image src="/images/header/search.svg" alt="검색" width={24} height={24} />
-              </Link>
+              {/* </Link> */}
             </li>
             <li>
               <Link href="/alarm">
@@ -145,6 +147,10 @@ export default function Header() {
             )}
           </ul>
         </div>
+        <HeaderSearchOverlay 
+          isOpen={isSearchOpen} 
+          onClose={() => setIsSearchOpen(false)} 
+        />
       </header>
 
       <Suspense fallback={null}>
