@@ -1,194 +1,181 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { customMenus } from "@/data/mainMenu";
-import "./menuCustom.scss";
+import { useState, useEffect } from "react";
+import { mainMenus, customMenus } from "@/data/mainMenu";
+import "../../scss/menuCustom.scss";
 
-// --- 메타데이터 없이 오직 path 기준으로만 데이터 분리 ---
-const genreOptions = customMenus
-  .filter((menu) => menu.path.startsWith("/genre/"))
-  .map((menu) => ({
-    ...menu,
-    slug: menu.path.replace("/genre/", ""), // 'action', 'comedy' 등 상태 관리에 쓸 key 추출
-  }));
-
-const moodOptions = customMenus
-  .filter((menu) => menu.path.startsWith("/mood/"))
-  .map((menu) => ({
-    ...menu,
-    slug: menu.path.replace("/mood/", ""), // 'chill', 'dark' 등 상태 관리에 쓸 key 추출
-  }));
+// 전체 선택 풀 생성 (순서 매핑용)
+const allSelectablePool = [...mainMenus, ...customMenus];
 
 export default function MenuCustomPage() {
-  // 탭 상태 (장르 / 무드)
-  const [genreTab, setGenreTab] = useState<"favorite" | "exclude">("favorite");
-  const [moodTab, setMoodTab] = useState<"favorite" | "exclude">("favorite");
+  const [selectedMenuPaths, setSelectedMenuPaths] = useState<string[]>([]);
 
-  // 선택된 슬러그(slug)들을 저장하는 상태
-  const [favoriteGenres, setFavoriteGenres] = useState(["thriller", "mystery", "scifi", "drama", "romance"]);
-  const [excludedGenres, setExcludedGenres] = useState(["horror", "war", "documentary"]);
-  
-  const [favoriteMoods, setFavoriteMoods] = useState(["chill", "emotional"]);
-  const [excludedMoods, setExcludedMoods] = useState(["scary"]);
-
-  // 장르 선택 토글
-  const toggleGenre = (slug: string) => {
-    if (genreTab === "favorite") {
-      if (favoriteGenres.includes(slug)) {
-        setFavoriteGenres(favoriteGenres.filter((g) => g !== slug));
-      } else {
-        setFavoriteGenres([...favoriteGenres, slug]);
-        setExcludedGenres(excludedGenres.filter((g) => g !== slug));
+  // 1. 초기 세팅값 LocalStorage 로드
+  useEffect(() => {
+    const saved = localStorage.getItem("custom_header_menus");
+    if (saved) {
+      try {
+        setSelectedMenuPaths(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
       }
     } else {
-      if (excludedGenres.includes(slug)) {
-        setExcludedGenres(excludedGenres.filter((g) => g !== slug));
-      } else {
-        setExcludedGenres([...excludedGenres, slug]);
-        setFavoriteGenres(favoriteGenres.filter((g) => g !== slug));
-      }
+      const defaultPaths = [
+        "/category",
+        "/mypage/playlist?tab=playlists",
+        "/mypage/playhist",
+      ];
+      setSelectedMenuPaths(defaultPaths);
+      localStorage.setItem("custom_header_menus", JSON.stringify(defaultPaths));
     }
-  };
+  }, []);
 
-  // 무드 선택 토글
-  const toggleMood = (slug: string) => {
-    if (moodTab === "favorite") {
-      if (favoriteMoods.includes(slug)) {
-        setFavoriteMoods(favoriteMoods.filter((m) => m !== slug));
-      } else {
-        setFavoriteMoods([...favoriteMoods, slug]);
-        setExcludedMoods(excludedMoods.filter((m) => m !== slug));
-      }
+  // 2. 토글 핸들러 (클릭한 순서대로 배열 끝에 추가됨)
+  const handleToggleMenu = (path: string) => {
+    let updatedPaths: string[];
+
+    if (selectedMenuPaths.includes(path)) {
+      updatedPaths = selectedMenuPaths.filter((p) => p !== path);
     } else {
-      if (excludedMoods.includes(slug)) {
-        setExcludedMoods(excludedMoods.filter((m) => m !== slug));
-      } else {
-        setExcludedMoods([...excludedMoods, slug]);
-        setFavoriteMoods(favoriteMoods.filter((m) => m !== slug));
+      if (selectedMenuPaths.length >= 8) {
+        alert("사이드 메뉴는 최대 8개까지만 등록하는 것을 권장합니다.");
+        return;
       }
+      updatedPaths = [...selectedMenuPaths, path];
     }
+
+    setSelectedMenuPaths(updatedPaths);
+    localStorage.setItem("custom_header_menus", JSON.stringify(updatedPaths));
+    window.dispatchEvent(new Event("customMenuStorageUpdate"));
   };
 
-  // 초기화
   const handleReset = () => {
-    setFavoriteGenres([]); // 선호 장르 비우기
-    setExcludedGenres([]); // 제외 장르 비우기
-    setFavoriteMoods([]);  // 선호 무드 비우기
-    setExcludedMoods([]);   // 제외 무드 비우기
+    const defaultPaths = [
+      "/category",
+      "/mypage/playlist?tab=playlists",
+      "/mypage/playhist",
+    ];
+    setSelectedMenuPaths(defaultPaths);
+    localStorage.setItem("custom_header_menus", JSON.stringify(defaultPaths));
+    window.dispatchEvent(new Event("customMenuStorageUpdate"));
+  };
+
+  // 데이터 그룹 분리
+  const baseOptions = mainMenus.filter((m) => m.path !== "/");
+  const genreOptions = customMenus.filter((m) => m.path.startsWith("/genre/"));
+  const moodOptions = customMenus.filter((m) => m.path.startsWith("/mood/"));
+
+  // 🌟 선택된 순서대로 정렬된 실제 메뉴 오브젝트 배열 추출
+  const orderedSelectedMenus = selectedMenuPaths
+    .map((path) => allSelectablePool.find((m) => m.path === path))
+    .filter((menu): menu is typeof mainMenus[number] => !!menu);
+
+  const renderMenuButton = (menu: typeof mainMenus[number]) => {
+    const orderIndex = selectedMenuPaths.indexOf(menu.path);
+    const isSelected = orderIndex !== -1;
+
+    return (
+      <button
+        key={menu.path}
+        className={`genre-button ${isSelected ? "active" : ""}`}
+        type="button"
+        onClick={() => handleToggleMenu(menu.path)}
+      >
+        <Image src={menu.imgUrl} alt="" width={22} height={22} />
+        <span>{menu.title}</span>
+        
+        {/* 🌟 기존 '✓' 대신 선택된 순서(숫자 번호)를 명시하여 순서 인지 제공 */}
+        {isSelected && <strong aria-hidden="true">{orderIndex + 1}</strong>}
+      </button>
+    );
   };
 
   return (
     <section className="menu-custom-page">
       <div className="menu-custom-page__inner">
+        
+        {/* 헤더 타이틀 */}
         <div className="menu-custom-page__hero">
-          <h1>메뉴 커스텀</h1>
-          <p>홈 화면에 표시할 장르와 무드 추천을 직접 설정할 수 있어요</p>
+          <h1>메뉴 커스텀 설정</h1>
+          <p>왼쪽 사이드바 메뉴 구성을 내 취향대로 변경합니다. 선택하신 순서대로 배치됩니다.</p>
         </div>
 
-        {/* 1. 장르 설정 섹션 */}
-        <section className="custom-panel">
-          <div className="custom-panel__header">
-            <h2>🎭 장르 설정</h2>
-            <p>선호하는 장르와 추천에서 제외할 장르를 설정하세요</p>
+        {/* 🌟 🗺️ [신설] 현재 메뉴 나열 순서 실시간 미리보기 흐름 바 */}
+        <section className="menu-flow-panel">
+          <div className="menu-flow-panel__header">
+            <h3>👀 사이드바 메뉴 나열 순서 프리뷰</h3>
+            <span>(홈 메뉴 바로 아래에 순서대로 장착됩니다)</span>
           </div>
+          
+          <div className="menu-flow-container">
+            {/* 고정 홈 표시 */}
+            <div className="flow-chip home-fixed">
+              <Image src="/images/header/menu/home.svg" alt="" width={16} height={16} />
+              <span>홈 (고정)</span>
+            </div>
 
-          <div className="genre-tabs" role="tablist" aria-label="장르 설정">
-            <button
-              className={genreTab === "favorite" ? "active" : ""}
-              type="button"
-              onClick={() => setGenreTab("favorite")}
-            >
-              선호 장르 ({favoriteGenres.length})
-            </button>
-            <button
-              className={genreTab === "exclude" ? "active" : ""}
-              type="button"
-              onClick={() => setGenreTab("exclude")}
-            >
-              제외 장르 ({excludedGenres.length})
-            </button>
-          </div>
+            {/* 유저가 추가한 메뉴들의 순서도 화살표 나열 */}
+            {orderedSelectedMenus.map((menu, index) => (
+              <div key={menu.path} className="flow-item-wrapper">
+                <div className="flow-arrow">→</div>
+                <div className="flow-chip dynamic" onClick={() => handleToggleMenu(menu.path)} title="클릭 시 해제">
+                  <span className="order-number">{index + 1}</span>
+                  <Image src={menu.imgUrl} alt="" width={16} height={16} />
+                  <span>{menu.title}</span>
+                  <span className="remove-x">×</span>
+                </div>
+              </div>
+            ))}
 
-          <div className="genre-grid">
-            {genreOptions.map((genre) => {
-              const isSelected =
-                genreTab === "favorite"
-                  ? favoriteGenres.includes(genre.slug)
-                  : excludedGenres.includes(genre.slug);
-
-              return (
-                <button
-                  className={isSelected ? "genre-button active" : "genre-button"}
-                  type="button"
-                  key={genre.slug}
-                  onClick={() => toggleGenre(genre.slug)}
-                >
-                  {/* 메인메뉴의 이미지를 그대로 출력 */}
-                  <Image src={genre.imgUrl} alt="" width={22} height={22} />
-                  {/* 메인메뉴의 타이틀("액션", "애니메이션" 등)을 그대로 출력 */}
-                  <span>{genre.title}</span>
-                  {genreTab === "exclude" && isSelected ? <strong aria-hidden="true">×</strong> : null}
-                </button>
-              );
-            })}
+            {selectedMenuPaths.length === 0 && (
+              <div className="flow-item-wrapper">
+                <div className="flow-arrow">→</div>
+                <div className="flow-chip empty">아래에서 메뉴를 선택해 주세요</div>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* 2. 무드 설정 섹션 */}
+        {/* 📦 박스 1. 기본 서비스 메뉴 설정 */}
         <section className="custom-panel">
           <div className="custom-panel__header">
-            <h2>🍿 무드 설정</h2>
-            <p>오늘의 기분에 맞는 작품의 분위기를 설정하세요</p>
+            <h2>기본 메뉴 설정 <span>Core Menus</span></h2>
+            <p>플랫폼의 핵심 대메뉴를 사이드바로 바로가기 링크로 배치하거나 숨길 수 있습니다.</p>
           </div>
-
-          <div className="genre-tabs" role="tablist" aria-label="무드 설정">
-            <button
-              className={moodTab === "favorite" ? "active" : ""}
-              type="button"
-              onClick={() => setMoodTab("favorite")}
-            >
-              선호 무드 ({favoriteMoods.length})
-            </button>
-            <button
-              className={moodTab === "exclude" ? "active" : ""}
-              type="button"
-              onClick={() => setMoodTab("exclude")}
-            >
-              제외 무드 ({excludedMoods.length})
-            </button>
-          </div>
-
           <div className="genre-grid">
-            {moodOptions.map((mood) => {
-              const isSelected =
-                moodTab === "favorite"
-                  ? favoriteMoods.includes(mood.slug)
-                  : excludedMoods.includes(mood.slug);
-
-              return (
-                <button
-                  className={isSelected ? "genre-button active" : "genre-button"}
-                  type="button"
-                  key={mood.slug}
-                  onClick={() => toggleMood(mood.slug)}
-                >
-                  {/* 메인메뉴의 이미지를 그대로 출력 */}
-                  <Image src={mood.imgUrl} alt="" width={22} height={22} />
-                  {/* 메인메뉴의 타이틀("잔잔한", "어두운" 등)을 그대로 출력 */}
-                  <span>{mood.title}</span>
-                  {moodTab === "exclude" && isSelected ? <strong aria-hidden="true">×</strong> : null}
-                </button>
-              );
-            })}
+            {baseOptions.map(renderMenuButton)}
           </div>
         </section>
 
-        {/* 초기화 판넬 */}
+        {/* 📦 박스 2. 장르 메뉴 설정 */}
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>🎭 장르별 추천 <span>Genres</span></h2>
+            <p>자주 탐색하는 카테고리 장르를 즐겨찾기 형태로 추가해보세요.</p>
+          </div>
+          <div className="genre-grid">
+            {genreOptions.map(renderMenuButton)}
+          </div>
+        </section>
+
+        {/* 📦 박스 3. 무드 메뉴 설정 */}
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>🍿 무드 태그 설정 <span>Moods</span></h2>
+            <p>오늘 기분과 분위기에 맞춰 골라볼 수 있는 무드 전용 링크를 바로가기로 세팅합니다.</p>
+          </div>
+          <div className="genre-grid">
+            {moodOptions.map(renderMenuButton)}
+          </div>
+        </section>
+
+        {/* 초기화 바 */}
         <section className="reset-panel">
-          <p>설정을 초기 상태로 되돌리고 싶으신가요?</p>
+          <p>모든 설정을 초기 레이아웃 상태(기본 메뉴 3개)로 되돌릴까요?</p>
           <button type="button" onClick={handleReset}>기본값 복원</button>
         </section>
+
       </div>
     </section>
   );
