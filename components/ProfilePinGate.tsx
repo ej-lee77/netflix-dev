@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import type { Profile } from "@/types/auth";
+import type { UserProfile } from "@/types/auth";
 
 type StoredPin = {
   pin?: string;
 };
 
 type ProfilePinGateProps = {
-  profile: Profile | null | undefined;
+  profile: UserProfile | null | undefined;
   description?: string;
   onCancel?: () => void;
   onSuccess?: () => void;
@@ -115,7 +115,7 @@ export default function ProfilePinGate({
         <h2>PIN 번호를 입력해 주세요</h2>
         <p>
           {description ??
-            `${profile?.name ?? "프로필"} 설정을 이용하려면 PIN이 필요합니다.`}
+            `${profile?.nickname ?? "프로필"} 설정을 이용하려면 PIN이 필요합니다.`}
         </p>
         <div className="profile-pin-gate-inputs">
           {draftPin.map((digit, index) => (

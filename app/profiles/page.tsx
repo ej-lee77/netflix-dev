@@ -3,8 +3,8 @@
 import React, { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProfilePinGate, { getProfilePin } from "@/components/ProfilePinGate";
-import { DEFAULT_PROFILES, useAuthStore } from "@/store/useAuthStore";
-import type { Profile } from "@/types/auth";
+import { useAuthStore } from "@/store/useAuthStore";
+import type { UserProfile } from "@/types/auth"; // 👈 UserProfile 타입으로 유지
 import "../scss/profileSelect.scss";
 
 const AVATAR_OPTIONS = [
@@ -41,10 +41,7 @@ const PROFILE_ICON_SECTIONS = [
   { title: "종이의 집", icons: iconPaths("money_heist", 10) },
   { title: "마이 멜로디 & 쿠로미", icons: iconPaths("my_melody_kuromi", 16) },
   { title: "원피스", icons: iconPaths("one_piece", 17) },
-  {
-    title: "오렌지 이즈 더 뉴 블랙",
-    icons: iconPaths("orange_is_the_new_black", 11),
-  },
+  { title: "오렌지 이즈 더 뉴 블랙", icons: iconPaths("orange_is_the_new_black", 11) },
   { title: "피키 블라인더스", icons: iconPaths("peaky_blinders", 6) },
   { title: "레트로 애니메이션", icons: iconPaths("retro_animation", 8) },
   { title: "소닉 프라임", icons: iconPaths("sonic_prime", 21) },
@@ -61,21 +58,25 @@ function ProfileSelectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, onSetProfile, onAddProfile, onUpdateProfile, onDeleteProfile } = useAuthStore();
+  
   const profiles = useMemo(
-    () => (user?.profiles?.length ? user.profiles : DEFAULT_PROFILES),
-    [user?.profiles]
+    () => user?.profile || [],
+    [user?.profile]
   );
+  
   const manageMode = searchParams.get("manage") === "1";
-  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
-  const [pendingProfile, setPendingProfile] = useState<Profile | null>(null);
+  const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
+  const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftAvatar, setDraftAvatar] = useState(AVATAR_OPTIONS[0]);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
 
-  const openEditor = (profile?: Profile) => {
+  const openEditor = (profile?: UserProfile) => {
     const fallbackAvatar = AVATAR_OPTIONS[profiles.length % AVATAR_OPTIONS.length];
-    setEditingProfile(profile ?? { id: 0, name: "새 프로필", imgUrl: fallbackAvatar });
-    setDraftName(profile?.name ?? "새 프로필");
+    
+    // 오타 수정 및 정확한 기본 객체 구조 세팅
+    setEditingProfile(profile ?? { id: 0, nickname: "새 프로필", imgUrl: fallbackAvatar } as UserProfile);
+    setDraftName(profile?.nickname || "새 프로필");
     setDraftAvatar(profile?.imgUrl ?? fallbackAvatar);
     setIsAvatarPickerOpen(false);
   };
@@ -87,7 +88,7 @@ function ProfileSelectContent() {
     setIsAvatarPickerOpen(false);
   };
 
-  const handleSelect = (profile: Profile) => {
+  const handleSelect = (profile: UserProfile) => {
     if (manageMode) {
       openEditor(profile);
       return;
@@ -114,12 +115,12 @@ function ProfileSelectContent() {
 
     const nextProfile = {
       ...editingProfile,
-      name: draftName.trim() || "프로필",
+      nickname: draftName.trim() || "프로필",
       imgUrl: draftAvatar,
     };
 
     if (editingProfile.id === 0) {
-      onAddProfile({ name: nextProfile.name, imgUrl: nextProfile.imgUrl });
+      onAddProfile(nextProfile);
     } else {
       onUpdateProfile(nextProfile);
     }
@@ -145,21 +146,21 @@ function ProfileSelectContent() {
               <button
                 type="button"
                 className={`ps-item${manageMode ? " is-edit" : ""}`}
-                onClick={() => handleSelect(profile)}
+                onClick={() => handleSelect(profile as UserProfile)}
               >
                 <div className="ps-avatar">
                   <img
                     src={profile.imgUrl || "/images/profile/image/default_icons/17.png"}
-                    alt={profile.name || "프로필"}
+                    alt={profile.nickname || "프로필"}
                   />
                   {manageMode && <span className="ps-edit-icon" aria-hidden="true">✎</span>}
                 </div>
-                <span className="ps-name">{profile.name}</span>
+                <span className="ps-name">{profile.nickname}</span>
               </button>
             </li>
           ))}
 
-          {profiles.length < 6 && (
+          {profiles.length < 5 && (
             <li>
               <button type="button" className="ps-item" onClick={() => openEditor()}>
                 <div className="ps-avatar ps-avatar-add" aria-hidden="true">+</div>
@@ -205,10 +206,7 @@ function ProfileSelectContent() {
                 </div>
 
                 {PROFILE_ICON_SECTIONS.map((section) => (
-                  <section
-                    key={section.title}
-                    className="profile-editor-picker-section"
-                  >
+                  <section key={section.title} className="profile-editor-picker-section">
                     <h4>{section.title}</h4>
                     <div className="profile-editor-picker-grid">
                       {section.icons.map((iconSrc) => (
@@ -243,10 +241,7 @@ function ProfileSelectContent() {
 
                 <div className="profile-avatar-options-head">
                   <span>프로필 사진</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsAvatarPickerOpen(true)}
-                  >
+                  <button type="button" onClick={() => setIsAvatarPickerOpen(true)}>
                     더 많은 프로필 보러가기
                   </button>
                 </div>
@@ -284,7 +279,7 @@ function ProfileSelectContent() {
         <ProfilePinGate
           key={pendingProfile.id}
           profile={pendingProfile}
-          description={`${pendingProfile.name ?? "프로필"} 프로필을 선택하려면 PIN을 입력해 주세요.`}
+          description={`${pendingProfile.nickname ?? "프로필"} 프로필을 선택하려면 PIN을 입력해 주세요.`}
           onCancel={() => setPendingProfile(null)}
           onSuccess={confirmPendingProfile}
         />

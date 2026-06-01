@@ -708,7 +708,7 @@
       .count-text {
         text-align: right;
         color: #ccc;
-        width: 60px;
+        width: 80px;
       }
 
       /* 막대 그래프 구현 */
@@ -769,12 +769,8 @@
         border: 1px solid #3a3a3a;
         transition: all 0.2s ease;
         cursor: default;
-
-        &:hover {
-          transform: translateY(-2px);
-          background: #333;
-          border-color: #555;
-        }
+        display: flex;
+        align-items: center;
       }
 
       .mood-summary-box {

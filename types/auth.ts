@@ -13,23 +13,33 @@ export interface UserInfo extends User {
 export type FamilyMember = "엄마" | "아빠" | "아들" | "딸";
 
 export interface AuthState {
-  user: UserInfo | null;
-  currentProfile: Profile | null;
-  currentMember: FamilyMember | null;
+  user: UserDocument | null;
+  currentProfile: UserProfile | null;
   onInitAuth: () => void;
-  onLogin: (user: UserInfo) => void;
+  onLogin: (user: UserDocument) => void;
   onLogout: () => Promise<void>;
-  onSetProfile: (profile: Profile | null) => void;
-  onAddProfile: (profile: Omit<Profile, "id">) => void;
-  onUpdateProfile: (profile: Profile) => void;
-  onDeleteProfile: (profileId: number) => void;
-  onSetMember: (member: FamilyMember) => void;
+  onSetProfile: (profile: UserProfile | null) => void;
+  onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
+  onUpdateProfile: (profile: UserProfile) => Promise<void>;
+  onDeleteProfile: (profileId: string | number) => Promise<void>; 
 }
 
 export interface UserProfile {
+  id: number;
   nickname: string;
   imgUrl: string;
   viewAge: string;
+  // 영상관련 (기본 필드 형태)
+  movies: MovieList;
+
+  // 커뮤니티관련
+  community: CommunityList;
+
+  // 메뉴 및 뱃지
+  headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
+  bages: BadgeList;
+
+  alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
 }
 
 export interface UserGenreStats {
@@ -66,25 +76,21 @@ export interface CommunityList{
   feeds: string[]; //피드 ID 목록 내 피드 말고 
 }
 
+export interface PayInfo{
+  pay: string;   //결제방법
+  bank: string;  //은행아니면 통신사
+  num: string; //카드번호, 계좌번호, 핸드폰번호
+  payDate: string; //카드 유효기간이랑 cvc 같이 저장 -로 연결
+  nextDate: string; //다음 결제일
+}
+
 export interface UserDocument {
+    uid?: string;
     userId: string; // 문서 ID로 사용됨
     
     // 기본정보
     email: string;
-    name: string;
-    phoneNumber: string;
     planType: string;
-    profile: UserProfile;
-
-    // 영상관련 (기본 필드 형태)
-    movies: MovieList;
-
-    // 커뮤니티관련
-    community: CommunityList;
-
-    // 메뉴 및 뱃지
-    headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
-    bages: BadgeList;
-
-    alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
+    payment: PayInfo;
+    profile: UserProfile[];
 }

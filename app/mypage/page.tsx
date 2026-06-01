@@ -7,24 +7,27 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
-import { mockUserData } from "@/data/mockUserData";
 import { BADGE_LIST } from "@/data/badge";
 
 export default function MyPage() {
-  const { user, currentProfile, currentMember, onLogout } = useAuthStore();
+  const { user, currentProfile, onLogout } = useAuthStore();
   const { playList, onLoadPlayList } = usePlayListStore();
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
 
-  // 🌟 커뮤니티 모드 제어 State (기본값: false = 보임)
+  // 🌟 커뮤니티 모드 제어 State
   const [hideCommunity, setHideCommunity] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+  // 💡 현재 시청 중인 활성화 프로필 추적 (우선순위: 선택 프로필 -> 첫 번째 프로필)
+  const activeProfile = useMemo(() => {
+    return currentProfile ?? user?.profile?.[0] ?? null;
+  }, [currentProfile, user]);
 
   useEffect(() => {
     onLoadPlayList();
     if (popMovies.length === 0) onFetchPopular();
     if (tvs.length === 0) onFetchTvs();
 
-    // 로컬 스토리지에서 유저의 기존 설정 불러오기
     const savedMode = localStorage.getItem("hide_community_ui");
     if (savedMode === "true") {
       setHideCommunity(true);
@@ -32,7 +35,6 @@ export default function MyPage() {
     setIsHydrated(true);
   }, []);
 
-  // 토글 핸들러
   const handleToggleCommunity = () => {
     const nextState = !hideCommunity;
     setHideCommunity(nextState);
@@ -52,7 +54,6 @@ export default function MyPage() {
     };
   }, []);
 
-  // 커뮤니티 활성화 여부에 따라 퀵메뉴 목록 필터링
   const quickMenuItems = useMemo(() => {
     const allItems = [
       { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "저장한 작품 모음", isCommunity: false },
@@ -65,37 +66,41 @@ export default function MyPage() {
       { href: "/goods", icon: menuIcons.badge, title: "뱃지 관리", desc: "대표 칭호 및 장착 설정", isCommunity: false }
     ];
 
-    if (hideCommunity) {
-      return allItems.filter(item => !item.isCommunity);
-    }
-    return allItems;
+    return hideCommunity ? allItems.filter(item => !item.isCommunity) : allItems;
   }, [hideCommunity, menuIcons]);
 
+  // 💡 [수정] 가짜 데이터(mockUserData) 대신 실제 스토어의 activeProfile 기반 통계 계산
   const profileData = useMemo(() => {
-    if (!mockUserData) {
+    if (!activeProfile) {
       return {
         equippedBadgeName: null,
         stats: { follower: 0, following: 0, review: 0, badge: 0, watched: 0 }
       };
     }
-    const matchedBadge = BADGE_LIST.find((b) => b.id === mockUserData.bages?.equippedBadges);
+
+    // 장착된 대표 칭호/뱃지 찾기
+    const matchedBadge = BADGE_LIST.find((b) => b.id === activeProfile.bages?.equippedBadges);
+
     return {
       equippedBadgeName: matchedBadge ? matchedBadge.name : null,
       stats: {
-        follower: mockUserData.community?.followers?.length || 0,
-        following: mockUserData.community?.following?.length || 0,
-        review: mockUserData.community?.reviews?.length || 0,
-        badge: mockUserData.bages?.earnedBadges?.filter(b => b.isComplete).length || 0,
-        watched: mockUserData.movies?.watchingVideos?.length || 0,
+        follower: activeProfile.community?.followers?.length || 0,
+        following: activeProfile.community?.following?.length || 0,
+        review: activeProfile.community?.reviews?.length || 0,
+        badge: activeProfile.bages?.earnedBadges?.filter(b => b.isComplete).length || 0,
+        watched: activeProfile.movies?.watchingVideos?.length || playList.length || 0, // 실제 담긴 목록 카운트 바인딩
       }
     };
-  }, [mockUserData]);
+  }, [activeProfile, playList]);
 
+  // 💡 [수정] 가짜 데이터 대신 실제 활성화된 프로필의 획득 뱃지 동기화
   const displayBadgesSummary = useMemo(() => {
-    if (!mockUserData || !mockUserData.bages) return [];
-    const { earnedBadges, equippedBadges } = mockUserData.bages;
-    const completedUserBadges = earnedBadges?.filter((b) => b.isComplete) || [];
-    const mapped = completedUserBadges.map((userBadge) => {
+    if (!activeProfile || !activeProfile.bages) return [];
+
+    const { earnedBadges, equippedBadges } = activeProfile.bages;
+    const completedUserBadges = earnedBadges?.filter((b: any) => b.isComplete) || [];
+    
+    const mapped = completedUserBadges.map((userBadge: any) => {
       const master = BADGE_LIST.find((m) => m.id === userBadge.id);
       return {
         id: userBadge.id,
@@ -105,44 +110,38 @@ export default function MyPage() {
         isEquipped: equippedBadges === userBadge.id
       };
     });
+
     return mapped
       .sort((a, b) => (b.isEquipped ? 1 : 0) - (a.isEquipped ? 1 : 0))
       .slice(0, 5);
-  }, [mockUserData]);
+  }, [activeProfile]);
 
-  // 🌟 [수정] 제공해주신 메뉴 가이드라인 장르 및 무드로 동기화
   const genreMoodStats = useMemo(() => {
+    // 💡 실제 프로필 내부에 장르 통계(genreStats)가 잡혀있다면 그것을 활용하고, 없으면 기본 목업 데이터 제공
+    const currentGenreStats = activeProfile?.movies?.genreStats;
+    
+    const baseGenres = [
+      { name: "SF", count: currentGenreStats?.SF || 24, percentage: 35, color: "#6366f1" },
+      { name: "액션", count: currentGenreStats?.Action || 18, percentage: 26, color: "#3b82f6" },
+      { name: "스릴러", count: currentGenreStats?.Thriller || 12, percentage: 17, color: "#ef4444" },
+      { name: "판타지", count: currentGenreStats?.Fantasy || 8, percentage: 11, color: "#a855f7" },
+      { name: "드라마", count: currentGenreStats?.Drama || 5, percentage: 7, color: "#10b981" },
+    ];
+
     return {
-      // customMenus의 장르 목록 매칭
-      genres: [
-        { name: "SF", count: 24, percentage: 35, color: "#6366f1" },
-        { name: "액션", count: 18, percentage: 26, color: "#3b82f6" },
-        { name: "스릴러", count: 12, percentage: 17, color: "#ef4444" },
-        { name: "판타지", count: 8, percentage: 11, color: "#a855f7" },
-        { name: "드라마", count: 5, percentage: 7, color: "#10b981" },
-      ],
-      // customMenus의 무드 목록 매칭 (아이콘/이모지 추가)
+      genres: baseGenres.sort((a, b) => b.count - a.count), // 편수 높은 순 정렬
       moods: [
-        { tag: "🧠 심오한", type: "positive" },
-        { tag: "⚡ 신나는", type: "positive" },
-        { tag: "🍿 유쾌한", type: "positive" },
-        { tag: "🕊️ 잔잔한", type: "neutral" },
-        { tag: "🕯️ 어두운", type: "negative" },
-        { tag: "💧 감성적인", type: "neutral" },
-        { tag: "💕 낭만적인", type: "positive" },
-        { tag: "😱 무서운", type: "negative" }
+        { tag: "심오한", type: "positive", img: "/images/header/menu/mood-thoughtful.svg" },
+        { tag: "신나는", type: "positive", img: "/images/header/menu/mood-exciting.svg" },
+        { tag: "유쾌한", type: "positive", img: "/images/header/menu/mood-funny.svg" },
+        { tag: "잔잔한", type: "neutral", img: "/images/header/menu/mood-chill.svg" },
+        { tag: "어두운", type: "negative", img: "/images/header/menu/mood-dark.svg" },
+        { tag: "감성적인", type: "neutral", img: "/images/header/menu/mood-emotional.svg" },
+        { tag: "낭만적인", type: "positive", img: "/images/header/menu/mood-romantic.svg" },
+        { tag: "무서운", type: "negative", img: "/images/header/menu/mood-scary.svg" }
       ]
     };
-  }, [playList]);
-
-  const activeProfile = currentProfile ?? user?.profiles?.[0] ?? null;
-
-  const stats = {
-    watched: playList.length,
-    wishlist: 38,
-    review: 24,
-    badge: 12,
-  };
+  }, [activeProfile]);
 
   const profileMovies = [...popMovies];
 
@@ -193,13 +192,13 @@ export default function MyPage() {
           <div className="profile-avatar">
             <img
               src={activeProfile?.imgUrl || "/images/profile/image/default_icons/17.png"}
-              alt={activeProfile?.name || "프로필"}
+              alt={activeProfile?.nickname || "프로필"}
             />
           </div>
           
           <div className="profile-info">
             <div className="name-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2>{activeProfile?.name || currentMember || "사용자"}</h2>
+              <h2>{activeProfile?.nickname || "사용자"}</h2>
               {profileData.equippedBadgeName && (
                 <span className="user-equipped-badge-tag">
                   {profileData.equippedBadgeName}
@@ -267,12 +266,12 @@ export default function MyPage() {
               {playList.slice(0, 6).map((item) => (
                 <Link
                   key={item.id}
-                  href={`/detail/${item.mediaType}/${item.id}`}
+                  href={`/detail/${item.mediaType || 'movie'}/${item.id}`}
                   className="poster-item"
                 >
                   <div className="poster-img">
                     {item.poster_path && (
-                      <img src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} alt={item.title} />
+                      <img src={`https://image.tmorg/t/p/w300${item.poster_path}`} alt={item.title} />
                     )}
                   </div>
                   <p>{item.title}</p>
@@ -284,17 +283,16 @@ export default function MyPage() {
           )}
         </section>
 
-        {/* 🌟 취향 분석 (동기화된 장르/무드 그래프 & 테이블 & 태그 컴포넌트) */}
+        {/* 취향 분석 */}
         <section className="section-block preference-analysis-section">
           <div className="section-h">
             <h2>시청 취향 분석</h2>
-            <span className="pref-subtitle">{activeProfile?.name || "사용자"}님의 시청 기록 분석 결과입니다.</span>
+            <span className="pref-subtitle">{activeProfile?.nickname || "사용자"}님의 시청 기록 분석 결과입니다.</span>
           </div>
           
           <div className="analysis-grid">
-            {/* 좌측: 선호 장르 테이블 & 그래프 차트 */}
             <div className="analysis-card genre-card-box">
-              <h3>📊 선호 장르 TOP 5</h3>
+              <h3>선호 장르 TOP 3</h3>
               <div className="genre-chart-container">
                 <table className="genre-stat-table">
                   <thead>
@@ -306,7 +304,7 @@ export default function MyPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {genreMoodStats.genres.map((g, index) => (
+                    {genreMoodStats.genres.slice(0, 3).map((g, index) => (
                       <tr key={index}>
                         <td className="rank-num">{index + 1}</td>
                         <td className="genre-name">{g.name}</td>
@@ -327,19 +325,19 @@ export default function MyPage() {
               </div>
             </div>
 
-            {/* 우측: 선호 무드 태그 클라우드 */}
             <div className="analysis-card mood-card-box">
-              <h3>✨ 선호하는 무드</h3>
+              <h3>선호하는 무드</h3>
               <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
               <div className="mood-tag-cloud">
                 {genreMoodStats.moods.map((m, index) => (
                   <span key={index} className={`mood-tag-item ${m.type}`}>
+                    <img src={m.img} alt={m.tag} />
                     {m.tag}
                   </span>
                 ))}
               </div>
               <div className="mood-summary-box">
-                💡 주로 <strong>{genreMoodStats.genres[0].name}</strong> 장르와 <strong>{genreMoodStats.moods[0].tag.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim()}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                💡 주로 <strong>{genreMoodStats.genres[0].name}</strong> 장르와 <strong>{genreMoodStats.moods[0].tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
               </div>
             </div>
           </div>
@@ -380,7 +378,7 @@ export default function MyPage() {
             <section>
               <div className="section-h">
                 <h2>최근 리뷰</h2>
-                <span className="more"><Link href="/mypage/community?tab=review">전체 {stats.review}개 →</Link></span>
+                <span className="more"><Link href="/mypage/community?tab=review">전체 {profileData.stats.review}개 →</Link></span>
               </div>
               <ul className="review-list">
                 {myReviews.map((r) => (
@@ -411,7 +409,7 @@ export default function MyPage() {
           <div className="section-h">
             <h2>획득한 뱃지</h2>
             <span className="more">
-              <Link href="/goods">전체 {stats.badge}개 →</Link>
+              <Link href="/goods">전체 {profileData.stats.badge}개 →</Link>
             </span>
           </div>
           
