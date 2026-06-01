@@ -1,11 +1,6 @@
 "use client";
 
-import { auth } from "@/firebase/firebase";
-import {
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-  signInWithPopup,
-} from "firebase/auth";
+import { signUp, useSignUpStore } from "@/store/useSignUpStore";
 import React, { useState } from "react";
 
 // ─── 아이콘 ────────────────────────────────────────────────────────────────────
@@ -71,6 +66,8 @@ export default function StepRegister({ onVerificationSent }: StepRegisterProps) 
         : "agree-checkbox";
 
   // ── 이메일 회원가입 + 인증메일 발송 ────────────────────────────────────────
+  const setUid = useSignUpStore((s) => s.setUid);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { setError("이메일과 비밀번호를 입력해주세요."); return; }
@@ -80,11 +77,10 @@ export default function StepRegister({ onVerificationSent }: StepRegisterProps) 
     setError("");
     setIsLoading(true);
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(result.user); // 인증 메일 발송
-      onVerificationSent(email);               // 다음 단계(StepVerify)로 전환
+      const uid = await signUp(email, password);
+      setUid(uid);           // 다음 단계에서 쓸 uid 저장
+      onVerificationSent(email);
     } catch (err: unknown) {
-      console.log(err);
       const code = (err as { code?: string }).code;
       if (code === "auth/email-already-in-use") {
         setError("이미 사용 중인 이메일입니다.");

@@ -983,7 +983,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   }}
                 >
                   <img
-                    src={isLiked ? "/images/detail/review/review-thumbup-black.svg" : "/images/detail/review/review-thumbup.svg"}
+                    // src={isLiked ? "/images/detail/review/review-thumbup-black.svg" : "/images/detail/review/review-thumbup.svg"}
+                    src={isLiked ? "/images/detail/review/heart-filled.svg" : "/images/detail/review/heart-lined.svg"}
                     alt=""
                     style={{
                       width: 14,
@@ -1289,7 +1290,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 background: "rgba(255,255,255,0.14)",
                 color: "rgba(255,255,255,0.72)",
                 fontSize: 13,
-                fontWeight: 800,
+                fontWeight: 600,
                 letterSpacing: 0,
               }}>
                 {heroTypeBadgeText}
