@@ -25,7 +25,7 @@ export default function MyPage() {
   const menuIcons = useMemo(() => {
     return {
       playlist: "/images/header/menu/playlist.svg",
-      wishlist: "/images/header/menu/wishlist.svg",
+      genre: "/images/header/menu/genre-filter.svg",
       custom: "/images/header/menu/custom.svg",
       alarm: "/images/header/alarm.svg",
       friends: "/images/icon/icon-friends.svg",
@@ -37,14 +37,14 @@ export default function MyPage() {
 
   // 💡 새롭게 확장된 빠른 메뉴 리스트 객체 (기존 4개 + 신규 관리 메뉴 4개)
   const quickMenuItems = [
-    { href: "/mypage/playlist?tab=playlists", icon: menuIcons.playlist, title: "플레이리스트", desc: "저장한 작품 모음", isImage: true },
-    { href: "/mypage/playlist?tab=wishlist", icon: menuIcons.wishlist, title: "위시리스트", desc: "찜한 작품 모음", isImage: true },
-    { href: "/menu/custom", icon: menuIcons.custom, title: "커스텀", desc: "나만의 메뉴 설정", isImage: true },
+    { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "저장한 작품 모음", isImage: true },
+    { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드" },
+    { href: "/menu/custom", icon: menuIcons.custom, title: "메뉴 커스텀", desc: "나만의 메뉴 커스텀", isImage: true },
     { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", isImage: true, hasDot: true },
     
     // ✨ 새로 추가된 관리 메뉴 4종
-    { href: "/friends", icon: menuIcons.friends, title: "팔로워•팔로잉", desc: "팔로워 및 팔로잉 설정" },
-    { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드" },
+    { href: "/friends", icon: menuIcons.friends, title: "팔로워 • 팔로잉", desc: "팔로워 및 팔로잉 관리" },
+    { href: "/mypage/genre", icon: menuIcons.genre, title: "장르 관리", desc: "선호/제외 장르 선택" },
     { href: "/contact?tab=history", icon: menuIcons.contact, title: "문의 관리", desc: "내가 쓴 문의" },
     { href: "/goods", icon: menuIcons.badge, title: "뱃지 관리", desc: "대표 칭호 및 장착 설정" }
   ];
