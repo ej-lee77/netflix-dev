@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/alarm.scss";
 
@@ -21,11 +22,37 @@ interface Notif {
   cta?: string;
 }
 
-export default function AlarmPage() {
+// 🌟 URL 파라미터를 읽고 제어하는 핵심 알림 컴포넌트
+function AlarmContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { upcomings, popMovies, tvs, onFetchUpcoming, onFetchPopular, onFetchTvs } = useMovieStore();
+  
+  // 기본 필터 State
   const [filter, setFilter] = useState<FilterType>("all");
   const [excludedGenres, setExcludedGenres] = useState<string[]>(["공포", "좀비", "고어"]);
   const [notifs, setNotifs] = useState<Notif[]>([]);
+
+  // 🌟 [추가] URL Param (?tab=...) 변화 감지 및 탭 동기화
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") as FilterType;
+    const validTabs: FilterType[] = ["all", "episode", "friend", "upcoming", "reaction"];
+    
+    if (tabParam && validTabs.includes(tabParam)) {
+      setFilter(tabParam);
+    } else {
+      setFilter("all");
+    }
+  }, [searchParams]);
+
+  // 🌟 [추가] 탭 클릭 시 URL의 Query String도 매끄럽게 교체해주는 핸들러
+  const handleTabChange = (targetTab: FilterType) => {
+    if (targetTab === "all") {
+      router.push("/alarm"); // 전체 탭은 깔끔하게 파라미터 제거
+    } else {
+      router.push(`/alarm?tab=${targetTab}`);
+    }
+  };
 
   useEffect(() => {
     if (upcomings.length === 0) onFetchUpcoming();
@@ -33,7 +60,6 @@ export default function AlarmPage() {
     if (tvs.length === 0) onFetchTvs();
   }, []);
 
-  // TMDB 데이터로 알림 생성
   useEffect(() => {
     if (upcomings.length === 0 || popMovies.length === 0 || tvs.length === 0) return;
 
@@ -143,21 +169,21 @@ export default function AlarmPage() {
           <p>새로운 활동과 업데이트를 확인하세요</p>
         </div>
 
-        {/* 탭 */}
+        {/* 탭 메뉴 - 클릭 시 handleTabChange 구동 */}
         <div className="notif-tabs">
-          <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>
+          <button className={filter === "all" ? "active" : ""} onClick={() => handleTabChange("all")}>
             전체 {notifs.length > 0 && <span className="badge">{notifs.length}</span>}
           </button>
-          <button className={filter === "episode" ? "active" : ""} onClick={() => setFilter("episode")}>
+          <button className={filter === "episode" ? "active" : ""} onClick={() => handleTabChange("episode")}>
             새 에피소드 {counts.episode > 0 && <span className="badge">{counts.episode}</span>}
           </button>
-          <button className={filter === "friend" ? "active" : ""} onClick={() => setFilter("friend")}>
-            친구 활동 {counts.friend > 0 && <span className="badge">{counts.friend}</span>}
+          <button className={filter === "friend" ? "active" : ""} onClick={() => handleTabChange("friend")}>
+            팔로워 활동 {counts.friend > 0 && <span className="badge">{counts.friend}</span>}
           </button>
-          <button className={filter === "upcoming" ? "active" : ""} onClick={() => setFilter("upcoming")}>
+          <button className={filter === "upcoming" ? "active" : ""} onClick={() => handleTabChange("upcoming")}>
             공개 예정 {counts.upcoming > 0 && <span className="badge">{counts.upcoming}</span>}
           </button>
-          <button className={filter === "reaction" ? "active" : ""} onClick={() => setFilter("reaction")}>
+          <button className={filter === "reaction" ? "active" : ""} onClick={() => handleTabChange("reaction")}>
             리뷰 반응 {counts.reaction > 0 && <span className="badge">{counts.reaction}</span>}
           </button>
         </div>
@@ -166,13 +192,13 @@ export default function AlarmPage() {
         <div className="excluded-section">
           <div className="ex-head">
             <h3>알림 받지 않을 장르</h3>
-            <Link href="/menu/custom" className="ex-link">＋ 추가</Link>
+            <Link href="/mypage/genre" className="ex-link">＋ 추가</Link>
           </div>
           <p className="ex-desc">선택한 장르의 새 에피소드·공개 예정 알림이 표시되지 않습니다</p>
           <div className="ex-chips">
             {excludedGenres.map((g) => (
               <span key={g} className="ex-chip">
-                <span>× {g}</span>
+                <span>{g}</span>
                 <button onClick={() => handleRemoveGenre(g)}>제거</button>
               </span>
             ))}
@@ -229,11 +255,11 @@ function NotifItem({ notif }: { notif: Notif }) {
     <>
       <div className={`notif-icon ${notif.type}`}>{iconMap[notif.type]}</div>
       <div className="notif-body">
-        <p className="text">
+        <div className="text">
           <strong>{notif.title}</strong>
           <br />
           <span>{notif.description}</span>
-        </p>
+        </div>
         <span className="time">{notif.time}</span>
       </div>
       {notif.thumb && (
@@ -256,4 +282,13 @@ function NotifItem({ notif }: { notif: Notif }) {
   }
 
   return <li className={`notif-item ${notif.unread ? "unread" : ""}`}>{content}</li>;
+}
+
+// 🌟 [Next.js 필수 규격] 클라이언트 사이드 서치파람 추적을 위한 Suspense 래핑 내보내기
+export default function AlarmPage() {
+  return (
+    <Suspense fallback={<div className="empty">알림 로딩 중...</div>}>
+      <AlarmContent />
+    </Suspense>
+  );
 }

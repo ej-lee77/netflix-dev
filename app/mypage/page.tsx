@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useMemo } from "react";
+
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -14,14 +15,30 @@ export default function MyPage() {
   const { playList, onLoadPlayList } = usePlayListStore();
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
 
+  // 🌟 커뮤니티 모드 제어 State (기본값: false = 보임)
+  const [hideCommunity, setHideCommunity] = useState<boolean>(false);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
   useEffect(() => {
     onLoadPlayList();
     if (popMovies.length === 0) onFetchPopular();
     if (tvs.length === 0) onFetchTvs();
+
+    // 로컬 스토리지에서 유저의 기존 설정 불러오기
+    const savedMode = localStorage.getItem("hide_community_ui");
+    if (savedMode === "true") {
+      setHideCommunity(true);
+    }
+    setIsHydrated(true);
   }, []);
 
-  // 💡 메인 메뉴 데이터에서 아이콘 경로 추출 
-  // (임포트된 파일명이나 구조에 맞춰 "홈", "재생목록", "알림" 등의 title 혹은 path로 매핑합니다)
+  // 토글 핸들러
+  const handleToggleCommunity = () => {
+    const nextState = !hideCommunity;
+    setHideCommunity(nextState);
+    localStorage.setItem("hide_community_ui", String(nextState));
+  };
+
   const menuIcons = useMemo(() => {
     return {
       playlist: "/images/header/menu/playlist.svg",
@@ -35,19 +52,24 @@ export default function MyPage() {
     };
   }, []);
 
-  // 💡 새롭게 확장된 빠른 메뉴 리스트 객체 (기존 4개 + 신규 관리 메뉴 4개)
-  const quickMenuItems = [
-    { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "저장한 작품 모음", isImage: true },
-    { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드" },
-    { href: "/menu/custom", icon: menuIcons.custom, title: "메뉴 커스텀", desc: "나만의 메뉴 커스텀", isImage: true },
-    { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", isImage: true, hasDot: true },
-    
-    // ✨ 새로 추가된 관리 메뉴 4종
-    { href: "/friends", icon: menuIcons.friends, title: "팔로워 • 팔로잉", desc: "팔로워 및 팔로잉 관리" },
-    { href: "/mypage/genre", icon: menuIcons.genre, title: "장르 관리", desc: "선호/제외 장르 선택" },
-    { href: "/contact?tab=history", icon: menuIcons.contact, title: "문의 관리", desc: "내가 쓴 문의" },
-    { href: "/goods", icon: menuIcons.badge, title: "뱃지 관리", desc: "대표 칭호 및 장착 설정" }
-  ];
+  // 커뮤니티 활성화 여부에 따라 퀵메뉴 목록 필터링
+  const quickMenuItems = useMemo(() => {
+    const allItems = [
+      { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "저장한 작품 모음", isCommunity: false },
+      { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드", isCommunity: true },
+      { href: "/menu/custom", icon: menuIcons.custom, title: "메뉴 커스텀", desc: "나만의 메뉴 커스텀", isCommunity: false },
+      { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", hasDot: true, isCommunity: false },
+      { href: "/friends", icon: menuIcons.friends, title: "팔로워 • 팔로잉", desc: "팔로워 및 팔로잉 관리", isCommunity: true },
+      { href: "/mypage/genre", icon: menuIcons.genre, title: "장르 관리", desc: "선호/제외 장르 선택", isCommunity: false },
+      { href: "/contact?tab=history", icon: menuIcons.contact, title: "문의 관리", desc: "내가 쓴 문의", isCommunity: false },
+      { href: "/goods", icon: menuIcons.badge, title: "뱃지 관리", desc: "대표 칭호 및 장착 설정", isCommunity: false }
+    ];
+
+    if (hideCommunity) {
+      return allItems.filter(item => !item.isCommunity);
+    }
+    return allItems;
+  }, [hideCommunity, menuIcons]);
 
   const profileData = useMemo(() => {
     if (!mockUserData) {
@@ -88,6 +110,30 @@ export default function MyPage() {
       .slice(0, 5);
   }, [mockUserData]);
 
+  // 🌟 [신설] 자주 본 장르 및 무드 데이터 가공 (플레이리스트 기반 혹은 Mocking 데이터 기반)
+  const genreMoodStats = useMemo(() => {
+    // 실제 서비스 적용 시에는 playList 내 영화들의 genre_ids를 맵핑하여 카운팅하도록 고도화할 수 있습니다.
+    // 여기서는 UI 구현을 위해 직관적인 목데이터 세트를 제공합니다.
+    return {
+      genres: [
+        { name: "SF / 판타지", count: 28, percentage: 40, color: "#6366f1" },
+        { name: "액션 / 스릴러", count: 18, percentage: 25, color: "#3b82f6" },
+        { name: "로맨스 / 코미디", count: 12, percentage: 17, color: "#ec4899" },
+        { name: "드라마 / 다큐", count: 8, percentage: 11, color: "#10b981" },
+        { name: "공포 / 미스터리", count: 5, percentage: 7, color: "#f59e0b" },
+      ],
+      moods: [
+        { tag: "🍿 긴장감 넘치는", type: "positive" },
+        { tag: "✨ 영상미가 뛰어난", type: "positive" },
+        { tag: "🧠 심오한 세계관", type: "positive" },
+        { tag: "💧 눈물샘 자극하는", type: "neutral" },
+        { tag: "⚡️ 몰입감 최고", type: "positive" },
+        { tag: "🕊️ 잔잔하고 평화로운", type: "neutral" },
+        { tag: "🔥 화려한 스케일", type: "positive" }
+      ]
+    };
+  }, [playList]);
+
   const activeProfile = currentProfile ?? user?.profiles?.[0] ?? null;
 
   const stats = {
@@ -112,7 +158,7 @@ export default function MyPage() {
     id: m.id,
     title: m.title,
     poster: m.poster_path,
-    stars: ["★★★★★", "★★★★☆"][i],
+    stars: ["★★★★★", "★★¼☆☆"][i],
     text: [
       "이번 시즌은 정말 다른 차원이었어요. 첫 화부터 빠져들었고...",
       "전체적으로 만족스럽지만 중반부가 살짝 늘어지는 느낌이...",
@@ -125,6 +171,22 @@ export default function MyPage() {
   return (
     <div className="mypage">
       <div className="inner">
+        
+        {/* 상단 모드 컨트롤러 바 */}
+        <div className="mypage-mode-controller">
+          <p>🎬 피드/리뷰 기능을 숨길 수 있습니다.</p>
+          <button 
+            type="button" 
+            className={`toggle-mode-btn ${hideCommunity ? "active" : ""}`}
+            onClick={handleToggleCommunity}
+          >
+            <span>{hideCommunity ? "🔒 커뮤니티 숨김 모드" : "🔓 커뮤니티 표시 모드"}</span>
+            <div className="switch-track">
+              <div className="switch-thumb"></div>
+            </div>
+          </button>
+        </div>
+
         {/* 프로필 요약 */}
         <div className="profile-summary">
           <div className="profile-avatar">
@@ -148,18 +210,22 @@ export default function MyPage() {
           </div>
           
           <div className="profile-stats">
-            <div className="stat">
-              <div className="value">{profileData.stats.follower}</div>
-              <div className="label">팔로워</div>
-            </div>
-            <div className="stat">
-              <div className="value">{profileData.stats.following}</div>
-              <div className="label">팔로잉</div>
-            </div>
-            <div className="stat">
-              <div className="value">{profileData.stats.review}</div>
-              <div className="label">작성 리뷰</div>
-            </div>
+            {!hideCommunity && (
+              <>
+                <div className="stat">
+                  <div className="value">{profileData.stats.follower}</div>
+                  <div className="label">팔로워</div>
+                </div>
+                <div className="stat">
+                  <div className="value">{profileData.stats.following}</div>
+                  <div className="label">팔로잉</div>
+                </div>
+                <div className="stat">
+                  <div className="value">{profileData.stats.review}</div>
+                  <div className="label">작성 리뷰</div>
+                </div>
+              </>
+            )}
             <div className="stat">
               <div className="value">{profileData.stats.badge}</div>
               <div className="label">획득 뱃지</div>
@@ -171,16 +237,14 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* 💡 컴팩트하게 리팩토링 및 확장된 빠른 메뉴 구조 */}
+        {/* 빠른 메뉴 구조 */}
         <div className="quick-menu">
           {quickMenuItems.map((item, idx) => (
             <Link href={item.href} className="quick-card" key={idx}>
               <div className="icon">
-                {/* 메인 메뉴용 혹은 신규 SVG 이미지가 매핑되어 있을 경우 이미지로 바인딩 */}
                 {item.icon.endsWith(".svg") || item.icon.endsWith(".png") ? (
                   <Image src={item.icon} alt="" width={24} height={24} />
                 ) : (
-                  // 파일 경로가 없을 때 비상용 이모지 분기 처리
                   <span>⚙️</span>
                 )}
               </div>
@@ -219,64 +283,127 @@ export default function MyPage() {
           )}
         </section>
 
-        {/* 2단: 친구 활동 + 최근 리뷰 */}
-        <div className="two-col-section">
-          <section>
-            <div className="section-h">
-              <h2>친구 활동</h2>
-              <span className="more">더보기 →</span>
+        {/* 🌟 [신설] 취향 분석 (장르/무드 그래프 & 테이블 & 태그 컴포넌트) */}
+        <section className="section-block preference-analysis-section">
+          <div className="section-h">
+            <h2>시청 취향 분석</h2>
+            <span className="pref-subtitle">{activeProfile?.name || "사용자"}님의 시청 기록 분석 결과입니다.</span>
+          </div>
+          
+          <div className="analysis-grid">
+            {/* 좌측: 선호 장르 테이블 & 그래프 차트 */}
+            <div className="analysis-card genre-card-box">
+              <h3>📊 선호 장르 TOP 5</h3>
+              <div className="genre-chart-container">
+                <table className="genre-stat-table">
+                  <thead>
+                    <tr>
+                      <th>순위</th>
+                      <th>장르명</th>
+                      <th>비율 및 그래프</th>
+                      <th>시청 편수</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {genreMoodStats.genres.map((g, index) => (
+                      <tr key={index}>
+                        <td className="rank-num">{index + 1}</td>
+                        <td className="genre-name">{g.name}</td>
+                        <td className="graph-td">
+                          <div className="progress-bar-wrapper">
+                            <div 
+                              className="progress-bar-fill" 
+                              style={{ width: `${g.percentage}%`, backgroundColor: g.color }}
+                            ></div>
+                            <span className="percent-text">{g.percentage}%</span>
+                          </div>
+                        </td>
+                        <td className="count-text">{g.count}편</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <ul className="activity-list">
-              {friendActivities.map((act) => (
-                <li key={act.id} className="activity-item">
-                  <div className="friend-avatar"></div>
-                  <div className="activity-body">
-                    <p>
-                      <strong>{act.friend}</strong>님이{" "}
-                      <Link href={`/detail/movie/${act.id}`} className="target">
-                        {act.title}
-                      </Link>
-                      {act.action}
-                    </p>
-                    <span className="time">{act.time}</span>
-                  </div>
-                  {act.poster && (
-                    <div className="activity-thumb">
-                      <img src={`https://image.tmdb.org/t/p/w200${act.poster}`} alt="" />
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
 
-          <section>
-            <div className="section-h">
-              <h2>최근 리뷰</h2>
-              <span className="more"><Link href="/mypage/community?tab=review">전체 {stats.review}개 →</Link></span>
+            {/* 우측: 선호 무드 태그 클라우드 */}
+            <div className="analysis-card mood-card-box">
+              <h3>✨ 선호하는 무드 / 태그</h3>
+              <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
+              <div className="mood-tag-cloud">
+                {genreMoodStats.moods.map((m, index) => (
+                  <span key={index} className={`mood-tag-item ${m.type}`}>
+                    {m.tag}
+                  </span>
+                ))}
+              </div>
+              <div className="mood-summary-box">
+                💡 주로 <strong>현실을 벗어난 몰입감 있는 세계관</strong>과 <strong>긴장감 넘치는 연출</strong>을 가진 작품에 높은 선호도를 보이고 있습니다.
+              </div>
             </div>
-            <ul className="review-list">
-              {myReviews.map((r) => (
-                <li key={r.id} className="review-item">
-                  <Link href={`/detail/movie/${r.id}`} className="review-thumb">
-                    {r.poster && <img src={`https://image.tmdb.org/t/p/w200${r.poster}`} alt={r.title} />}
-                  </Link>
-                  <div className="review-body">
-                    <div className="review-head">
-                      <h3>{r.title}</h3>
-                      <span className="stars">{r.stars}</span>
+          </div>
+        </section>
+
+        {/* 2단 섹션: 커뮤니티 활성화 상태일 때만 출력 */}
+        {!hideCommunity && isHydrated && (
+          <div className="two-col-section">
+            <section>
+              <div className="section-h">
+                <h2>팔로워 활동</h2>
+                <span className="more"><Link href="/alarm?tab=friend">더보기 →</Link></span>
+              </div>
+              <ul className="activity-list">
+                {friendActivities.map((act) => (
+                  <li key={act.id} className="activity-item">
+                    <div className="friend-avatar"></div>
+                    <div className="activity-body">
+                      <p>
+                        <strong>{act.friend}</strong>님이{" "}
+                        <Link href={`/detail/movie/${act.id}`} className="target">
+                          {act.title}
+                        </Link>
+                        {act.action}
+                      </p>
+                      <span className="time">{act.time}</span>
                     </div>
-                    <p className="text">{r.text}</p>
-                    <div className="meta">
-                      <span>♡ {r.likes}</span>
-                      <span>{r.time}</span>
+                    {act.poster && (
+                      <div className="activity-thumb">
+                        <img src={`https://image.tmdb.org/t/p/w200${act.poster}`} alt="" />
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section>
+              <div className="section-h">
+                <h2>최근 리뷰</h2>
+                <span className="more"><Link href="/mypage/community?tab=review">전체 {stats.review}개 →</Link></span>
+              </div>
+              <ul className="review-list">
+                {myReviews.map((r) => (
+                  <li key={r.id} className="review-item">
+                    <Link href={`/detail/movie/${r.id}`} className="review-thumb">
+                      {r.poster && <img src={`https://image.tmdb.org/t/p/w200${r.poster}`} alt={r.title} />}
+                    </Link>
+                    <div className="review-body">
+                      <div className="review-head">
+                        <h3>{r.title}</h3>
+                        <span className="stars">{r.stars}</span>
+                      </div>
+                      <p className="text">{r.text}</p>
+                      <div className="meta">
+                        <span>♡ {r.likes}</span>
+                        <span>{r.time}</span>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        )}
 
         {/* 뱃지 */}
         <section className="section-block">
