@@ -110,26 +110,27 @@ export default function MyPage() {
       .slice(0, 5);
   }, [mockUserData]);
 
-  // 🌟 [신설] 자주 본 장르 및 무드 데이터 가공 (플레이리스트 기반 혹은 Mocking 데이터 기반)
+  // 🌟 [수정] 제공해주신 메뉴 가이드라인 장르 및 무드로 동기화
   const genreMoodStats = useMemo(() => {
-    // 실제 서비스 적용 시에는 playList 내 영화들의 genre_ids를 맵핑하여 카운팅하도록 고도화할 수 있습니다.
-    // 여기서는 UI 구현을 위해 직관적인 목데이터 세트를 제공합니다.
     return {
+      // customMenus의 장르 목록 매칭
       genres: [
-        { name: "SF / 판타지", count: 28, percentage: 40, color: "#6366f1" },
-        { name: "액션 / 스릴러", count: 18, percentage: 25, color: "#3b82f6" },
-        { name: "로맨스 / 코미디", count: 12, percentage: 17, color: "#ec4899" },
-        { name: "드라마 / 다큐", count: 8, percentage: 11, color: "#10b981" },
-        { name: "공포 / 미스터리", count: 5, percentage: 7, color: "#f59e0b" },
+        { name: "SF", count: 24, percentage: 35, color: "#6366f1" },
+        { name: "액션", count: 18, percentage: 26, color: "#3b82f6" },
+        { name: "스릴러", count: 12, percentage: 17, color: "#ef4444" },
+        { name: "판타지", count: 8, percentage: 11, color: "#a855f7" },
+        { name: "드라마", count: 5, percentage: 7, color: "#10b981" },
       ],
+      // customMenus의 무드 목록 매칭 (아이콘/이모지 추가)
       moods: [
-        { tag: "🍿 긴장감 넘치는", type: "positive" },
-        { tag: "✨ 영상미가 뛰어난", type: "positive" },
-        { tag: "🧠 심오한 세계관", type: "positive" },
-        { tag: "💧 눈물샘 자극하는", type: "neutral" },
-        { tag: "⚡️ 몰입감 최고", type: "positive" },
-        { tag: "🕊️ 잔잔하고 평화로운", type: "neutral" },
-        { tag: "🔥 화려한 스케일", type: "positive" }
+        { tag: "🧠 심오한", type: "positive" },
+        { tag: "⚡ 신나는", type: "positive" },
+        { tag: "🍿 유쾌한", type: "positive" },
+        { tag: "🕊️ 잔잔한", type: "neutral" },
+        { tag: "🕯️ 어두운", type: "negative" },
+        { tag: "💧 감성적인", type: "neutral" },
+        { tag: "💕 낭만적인", type: "positive" },
+        { tag: "😱 무서운", type: "negative" }
       ]
     };
   }, [playList]);
@@ -283,7 +284,7 @@ export default function MyPage() {
           )}
         </section>
 
-        {/* 🌟 [신설] 취향 분석 (장르/무드 그래프 & 테이블 & 태그 컴포넌트) */}
+        {/* 🌟 취향 분석 (동기화된 장르/무드 그래프 & 테이블 & 태그 컴포넌트) */}
         <section className="section-block preference-analysis-section">
           <div className="section-h">
             <h2>시청 취향 분석</h2>
@@ -328,7 +329,7 @@ export default function MyPage() {
 
             {/* 우측: 선호 무드 태그 클라우드 */}
             <div className="analysis-card mood-card-box">
-              <h3>✨ 선호하는 무드 / 태그</h3>
+              <h3>✨ 선호하는 무드</h3>
               <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
               <div className="mood-tag-cloud">
                 {genreMoodStats.moods.map((m, index) => (
@@ -338,12 +339,12 @@ export default function MyPage() {
                 ))}
               </div>
               <div className="mood-summary-box">
-                💡 주로 <strong>현실을 벗어난 몰입감 있는 세계관</strong>과 <strong>긴장감 넘치는 연출</strong>을 가진 작품에 높은 선호도를 보이고 있습니다.
+                💡 주로 <strong>{genreMoodStats.genres[0].name}</strong> 장르와 <strong>{genreMoodStats.moods[0].tag.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF]/g, '').trim()}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
               </div>
             </div>
           </div>
         </section>
-
+        
         {/* 2단 섹션: 커뮤니티 활성화 상태일 때만 출력 */}
         {!hideCommunity && isHydrated && (
           <div className="two-col-section">
