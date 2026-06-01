@@ -9,7 +9,7 @@ type Billing = "monthly" | "yearly";
 type Method = "card" | "easypay" | "bank" | "phone";
 
 const plans = {
-  basic: { name: "베이직", monthly: 5500, yearly: 55000, features: "광고 포함 · HD 720p · 1대 동시 시청" },
+  basic: { name: "베이직", monthly: 7000, yearly: 55000, features: "광고 포함 · HD 720p · 1대 동시 시청" },
   standard: {
     name: "스탠다드",
     monthly: 13500,
@@ -322,9 +322,8 @@ export default function PaymentPage() {
                 {coupons.map((c) => (
                   <li
                     key={c.id}
-                    className={`coupon-card ${selectedCoupon === c.id ? "selected" : ""} ${
-                      c.disabled ? "disabled" : ""
-                    }`}
+                    className={`coupon-card ${selectedCoupon === c.id ? "selected" : ""} ${c.disabled ? "disabled" : ""
+                      }`}
                     onClick={() => !c.disabled && setSelectedCoupon(c.id)}
                   >
                     <div className="coupon-amount">

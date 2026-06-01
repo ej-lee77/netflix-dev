@@ -27,7 +27,10 @@ interface StepPaymentProps {
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
 
 const BANKS = ["국민은행", "신한은행", "우리은행", "하나은행", "카카오뱅크", "토스뱅크"];
-const QUICK_PAYS = ["카카오페이", "네이버페이", "토스", "페이코"];
+const QUICK_PAYS = [
+  { id: "kakao", label: "카카오페이", icon: "/images/social/kakao_login.svg" },
+  { id: "naver", label: "네이버페이", icon: "/images/social/naver_login.svg" },
+];
 
 // ─── 숫자 포맷 ────────────────────────────────────────────────────────────────
 
@@ -49,10 +52,22 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   const [agreeSave, setAgreeSave] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [carrier, setCarrier] = useState("");
+  const [selectedBank, setSelectedBank] = useState<string>("");
+  const [selectedQuickPay, setSelectedQuickPay] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [carrierOpen, setCarrierOpen] = useState(false);
 
   const defaultProfiles = [{ id: 1, name: "나", imgUrl: "/images/profile/image/default_icons/17.png" }];
+
+  const handlePhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+    const formatted =
+      raw.length < 4 ? raw :
+        raw.length < 8 ? `${raw.slice(0, 3)}-${raw.slice(3)}` :
+          `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7)}`;
+    setPhoneNumber(formatted);
+  };
 
   // ── 카드 번호 자동 포맷 (4자리마다 공백) ────────────────────────────────────
   const handleCardNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,6 +109,9 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
       setIsLoading(false);
     }
   };
+
+  // 통신사 드롭다운
+  const CARRIERS = ["SKT", "KT", "LG U+", "알뜰폰"];
 
   // ── 금액 계산 ────────────────────────────────────────────────────────────────
   const isAnnual = plan.billing === "annual";
@@ -214,8 +232,16 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
         <div className="payment-tab-content">
           <p className="payment-tab-desc">간편결제 수단을 선택하면 해당 앱으로 연결돼요.</p>
           <div className="payment-quick-grid">
-            {QUICK_PAYS.map((name) => (
-              <button key={name} type="button" className="payment-quick-btn">{name}</button>
+            {QUICK_PAYS.map((pay) => (
+              <button
+                key={pay.id}
+                type="button"
+                className={`payment-quick-btn ${pay.id}${selectedQuickPay === pay.id ? " selected" : ""}`}
+                onClick={() => setSelectedQuickPay(pay.id)}
+              >
+                <img src={pay.icon} alt={pay.label} width={22} height={22} />
+                {pay.label}
+              </button>
             ))}
           </div>
         </div>
@@ -227,7 +253,14 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
           <p className="payment-tab-desc">은행을 선택하면 계좌이체 화면으로 연결돼요.</p>
           <div className="payment-bank-grid">
             {BANKS.map((bank) => (
-              <button key={bank} type="button" className="payment-bank-btn">{bank}</button>
+              <button
+                key={bank}
+                type="button"
+                className={`payment-bank-btn${selectedBank === bank ? " selected" : ""}`}
+                onClick={() => setSelectedBank(bank)}
+              >
+                {bank}
+              </button>
             ))}
           </div>
         </div>
@@ -244,23 +277,34 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
                 className="payment-form-input"
                 placeholder="010-0000-0000"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={handlePhoneNumber}
               />
             </div>
             <div className="payment-form-field">
               <label htmlFor="carrier" className="payment-form-label">통신사</label>
-              <select
-                id="carrier"
-                className="payment-form-input"
-                value={carrier}
-                onChange={(e) => setCarrier(e.target.value)}
-              >
-                <option value="">통신사를 선택해주세요</option>
-                <option value="skt">SKT</option>
-                <option value="kt">KT</option>
-                <option value="lgu">LG U+</option>
-                <option value="mvno">알뜰폰</option>
-              </select>
+              <div className="payment-select-wrap">
+                <button
+                  type="button"
+                  className="payment-select-btn"
+                  onClick={() => setCarrierOpen((v) => !v)}
+                >
+                  <span>{carrier || "통신사를 선택해주세요"}</span>
+                  <span className={`payment-select-arrow${carrierOpen ? " open" : ""}`}>▾</span>
+                </button>
+                {carrierOpen && (
+                  <ul className="payment-select-list">
+                    {CARRIERS.map((c) => (
+                      <li
+                        key={c}
+                        className={`payment-select-item${carrier === c ? " selected" : ""}`}
+                        onClick={() => { setCarrier(c); setCarrierOpen(false); }}
+                      >
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
         </div>
