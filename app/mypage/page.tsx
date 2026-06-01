@@ -8,7 +8,6 @@ import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
 import { mockUserData } from "@/data/mockUserData";
 import { BADGE_LIST } from "@/data/badge";
-import { customMenus } from "@/data/mainMenu"; // 💡 메인 메뉴 데이터 임포트
 
 export default function MyPage() {
   const { user, currentProfile, currentMember, onLogout } = useAuthStore();
@@ -24,31 +23,29 @@ export default function MyPage() {
   // 💡 메인 메뉴 데이터에서 아이콘 경로 추출 
   // (임포트된 파일명이나 구조에 맞춰 "홈", "재생목록", "알림" 등의 title 혹은 path로 매핑합니다)
   const menuIcons = useMemo(() => {
-    const findIcon = (path: string) => customMenus.find(m => m.path === path)?.imgUrl;
     return {
-      playlist: findIcon("/mypage/playlist") || "/images/header/menu/playlist.svg",
-      wishlist: findIcon("/mypage/playlist?tab=wishlist") || "/images/header/menu/wishlist.svg",
-      custom: findIcon("/menu/custom") || "/images/header/menu/custom.svg",
-      alarm: findIcon("/alarm") || "/images/header/alarm.svg",
-      // 아래 관리 항목용 기본 아이콘 경로 (메인 데이터에 없다면 폴백용으로 지정)
-      community: "/images/menu/community.svg",
-      review: "/images/menu/review.svg",
-      feed: "/images/menu/feed.svg",
-      badge: "/images/menu/badge.svg"
+      playlist: "/images/header/menu/playlist.svg",
+      wishlist: "/images/header/menu/wishlist.svg",
+      custom: "/images/header/menu/custom.svg",
+      alarm: "/images/header/alarm.svg",
+      friends: "/images/icon/icon-friends.svg",
+      review: "/images/icon/icon-community.svg",
+      contact: "/images/icon/icon-mail.svg",
+      badge: "/images/icon/icon-badge.svg"
     };
   }, []);
 
   // 💡 새롭게 확장된 빠른 메뉴 리스트 객체 (기존 4개 + 신규 관리 메뉴 4개)
   const quickMenuItems = [
-    { href: "/mypage/playlist", icon: menuIcons.playlist, title: "재생목록", desc: "최근 시청 작품", isImage: true },
+    { href: "/mypage/playlist?tab=playlists", icon: menuIcons.playlist, title: "플레이리스트", desc: "저장한 작품 모음", isImage: true },
     { href: "/mypage/playlist?tab=wishlist", icon: menuIcons.wishlist, title: "위시리스트", desc: "찜한 작품 모음", isImage: true },
     { href: "/menu/custom", icon: menuIcons.custom, title: "커스텀", desc: "나만의 메뉴 설정", isImage: true },
     { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", isImage: true, hasDot: true },
     
     // ✨ 새로 추가된 관리 메뉴 4종
-    { href: "/mypage/followers", icon: menuIcons.community, title: "팔로워 관리", desc: "팔로워 및 팔로잉 설정" },
-    { href: "/mypage/reviews", icon: menuIcons.review, title: "리뷰 관리", desc: "내가 쓴 한줄평/리뷰" },
-    { href: "/mypage/feeds", icon: menuIcons.feed, title: "피드 관리", desc: "소식 및 업로드 피드" },
+    { href: "/friends", icon: menuIcons.friends, title: "팔로워•팔로잉", desc: "팔로워 및 팔로잉 설정" },
+    { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드" },
+    { href: "/contact?tab=history", icon: menuIcons.contact, title: "문의 관리", desc: "내가 쓴 문의" },
     { href: "/goods", icon: menuIcons.badge, title: "뱃지 관리", desc: "대표 칭호 및 장착 설정" }
   ];
 
@@ -256,7 +253,7 @@ export default function MyPage() {
           <section>
             <div className="section-h">
               <h2>최근 리뷰</h2>
-              <span className="more">전체 {stats.review}개 →</span>
+              <span className="more"><Link href="/mypage/community?tab=review">전체 {stats.review}개 →</Link></span>
             </div>
             <ul className="review-list">
               {myReviews.map((r) => (
@@ -272,7 +269,6 @@ export default function MyPage() {
                     <p className="text">{r.text}</p>
                     <div className="meta">
                       <span>♡ {r.likes}</span>
-                      <span>💬 {r.comments}</span>
                       <span>{r.time}</span>
                     </div>
                   </div>

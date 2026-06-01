@@ -183,12 +183,13 @@
 
   /* 취향 유사도 바 */
   .affinity-row {
-    margin-bottom: 14px;
+    margin-bottom: 4px;
 
     .affinity-head {
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 6px;
+      // justify-content: space-between;
+      gap: 10px;
+      // margin-bottom: 6px;
 
       .label {
         font-size: g.$text-12;
@@ -221,7 +222,7 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    // margin-bottom: 14px;
 
     .genre-tag {
       padding: 4px 10px;
@@ -254,6 +255,7 @@
       font-size: g.$text-13;
       cursor: pointer;
       transition: all 0.2s;
+      margin-top: 10px;
 
       &.primary {
         background: g.$main-color;
