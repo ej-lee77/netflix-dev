@@ -1,0 +1,288 @@
+@use "@/app/globals" as g;
+
+.community-page {
+  min-height: calc(100vh - g.$header-height);
+  background-color: g.$bg-color; // 대개 #141414 등 어두운 넷플릭스 톤
+  color: g.$w-color;
+  padding: 40px 0 80px;
+
+  .community-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 40px;
+
+    @media (max-width: 768px) {
+      padding: 0 20px;
+    }
+  }
+
+  // 대타이틀 헤더
+  .community-header {
+    margin-bottom: 24px;
+    h1 {
+      font-size: g.$text-32;
+      font-weight: 800;
+      color: #fff;
+    }
+  }
+
+  // 이미지 스타일 1:1 구현: 메인 상단 탭메뉴 가로 드롭라인 레이아웃
+  .community-tabs {
+    display: flex;
+    gap: 28px;
+    border-bottom: 1px solid rgba(#fff, 0.1);
+    margin-bottom: 40px;
+
+    @media (max-width: 600px) {
+      gap: 16px;
+      overflow-x: auto;
+      scrollbar-width: none; // 파이어폭스용 노출 방지
+      &::-webkit-scrollbar { display: none; }
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 0 0 14px;
+      color: g.$main-menu-color; // 비활성 글자색 (#b3b3b3 등)
+      font-size: g.$text-16;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: rgba(#fff, 0.85);
+      }
+
+      &.is-active {
+        color: #fff;
+        font-weight: 700;
+
+        &::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          bottom: -1px; // 하단 border-bottom 라인 위에 정확히 매칭되도록 지정
+          width: 100%;
+          height: 2px;
+          background-color: g.$main-color; // 넷플릭스 전용 레드 컬러 수렴
+        }
+      }
+    }
+  }
+
+  // 중간 서브 타이틀 가로 배치 (예: 위시리스트 1개)
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+
+    h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .total-count {
+      font-size: g.$text-13;
+      color: g.$main-menu-color;
+    }
+  }
+
+  // 이미지 스타일 1:1 구현: 하단 칩스 및 정렬 툴바
+  .community-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+
+    @media (max-width: 600px) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+  }
+
+  // 타원형 넷플릭스 오리지널 칩 디자인
+  .community-chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    .chip {
+      padding: 8px 18px;
+      background-color: rgba(#2f2f2f, 0.2);
+      border: 1px solid rgba(#fff, 0.15);
+      color: #fff;
+      border-radius: 20px; // 완전 타원형 라운딩 처리
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: rgba(#fff, 0.05);
+        border-color: rgba(#fff, 0.3);
+      }
+
+      &.is-active {
+        background-color: rgba(g.$main-color, 0.1);
+        border-color: g.$main-color; // 선택 시 보더 레드 변경
+        color: #fff;
+        font-weight: 700;
+      }
+    }
+  }
+
+  // 우측 정렬 드롭다운 시스템
+  .community-sort {
+    position: relative;
+
+    @media (max-width: 600px) {
+      align-self: flex-end;
+    }
+
+    .sort-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: rgba(#fff, 0.8);
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: #fff;
+      }
+
+      .sort-arrow {
+        font-size: 10px;
+        margin-left: 2px;
+        transition: transform 0.2s ease;
+        display: inline-block;
+
+        &.is-open {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+
+  // 드롭다운 오버레이 메뉴판 스타일링
+  .sort-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    min-width: 140px;
+    background-color: #181818;
+    border: 1px solid #282828;
+    border-radius: 4px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 20;
+    list-style: none;
+    padding: 5px;
+
+    .sort-option {
+      display: block;
+      width: 100%;
+      padding: 10px 14px;
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background-color: rgba(#fff, 0.08);
+        color: #fff;
+      }
+
+      &.is-selected {
+        color: g.$main-color;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // 작성 글 빌더 영역 폼 스타일링
+  .feed-builder-form {
+    background-color: #18181c;
+    padding: 30px;
+    border-radius: 6px;
+    border: 1px solid rgba(#fff, 0.05);
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+
+      label {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      input, textarea {
+        background-color: #2a2a32;
+        border: 1px solid rgba(#fff, 0.1);
+        border-radius: 4px;
+        color: #fff;
+        padding: 12px;
+        font-size: 14px;
+        outline: none;
+
+        &:focus {
+          border-color: g.$main-color;
+        }
+      }
+    }
+    
+    .btn-submit-feed {
+      padding: 12px 32px;
+      background-color: g.$main-color;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      &:hover { background-color: #f40612; }
+    }
+  }
+
+  // 기본 엠티 홀더 디자인
+  .community-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 120px 0;
+    text-align: center;
+
+    .empty-text {
+      font-size: 15px;
+      color: g.$main-menu-color;
+    }
+
+    .empty-cta {
+      padding: 10px 24px;
+      background-color: g.$main-color;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+  }
+}
