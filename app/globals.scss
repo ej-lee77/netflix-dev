@@ -8,7 +8,7 @@ $w-color: #ffffff; // 흰색
 $d-color: #000000; // 검정색
 $g-color: #999999; // 회색 (DS: --gray1)
 // TEXT-SIZE
-$text-12: 0.75rem; // 12px
+$text-12: 0.75rem; // 12px  
 $text-13: 0.8125rem; // 13px
 $text-14: 0.875rem; // 14px
 $text-16: 1rem; // 16px
@@ -26,7 +26,10 @@ $radius-lg: 16px;
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* header */
@@ -92,8 +95,8 @@ main {
   align-items: center;
 }
 
-.main-page-wrap{
-  section{
+.main-page-wrap {
+  section {
     margin-top: $section-gap;
 
     .inner {

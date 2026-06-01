@@ -1,0 +1,195 @@
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+import { customMenus } from "@/data/mainMenu";
+import "../../scss/selectGenre.scss";
+
+// --- 메타데이터 없이 오직 path 기준으로만 데이터 분리 ---
+const genreOptions = customMenus
+  .filter((menu) => menu.path.startsWith("/genre/"))
+  .map((menu) => ({
+    ...menu,
+    slug: menu.path.replace("/genre/", ""), // 'action', 'comedy' 등 상태 관리에 쓸 key 추출
+  }));
+
+const moodOptions = customMenus
+  .filter((menu) => menu.path.startsWith("/mood/"))
+  .map((menu) => ({
+    ...menu,
+    slug: menu.path.replace("/mood/", ""), // 'chill', 'dark' 등 상태 관리에 쓸 key 추출
+  }));
+
+export default function SelectGenre() {
+  // 탭 상태 (장르 / 무드)
+  const [genreTab, setGenreTab] = useState<"favorite" | "exclude">("favorite");
+  const [moodTab, setMoodTab] = useState<"favorite" | "exclude">("favorite");
+
+  // 선택된 슬러그(slug)들을 저장하는 상태
+  const [favoriteGenres, setFavoriteGenres] = useState(["thriller", "mystery", "scifi", "drama", "romance"]);
+  const [excludedGenres, setExcludedGenres] = useState(["horror", "war", "documentary"]);
+  
+  const [favoriteMoods, setFavoriteMoods] = useState(["chill", "emotional"]);
+  const [excludedMoods, setExcludedMoods] = useState(["scary"]);
+
+  // 장르 선택 토글
+  const toggleGenre = (slug: string) => {
+    if (genreTab === "favorite") {
+      if (favoriteGenres.includes(slug)) {
+        setFavoriteGenres(favoriteGenres.filter((g) => g !== slug));
+      } else {
+        setFavoriteGenres([...favoriteGenres, slug]);
+        setExcludedGenres(excludedGenres.filter((g) => g !== slug));
+      }
+    } else {
+      if (excludedGenres.includes(slug)) {
+        setExcludedGenres(excludedGenres.filter((g) => g !== slug));
+      } else {
+        setExcludedGenres([...excludedGenres, slug]);
+        setFavoriteGenres(favoriteGenres.filter((g) => g !== slug));
+      }
+    }
+  };
+
+  // 무드 선택 토글
+  const toggleMood = (slug: string) => {
+    if (moodTab === "favorite") {
+      if (favoriteMoods.includes(slug)) {
+        setFavoriteMoods(favoriteMoods.filter((m) => m !== slug));
+      } else {
+        setFavoriteMoods([...favoriteMoods, slug]);
+        setExcludedMoods(excludedMoods.filter((m) => m !== slug));
+      }
+    } else {
+      if (excludedMoods.includes(slug)) {
+        setExcludedMoods(excludedMoods.filter((m) => m !== slug));
+      } else {
+        setExcludedMoods([...excludedMoods, slug]);
+        setFavoriteMoods(favoriteMoods.filter((m) => m !== slug));
+      }
+    }
+  };
+
+  // 초기화
+  const handleReset = () => {
+    setFavoriteGenres([]); // 선호 장르 비우기
+    setExcludedGenres([]); // 제외 장르 비우기
+    setFavoriteMoods([]);  // 선호 무드 비우기
+    setExcludedMoods([]);   // 제외 무드 비우기
+  };
+
+  return (
+    <section className="menu-custom-page">
+      <div className="menu-custom-page__inner">
+        <div className="menu-custom-page__hero">
+          <h1>장르 관리</h1>
+          <p>표시할 장르와 무드 추천을 직접 설정할 수 있어요</p>
+        </div>
+
+        {/* 1. 장르 설정 섹션 */}
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>🎭 장르 설정</h2>
+            <p>선호하는 장르와 추천에서 제외할 장르를 설정하세요</p>
+          </div>
+
+          <div className="genre-tabs" role="tablist" aria-label="장르 설정">
+            <button
+              className={genreTab === "favorite" ? "active" : ""}
+              type="button"
+              onClick={() => setGenreTab("favorite")}
+            >
+              선호 장르 ({favoriteGenres.length})
+            </button>
+            <button
+              className={genreTab === "exclude" ? "active" : ""}
+              type="button"
+              onClick={() => setGenreTab("exclude")}
+            >
+              제외 장르 ({excludedGenres.length})
+            </button>
+          </div>
+
+          <div className="genre-grid">
+            {genreOptions.map((genre) => {
+              const isSelected =
+                genreTab === "favorite"
+                  ? favoriteGenres.includes(genre.slug)
+                  : excludedGenres.includes(genre.slug);
+
+              return (
+                <button
+                  className={isSelected ? "genre-button active" : "genre-button"}
+                  type="button"
+                  key={genre.slug}
+                  onClick={() => toggleGenre(genre.slug)}
+                >
+                  {/* 메인메뉴의 이미지를 그대로 출력 */}
+                  <Image src={genre.imgUrl} alt="" width={22} height={22} />
+                  {/* 메인메뉴의 타이틀("액션", "애니메이션" 등)을 그대로 출력 */}
+                  <span>{genre.title}</span>
+                  {genreTab === "exclude" && isSelected ? <strong aria-hidden="true">×</strong> : null}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 2. 무드 설정 섹션 */}
+        <section className="custom-panel">
+          <div className="custom-panel__header">
+            <h2>🍿 무드 설정</h2>
+            <p>오늘의 기분에 맞는 작품의 분위기를 설정하세요</p>
+          </div>
+
+          <div className="genre-tabs" role="tablist" aria-label="무드 설정">
+            <button
+              className={moodTab === "favorite" ? "active" : ""}
+              type="button"
+              onClick={() => setMoodTab("favorite")}
+            >
+              선호 무드 ({favoriteMoods.length})
+            </button>
+            <button
+              className={moodTab === "exclude" ? "active" : ""}
+              type="button"
+              onClick={() => setMoodTab("exclude")}
+            >
+              제외 무드 ({excludedMoods.length})
+            </button>
+          </div>
+
+          <div className="genre-grid">
+            {moodOptions.map((mood) => {
+              const isSelected =
+                moodTab === "favorite"
+                  ? favoriteMoods.includes(mood.slug)
+                  : excludedMoods.includes(mood.slug);
+
+              return (
+                <button
+                  className={isSelected ? "genre-button active" : "genre-button"}
+                  type="button"
+                  key={mood.slug}
+                  onClick={() => toggleMood(mood.slug)}
+                >
+                  {/* 메인메뉴의 이미지를 그대로 출력 */}
+                  <Image src={mood.imgUrl} alt="" width={22} height={22} />
+                  {/* 메인메뉴의 타이틀("잔잔한", "어두운" 등)을 그대로 출력 */}
+                  <span>{mood.title}</span>
+                  {moodTab === "exclude" && isSelected ? <strong aria-hidden="true">×</strong> : null}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 초기화 판넬 */}
+        <section className="reset-panel">
+          <p>설정을 초기 상태로 되돌리고 싶으신가요?</p>
+          <button type="button" onClick={handleReset}>기본값 복원</button>
+        </section>
+      </div>
+    </section>
+  );
+}

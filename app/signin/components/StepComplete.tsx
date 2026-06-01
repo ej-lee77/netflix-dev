@@ -63,11 +63,6 @@ export default function StepComplete({ plan }: StepCompleteProps) {
 
       {/* 영수증 카드 */}
       <div className="complete-receipt">
-        <div className="receipt-header">
-          <span className="receipt-order-num">주문번호 {orderId}</span>
-          <span className="receipt-status-badge">결제 완료</span>
-        </div>
-
         <div className="receipt-body">
           <div className="receipt-row">
             <span className="receipt-label">플랜</span>
