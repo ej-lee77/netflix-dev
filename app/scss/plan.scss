@@ -12,11 +12,9 @@
 .plan-hero {
   position: relative;
   padding: 80px 0 60px;
-  background: radial-gradient(
-    ellipse at top,
-    rgba(g.$main-color, 0.15) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(ellipse at top,
+      rgba(g.$main-color, 0.15) 0%,
+      transparent 70%);
 }
 
 .plan-hero-inner {
@@ -86,12 +84,12 @@
   border-radius: g.$radius-lg;
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  // transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 
-  &:hover {
-    transform: translateY(-4px);
-    border-color: #4a4a4a;
-  }
+  // &:hover {
+  //   transform: translateY(-4px);
+  //   border-color: #4a4a4a;
+  // }
 
   // 강조 카드 (스탠다드)
   &.is-highlighted {
@@ -107,6 +105,7 @@
 
     @media (max-width: 900px) {
       transform: scale(1);
+
       &:hover {
         transform: translateY(-4px);
       }
@@ -368,6 +367,7 @@
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

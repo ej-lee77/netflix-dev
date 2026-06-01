@@ -62,7 +62,7 @@ export default function Header() {
 
             <ul className="mode-menu flex-item gap-4">
               <li className={pathname === "/" ? "active" : ""}>
-                <Link href="/">방구석 모드</Link>
+                <Link href="/">시네마 모드</Link>
               </li>
               <li className={pathname?.startsWith("/connect") ? "active" : ""}>
                 <Link href="/connect">커넥트 모드</Link>
@@ -73,7 +73,7 @@ export default function Header() {
           <ul className="gnb-menu flex-item gap-4">
             <li onClick={() => setIsSearchOpen(true)}>
               {/* <Link href="/search"> */}
-                <Image src="/images/header/search.svg" alt="검색" width={24} height={24} />
+              <Image src="/images/header/search.svg" alt="검색" width={24} height={24} />
               {/* </Link> */}
             </li>
             <li>
@@ -147,9 +147,9 @@ export default function Header() {
             )}
           </ul>
         </div>
-        <HeaderSearchOverlay 
-          isOpen={isSearchOpen} 
-          onClose={() => setIsSearchOpen(false)} 
+        <HeaderSearchOverlay
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
         />
       </header>
 
