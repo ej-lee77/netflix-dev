@@ -25,21 +25,7 @@ interface CustomPlaylist {
   createdAt: string;
 }
 
-interface ActivityReview {
-  id: number;
-  author: string;
-  rating: number;
-  content: string;
-  createdAt: string;
-  spoiler: boolean;
-  mediaId: number;
-  mediaType: "movie" | "tv";
-  mediaTitle: string;
-  posterPath?: string;
-}
-
 const CUSTOM_PLAYLIST_KEY = "netflix-custom-playlists";
-const USER_REVIEWS_KEY = "netflix-user-reviews";
 const SELECTABLE_PAGE_SIZE = 10;
 const PLAYLIST_MOOD_TAGS = customMenus.filter((menu) => menu.path.startsWith("/mood/"));
 const getMoodIcon = (tag: string) => PLAYLIST_MOOD_TAGS.find((mood) => mood.title === tag)?.imgUrl;
@@ -48,7 +34,6 @@ const tabs: { id: ActivityTab; label: string }[] = [
   { id: "watching", label: "시청중" },
   { id: "history", label: "시청기록" },
   { id: "wishlist", label: "위시리스트" },
-  { id: "reviews", label: "리뷰" },
   { id: "playlists", label: "플레이리스트" },
 ];
 
@@ -100,17 +85,6 @@ const saveCustomPlaylists = (items: CustomPlaylist[]) => {
   window.localStorage.setItem(CUSTOM_PLAYLIST_KEY, JSON.stringify(items));
 };
 
-const loadUserReviews = () => {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const stored = window.localStorage.getItem(USER_REVIEWS_KEY);
-    return stored ? JSON.parse(stored) as ActivityReview[] : [];
-  } catch {
-    return [];
-  }
-};
-
 export default function PlaylistPage() {
   return (
     <Suspense fallback={null}>
@@ -146,7 +120,6 @@ function ActivityContent() {
   const [selectionPage, setSelectionPage] = useState(1);
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
   const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
-  const [reviews, setReviews] = useState<ActivityReview[]>(loadUserReviews);
   const [modifyPlaylistId, setModifyPlaylistId] = useState<string | null>(null);
   const [modifyTitle, setModifyTitle] = useState("");
   const [modifyDescription, setModifyDescription] = useState("");
@@ -169,11 +142,7 @@ function ActivityContent() {
   useEffect(() => {
     onLoadPlayList();
     onLoadMyList();
-    const timeoutId = window.setTimeout(() => {
-      setReviews(loadUserReviews());
-    }, 0);
 
-    return () => window.clearTimeout(timeoutId);
   }, [onLoadPlayList, onLoadMyList]);
 
   useEffect(() => {
@@ -846,39 +815,6 @@ function ActivityContent() {
     </section>
   );
 
-  const renderReviews = () => (
-    <section className="activity-section">
-      <div className="section-head">
-        <h2>작성한 리뷰</h2>
-        <span>{reviews.length}개</span>
-      </div>
-
-      {reviews.length > 0 ? (
-        <div className="review-stack">
-          {reviews.map((review) => (
-            <article className="review-row" key={review.id}>
-              <Link href={`/detail/${review.mediaType}/${review.mediaId}`} className="review-poster">
-                {review.posterPath && <img src={getPosterUrl(review.posterPath)} alt={review.mediaTitle} />}
-              </Link>
-              <div className="review-content">
-                <div className="review-title-row">
-                  <h3>{review.mediaTitle}</h3>
-                  {review.spoiler && <span>스포일러</span>}
-                </div>
-                <p className="stars">★★★★★ <em>{review.rating.toFixed(1)} / 5.0</em></p>
-                <p className="review-copy">{review.content}</p>
-                <div className="review-meta">
-                  <span>{review.author}</span>
-                  <time>{review.createdAt}</time>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : renderEmpty("작성한 리뷰가 없어요.")}
-    </section>
-  );
-
   const renderPlaylistMosaic = (playlist: CustomPlaylist) => {
     const playlistItems = listItems.filter((item) => playlist.itemKeys.includes(getItemKey(item)));
     const previewItems = playlistItems.slice(0, 4);
@@ -1083,7 +1019,6 @@ function ActivityContent() {
         {activeTab === "watching" && renderWatching()}
         {activeTab === "history" && renderHistory()}
         {activeTab === "wishlist" && renderWishlist()}
-        {activeTab === "reviews" && renderReviews()}
         {activeTab === "playlists" && renderPlaylists()}
         {renderCreatePlaylistModal()}
         {renderModifyCard()}

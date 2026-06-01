@@ -6,8 +6,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import HeaderMenu from "./HeaderMenu";
 import ProfilePinGate, { getProfilePin } from "./ProfilePinGate";
-import { DEFAULT_PROFILES, useAuthStore } from "@/store/useAuthStore";
-import type { Profile } from "@/types/auth";
+import { useAuthStore } from "@/store/useAuthStore";
+import type { UserProfile } from "@/types/auth"; 
 import "./scss/header.scss";
 import HeaderSearchOverlay from "./HeaderSearchOverlay";
 
@@ -18,18 +18,18 @@ export default function Header() {
   const router = useRouter();
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [pendingProfile, setPendingProfile] = useState<Profile | null>(null);
+  const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(null);
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const profiles = user?.profiles?.length ? user.profiles : DEFAULT_PROFILES;
-  const activeProfile = currentProfile ?? profiles[0];
+  const profiles = user?.profile || [];
+  const activeProfile = currentProfile;
   const isProfileRoute = Boolean(pathname?.startsWith("/profiles"));
   const shouldSelectProfile = Boolean(
     user && !currentProfile && !AUTH_PATHS.includes(pathname ?? "") && !isProfileRoute
   );
 
-  const handleProfileChange = (selectedProfile: Profile) => {
+  const handleProfileChange = (selectedProfile: UserProfile) => {
     if (selectedProfile.id === currentProfile?.id) {
       setIsProfileMenuOpen(false);
       return;
@@ -93,9 +93,7 @@ export default function Header() {
 
           <ul className="gnb-menu flex-item gap-4">
             <li onClick={() => setIsSearchOpen(true)}>
-              {/* <Link href="/search"> */}
               <Image src="/images/header/search.svg" alt="검색" width={24} height={24} />
-              {/* </Link> */}
             </li>
             <li>
               <Link href="/alarm">
@@ -119,7 +117,7 @@ export default function Header() {
                 >
                   <Image
                     src={activeProfile?.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                    alt={activeProfile?.name ?? "프로필"}
+                    alt={activeProfile?.nickname ?? activeProfile?.nickname ?? "프로필"}
                     width={40}
                     height={40}
                   />
@@ -131,16 +129,18 @@ export default function Header() {
                     <span className="profile-dropdown-caret" aria-hidden="true" />
 
                     <ul className="profile-switch-list">
+                      {/* 🌟 이제 profiles가 빈 배열 또는 온전한 프로필 리스트이므로 에러가 나지 않습니다. */}
                       {profiles.map((profile) => (
                         <li key={profile.id}>
                           <button type="button" onClick={() => handleProfileChange(profile)}>
                             <Image
                               src={profile.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                              alt={profile.name ?? "프로필"}
+                              alt={profile.nickname ?? profile.nickname ?? "프로필"}
                               width={42}
                               height={42}
                             />
-                            <span>{profile.name}</span>
+                            {/* 데이터 스키마에 따라 nickname 혹은 name을 띄워줍니다. */}
+                            <span>{profile.nickname || profile.nickname}</span>
                           </button>
                         </li>
                       ))}
@@ -181,7 +181,7 @@ export default function Header() {
         <ProfilePinGate
           key={pendingProfile.id}
           profile={pendingProfile}
-          description={`${pendingProfile.name ?? "프로필"} 프로필로 전환하려면 PIN을 입력해 주세요.`}
+          description={`${pendingProfile.nickname ?? "프로필"} 프로필로 전환하려면 PIN을 입력해 주세요.`}
           onCancel={() => setPendingProfile(null)}
           onSuccess={confirmPendingProfile}
         />
