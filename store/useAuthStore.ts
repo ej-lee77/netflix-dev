@@ -98,6 +98,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
+      // 이메일/비밀번호 가입인데 아직 인증 안 된 경우 → 로그인 상태로 인식 안 함
+      const isEmailProvider = user.providerData[0]?.providerId === "password";
+      if (isEmailProvider && !user.emailVerified) {
+        set({ user: null, currentProfile: null, currentMember: null });
+        return;
+      }
+
       const userWithProfiles = withDefaultProfiles(user);
       set({
         user: userWithProfiles,
@@ -106,7 +113,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     });
   },
-
   onLogin: (user) => {
     const userWithProfiles = withDefaultProfiles(user, isNewAuthUser(user));
     saveProfiles(userWithProfiles.profiles ?? DEFAULT_PROFILES);

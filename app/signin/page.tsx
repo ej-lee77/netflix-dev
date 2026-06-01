@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./signin.scss";
 import StepRegister from "./components/StepRegister";
-import StepVerify   from "./components/StepVerify";
-import StepPlan     from "./components/StepPlan";
-import StepPayment  from "./components/StepPayment";
+import StepVerify from "./components/StepVerify";
+import StepPlan from "./components/StepPlan";
+import StepPayment from "./components/StepPayment";
 import StepComplete from "./components/StepComplete";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ function buildSteps(current: number): Step[] {
 
 export default function SigninPage() {
   const [currentStep, setCurrentStep] = useState<number>(0);
-  const [sentEmail,   setSentEmail]   = useState<string>("");
+  const [sentEmail, setSentEmail] = useState<string>("");
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>({
     name: "스탠다드",
     billing: "monthly",
@@ -49,6 +49,10 @@ export default function SigninPage() {
     annualDiscount: 27000,
   });
 
+  //currentStep 바뀔때마다 스크롤 초기화
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
   const steps = buildSteps(currentStep);
 
   const handleVerificationSent = (email: string) => {
@@ -56,10 +60,10 @@ export default function SigninPage() {
     setCurrentStep(1);
   };
 
-  const handleVerified  = ()                   => setCurrentStep(2);
-  const handlePlanNext  = (plan: SelectedPlan) => { setSelectedPlan(plan); setCurrentStep(3); };
-  const handlePayBack   = ()                   => setCurrentStep(2);
-  const handlePayComplete = ()                 => setCurrentStep(4);
+  const handleVerified = () => setCurrentStep(2);
+  const handlePlanNext = (plan: SelectedPlan) => { setSelectedPlan(plan); setCurrentStep(3); };
+  const handlePayBack = () => setCurrentStep(2);
+  const handlePayComplete = () => setCurrentStep(4);
 
   return (
     <div className="signin-page">
