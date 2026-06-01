@@ -40,7 +40,7 @@ interface ActivityReview {
 
 const CUSTOM_PLAYLIST_KEY = "netflix-custom-playlists";
 const USER_REVIEWS_KEY = "netflix-user-reviews";
-const SELECTABLE_PAGE_SIZE = 5;
+const SELECTABLE_PAGE_SIZE = 10;
 const PLAYLIST_MOOD_TAGS = customMenus.filter((menu) => menu.path.startsWith("/mood/"));
 const getMoodIcon = (tag: string) => PLAYLIST_MOOD_TAGS.find((mood) => mood.title === tag)?.imgUrl;
 
@@ -144,8 +144,15 @@ function ActivityContent() {
   const [playlistIsPublic, setPlaylistIsPublic] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionPage, setSelectionPage] = useState(1);
+  const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
   const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
   const [reviews, setReviews] = useState<ActivityReview[]>(loadUserReviews);
+  const [modifyPlaylistId, setModifyPlaylistId] = useState<string | null>(null);
+  const [modifyTitle, setModifyTitle] = useState("");
+  const [modifyDescription, setModifyDescription] = useState("");
+  const [modifyMoodTags, setModifyMoodTags] = useState<string[]>([]);
+  const [modifyIsPublic, setModifyIsPublic] = useState(false);
+  const [modifyItemKeys, setModifyItemKeys] = useState<string[]>([]);
 
   // 헤더 메뉴에서 ?tab=wishlist / ?tab=playlists 로 들어오면 해당 탭 열기
   useEffect(() => {
@@ -168,6 +175,29 @@ function ActivityContent() {
 
     return () => window.clearTimeout(timeoutId);
   }, [onLoadPlayList, onLoadMyList]);
+
+  useEffect(() => {
+    if (!modifyPlaylistId && !createPlaylistOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (modifyPlaylistId) {
+          setModifyPlaylistId(null);
+          setModifyTitle("");
+          setModifyDescription("");
+          setModifyMoodTags([]);
+          setModifyIsPublic(false);
+          setModifyItemKeys([]);
+        }
+        if (createPlaylistOpen) {
+          setCreatePlaylistOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [modifyPlaylistId, createPlaylistOpen]);
 
   // 찜 목록 불러오기
   useEffect(() => {
@@ -263,6 +293,16 @@ function ActivityContent() {
     setPlaylistIsPublic(false);
     setSelectedKeys([]);
     setSelectionPage(1);
+    setCreatePlaylistOpen(false);
+  };
+
+  const openCreatePlaylistModal = () => {
+    if (selectedKeys.length === 0) return;
+    setCreatePlaylistOpen(true);
+  };
+
+  const closeCreatePlaylistModal = () => {
+    setCreatePlaylistOpen(false);
   };
 
   const handleDeletePlaylist = (playlistId: string) => {
@@ -270,6 +310,69 @@ function ActivityContent() {
 
     setCustomPlaylists(nextPlaylists);
     saveCustomPlaylists(nextPlaylists);
+    if (modifyPlaylistId === playlistId) {
+      closeModifyCard();
+    }
+  };
+
+  const openModifyCard = (playlist: CustomPlaylist) => {
+    setModifyPlaylistId(playlist.id);
+    setModifyTitle(playlist.title);
+    setModifyDescription(playlist.description || "");
+    setModifyMoodTags(playlist.moodTags || []);
+    setModifyIsPublic(Boolean(playlist.isPublic));
+    setModifyItemKeys(playlist.itemKeys);
+  };
+
+  const closeModifyCard = () => {
+    setModifyPlaylistId(null);
+    setModifyTitle("");
+    setModifyDescription("");
+    setModifyMoodTags([]);
+    setModifyIsPublic(false);
+    setModifyItemKeys([]);
+  };
+
+  const toggleModifyMoodTag = (tag: string) => {
+    setModifyMoodTags((prev) => (
+      prev.includes(tag)
+        ? prev.filter((item) => item !== tag)
+        : [...prev, tag]
+    ));
+  };
+
+  const toggleModifyItemKey = (key: string) => {
+    setModifyItemKeys((prev) => (
+      prev.includes(key)
+        ? prev.filter((itemKey) => itemKey !== key)
+        : [...prev, key]
+    ));
+  };
+
+  const handleSaveModifyPlaylist = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!modifyPlaylistId) return;
+
+    const title = modifyTitle.trim();
+    const description = modifyDescription.trim();
+    if (!title || modifyItemKeys.length === 0) return;
+
+    const nextPlaylists = customPlaylists.map((playlist) => (
+      playlist.id === modifyPlaylistId
+        ? {
+          ...playlist,
+          title,
+          description,
+          moodTags: modifyMoodTags,
+          isPublic: modifyIsPublic,
+          itemKeys: modifyItemKeys,
+        }
+        : playlist
+    ));
+
+    setCustomPlaylists(nextPlaylists);
+    saveCustomPlaylists(nextPlaylists);
+    closeModifyCard();
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
@@ -288,12 +391,270 @@ function ActivityContent() {
     }));
     setCustomPlaylists(nextPlaylists);
     saveCustomPlaylists(nextPlaylists);
+    setModifyItemKeys((prev) => prev.filter((key) => key !== itemKey));
+  };
+
+  //renderModifyCard : 제목, 설명, 무드태그, 공개여부, 추가된 컨텐츠 수정 팝업창
+  const renderModifyCard = () => {
+    if (!modifyPlaylistId) return null;
+
+    const selectedModifyItems = listItems.filter((item) => modifyItemKeys.includes(getItemKey(item)));
+
+    return (
+      <div
+        className="modify-playlist-backdrop"
+        role="presentation"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            closeModifyCard();
+          }
+        }}
+      >
+        <section
+          className="modify-playlist-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modify-playlist-title"
+        >
+          <form onSubmit={handleSaveModifyPlaylist}>
+            <div className="modify-playlist-head">
+              <div>
+                <div className="title-area">
+                  <img src="/images/playlist/playlist-icon.svg" alt="." />
+                  <h3 id="modify-playlist-title">플레이리스트 수정</h3>
+                </div>
+
+                <p>{selectedModifyItems.length}개 작품 선택됨</p>
+              </div>
+              <button
+                type="button"
+                className="modify-close-btn"
+                onClick={closeModifyCard}
+                aria-label="수정 창 닫기"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="modify-field-stack">
+              <label>
+                <span>제목</span>
+                <input
+                  type="text"
+                  value={modifyTitle}
+                  onChange={(event) => setModifyTitle(event.target.value)}
+                  placeholder="플레이리스트 제목"
+                />
+              </label>
+
+              <label>
+                <span>설명</span>
+                <textarea
+                  value={modifyDescription}
+                  onChange={(event) => setModifyDescription(event.target.value)}
+                  placeholder="플레이리스트 설명"
+                />
+              </label>
+            </div>
+
+            <div className="modify-section">
+              <strong>무드 태그</strong>
+              <div className="modify-mood-tags">
+                {PLAYLIST_MOOD_TAGS.map((mood) => (
+                  <button
+                    type="button"
+                    key={mood.path}
+                    className={modifyMoodTags.includes(mood.title) ? "active" : ""}
+                    onClick={() => toggleModifyMoodTag(mood.title)}
+                  >
+                    <img src={mood.imgUrl} alt="" />
+                    {mood.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="modify-section">
+              <strong>피드 공개 여부</strong>
+              <button
+                type="button"
+                className={modifyIsPublic ? "modify-visibility-toggle active" : "modify-visibility-toggle"}
+                onClick={() => setModifyIsPublic((value) => !value)}
+                aria-pressed={modifyIsPublic}
+              >
+                피드 공개
+                {/* {modifyIsPublic ? "피드 공개" : "비공개"} */}
+              </button>
+            </div>
+
+            <div className="modify-section">
+              <strong>추가된 콘텐츠</strong>
+              <div className="modify-content-grid">
+                {listItems.map((item) => {
+                  const key = getItemKey(item);
+                  const isSelected = modifyItemKeys.includes(key);
+
+                  return (
+                    <button
+                      type="button"
+                      key={key}
+                      className={isSelected ? "modify-content-card selected" : "modify-content-card"}
+                      onClick={() => toggleModifyItemKey(key)}
+                    >
+                      {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+                      <span>{isSelected ? "✓" : "+"}</span>
+                      <strong>{item.title}</strong>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="modify-actions">
+              <button type="button" className="modify-cancel-btn" onClick={closeModifyCard}>
+                취소
+              </button>
+              <button
+                type="submit"
+                className="modify-save-btn"
+                disabled={!modifyTitle.trim() || modifyItemKeys.length === 0}
+              >
+                저장
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    );
+  };
+
+  const renderCreatePlaylistModal = () => {
+    if (!createPlaylistOpen) return null;
+
+    return (
+      <div
+        className="modify-playlist-backdrop"
+        role="presentation"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            closeCreatePlaylistModal();
+          }
+        }}
+      >
+        <section
+          className="modify-playlist-modal create-playlist-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-playlist-title"
+        >
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleCreatePlaylist();
+            }}
+          >
+            <div className="modify-playlist-head">
+              <div>
+                <div className="title-area">
+                  <img src="/images/playlist/playlist-icon.svg" alt="." />
+                  <h3 id="create-playlist-title">플레이리스트 만들기</h3>
+                </div>
+
+                <p>{selectedItems.length}개 작품으로 새 플레이리스트를 만들어요</p>
+              </div>
+              <button
+                type="button"
+                className="modify-close-btn"
+                onClick={closeCreatePlaylistModal}
+                aria-label="만들기 창 닫기"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="create-selected-strip" aria-label="선택된 콘텐츠">
+              {selectedItems.slice(0, 6).map((item) => (
+                <span key={getItemKey(item)}>
+                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+                </span>
+              ))}
+              {selectedItems.length > 6 && <em>+{selectedItems.length - 6}</em>}
+            </div>
+
+            <div className="modify-field-stack">
+              <label>
+                <span>제목</span>
+                <input
+                  type="text"
+                  value={playlistTitle}
+                  onChange={(event) => setPlaylistTitle(event.target.value)}
+                  placeholder="플레이리스트 이름"
+                />
+              </label>
+
+              <label>
+                <span>설명</span>
+                <textarea
+                  value={playlistDescription}
+                  onChange={(event) => setPlaylistDescription(event.target.value)}
+                  placeholder="플레이리스트 설명"
+                />
+              </label>
+            </div>
+
+            <div className="modify-section">
+              <strong>무드 태그</strong>
+              <div className="modify-mood-tags">
+                {PLAYLIST_MOOD_TAGS.map((mood) => (
+                  <button
+                    type="button"
+                    key={mood.path}
+                    className={selectedMoodTags.includes(mood.title) ? "active" : ""}
+                    onClick={() => toggleMoodTag(mood.title)}
+                  >
+                    <img src={mood.imgUrl} alt="" />
+                    {mood.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="modify-section">
+              <strong>피드 공개 여부</strong>
+              <button
+                type="button"
+                className={playlistIsPublic ? "modify-visibility-toggle active" : "modify-visibility-toggle"}
+                onClick={() => setPlaylistIsPublic((value) => !value)}
+                aria-pressed={playlistIsPublic}
+              >
+                {/* {playlistIsPublic ? "피드 공개" : "비공개"} */}
+                피드 공개
+              </button>
+            </div>
+
+            <div className="modify-actions">
+              <button type="button" className="modify-cancel-btn" onClick={closeCreatePlaylistModal}>
+                취소
+              </button>
+              <button
+                type="submit"
+                className="modify-save-btn"
+                disabled={!playlistTitle.trim() || selectedKeys.length === 0}
+              >
+                만들기
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    );
   };
 
   const renderEmpty = (message: string) => (
     <div className="empty">
+      <img src="/images/playlist/empty-contents.png" alt="." />
       <p>{message}</p>
-      <Link href="/" className="btn-primary">작품 둘러보기</Link>
+      {/* <Link href="/" className="btn-primary">작품 둘러보기</Link> */}
     </div>
   );
 
@@ -559,99 +920,84 @@ function ActivityContent() {
         <span className={playlist.isPublic ? "playlist-visibility public" : "playlist-visibility"}>
           {playlist.isPublic ? "피드 공개" : "비공개"}
         </span>
-        <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
+        <div className="playlist-extra-area">
+          <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
+          <button
+            className="playcard-more-btn"
+            type="button"
+            onClick={() => openModifyCard(playlist)}
+            aria-label={`${playlist.title} 플레이리스트 수정`}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="m12 16.495c1.242 0 2.25 1.008 2.25 2.25s-1.008 2.25-2.25 2.25-2.25-1.008-2.25-2.25 1.008-2.25 2.25-2.25zm0-6.75c1.242 0 2.25 1.008 2.25 2.25s-1.008 2.25-2.25 2.25-2.25-1.008-2.25-2.25 1.008-2.25 2.25-2.25zm0-6.75c1.242 0 2.25 1.008 2.25 2.25s-1.008 2.25-2.25 2.25-2.25-1.008-2.25-2.25 1.008-2.25 2.25-2.25z"
+              />
+            </svg>
+          </button>
+        </div>
+
       </article>
     );
   };
 
   const renderPlaylists = () => (
     <section className="activity-section">
-      <div className="section-head">
-        <h2>나의 플레이리스트</h2>
-        <span>{customPlaylists.length}개</span>
+      <div className="section-head playlist-content-head">
+        <div>
+          <h2>플레이리스트에 담을 콘텐츠</h2>
+          <span>{selectedItems.length}개 선택됨</span>
+        </div>
+        <button
+          type="button"
+          className="create-playlist-btn"
+          onClick={openCreatePlaylistModal}
+          disabled={selectedKeys.length === 0}
+        >
+          <div className="content">
+            <img src="/images/playlist/playlist-icon.svg" alt="" />
+            <p>플레이리스트 만들기</p>
+          </div>
+
+        </button>
       </div>
 
-      <div className="playlist-builder" id="playlist-builder">
-        <div className="builder-panel">
-          {/* <div className="builder-plus">＋</div> */}
-          <div className="builder-plus">
-            <img src="/images/playlist/playlist-icon.svg" alt="" />
-          </div>
-          <h3>플레이리스트 만들기</h3>
-          <input
-            type="text"
-            value={playlistTitle}
-            onChange={(event) => setPlaylistTitle(event.target.value)}
-            placeholder="플레이리스트 이름"
-          />
-          <textarea
-            value={playlistDescription}
-            onChange={(event) => setPlaylistDescription(event.target.value)}
-            placeholder="플레이리스트 설명"
-          />
-          <div className="playlist-mood-tags" aria-label="플레이리스트 무드 선택">
-            {PLAYLIST_MOOD_TAGS.map((mood) => (
-              <button
-                type="button"
-                key={mood.path}
-                className={selectedMoodTags.includes(mood.title) ? "active" : ""}
-                onClick={() => toggleMoodTag(mood.title)}
-              >
-                <img src={mood.imgUrl} alt="" />
-                {mood.title}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            className={playlistIsPublic ? "visibility-toggle active" : "visibility-toggle"}
-            onClick={() => setPlaylistIsPublic((value) => !value)}
-            aria-pressed={playlistIsPublic}
-          >
-            {/* {playlistIsPublic ? "피드에 공개" : "피드 비공개"} */}
-            피드에 공개
-          </button>
-          <button type="button" onClick={handleCreatePlaylist} disabled={!playlistTitle.trim() || selectedKeys.length === 0}>
-            선택한 작품으로 만들기
-          </button>
-          <p>{selectedItems.length}개 선택됨</p>
-        </div>
+      <div className="playlist-content-layout" id="playlist-builder">
+        <div className="selectable-history-wrap playlist-content-panel">
+          {listItems.length > 0 ? (
+            <div className="selectable-history">
+              {pagedSelectionItems.map((item) => {
+                const key = getItemKey(item);
+                const isSelected = selectedKeys.includes(key);
 
-        <div className="selectable-history-wrap">
-          <div className="selectable-history">
-            {pagedSelectionItems.map((item) => {
-              const key = getItemKey(item);
-              const isSelected = selectedKeys.includes(key);
-
-              return (
-                <article key={key} className={isSelected ? "select-card selected" : "select-card"}>
-                  <button
-                    type="button"
-                    className="select-card-main"
-                    onClick={() => toggleSelected(key)}
-                  >
-                    <span className="select-check">{isSelected ? "✓" : "+"}</span>
-                    {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
-                  </button>
-                  <div className="select-card-title-row">
-                    <strong>{item.title}</strong>
+                return (
+                  <article key={key} className={isSelected ? "select-card selected" : "select-card"}>
                     <button
                       type="button"
-                      className="select-delete-btn"
-                      onClick={() => handleDeleteMyListItem(item)}
-                      aria-label={`${item.title} 내 리스트 삭제`}
+                      className="select-card-main"
+                      onClick={() => toggleSelected(key)}
                     >
-                      -
+                      <span className="select-check">{isSelected ? "✓" : "+"}</span>
+                      {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
                     </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-
-          {listItems.length === 0 && (
-            <div className="empty">
-              <p>상세 페이지에서 + 내 리스트를 눌러 작품을 담아주세요.</p>
+                    <div className="select-card-title-row">
+                      <strong>{item.title}</strong>
+                      <button
+                        type="button"
+                        className="select-delete-btn"
+                        onClick={() => handleDeleteMyListItem(item)}
+                        aria-label={`${item.title} 내 리스트 삭제`}
+                      >
+                        -
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="playlist-selection-empty">
+              {renderEmpty("아직 플레이리스트에 담을 콘텐츠가 없어요.")}
             </div>
           )}
 
@@ -688,6 +1034,11 @@ function ActivityContent() {
 
       <div className="playlist-section-divider" aria-hidden="true" />
 
+      <div className="section-head">
+        <h2>나의 플레이리스트</h2>
+        <span>{customPlaylists.length}개</span>
+      </div>
+
       {customPlaylists.length > 0 ? (
         <div className="custom-playlist-grid">
           {customPlaylists.map(renderPlaylistMosaic)}
@@ -695,11 +1046,12 @@ function ActivityContent() {
       ) : (
         <div className="playlist-empty-state">
           <img src="/images/playlist/empty-playlist.png" alt="" />
-          <h3>아직 플레이리스트가 없어요</h3>
-          <p>
+          {/* <h3>아직 플레이리스트가 없어요</h3> */}
+          <p>아직 플레이리스트가 없어요.</p>
+          {/* <p>
             Your archive is empty.<br />
             Start your collection.
-          </p>
+          </p> */}
         </div>
       )}
     </section>
@@ -733,6 +1085,8 @@ function ActivityContent() {
         {activeTab === "wishlist" && renderWishlist()}
         {activeTab === "reviews" && renderReviews()}
         {activeTab === "playlists" && renderPlaylists()}
+        {renderCreatePlaylistModal()}
+        {renderModifyCard()}
       </div>
     </div>
   );
