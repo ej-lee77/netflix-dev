@@ -21,11 +21,26 @@ export const mainMenus: mainMenu[] = [
     imgUrl: "/images/header/menu/wishlist.svg",
     path: "/mypage/playlist?tab=wishlist",
   },
-  // {
-  //     title: "시청이력",
-  //     imgUrl: "/images/header/menu/playhist.svg",
-  //     path: "/mypage/playhist"
-  // },
+  {
+      title: "시청이력",
+      imgUrl: "/images/header/menu/playhist.svg",
+      path: "/mypage/playhist"
+  },
+  {
+    title: "영화",
+    imgUrl: "/images/header/menu/movie.svg",
+    path: "/category?tab=movie",
+  },
+  {
+    title: "시리즈",
+    imgUrl: "/images/header/menu/tv.svg",
+    path: "/category?tab=tv",
+  },
+  {
+    title: "애니메이션",
+    imgUrl: "/images/header/menu/animation.svg",
+    path: "/category?tab=animation",
+  },
   // {
   //     title: "커스텀",
   //     imgUrl: "/images/header/menu/custom.svg",
