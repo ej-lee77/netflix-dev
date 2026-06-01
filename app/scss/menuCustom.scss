@@ -1,0 +1,326 @@
+@use "@/app/globals" as g;
+
+.menu-custom-page {
+  min-height: calc(100vh - g.$header-height);
+  color: #fff;
+  padding: 44px 6vw 72px;
+
+  // 1. 레이아웃 컨테이너
+  .menu-custom-page__inner {
+    width: min(100%, 1500px);
+    margin: 0 auto;
+  }
+
+  // 2. 상단 히어로 영역
+  .menu-custom-page__hero {
+    margin-bottom: 18px;
+
+    h1 {
+      font-size: clamp(1.5rem, 3vw, 1.6rem);
+      font-weight: 700;
+      line-height: 1.12;
+    }
+
+    p {
+      margin-top: 14px;
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 1rem;
+    }
+  }
+
+  // 3. 공통 판넬 섀도우 박스 (기본 메뉴, 장르, 무드, 리셋 공통)
+  .custom-panel,
+  .reset-panel,
+  .menu-flow-panel {
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 8px;
+    background:
+      linear-gradient(145deg, rgba(229, 9, 20, 0.045), transparent 38%),
+      rgba(255, 255, 255, 0.035);
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+  }
+  .reset-panel{
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .custom-panel {
+    margin-top: 24px; // 박스 간격 식별을 위해 14px -> 24px 확장
+    padding: 34px;
+  }
+
+  // 4. 판넬 헤더 스타일
+  .custom-panel__header {
+    margin-bottom: 26px;
+
+    h2 {
+      color: #fff;
+      font-size: 1.35rem;
+      font-weight: 900;
+      line-height: 1.25;
+
+      span {
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 1rem;
+        margin-left: 6px;
+      }
+    }
+
+    p {
+      margin-top: 12px;
+      color: rgba(255, 255, 255, 0.46);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+  }
+
+  // 5. 🗺️ [신설] 메뉴 나열 순서 프리뷰 바
+  .menu-flow-panel {
+    margin-top: 18px;
+    margin-bottom: 8px;
+    padding: 20px 24px;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      
+      h3 { 
+        font-size: 1.05rem; 
+        font-weight: 800; 
+        color: #fff; 
+      }
+      span { 
+        font-size: 0.85rem; 
+        color: rgba(255, 255, 255, 0.38); 
+      }
+      
+      @media (max-width: 600px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+    }
+  }
+
+  .menu-flow-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 44px;
+    padding: 4px 0;
+  }
+
+  .flow-item-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .flow-arrow {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+
+  .flow-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    
+    &.home-fixed {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    &.dynamic {
+      background: rgba(229, 9, 20, 0.15);
+      border: 1px solid rgba(229, 9, 20, 0.5);
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      .order-number {
+        background: #e50914;
+        color: #fff;
+        font-size: 10px;
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+
+      .remove-x {
+        margin-left: 4px;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 14px;
+        transition: color 0.1s;
+      }
+
+      &:hover {
+        background: rgba(229, 9, 20, 0.25);
+        border-color: #e50914;
+        
+        .remove-x { color: #fff; }
+      }
+    }
+
+    &.empty {
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 0.88rem;
+      font-style: italic;
+    }
+  }
+
+  // 6. 메뉴 선택 그리드 & 버튼 레이아웃
+  .genre-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .genre-button {
+    position: relative;
+    display: flex;
+    min-height: 58px;
+    align-items: center;
+    justify-content: flex-start; // 텍스트 균형을 위해 좌측정렬 고정
+    gap: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(255, 255, 255, 0.54);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 900;
+    padding: 0 45px 0 18px; // 우측 순서 원형 배지를 위한 패딩 확보
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
+
+    img {
+      opacity: 0.48;
+      transition: opacity 0.18s ease;
+    }
+
+    // 활성화 시 우측 동그라미 숫자 칩
+    strong {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: g.$main-color;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &:hover,
+    &.active {
+      border-color: rgba(229, 9, 20, 0.48);
+      background: rgba(229, 9, 20, 0.11);
+      color: #fff;
+
+      img { opacity: 0.9; }
+    }
+
+    &.active {
+      box-shadow: inset 0 0 0 1px rgba(229, 9, 20, 0.14);
+    }
+  }
+
+  // 7. 초기화 하단 바
+  .reset-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: 24px;
+    padding: 20px 28px;
+
+    p {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.95rem;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.78);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 800;
+      padding: 0 18px;
+      transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease;
+
+      &:hover {
+        border-color: rgba(229, 9, 20, 0.46);
+        background: rgba(229, 9, 20, 0.1);
+        color: #fff;
+      }
+    }
+  }
+
+  // 9. 📱 반응형 미디어 쿼리 구간 정의
+  @media (max-width: 1100px) {
+    .genre-grid {
+      grid-template-columns: repeat(3, minmax(150px, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    padding: 28px 20px 56px;
+
+    .custom-panel {
+      padding: 24px 18px;
+    }
+
+    .genre-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .genre-button {
+      min-height: 64px;
+      flex-direction: row; // 모바일 텍스트 일렬 유지를 위해 가로 배열 강제 유지
+      padding: 0 38px 0 12px;
+      
+      strong {
+        right: 10px;
+      }
+    }
+
+    .reset-panel {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .section-item {
+      grid-template-columns: 20px 1fr auto;
+      gap: 10px;
+      padding: 15px 14px;
+    }
+  }
+}
