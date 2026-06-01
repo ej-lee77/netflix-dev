@@ -12,7 +12,7 @@ export const mainMenus: mainMenu[] = [
     path: "/category",
   },
   {
-    title: "재생목록",
+    title: "플레이리스트",
     imgUrl: "/images/header/menu/playlist.svg",
     path: "/mypage/playlist?tab=playlists",
   },
