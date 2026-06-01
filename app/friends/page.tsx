@@ -83,32 +83,32 @@ export default function FriendsPage() {
     <div className="friends-page">
       <div className="inner">
         <div className="page-head">
-          <h1>친구</h1>
-          <p>취향이 비슷한 친구를 찾고 함께 시청해보세요</p>
+          <h1>팔로워 • 팔로잉</h1>
+          <p>취향이 비슷한 팔로워를 찾고 함께 공유해보세요</p>
         </div>
 
         {/* 검색 바 */}
         <div className="search-input">
           <span className="icon">⌕</span>
-          <input type="text" placeholder="이름·이메일·코드로 친구 찾기" />
+          <input type="text" placeholder="이름·이메일로 찾기" />
         </div>
 
         {/* 탭 */}
         <div className="tab-bar">
           <button className={tab === "all" ? "tab active" : "tab"} onClick={() => setTab("all")}>
-            내 친구 <span className="num">{sampleFriends.length}</span>
-          </button>
-          <button
-            className={tab === "recommend" ? "tab active" : "tab"}
-            onClick={() => setTab("recommend")}
-          >
-            친구 추천 <span className="num">{recommendFriends.length}</span>
+            팔로워 <span className="num">{sampleFriends.length}</span>
           </button>
           <button
             className={tab === "watchTogether" ? "tab active" : "tab"}
             onClick={() => setTab("watchTogether")}
           >
-            함께 보기 제안 <span className="num">3</span>
+            팔로잉 <span className="num">3</span>
+          </button>
+          <button
+            className={tab === "recommend" ? "tab active" : "tab"}
+            onClick={() => setTab("recommend")}
+          >
+            추천 유저 <span className="num">{recommendFriends.length}</span>
           </button>
         </div>
 
@@ -131,9 +131,9 @@ export default function FriendsPage() {
                   <span className="label">취향 유사도</span>
                   <span className="value">{friend.affinity}%</span>
                 </div>
-                <div className="affinity-bar">
+                {/* <div className="affinity-bar">
                   <div className="fill" style={{ width: `${friend.affinity}%` }}></div>
-                </div>
+                </div> */}
               </div>
 
               <div className="common-genres">
@@ -146,10 +146,9 @@ export default function FriendsPage() {
               </div>
 
               <div className="actions">
-                <button className="btn primary">▶ 함께 보기 제안</button>
-                <button className="btn">
-                  {tab === "recommend" ? "＋ 팔로우" : "메시지"}
-                </button>
+                
+                  {tab === "recommend" ? <button className="btn">＋ 팔로우</button> : ""}
+                
               </div>
             </article>
           ))}
