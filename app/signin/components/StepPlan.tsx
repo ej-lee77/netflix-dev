@@ -81,7 +81,7 @@ const PLANS: PlanData[] = [
 const COMPARE_ROWS = [
   {
     label: "월 요금",
-    monthly: ["5,500원", "13,500원", "17,000원"],
+    monthly: ["7,000원", "13,500원", "17,000원"],
     annual: ["4,583원", "11,250원", "14,167원"],
   },
   {
