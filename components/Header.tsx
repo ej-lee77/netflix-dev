@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import HeaderMenu from "./HeaderMenu";
+import ProfilePinGate, { getProfilePin } from "./ProfilePinGate";
 import { DEFAULT_PROFILES, useAuthStore } from "@/store/useAuthStore";
 import type { Profile } from "@/types/auth";
 import "./scss/header.scss";
@@ -17,6 +18,7 @@ export default function Header() {
   const router = useRouter();
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [pendingProfile, setPendingProfile] = useState<Profile | null>(null);
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -28,8 +30,27 @@ export default function Header() {
   );
 
   const handleProfileChange = (selectedProfile: Profile) => {
+    if (selectedProfile.id === currentProfile?.id) {
+      setIsProfileMenuOpen(false);
+      return;
+    }
+
+    if (getProfilePin(selectedProfile.id)) {
+      setPendingProfile(selectedProfile);
+      setIsProfileMenuOpen(false);
+      return;
+    }
+
     onSetProfile(selectedProfile);
     setIsProfileMenuOpen(false);
+    router.push("/");
+  };
+
+  const confirmPendingProfile = () => {
+    if (!pendingProfile) return;
+    onSetProfile(pendingProfile);
+    setPendingProfile(null);
+    router.push("/");
   };
 
   useEffect(() => {
@@ -132,7 +153,7 @@ export default function Header() {
                         </Link>
                       </li>
                       <li>
-                        <Link href="/profiles" onClick={() => setIsProfileMenuOpen(false)}>
+                        <Link href="/settings?tab=profile" onClick={() => setIsProfileMenuOpen(false)}>
                           프로필 관리
                         </Link>
                       </li>
@@ -156,6 +177,15 @@ export default function Header() {
       <Suspense fallback={null}>
         <HeaderMenu />
       </Suspense>
+      {pendingProfile && (
+        <ProfilePinGate
+          key={pendingProfile.id}
+          profile={pendingProfile}
+          description={`${pendingProfile.name ?? "프로필"} 프로필로 전환하려면 PIN을 입력해 주세요.`}
+          onCancel={() => setPendingProfile(null)}
+          onSuccess={confirmPendingProfile}
+        />
+      )}
     </>
   );
 }
