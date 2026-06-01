@@ -25,35 +25,43 @@ export const signUp = async (
   const userDoc: UserDocument = {
     userId: user.uid,
     email: user.email!,
-    name: "",         // 마이페이지에서 입력
-    phoneNumber: "",  // 마이페이지에서 입력
     planType: "",         // 플랜 선택 단계에서 채워짐
-    profile: {
-      nickname: "",       // 추후 마이페이지에서 설정
-      imgUrl: "/images/profile/image/default_icons/17.png",
-      viewAge: "",
+    payment: {
+      pay: "", 
+      bank: "",  
+      num: "", 
+      payDate: "",
+      nextDate: "" 
     },
-    movies: {
-      watchingVideos: [], // 시청 중인 영상 ID 목록
-      wishlist: [],       // 찜한 영상 ID 목록
-      playlist: {
-        playlistVideos: [],   // 플레이리스트 영상 ID 목록
-        customPlaylists: [],  // 커스텀 플레이리스트 ID 목록
-      },
-      genreStats: {},     // 장르별 시청 횟수 통계
-    },
-    community: {
-      followers: [],  // 나를 팔로우하는 유저 ID 목록
-      following: [],  // 내가 팔로우하는 유저 ID 목록
-      reviews: [],    // 좋아요/싫어요/신고한 리뷰 ID 목록
-      feeds: [],      // 좋아요/신고한 피드 ID 목록
-    },
-    headerMenus: [],  // 헤더에 표시할 메뉴 ID 목록
-    bages: {
-      earnedBadges: [],   // 획득한 뱃지 목록
-      equippedBadges: "", // 현재 장착 중인 뱃지 ID
-    },
-    alarm: [],  // 알림 설정한 영상 ID 목록
+    profile: [
+      {
+        id: 1,
+        nickname: "",       // 추후 마이페이지에서 설정
+        imgUrl: "/images/profile/image/default_icons/17.png",
+        viewAge: "",
+        movies: {
+          watchingVideos: [], // 시청 중인 영상 ID 목록
+          wishlist: [],       // 찜한 영상 ID 목록
+          playlist: {
+            playlistVideos: [],   // 플레이리스트 영상 ID 목록
+            customPlaylists: [],  // 커스텀 플레이리스트 ID 목록
+          },
+          genreStats: {},     // 장르별 시청 횟수 통계
+        },
+        community: {
+          followers: [],  // 나를 팔로우하는 유저 ID 목록
+          following: [],  // 내가 팔로우하는 유저 ID 목록
+          reviews: [],    // 좋아요/싫어요/신고한 리뷰 ID 목록
+          feeds: [],      // 좋아요/신고한 피드 ID 목록
+        },
+        headerMenus: [],  // 헤더에 표시할 메뉴 ID 목록
+        bages: {
+          earnedBadges: [],   // 획득한 뱃지 목록
+          equippedBadges: "", // 현재 장착 중인 뱃지 ID
+        },
+        alarm: [],  // 알림 설정한 영상 ID 목록
+      }
+    ]
   };
 
   // Firestore users 컬렉션에 문서 저장 (문서 ID = uid)
