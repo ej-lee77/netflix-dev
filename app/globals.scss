@@ -39,6 +39,114 @@ $main-menu-color: #8a8a88;
 // GAP
 $section-gap: 40px;
 
+.profile-pin-gate-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #141414;
+}
+
+.profile-pin-gate {
+  width: min(100%, 420px);
+  border: 1px solid #2e2e2e;
+  border-radius: $radius-md;
+  padding: 26px;
+  background: #141414;
+  color: $w-color;
+
+  h2 {
+    margin-top: 18px;
+    font-size: $text-20;
+    font-weight: 800;
+  }
+
+  p {
+    margin-top: 10px;
+    color: $main-menu-color;
+    font-size: $text-14;
+    line-height: 1.5;
+  }
+
+  .profile-pin-gate-submit {
+    width: 100%;
+    min-height: 40px;
+    margin-top: 18px;
+    border: 1px solid $main-color;
+    border-radius: $radius-md;
+    background: $main-color;
+    color: $w-color;
+    font-size: $text-14;
+    font-weight: 800;
+    cursor: pointer;
+
+    &:hover {
+      background: #f40612;
+    }
+  }
+}
+
+.profile-pin-gate-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: $main-menu-color;
+  font-size: $text-13;
+  cursor: pointer;
+
+  &:hover {
+    color: $w-color;
+  }
+
+  span {
+    width: 9px;
+    height: 9px;
+    border-left: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+  }
+}
+
+.profile-pin-gate-inputs {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+
+  input {
+    width: 48px;
+    height: 56px;
+    border: 1px solid #5a5a5a;
+    border-radius: $radius-md;
+    background: #121212;
+    color: $w-color;
+    font-size: $text-24;
+    text-align: center;
+
+    &:focus {
+      border-color: $w-color;
+      outline: none;
+    }
+
+    &.is-error {
+      border-color: #ff4d4d;
+      box-shadow: 0 0 0 1px rgba(255, 77, 77, 0.55);
+    }
+  }
+}
+
+.profile-pin-gate-error {
+  display: block;
+  margin-top: 10px;
+  color: #ff7777;
+  font-size: $text-12;
+}
+
 * {
   margin: 0;
   padding: 0;

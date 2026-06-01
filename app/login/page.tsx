@@ -121,8 +121,15 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  const defaultProfiles = [{ id: 1, name: "나", imgUrl: "/images/profile/image/default_icons/17.png" }];
+  const defaultProfiles = [
+    { 
+      id: 1, 
+      nickname: "나", // 👈 name은 빼고 nickname만 선언!
+      imgUrl: "/images/profile/image/default_icons/17.png" 
+    }
+  ];
 
+  // ── 이메일 로그인 처리 ────────────────────────────────────────────────────────
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -133,24 +140,39 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      onLogin({ ...result.user, profiles: defaultProfiles });
-      router.push("/");
+      onLogin({
+        uid: result.user.uid,
+        email: result.user.email ?? "",
+        profiles: defaultProfiles
+      } as any);
+      
+      // 💡 메인("/")이 아닌 프로필 선택 라우트로 주소를 변경합니다!
+      router.push("/profiles"); 
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError("이메일 또는 비밀번호가 올바르지 않습니다.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ── 구글 로그인 처리 ─────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     setError("");
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      onLogin({ ...result.user, profiles: defaultProfiles });
-      router.push("/");
+      
+      // 💥 BUG FIX: 소셜 로그인 결과도 안전하게 일반 구조체 객체로 매핑
+      onLogin({
+        uid: result.user.uid,
+        email: result.user.email ?? "",
+        displayName: result.user.displayName ?? "나",
+        profiles: defaultProfiles
+      } as any);
+      
+      router.push("/profiles"); ;
     } catch (err) {
-      console.log(err);
+      console.error(err);
       setError("Google 로그인에 실패했습니다.");
     }
   };
@@ -264,7 +286,7 @@ export default function LoginPage() {
           </ul>
 
           <p className="login-signup">
-            아직 회원이 아니신가요?
+            장님이 아니신가요?
             <Link href="/signin">회원가입</Link>
           </p>
         </div>
