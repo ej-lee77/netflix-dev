@@ -4,6 +4,7 @@ import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { updatePayment, useSignUpStore } from "@/store/useSignUpStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,8 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   };
 
   // ── 결제하기 ────────────────────────────────────────────────────────────────
+  const uid = useSignUpStore((s) => s.uid);
+
   const handlePay = async () => {
     if (activeTab === "card") {
       if (!cardNumber || !expiry || !cvc || !birthDate || !cardPw) {
@@ -100,6 +103,19 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
     try {
       // TODO: 실제 결제 API 연동
       await new Promise((res) => setTimeout(res, 1500));
+
+      // 결제 수단 Firestore 저장
+      if (uid) {
+        await updatePayment(uid, {
+          type: activeTab === "card" ? "card"
+            : activeTab === "quick" ? selectedQuickPay as "kakao" | "naver"
+              : "",
+          cardNumber: activeTab === "card" ? cardNumber.replace(/\s/g, "").slice(-4) : "", // 마지막 4자리만
+          cardHolder: "",
+          expiryDate: activeTab === "card" ? expiry : "",
+        });
+      }
+
       const user = auth.currentUser;
       if (user) onLogin({ ...user, profiles: defaultProfiles });
       onComplete();
