@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
 import { getPosterUrl } from "../feedData";
 import "../../scss/feed.scss";
+
+const BEST_REVIEWER_BADGE_IMAGE = "/images/badge/social_review_master.png";
+const BEST_REVIEWER_BADGE_ALT = "베스트 리뷰어";
 
 const renderRatingStars = (rating: number) => (
   <span className="rating-stars" aria-label={`${rating.toFixed(1)}점`}>
@@ -30,17 +33,30 @@ const renderRatingStars = (rating: number) => (
 export default function FeedDetailPage() {
   const params = useParams<{ id: string }>();
   const { currentProfile } = useAuthStore();
-  const { reviews, onAddComment } = useFeedStore();
+  const { reviews, onAddComment, onDeleteComment, onHydrateReviews, onUpdateComment } = useFeedStore();
   const [commentText, setCommentText] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
 
   const review = useMemo(() => (
     reviews.find((item) => String(item.id) === params.id) ?? null
   ), [params.id, reviews]);
 
+  useEffect(() => {
+    onHydrateReviews();
+  }, [onHydrateReviews]);
+
   const handleSubmitComment = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!review || !commentText.trim()) return;
+
+    if (editingCommentId) {
+      onUpdateComment(review.id, editingCommentId, commentText.trim());
+      setEditingCommentId(null);
+      setCommentText("");
+      return;
+    }
+
     const nextCommentId = review.commentsList.reduce((maxId, comment) => (
       Math.max(maxId, comment.id)
     ), review.id * 100);
@@ -50,6 +66,7 @@ export default function FeedDetailPage() {
       author: "나",
       avatarInitial: "나",
       avatarImage: currentProfile?.imgUrl,
+      isMine: true,
       time: "방금 전",
       text: commentText.trim(),
       likes: 0,
@@ -58,6 +75,21 @@ export default function FeedDetailPage() {
 
     onAddComment(review.id, nextComment);
     setCommentText("");
+  };
+
+  const handleOpenEditComment = (commentId: number, text: string) => {
+    setEditingCommentId(commentId);
+    setCommentText(text);
+  };
+
+  const handleDeleteComment = (commentId: number) => {
+    if (!review) return;
+
+    onDeleteComment(review.id, commentId);
+    if (editingCommentId === commentId) {
+      setEditingCommentId(null);
+      setCommentText("");
+    }
   };
 
   const handleCopyShareLink = () => {
@@ -94,7 +126,12 @@ export default function FeedDetailPage() {
               {review.avatarImage ? <img src={review.avatarImage} alt="" /> : review.avatarInitial}
             </div>
             <div className="post-meta">
-              <h3>{review.author}</h3>
+              <h3>
+                {review.author}
+                {review.isBestReviewer && (
+                  <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
+                )}
+              </h3>
               <div className="post-info">
                 <span className="time">{review.time}</span>
                 {!review.public && <span className="private-tag">비공개</span>}
@@ -147,7 +184,7 @@ export default function FeedDetailPage() {
               placeholder="댓글을 입력해 주세요"
             />
             <button type="submit" disabled={!commentText.trim()}>
-              등록
+              {editingCommentId ? "수정" : "등록"}
             </button>
           </form>
 
@@ -160,11 +197,35 @@ export default function FeedDetailPage() {
                   </div>
                   <div className="comment-content">
                     <div className="comment-meta">
-                      <strong>{comment.author}</strong>
+                      <strong>
+                        {comment.author}
+                        {comment.isBestReviewer && (
+                          <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
+                        )}
+                      </strong>
                       <span>{comment.time}</span>
                     </div>
                     <p>{comment.text}</p>
-                    <button type="button">좋아요 {comment.likes}</button>
+                    <div className="comment-actions">
+                      <button type="button">좋아요 {comment.likes}</button>
+                      {comment.isMine && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditComment(comment.id, comment.text)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="comment-delete-btn"
+                            onClick={() => handleDeleteComment(comment.id)}
+                          >
+                            삭제
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))

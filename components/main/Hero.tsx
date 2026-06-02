@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -278,6 +279,8 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
 
 export default function Hero() {
   const router = useRouter();
+  const { currentProfile } = useAuthStore();
+  const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeCertification, setActiveCertification] = useState("");
@@ -508,7 +511,7 @@ export default function Hero() {
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
-    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
   const visiblePosters = [-2, -1, 0, 1, 2]
     .map((offset) => {
       const index = (activeIndex + offset + items.length) % items.length;
@@ -531,7 +534,7 @@ export default function Hero() {
         className={`hero-video-poster${isVideoVisible ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
-      {(previousVideoKey || currentVideoKey) && (
+      {autoplayPreview && (previousVideoKey || currentVideoKey) && (
         <>
           {previousVideoKey && (
             <iframe

@@ -34,6 +34,7 @@ export default function CategoryList({ category }: MediaListProps) {
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
+  const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
 
   const movieSource = [
     ...popMovies.slice(profileOffset),
@@ -144,7 +145,7 @@ export default function CategoryList({ category }: MediaListProps) {
                   {hover === item.id && (
                     <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}`}>
                       <div className="hover-video">
-                        {trailerKey && videoReady === item.id ? (
+                        {autoplayPreview && trailerKey && videoReady === item.id ? (
                           <iframe
                             src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0`}
                             title="트레일러"

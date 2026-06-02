@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
-import { useAuthStore } from "@/store/useAuthStore";
+import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
 
@@ -103,8 +103,9 @@ function ActivityContent() {
     onRemoveMyList,
   } = usePlayListStore();
   const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
-  const { user } = useAuthStore();
+  const { user, currentProfile, onUpdateProfile } = useAuthStore();
   const searchParams = useSearchParams();
+  const hideMode = searchParams.get("mode") === "hide";
 
   const [activeTab, setActiveTab] = useState<ActivityTab>("watching");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -178,12 +179,16 @@ function ActivityContent() {
     load();
   }, [onLoadWishlist, user]);
 
+  const hiddenWatchingVideos = currentProfile?.settings?.hiddenWatchingVideos ?? [];
   const watchItems = playList;
   const listItems = myList;
   const watchingItems = watchItems.slice(0, 6);
-  const filteredHistory = filter === "all" ? watchItems : watchItems.filter((item) => item.mediaType === filter);
-  const movieCount = watchItems.filter((item) => item.mediaType === "movie").length;
-  const tvCount = watchItems.filter((item) => item.mediaType === "tv").length;
+  const visibleHistoryItems = hideMode
+    ? watchItems
+    : watchItems.filter((item) => !hiddenWatchingVideos.includes(getItemKey(item)));
+  const filteredHistory = filter === "all" ? visibleHistoryItems : visibleHistoryItems.filter((item) => item.mediaType === filter);
+  const movieCount = visibleHistoryItems.filter((item) => item.mediaType === "movie").length;
+  const tvCount = visibleHistoryItems.filter((item) => item.mediaType === "tv").length;
 
   // ── 찜하기 필터/정렬 ──────────────────────────────────────────────────
   const wishCount = (key: WishFilterType) => {
@@ -346,6 +351,24 @@ function ActivityContent() {
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
     await onRemovePlayList(item.id, item.mediaType);
+  };
+
+  const handleHideHistoryItem = async (item: PlayListItem) => {
+    if (!currentProfile) return;
+
+    const itemKey = getItemKey(item);
+    if (hiddenWatchingVideos.includes(itemKey)) return;
+
+    await onUpdateProfile({
+      ...currentProfile,
+      settings: {
+        ...currentProfile.settings,
+        maturityRating: currentProfile.settings?.maturityRating ?? DEFAULT_PROFILE_SETTINGS.maturityRating,
+        subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
+        playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
+        hiddenWatchingVideos: [...hiddenWatchingVideos, itemKey],
+      },
+    });
   };
 
   const handleDeleteMyListItem = async (item: PlayListItem) => {
@@ -669,7 +692,7 @@ function ActivityContent() {
   const renderHistory = () => (
     <section className="activity-section">
       <div className="section-head">
-        <h2>시청기록</h2>
+        <h2>{hideMode ? "시청기록 숨기기" : "시청기록"}</h2>
         <select className="sort-select" defaultValue="recent" aria-label="정렬">
           <option value="recent">최근 시청순</option>
           <option value="title">제목순</option>
@@ -679,7 +702,7 @@ function ActivityContent() {
       <div className="filter-row">
         <div className="filter-chips">
           <button className={filter === "all" ? "chip active" : "chip"} onClick={() => setFilter("all")}>
-            전체 {watchItems.length}
+            전체 {visibleHistoryItems.length}
           </button>
           <button className={filter === "movie" ? "chip active" : "chip"} onClick={() => setFilter("movie")}>
             영화 {movieCount}
@@ -697,10 +720,10 @@ function ActivityContent() {
               <button
                 type="button"
                 className="mini-delete-btn"
-                onClick={() => handleDeleteWatchingItem(item)}
-                aria-label={`${item.title} 시청기록 삭제`}
+                onClick={() => hideMode ? handleHideHistoryItem(item) : handleDeleteWatchingItem(item)}
+                aria-label={`${item.title} ${hideMode ? "시청기록 숨기기" : "시청기록 삭제"}`}
               >
-                -
+                {hideMode ? "숨기기" : "-"}
               </button>
               <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
                 <div className="mini-poster__image">
