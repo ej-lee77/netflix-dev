@@ -34,8 +34,8 @@ export interface FeedDocument {
   comments: FeedComment;    // 댓글
 }
 
-export interface ReviewStore {
+export interface CommunityStore {
   reviews: ReviewDocument[];
-  movieMap: Record<string, any>;
+  // 스토어 내부에서 DB 로직을 수행
   fetchUserReviews: (userId: string) => Promise<void>;
 }
