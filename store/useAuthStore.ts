@@ -250,6 +250,36 @@ export const useAuthStore = create<AuthState>()(
           console.error("로그아웃 실패:", err);
         }
       },
+
+      toggleCommunity: async () => {
+        const { user, currentProfile } = get();
+        if (!user || !currentProfile) return;
+
+        // 1. 상태 반전 (UI 즉시 반영용)
+        const newStatus = !currentProfile.isCommunity;
+        
+        // 2. Zustand 스토어 업데이트
+        set((state) => ({
+          user: {
+            ...state.user!,
+            profile: state.user!.profile.map((p) => 
+              p.id === currentProfile.id ? { ...p, isCommunity: newStatus } : p
+            ),
+          },
+          currentProfile: { ...currentProfile, isCommunity: newStatus }
+        }));
+
+        // 3. Firestore 업데이트 (비동기 처리)
+        try {
+          const userDocRef = doc(db, "users", user.uid || user.userId);
+          await updateDoc(userDocRef, {
+            profile: get().user?.profile // 전체 프로필 배열을 업데이트
+          });
+        } catch (error) {
+          console.error("커뮤니티 설정 변경 실패:", error);
+          // 에러 발생 시 원상복구 로직 필요하면 추가
+        }
+      },
     }),
     {
       name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.

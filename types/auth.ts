@@ -22,6 +22,7 @@ export interface AuthState {
   onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
   onUpdateProfile: (profile: UserProfile) => Promise<void>;
   onDeleteProfile: (profileId: string | number) => Promise<void>; 
+  toggleCommunity: () => Promise<void>;
 }
 
 export interface UserProfile {
@@ -39,8 +40,15 @@ export interface UserProfile {
   headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
   bages: BadgeList;
 
-  alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
+  alarm: AlarmInfo[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
   isCommunity: boolean;
+}
+
+export interface AlarmInfo {
+  category: string; // 알람 카테고리 피드인지 리뷰인지 공개예정인지 새에피소드인지..
+  content: string; //알림 내용
+  title: string // 알림 타이틀
+  link: string // 알림 링크
 }
 
 export interface UserGenreStats {
@@ -57,6 +65,7 @@ export interface MovieList {
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
+  moodStats: UserGenreStats;
 }
 
 export interface BadgeInfo{
