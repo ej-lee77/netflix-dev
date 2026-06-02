@@ -109,12 +109,16 @@ export const updatePlan = async (uid: string, planType: string): Promise<void> =
  */
 interface SignUpState {
   uid: string | null;
-  setUid: (uid: string) => void; // 회원가입 직후 uid 저장
-  clear: () => void;             // 가입 완료 후 초기화
+  payInfo: PayInfo | null;                    // ← 추가
+  setUid: (uid: string) => void;
+  setPayInfo: (payInfo: PayInfo) => void;     // ← 추가
+  clear: () => void;
 }
 
 export const useSignUpStore = create<SignUpState>((set) => ({
   uid: null,
+  payInfo: null,                              // ← 추가
   setUid: (uid) => set({ uid }),
-  clear: () => set({ uid: null }),
+  setPayInfo: (payInfo) => set({ payInfo }), // ← 추가
+  clear: () => set({ uid: null, payInfo: null }), // ← payInfo도 초기화
 }));

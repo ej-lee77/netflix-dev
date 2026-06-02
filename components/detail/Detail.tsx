@@ -955,7 +955,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                           boxShadow: "0 8px 24px rgba(0,0,0,0.26)",
                         }}
                       >
-                        그래도 리뷰 보기
+                        스포일러 보기
                       </button>
                     </div>
                   )}

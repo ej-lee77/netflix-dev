@@ -4,9 +4,12 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { deleteUser } from "firebase/auth";
-import { auth } from "@/firebase/firebase";
+import { auth, db } from "@/firebase/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import type { PayInfo } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/settings.scss";
+
 
 // ==========================================
 // Constants & Helpers (컴포넌트 외부에 배치)
@@ -98,17 +101,58 @@ function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
-  
+
   const [active, setActive] = useState<TabKey>(
     TABS.some((tab) => tab.key === initialTab)
       ? (initialTab as TabKey)
       : "account"
   );
-  
+
   const { user, onAddProfile } = useAuthStore();
-  
+
+  // Firestore에서 플랜/결제 정보 불러오기
+  const [planType, setPlanType] = useState<string>("");
+  const [payInfo, setPayInfo] = useState<PayInfo | null>(null);
+  const [membershipLoading, setMembershipLoading] = useState(false);
+
+  useEffect(() => {
+    if (active !== "membership") return; // membership 탭일 때만 실행
+
+    const uid = user?.uid ?? auth.currentUser?.uid;
+    if (!uid) return;
+
+    setMembershipLoading(true);
+    getDoc(doc(db, "users", uid))
+      .then((snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        setPlanType(data.planType ?? "");
+        setPayInfo(data.payment ?? null);
+      })
+      .finally(() => setMembershipLoading(false));
+  }, [user?.uid, active]); // active 추가
+
+  // 플랜 이름 변환
+  const planLabel = (() => {
+    if (planType === "basic") return "베이직";
+    if (planType === "standard") return "스탠다드";
+    if (planType === "premium") return "프리미엄";
+    return planType || "없음";
+  })();
+
+  // 결제 수단 텍스트
+  const payLabel = (() => {
+    if (!payInfo?.pay) return "등록된 결제 수단 없음";
+    if (payInfo.pay === "card") return `카드 ****-${payInfo.num}`;
+    if (payInfo.pay === "kakao") return "카카오페이";
+    if (payInfo.pay === "naver") return "네이버페이";
+    if (payInfo.pay === "transfer") return `계좌이체 (${payInfo.bank})`;
+    if (payInfo.pay === "phone") return `휴대폰 결제 (${payInfo.bank})`;
+    return "결제 수단";
+  })();
+
   // 💥 BUG FIX: profiles에는 배열 자체를 대입하고 fallback은 빈 배열로 처리합니다.
-  const profileList = user?.profile ?? []; 
+  const profileList = user?.profile ?? [];
   const profileCount = profileList.length;
 
   const [deleteError, setDeleteError] = useState("");
@@ -217,6 +261,7 @@ function SettingsContent() {
     }
   };
 
+
   return (
     <div className="acset-page">
       <div className="acset-container">
@@ -272,27 +317,27 @@ function SettingsContent() {
 
             {active === "membership" && (
               <>
-                <div className="acset-plan-box">
-                  <div>
-                    <div className="acset-plan-name">스탠다드</div>
-                    <div className="acset-plan-price">
-                      월 13,500원 · 다음 결제일 2026.06.15
+                {membershipLoading ? (
+                  <p className="acset-row-desc" style={{ padding: "20px 0" }}>불러오는 중...</p>
+                ) : (
+                  <>
+                    <div className="acset-plan-box">
+                      <div>
+                        <div className="acset-plan-name">{planLabel}</div>
+                        <div className="acset-plan-price">
+                          다음 결제일 {payInfo?.nextDate ?? "-"}
+                        </div>
+                      </div>
+                      <div className="acset-plan-actions">
+                        <Link href="/plan" className="acset-btn">플랜 변경</Link>
+                        <button type="button" className="acset-btn danger">해지</button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="acset-plan-actions">
-                    <Link href="/plan" className="acset-btn">
-                      플랜 변경
-                    </Link>
-                    <button type="button" className="acset-btn danger">
-                      해지
-                    </button>
-                  </div>
-                </div>
-                <Row label="결제 수단">
-                  <button type="button" className="acset-btn">
-                    관리
-                  </button>
-                </Row>
+                    <Row label="결제 수단" desc={payLabel}>
+                      <button type="button" className="acset-btn">관리</button>
+                    </Row>
+                  </>
+                )}
               </>
             )}
 
