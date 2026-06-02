@@ -8,6 +8,8 @@ export interface FeedComment {
   author: string;
   avatarInitial: string;
   avatarImage?: string | null;
+  isBestReviewer?: boolean;
+  isMine?: boolean;
   time: string;
   text: string;
   likes: number;
@@ -19,6 +21,8 @@ export interface FeedReview {
   author: string;
   avatarInitial: string;
   avatarImage?: string | null;
+  isBestReviewer?: boolean;
+  isMine?: boolean;
   isFollowing: boolean;
   time: string;
   mediaId: number;
@@ -59,6 +63,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     id: 1,
     author: "민서",
     avatarInitial: "민",
+    isBestReviewer: true,
     isFollowing: true,
     time: "2시간 전",
     mediaId: 872585,
@@ -146,15 +151,16 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     id: 3,
     author: "서연",
     avatarInitial: "서",
+    isBestReviewer:true,
     isFollowing: false,
     time: "어제",
-    mediaId: 157336,
+    mediaId: 313369,
     mediaType: "movie",
-    mediaTitle: "인터스텔라",
-    mediaPoster: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-    mediaMeta: "영화 · SF · 평균 8.5",
-    rating: 5,
-    reviewText: "큰 화면으로 다시 보고 싶어지는 작품. 과학적 상상력보다 가족 이야기가 더 크게 다가와서 좋았고 음악의 감정선도 거의 완벽합니다.",
+    mediaTitle: "라라랜드",
+    mediaPoster: "/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg",
+    mediaMeta: "영화 · 로맨스 · 평균 8.0",
+    rating: 4.5,
+    reviewText: "색감이랑 음악이 오래 남는 영화. 꿈을 좇는 마음과 현실 사이의 균형이 씁쓸해서 마지막 장면까지 계속 생각나요.",
     spoiler: false,
     public: true,
     likes: 89,
@@ -181,11 +187,69 @@ export const INITIAL_REVIEWS: FeedReview[] = [
       },
     ],
   },
+  {
+    id: 9001,
+    author: "혜원",
+    avatarInitial: "혜",
+    // avatarImage: "/images/profile/image/default_icons/18.png",
+    //isBestReviewer: true,
+    isFollowing: true,
+    time: "약 2시간 전",
+    mediaId: 575265,
+    mediaType: "movie",
+    mediaTitle: "인터스텔라",
+    mediaPoster: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    mediaMeta: "영화 · 미스터리 · 평균 8.5",
+    rating: 4.5,
+    reviewText: "그래비티가 어머니에 관한 영화였다면 인터스텔라는 아버지에 관한 영화다",
+    spoiler: false,
+    public: true,
+    likes: 2,
+    comments: 1,
+    liked: false,
+    commentsList: [
+      {
+        id: 900101,
+        author: "지원",
+        avatarInitial: "지",
+        //avatarImage: "/images/profile/image/default_icons/18.png",
+        isBestReviewer: true,
+        time: "방금 전",
+        text: "이런 결의 영화 좋아하면 꽤 재밌게 볼 수 있어요.",
+        likes: 0,
+        liked: false,
+      },
+    ],
+  },
 ];
 
 export const getPosterUrl = (path?: string) => (
   path ? `https://image.tmdb.org/t/p/w300${path}` : ""
 );
+
+const hydrateFeedReview = (review: FeedReview) => {
+  const seedReview = INITIAL_REVIEWS.find((item) => item.id === review.id);
+  const isMine = review.isMine ?? (review.author === "나" && review.avatarInitial === "나");
+  const baseReview = seedReview && !isMine
+    ? {
+      ...seedReview,
+      likes: review.likes ?? seedReview.likes,
+      liked: review.liked ?? seedReview.liked,
+      commentsList: seedReview.commentsList,
+    }
+    : review;
+  const commentsList = (baseReview.commentsList ?? []).map((comment) => ({
+    ...comment,
+    isMine: comment.isMine ?? (comment.author === "나" && comment.avatarInitial === "나"),
+  }));
+
+  return {
+    ...baseReview,
+    isMine,
+    commentsList,
+    comments: commentsList.length,
+  };
+};
 
 export const loadFeedReviews = () => {
   if (typeof window === "undefined") return INITIAL_REVIEWS;
@@ -195,11 +259,13 @@ export const loadFeedReviews = () => {
     if (!storedReviews) return INITIAL_REVIEWS;
 
     const parsedReviews = JSON.parse(storedReviews) as FeedReview[];
-    return parsedReviews.map((review) => ({
-      ...review,
-      commentsList: review.commentsList ?? [],
-      comments: review.commentsList?.length ?? review.comments ?? 0,
-    }));
+    const storedReviewIds = new Set(parsedReviews.map((review) => review.id));
+    const mergedReviews = [
+      ...parsedReviews,
+      ...INITIAL_REVIEWS.filter((review) => !storedReviewIds.has(review.id)),
+    ];
+
+    return mergedReviews.map(hydrateFeedReview);
   } catch {
     return INITIAL_REVIEWS;
   }
