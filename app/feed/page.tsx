@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
 import { useMovieStore } from "@/store/useMovieStore";
@@ -44,20 +45,22 @@ const getNextStarRating = (currentRating: number, star: number) => {
   return currentRating === halfRating ? star : halfRating;
 };
 
+const createLocalId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+
 export default function FeedPage() {
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
-  const { currentProfile } = useAuthStore();
+  const { user, currentProfile } = useAuthStore();
   const { reviews, onAddComment, onAddReview, onDeleteComment, onDeleteReview, onHydrateReviews, onToggleLike, onUpdateComment, onUpdateReview } = useFeedStore();
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
-  const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<number[]>([]);
-  const [reportedReviewIds, setReportedReviewIds] = useState<number[]>([]);
-  const [reportTargetReviewId, setReportTargetReviewId] = useState<number | null>(null);
+  const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<string[]>([]);
+  const [reportedReviewIds, setReportedReviewIds] = useState<string[]>([]);
+  const [reportTargetReviewId, setReportTargetReviewId] = useState<string | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState("");
-  const [copiedReviewId, setCopiedReviewId] = useState<number | null>(null);
+  const [copiedReviewId, setCopiedReviewId] = useState<string | null>(null);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
-  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
-  const [commentTargetReviewId, setCommentTargetReviewId] = useState<number | null>(null);
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [commentTargetReviewId, setCommentTargetReviewId] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [reviewSearch, setReviewSearch] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<FeedMediaOption | null>(null);
@@ -136,12 +139,60 @@ export default function FeedPage() {
     : reviews.filter((review) => review.isFollowing);
 
   const selectedCommentReview = reviews.find((review) => review.id === commentTargetReviewId) ?? null;
+  const viewerUid = user?.uid || user?.userId || auth.currentUser?.uid || "";
+  const viewerProfileId = currentProfile?.id ?? null;
+  const viewerName = currentProfile?.nickname || user?.email?.split("@")[0] || "나";
+  const viewerInitial = viewerName.slice(0, 1) || "나";
+  const isSameAuthor = (authorUid?: string, authorProfileId?: number | null) => (
+    Boolean(viewerUid) &&
+    authorUid === viewerUid &&
+    (authorProfileId == null || viewerProfileId == null || authorProfileId === viewerProfileId)
+  );
+  const isReviewOwner = (review: FeedReview) => (
+    isSameAuthor(review.authorUid, review.authorProfileId) ||
+    (
+      !review.authorUid &&
+      review.authorProfileId === viewerProfileId &&
+      (review.author === viewerName || review.author === "나")
+    ) ||
+    (
+      !review.authorUid &&
+      review.isMine === true &&
+      (review.authorProfileId == null || review.authorProfileId === viewerProfileId)
+    ) ||
+    (
+      !review.authorUid &&
+      review.authorProfileId == null &&
+      review.author === "나"
+    )
+  );
+  const isCommentOwner = (comment: FeedReview["commentsList"][number]) => (
+    isSameAuthor(comment.authorUid, comment.authorProfileId) ||
+    (
+      !comment.authorUid &&
+      comment.authorProfileId === viewerProfileId &&
+      (comment.author === viewerName || comment.author === "나")
+    ) ||
+    (
+      !comment.authorUid &&
+      comment.isMine === true &&
+      (comment.authorProfileId == null || comment.authorProfileId === viewerProfileId)
+    ) ||
+    (
+      !comment.authorUid &&
+      comment.authorProfileId == null &&
+      comment.author === "나"
+    )
+  );
+  const getDisplayAuthor = (author: string, isOwner: boolean) => (
+    isOwner ? "나" : author
+  );
 
-  const handleLike = (id: number) => {
+  const handleLike = (id: string) => {
     onToggleLike(id);
   };
 
-  const handleOpenReportReview = (reviewId: number) => {
+  const handleOpenReportReview = (reviewId: string) => {
     setReportTargetReviewId((currentId) => currentId === reviewId ? null : reviewId);
     setSelectedReportReason("");
   };
@@ -157,7 +208,7 @@ export default function FeedPage() {
     window.alert("신고되었습니다.");
   };
 
-  const handleCopyShareLink = (reviewId: number) => {
+  const handleCopyShareLink = (reviewId: string) => {
     const shareUrl = `${window.location.origin}/feed/${reviewId}`;
 
     setCopiedReviewId(reviewId);
@@ -193,16 +244,13 @@ export default function FeedPage() {
       return;
     }
 
-    const nextCommentId = selectedCommentReview.commentsList.reduce((maxId, comment) => (
-      Math.max(maxId, comment.id)
-    ), selectedCommentReview.id * 100);
-
     const nextComment = {
-      id: nextCommentId + 1,
-      author: "나",
-      avatarInitial: "나",
+      id: createLocalId("local-comment"),
+      author: viewerName,
+      avatarInitial: viewerInitial,
       avatarImage: currentProfile?.imgUrl,
-      isMine: true,
+      authorUid: viewerUid,
+      authorProfileId: viewerProfileId,
       time: "방금 전",
       text: commentText.trim(),
       likes: 0,
@@ -213,12 +261,12 @@ export default function FeedPage() {
     setCommentText("");
   };
 
-  const handleOpenEditComment = (commentId: number, text: string) => {
+  const handleOpenEditComment = (commentId: string, text: string) => {
     setEditingCommentId(commentId);
     setCommentText(text);
   };
 
-  const handleDeleteComment = (reviewId: number, commentId: number) => {
+  const handleDeleteComment = (reviewId: string, commentId: string) => {
     onDeleteComment(reviewId, commentId);
     if (editingCommentId === commentId) {
       setEditingCommentId(null);
@@ -250,14 +298,15 @@ export default function FeedPage() {
       return;
     }
 
-    const nextReviewId = reviews.reduce((maxId, review) => Math.max(maxId, review.id), 0) + 1;
+    const nextReviewId = createLocalId("local-feed");
 
     const nextReview: FeedReview = {
       id: nextReviewId,
-      author: "나",
-      avatarInitial: "나",
+      author: viewerName,
+      avatarInitial: viewerInitial,
       avatarImage: currentProfile?.imgUrl,
-      isMine: true,
+      authorUid: viewerUid,
+      authorProfileId: viewerProfileId,
       isFollowing: false,
       time: "방금 전",
       mediaId: selectedMedia.id,
@@ -429,7 +478,10 @@ export default function FeedPage() {
 
           <div className="comment-list">
             {selectedCommentReview.commentsList.length > 0 ? (
-              selectedCommentReview.commentsList.map((comment) => (
+              selectedCommentReview.commentsList.map((comment) => {
+                const commentOwner = isCommentOwner(comment);
+
+                return (
                 <div className="comment-item" key={comment.id}>
                   <div className="comment-avatar">
                     {comment.avatarImage ? <img src={comment.avatarImage} alt="" /> : comment.avatarInitial}
@@ -437,7 +489,7 @@ export default function FeedPage() {
                   <div className="comment-content">
                     <div className="comment-meta">
                       <strong>
-                        {comment.author}
+                        {getDisplayAuthor(comment.author, commentOwner)}
                         {comment.isBestReviewer && (
                           <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
                         )}
@@ -447,7 +499,7 @@ export default function FeedPage() {
                     <p>{comment.text}</p>
                     <div className="comment-actions">
                       <button type="button">좋아요 {comment.likes}</button>
-                      {comment.isMine && (
+                      {commentOwner && (
                         <>
                           <button
                             type="button"
@@ -467,7 +519,8 @@ export default function FeedPage() {
                     </div>
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="comment-empty">아직 댓글이 없어요.</div>
             )}
@@ -517,6 +570,8 @@ export default function FeedPage() {
               const isReported = reportedReviewIds.includes(review.id);
               const shouldBlurSpoiler = review.spoiler && !visibleSpoilerReviewIds.includes(review.id);
 
+              const reviewOwner = isReviewOwner(review);
+
               return (
                 <article key={review.id} className="feed-post">
                   <div className="post-head">
@@ -525,7 +580,7 @@ export default function FeedPage() {
                     </div>
                     <div className="post-meta">
                       <h3>
-                        {review.author}
+                        {getDisplayAuthor(review.author, reviewOwner)}
                         {review.isBestReviewer && (
                           <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
                         )}
@@ -625,7 +680,7 @@ export default function FeedPage() {
                     >
                       {copiedReviewId === review.id ? "복사됨" : "공유"}
                     </button>
-                    {review.isMine && (
+                    {reviewOwner && (
                       <div className="review-owner-actions">
                         <button
                           type="button"

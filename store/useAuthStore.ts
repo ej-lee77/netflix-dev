@@ -254,6 +254,12 @@ export const useAuthStore = create<AuthState>()(
       toggleCommunity: async () => {
         const { user, currentProfile } = get();
         if (!user || !currentProfile) return;
+        const targetUid = user.uid || user.userId || auth.currentUser?.uid;
+
+        if (!targetUid) {
+          console.warn("커뮤니티 설정 변경 실패: 사용자 문서 ID를 찾을 수 없습니다.");
+          return;
+        }
 
         // 1. 상태 반전 (UI 즉시 반영용)
         const newStatus = !currentProfile.isCommunity;
@@ -271,7 +277,7 @@ export const useAuthStore = create<AuthState>()(
 
         // 3. Firestore 업데이트 (비동기 처리)
         try {
-          const userDocRef = doc(db, "users", user.uid || user.userId);
+          const userDocRef = doc(db, "users", targetUid);
           await updateDoc(userDocRef, {
             profile: get().user?.profile // 전체 프로필 배열을 업데이트
           });

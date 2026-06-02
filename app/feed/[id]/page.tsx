@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
 import { getPosterUrl } from "../feedData";
@@ -32,15 +33,63 @@ const renderRatingStars = (rating: number) => (
 
 export default function FeedDetailPage() {
   const params = useParams<{ id: string }>();
-  const { currentProfile } = useAuthStore();
+  const { user, currentProfile } = useAuthStore();
   const { reviews, onAddComment, onDeleteComment, onHydrateReviews, onUpdateComment } = useFeedStore();
   const [commentText, setCommentText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const review = useMemo(() => (
     reviews.find((item) => String(item.id) === params.id) ?? null
   ), [params.id, reviews]);
+  const viewerUid = user?.uid || user?.userId || auth.currentUser?.uid || "";
+  const viewerProfileId = currentProfile?.id ?? null;
+  const viewerName = currentProfile?.nickname || user?.email?.split("@")[0] || "나";
+  const viewerInitial = viewerName.slice(0, 1) || "나";
+  const isSameAuthor = (authorUid?: string, authorProfileId?: number | null) => (
+    Boolean(viewerUid) &&
+    authorUid === viewerUid &&
+    (authorProfileId == null || viewerProfileId == null || authorProfileId === viewerProfileId)
+  );
+  const isCommentOwner = (comment: NonNullable<typeof review>["commentsList"][number]) => (
+    isSameAuthor(comment.authorUid, comment.authorProfileId) ||
+    (
+      !comment.authorUid &&
+      comment.authorProfileId === viewerProfileId &&
+      (comment.author === viewerName || comment.author === "나")
+    ) ||
+    (
+      !comment.authorUid &&
+      comment.isMine === true &&
+      (comment.authorProfileId == null || comment.authorProfileId === viewerProfileId)
+    ) ||
+    (
+      !comment.authorUid &&
+      comment.authorProfileId == null &&
+      comment.author === "나"
+    )
+  );
+  const isReviewOwner = (
+    isSameAuthor(review?.authorUid, review?.authorProfileId) ||
+    (
+      !review?.authorUid &&
+      review?.authorProfileId === viewerProfileId &&
+      (review?.author === viewerName || review?.author === "나")
+    ) ||
+    (
+      !review?.authorUid &&
+      review?.isMine === true &&
+      (review?.authorProfileId == null || review?.authorProfileId === viewerProfileId)
+    ) ||
+    (
+      !review?.authorUid &&
+      review?.authorProfileId == null &&
+      review?.author === "나"
+    )
+  );
+  const getDisplayAuthor = (author: string, isOwner: boolean) => (
+    isOwner ? "나" : author
+  );
 
   useEffect(() => {
     onHydrateReviews();
@@ -57,16 +106,18 @@ export default function FeedDetailPage() {
       return;
     }
 
-    const nextCommentId = review.commentsList.reduce((maxId, comment) => (
-      Math.max(maxId, comment.id)
-    ), review.id * 100);
+    // const nextCommentId = review.commentsList.reduce((maxId, comment) => (
+    //   Math.max(maxId, comment.id)
+    // ), review.id * 100);
 
     const nextComment = {
-      id: nextCommentId + 1,
-      author: "나",
-      avatarInitial: "나",
+      //id: nextCommentId + 1,
+      id: `local-comment-${crypto.randomUUID()}`,
+      author: viewerName,
+      avatarInitial: viewerInitial,
       avatarImage: currentProfile?.imgUrl,
-      isMine: true,
+      authorUid: viewerUid,
+      authorProfileId: viewerProfileId,
       time: "방금 전",
       text: commentText.trim(),
       likes: 0,
@@ -77,12 +128,12 @@ export default function FeedDetailPage() {
     setCommentText("");
   };
 
-  const handleOpenEditComment = (commentId: number, text: string) => {
+  const handleOpenEditComment = (commentId: string, text: string) => {
     setEditingCommentId(commentId);
     setCommentText(text);
   };
 
-  const handleDeleteComment = (commentId: number) => {
+  const handleDeleteComment = (commentId: string) => {
     if (!review) return;
 
     onDeleteComment(review.id, commentId);
@@ -127,7 +178,7 @@ export default function FeedDetailPage() {
             </div>
             <div className="post-meta">
               <h3>
-                {review.author}
+                {getDisplayAuthor(review.author, isReviewOwner)}
                 {review.isBestReviewer && (
                   <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
                 )}
@@ -190,7 +241,10 @@ export default function FeedDetailPage() {
 
           <div className="comment-list detail-comment-list">
             {review.commentsList.length > 0 ? (
-              review.commentsList.map((comment) => (
+              review.commentsList.map((comment) => {
+                const commentOwner = isCommentOwner(comment);
+
+                return (
                 <div className="comment-item" key={comment.id}>
                   <div className="comment-avatar">
                     {comment.avatarImage ? <img src={comment.avatarImage} alt="" /> : comment.avatarInitial}
@@ -198,7 +252,7 @@ export default function FeedDetailPage() {
                   <div className="comment-content">
                     <div className="comment-meta">
                       <strong>
-                        {comment.author}
+                        {getDisplayAuthor(comment.author, commentOwner)}
                         {comment.isBestReviewer && (
                           <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
                         )}
@@ -208,7 +262,7 @@ export default function FeedDetailPage() {
                     <p>{comment.text}</p>
                     <div className="comment-actions">
                       <button type="button">좋아요 {comment.likes}</button>
-                      {comment.isMine && (
+                      {commentOwner && (
                         <>
                           <button
                             type="button"
@@ -228,7 +282,8 @@ export default function FeedDetailPage() {
                     </div>
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="comment-empty">아직 댓글이 없어요.</div>
             )}

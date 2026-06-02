@@ -4,7 +4,8 @@ export type FeedTab = "all" | "following";
 export type MediaType = "movie" | "tv";
 
 export interface FeedComment {
-  id: number;
+  //id: number;
+  id: string;
   author: string;
   avatarInitial: string;
   avatarImage?: string | null;
@@ -14,10 +15,17 @@ export interface FeedComment {
   text: string;
   likes: number;
   liked: boolean;
+
+  //firebase연동
+  authorUid?: string;
+  authorProfileId?: number | null;
+  createdAt?: unknown;
+  updatedAt?: unknown;
 }
 
 export interface FeedReview {
-  id: number;
+  //id: number;
+  id: string;
   author: string;
   avatarInitial: string;
   avatarImage?: string | null;
@@ -38,6 +46,12 @@ export interface FeedReview {
   comments: number;
   liked: boolean;
   commentsList: FeedComment[];
+
+  //firebase연동
+  authorUid?: string;
+  authorProfileId?: number | null;
+  createdAt?: unknown;
+  updatedAt?: unknown;
 }
 
 export interface FeedMediaOption {
@@ -60,7 +74,7 @@ export const REPORT_REASONS = [
 
 export const INITIAL_REVIEWS: FeedReview[] = [
   {
-    id: 1,
+    id: "seed-feed-1",
     author: "민서",
     avatarInitial: "민",
     isBestReviewer: true,
@@ -72,7 +86,8 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     mediaPoster: "/ptpr0kGAckfQkJeJIt8st5dglvd.jpg",
     mediaMeta: "영화 · 2023 · 평균 8.1",
     rating: 4.5,
-    reviewText: "러닝타임은 길지만 장면마다 긴장감이 높아서 끝까지 몰입됐어요. 인물의 선택을 보여주는 방식이 묵직했고, 마지막 사운드가 오래 남았습니다.",
+    reviewText:
+      "러닝타임은 길지만 장면마다 긴장감이 높아서 끝까지 몰입됐어요. 인물의 선택을 보여주는 방식이 묵직했고, 마지막 사운드가 오래 남았습니다.",
     spoiler: false,
     public: true,
     likes: 132,
@@ -80,7 +95,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     liked: true,
     commentsList: [
       {
-        id: 101,
+        id: "seed-comment-101",
         author: "수진",
         avatarInitial: "수",
         time: "1시간 전",
@@ -89,7 +104,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
         liked: false,
       },
       {
-        id: 102,
+        id: "seed-comment-102",
         author: "도윤",
         avatarInitial: "도",
         time: "48분 전",
@@ -98,7 +113,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
         liked: false,
       },
       {
-        id: 103,
+        id: "seed-comment-103",
         author: "하린",
         avatarInitial: "하",
         time: "32분 전",
@@ -109,7 +124,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     ],
   },
   {
-    id: 2,
+    id: "seed-feed-2",
     author: "지아",
     avatarInitial: "지",
     isFollowing: true,
@@ -120,7 +135,8 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     mediaPoster: "/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
     mediaMeta: "시리즈 · 판타지 · 평균 8.4",
     rating: 4,
-    reviewText: "초반부의 선택 때문에 인물관계가 갈리는 지점이 인상적이었어요. 특정 인물의 퇴장 장면은 정말 충격적이었습니다.",
+    reviewText:
+      "초반부의 선택 때문에 인물관계가 갈리는 지점이 인상적이었어요. 특정 인물의 퇴장 장면은 정말 충격적이었습니다.",
     spoiler: true,
     public: true,
     likes: 45,
@@ -128,7 +144,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     liked: false,
     commentsList: [
       {
-        id: 201,
+        id: "seed-comment-201",
         author: "재현",
         avatarInitial: "재",
         time: "3시간 전",
@@ -137,7 +153,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
         liked: false,
       },
       {
-        id: 202,
+        id: "seed-comment-202",
         author: "유나",
         avatarInitial: "유",
         time: "2시간 전",
@@ -148,10 +164,10 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     ],
   },
   {
-    id: 3,
+    id: "seed-feed-3",
     author: "서연",
     avatarInitial: "서",
-    isBestReviewer:true,
+    isBestReviewer: true,
     isFollowing: false,
     time: "어제",
     mediaId: 313369,
@@ -160,7 +176,8 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     mediaPoster: "/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg",
     mediaMeta: "영화 · 로맨스 · 평균 8.0",
     rating: 4.5,
-    reviewText: "색감이랑 음악이 오래 남는 영화. 꿈을 좇는 마음과 현실 사이의 균형이 씁쓸해서 마지막 장면까지 계속 생각나요.",
+    reviewText:
+      "색감이랑 음악이 오래 남는 영화. 꿈을 좇는 마음과 현실 사이의 균형이 씁쓸해서 마지막 장면까지 계속 생각나요.",
     spoiler: false,
     public: true,
     likes: 89,
@@ -168,7 +185,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     liked: false,
     commentsList: [
       {
-        id: 301,
+        id: "seed-comment-301",
         author: "현우",
         avatarInitial: "현",
         time: "어제",
@@ -177,7 +194,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
         liked: false,
       },
       {
-        id: 302,
+        id: "seed-comment-302",
         author: "나은",
         avatarInitial: "나",
         time: "어제",
@@ -188,7 +205,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     ],
   },
   {
-    id: 9001,
+    id: "seed-feed-9001",
     author: "혜원",
     avatarInitial: "혜",
     // avatarImage: "/images/profile/image/default_icons/18.png",
@@ -201,7 +218,8 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     mediaPoster: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
     mediaMeta: "영화 · 미스터리 · 평균 8.5",
     rating: 4.5,
-    reviewText: "그래비티가 어머니에 관한 영화였다면 인터스텔라는 아버지에 관한 영화다",
+    reviewText:
+      "그래비티가 어머니에 관한 영화였다면 인터스텔라는 아버지에 관한 영화다",
     spoiler: false,
     public: true,
     likes: 2,
@@ -209,7 +227,7 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     liked: false,
     commentsList: [
       {
-        id: 900101,
+        id: "seed-comment-900101",
         author: "지원",
         avatarInitial: "지",
         //avatarImage: "/images/profile/image/default_icons/18.png",
@@ -223,24 +241,27 @@ export const INITIAL_REVIEWS: FeedReview[] = [
   },
 ];
 
-export const getPosterUrl = (path?: string) => (
-  path ? `https://image.tmdb.org/t/p/w300${path}` : ""
-);
+export const getPosterUrl = (path?: string) =>
+  path ? `https://image.tmdb.org/t/p/w300${path}` : "";
 
 const hydrateFeedReview = (review: FeedReview) => {
   const seedReview = INITIAL_REVIEWS.find((item) => item.id === review.id);
-  const isMine = review.isMine ?? (review.author === "나" && review.avatarInitial === "나");
-  const baseReview = seedReview && !isMine
-    ? {
-      ...seedReview,
-      likes: review.likes ?? seedReview.likes,
-      liked: review.liked ?? seedReview.liked,
-      commentsList: seedReview.commentsList,
-    }
-    : review;
+  const isMine =
+    review.isMine ?? (review.author === "나" && review.avatarInitial === "나");
+  const baseReview =
+    seedReview && !isMine
+      ? {
+          ...seedReview,
+          likes: review.likes ?? seedReview.likes,
+          liked: review.liked ?? seedReview.liked,
+          commentsList: seedReview.commentsList,
+        }
+      : review;
   const commentsList = (baseReview.commentsList ?? []).map((comment) => ({
     ...comment,
-    isMine: comment.isMine ?? (comment.author === "나" && comment.avatarInitial === "나"),
+    isMine:
+      comment.isMine ??
+      (comment.author === "나" && comment.avatarInitial === "나"),
   }));
 
   return {
@@ -248,6 +269,7 @@ const hydrateFeedReview = (review: FeedReview) => {
     isMine,
     commentsList,
     comments: commentsList.length,
+    id: String(baseReview.id),
   };
 };
 
@@ -258,7 +280,17 @@ export const loadFeedReviews = () => {
     const storedReviews = window.localStorage.getItem(FEED_STORAGE_KEY);
     if (!storedReviews) return INITIAL_REVIEWS;
 
-    const parsedReviews = JSON.parse(storedReviews) as FeedReview[];
+    const parsedReviews = (JSON.parse(storedReviews) as FeedReview[]).map(
+      (review) => ({
+        ...review,
+        id: String(review.id),
+        commentsList: (review.commentsList ?? []).map((comment) => ({
+          ...comment,
+          id: String(comment.id),
+        })),
+      }),
+    );
+
     const storedReviewIds = new Set(parsedReviews.map((review) => review.id));
     const mergedReviews = [
       ...parsedReviews,
