@@ -95,7 +95,6 @@ export interface PayInfo {
 }
 
 export interface UserDocument {
-  uid?: string;
   userId: string; // 문서 ID로 사용됨
 
   // 기본정보

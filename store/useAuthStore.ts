@@ -81,7 +81,7 @@ export const useAuthStore = create<AuthState>()(
               });
 
               const newUserData = {
-                uid: firebaseUser.uid,
+                userId: firebaseUser.uid,
                 email: firebaseUser.email || "",
                 profile: [defaultProfile]
               };
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthState>()(
       onLogin: async (firebaseUser) => {
         if (!firebaseUser) return;
         
-        const targetUid = firebaseUser.uid || firebaseUser.userId;
+        const targetUid = firebaseUser.userId;
         if (!targetUid) return;
         
         try {
@@ -271,7 +271,7 @@ export const useAuthStore = create<AuthState>()(
 
         // 3. Firestore 업데이트 (비동기 처리)
         try {
-          const userDocRef = doc(db, "users", user.uid || user.userId);
+          const userDocRef = doc(db, "users", user.userId || user.userId);
           await updateDoc(userDocRef, {
             profile: get().user?.profile // 전체 프로필 배열을 업데이트
           });
