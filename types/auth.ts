@@ -13,30 +13,49 @@ export interface UserInfo extends User {
 export type FamilyMember = "엄마" | "아빠" | "아들" | "딸";
 
 export interface AuthState {
-  user: UserInfo | null;
-  currentProfile: Profile | null;
-  currentMember: FamilyMember | null;
+  user: UserDocument | null;
+  currentProfile: UserProfile | null;
   onInitAuth: () => void;
-  onLogin: (user: UserInfo) => void;
+  onLogin: (user: UserDocument) => void;
   onLogout: () => Promise<void>;
-  onSetProfile: (profile: Profile | null) => void;
-  onAddProfile: (profile: Omit<Profile, "id">) => void;
-  onUpdateProfile: (profile: Profile) => void;
-  onDeleteProfile: (profileId: number) => void;
-  onSetMember: (member: FamilyMember) => void;
+  onSetProfile: (profile: UserProfile | null) => void;
+  onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
+  onUpdateProfile: (profile: UserProfile) => Promise<void>;
+  onDeleteProfile: (profileId: string | number) => Promise<void>; 
+  toggleCommunity: () => Promise<void>;
 }
 
 export interface UserProfile {
+  id: number;
   nickname: string;
   imgUrl: string;
   viewAge: string;
+  // 영상관련 (기본 필드 형태)
+  movies: MovieList;
+
+  // 커뮤니티관련
+  community: CommunityList;
+
+  // 메뉴 및 뱃지
+  headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
+  bages: BadgeList;
+
+  alarm: AlarmInfo[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
+  isCommunity: boolean;
+}
+
+export interface AlarmInfo {
+  category: string; // 알람 카테고리 피드인지 리뷰인지 공개예정인지 새에피소드인지..
+  content: string; //알림 내용
+  title: string // 알림 타이틀
+  link: string // 알림 링크
 }
 
 export interface UserGenreStats {
   [genreName: string]: number;
 }
 
-export interface PlayList{
+export interface PlayList {
   playlistVideos: string[]; // 플레이리스트 영상 ID 목록
   customPlaylists: string[]; // 커스텀 플레이리스트 ID 목록 - 필요없음
 }
@@ -46,45 +65,42 @@ export interface MovieList {
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
+  moodStats: UserGenreStats;
 }
 
-export interface BadgeInfo{
+export interface BadgeInfo {
   id: string; //뱃지 아이디
   progress: number; //진행도
   isComplete: boolean; //획득유무
 }
 
-export interface BadgeList{
+export interface BadgeList {
   earnedBadges: BadgeInfo[];   // 획득 뱃지 ID 목록
   equippedBadges: string;  // 장착 뱃지 ID 하나만
 }
 
-export interface CommunityList{
+export interface CommunityList {
   followers: string[];   // 팔로워 유저 ID 목록
   following: string[]; // 팔로잉 유저 ID 목록
   reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
   feeds: string[]; //피드 ID 목록 내 피드 말고 
 }
 
+export interface PayInfo {
+  pay: string;   //결제방법
+  bank: string;  //은행아니면 통신사
+  num: string; //카드번호, 계좌번호, 핸드폰번호
+  payDate: string; //카드 유효기간이랑 cvc 같이 저장 -로 연결
+  nextDate: string; //다음 결제일
+}
+
 export interface UserDocument {
-    userId: string; // 문서 ID로 사용됨
-    
-    // 기본정보
-    email: string;
-    name: string;
-    phoneNumber: string;
-    planType: string;
-    profile: UserProfile;
+  uid?: string;
+  userId: string; // 문서 ID로 사용됨
 
-    // 영상관련 (기본 필드 형태)
-    movies: MovieList;
-
-    // 커뮤니티관련
-    community: CommunityList;
-
-    // 메뉴 및 뱃지
-    headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
-    bages: BadgeList;
-
-    alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
+  // 기본정보
+  email: string;
+  planType: string;
+  payment: PayInfo;
+  profile: UserProfile[];
 }

@@ -1,193 +1,292 @@
-import { auth } from "@/firebase/firebase";
-import { AuthState, type Profile, type UserInfo } from "@/types/auth";
+import { auth, db } from "@/firebase/firebase"; 
+import { AuthState, type Profile, type UserInfo, type UserDocument } from "@/types/auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
 import { create } from "zustand";
+import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
-export const DEFAULT_PROFILES: Profile[] = [
-  {
-    id: 1,
-    name: "나",
-    imgUrl: "/images/profile/image/default_icons/17.png",
-  },
-];
-
-const PROFILE_STORAGE_KEY = "netflix-current-profile";
-const PROFILE_LIST_STORAGE_KEY = "netflix-profile-list";
 const FALLBACK_PROFILE_IMAGE = "/images/profile/image/default_icons/17.png";
 
+// 이미지 경로 정규화 함수
 const normalizeProfileImage = (imgUrl: string | null | undefined) => {
   if (!imgUrl || imgUrl === "/images/profile/normal.svg" || imgUrl === "images/profile/1.png") {
     return FALLBACK_PROFILE_IMAGE;
   }
-
   if (imgUrl.startsWith("/images/profile/default_icons/")) {
     return imgUrl.replace("/images/profile/default_icons/", "/images/profile/image/default_icons/");
   }
-
   if (imgUrl.startsWith("/images/profile/") && !imgUrl.startsWith("/images/profile/image/")) {
     return imgUrl.replace("/images/profile/", "/images/profile/image/");
   }
-
   return imgUrl;
 };
 
-const normalizeProfile = (profile: Profile): Profile => ({
+// 프로필 데이터 내부 이미지 주소 정규화
+const normalizeProfile = (profile: any): any => ({
   ...profile,
   imgUrl: normalizeProfileImage(profile.imgUrl),
 });
 
-const getStoredProfiles = (): Profile[] | null => {
-  if (typeof window === "undefined") return null;
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,           // Firestore에서 가져온 순수 데이터
+      currentProfile: null, // 현재 선택하여 시청 중인 프로필 (persist가 자동 저장함)
 
-  try {
-    const savedProfiles = window.localStorage.getItem(PROFILE_LIST_STORAGE_KEY);
-    if (!savedProfiles) return null;
+      // 1. 앱 초기화 및 로그인 상태 실시간 감지 (Fetch)
+      onInitAuth: () => {
+        onAuthStateChanged(auth, async (firebaseUser) => {
+          if (!firebaseUser) {
+            set({ user: null, currentProfile: null });
+            return;
+          }
 
-    const parsedProfiles = JSON.parse(savedProfiles);
-    if (!Array.isArray(parsedProfiles) || parsedProfiles.length === 0) return null;
+          // 이메일 인증 가드
+          const isEmailProvider = firebaseUser.providerData[0]?.providerId === "password";
+          if (isEmailProvider && !firebaseUser.emailVerified) {
+            set({ user: null, currentProfile: null });
+            return;
+          }
 
-    return parsedProfiles.map(normalizeProfile);
-  } catch {
-    return null;
-  }
-};
+          try {
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
 
-const saveProfiles = (profiles: Profile[]) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(PROFILE_LIST_STORAGE_KEY, JSON.stringify(profiles));
-};
+            if (userDocSnap.exists()) {
+              const userData = userDocSnap.data() as UserDocument;
+              
+              if (userData.profile && userData.profile.length > 0) {
+                userData.profile = userData.profile.map(normalizeProfile);
+              }
 
-const isNewAuthUser = (user: UserInfo) =>
-  Boolean(user.metadata?.creationTime && user.metadata?.creationTime === user.metadata?.lastSignInTime);
+              // 💡 수정: 확실하게 기존에 쓰던 프로필(로컬 영속화 데이터)이 매칭될 때만 유지하고,
+              // 아예 첫 로그인이거나 정보가 없으면 null로 비워두어 프로필 선택 화면을 띄우게 만듭니다.
+              const existingProfile = get().currentProfile;
+              const savedProfile = userData.profile?.find((p) => p.id === existingProfile?.id) || null; // 👈 || null 로 변경!
 
-const withDefaultProfiles = (user: UserInfo, preferProvidedProfiles = false): UserInfo => {
-  const providedProfiles = user.profiles?.map(normalizeProfile);
-  const storedProfiles = getStoredProfiles();
+              set({
+                user: userData, 
+                currentProfile: savedProfile, // 기존 시청 프로필이 없으면 null이 됨
+              });
+            } else {
+              console.warn("Firestore 유저 문서가 없어 기본 문서를 자동으로 생성합니다.");
+              
+              const defaultProfile = normalizeProfile({
+                id: 1,
+                nickname: "나",
+                imgUrl: FALLBACK_PROFILE_IMAGE,
+                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {} },
+                community: { followers: [], following: [], reviews: [], feeds: [] },
+                bages: { equippedBadges: null, earnedBadges: [] }
+              });
 
-  return {
-    ...user,
-    profiles: preferProvidedProfiles
-      ? providedProfiles ?? storedProfiles ?? DEFAULT_PROFILES
-      : storedProfiles ?? providedProfiles ?? DEFAULT_PROFILES,
-  };
-};
+              const newUserData = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || "",
+                profile: [defaultProfile]
+              };
 
-const getSavedProfile = (profiles: Profile[]) => {
-  if (typeof window === "undefined") return null;
+              await setDoc(userDocRef, newUserData);
 
-  try {
-    const savedProfile = window.localStorage.getItem(PROFILE_STORAGE_KEY);
-    if (!savedProfile) return null;
+              set({
+                user: newUserData as any,
+                currentProfile: get().currentProfile || defaultProfile,
+              });
+            }
+          } catch (error) {
+            console.error("유저 정보 로드 중 오류 발생:", error);
+            set({ user: null, currentProfile: null });
+          }
+        });
+      },
 
-    const parsedProfile = JSON.parse(savedProfile);
-    return profiles.find((profile) => profile.id === parsedProfile?.id) ?? null;
-  } catch {
-    return null;
-  }
-};
+      // 2. 수동 로그인 혹은 결제 완료 직후 세팅 시 호출
+      onLogin: async (firebaseUser) => {
+        if (!firebaseUser) return;
+        
+        const targetUid = firebaseUser.uid || firebaseUser.userId;
+        if (!targetUid) return;
+        
+        try {
+          const userDocRef = doc(db, "users", targetUid);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data() as UserDocument;
+            if (userData.profile) userData.profile = userData.profile.map(normalizeProfile);
+            
+            set({ 
+              user: userData, 
+              currentProfile: userData.profile?.[0] || null,
+            });
+          } else {
+            const fallbackProfiles = (firebaseUser as any).profiles || (firebaseUser as any).profile || [];
+            
+            const fixedProfiles = fallbackProfiles.length > 0 
+              ? fallbackProfiles.map((p: any) => ({
+                  id: p.id,
+                  nickname: p.nickname || "나",
+                  imgUrl: p.imgUrl
+                }))
+              : [{ id: 1, nickname: "나", imgUrl: FALLBACK_PROFILE_IMAGE }];
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  currentProfile: null,
-  currentMember: null,
+            const normalizedFallback = fixedProfiles.map(normalizeProfile);
 
-  onInitAuth: () => {
-    onAuthStateChanged(auth, (user: UserInfo | null) => {
-      if (!user) {
-        set({ user: null, currentProfile: null, currentMember: null });
-        return;
-      }
+            set({
+              user: {
+                uid: targetUid,
+                email: firebaseUser.email || "",
+                profile: normalizedFallback,
+              } as any,
+              currentProfile: normalizedFallback[0] || null,
+            });
+          }
+        } catch (error) {
+          console.error("onLogin 에러:", error);
+        }
+      },
 
-      // 이메일/비밀번호 가입인데 아직 인증 안 된 경우 → 로그인 상태로 인식 안 함
-      const isEmailProvider = user.providerData[0]?.providerId === "password";
-      if (isEmailProvider && !user.emailVerified) {
-        set({ user: null, currentProfile: null, currentMember: null });
-        return;
-      }
+      // 3. 프로필 선택 (시청 프로필 전환)
+      onSetProfile: (profile) => {
+        // 💡 [수정] localStorage 관련 코드가 전부 빠지고 순수 상태만 변경합니다. 미들웨어가 알아서 감지하여 저장합니다.
+        set({ currentProfile: profile });
+      },
 
-      const userWithProfiles = withDefaultProfiles(user);
-      set({
-        user: userWithProfiles,
-        currentProfile: getSavedProfile(userWithProfiles.profiles ?? DEFAULT_PROFILES),
-        currentMember: null,
-      });
-    });
-  },
-  onLogin: (user) => {
-    const userWithProfiles = withDefaultProfiles(user, isNewAuthUser(user));
-    saveProfiles(userWithProfiles.profiles ?? DEFAULT_PROFILES);
-    set({ user: userWithProfiles, currentProfile: null });
-  },
+      // 4. 새로운 프로필 추가 (Firestore DB 저장)
+      onAddProfile: async (newProfile) => {
+        const currentUser = get().user;
+        const uid = auth.currentUser?.uid;
 
-  onLogout: async () => {
-    try {
-      await signOut(auth);
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(PROFILE_STORAGE_KEY);
-      }
-      set({ user: null, currentProfile: null, currentMember: null });
-    } catch (err) {
-      console.log(err);
+        if (!uid || !currentUser) return;
+
+        const currentProfiles = currentUser.profile?.length ? currentUser.profile : [];
+        const nextId = Math.max(0, ...currentProfiles.map((item) => item.id)) + 1;
+        
+        const formattedProfile = normalizeProfile({ 
+          ...newProfile, 
+          id: nextId,
+          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {} },
+          community: { followers: [], following: [], reviews: [], feeds: [] },
+          bages: { equippedBadges: null, earnedBadges: [] }
+        });
+        
+        const nextProfiles = [...currentProfiles, formattedProfile];
+
+        try {
+          const userDocRef = doc(db, "users", uid);
+          await updateDoc(userDocRef, { profile: nextProfiles });
+          set({ user: { ...currentUser, profile: nextProfiles } });
+        } catch (error) {
+          console.error("프로필 추가 실패:", error);
+        }
+      },
+
+      // 5. 기존 프로필 수정 (Firestore DB 반영)
+      onUpdateProfile: async (updatedProfile) => {
+        const currentUser = get().user;
+        const uid = auth.currentUser?.uid;
+
+        if (!uid || !currentUser) return;
+
+        const currentProfiles = currentUser.profile?.length ? currentUser.profile : [];
+        const nextNormalizedProfile = normalizeProfile(updatedProfile);
+        
+        const nextProfiles = currentProfiles.map((item) => 
+          item.id === updatedProfile.id ? { ...item, ...nextNormalizedProfile } : item
+        );
+        
+        const isCurrentActive = get().currentProfile?.id === updatedProfile.id;
+        const nextCurrentProfile = isCurrentActive ? { ...get().currentProfile, ...nextNormalizedProfile } : get().currentProfile;
+
+        try {
+          const userDocRef = doc(db, "users", uid);
+          await updateDoc(userDocRef, { profile: nextProfiles });
+
+          set({
+            user: { ...currentUser, profile: nextProfiles },
+            currentProfile: nextCurrentProfile,
+          });
+        } catch (error) {
+          console.error("프로필 수정 실패:", error);
+        }
+      },
+
+      // 6. 프로필 삭제 (Firestore DB 반영)
+      onDeleteProfile: async (profileId) => {
+        const currentUser = get().user;
+        const uid = auth.currentUser?.uid;
+
+        if (!uid || !currentUser) return;
+
+        const currentProfiles = currentUser.profile?.length ? currentUser.profile : [];
+        if (currentProfiles.length <= 1) {
+          alert("최소 하나의 프로필은 유지해야 합니다.");
+          return;
+        }
+
+        const nextProfiles = currentProfiles.filter((profile) => profile.id !== profileId);
+        const isDeletingCurrent = get().currentProfile?.id === profileId;
+        const nextCurrentProfile = isDeletingCurrent ? null : get().currentProfile;
+
+        try {
+          const userDocRef = doc(db, "users", uid);
+          await updateDoc(userDocRef, { profile: nextProfiles });
+
+          set({
+            user: { ...currentUser, profile: nextProfiles },
+            currentProfile: nextCurrentProfile,
+          });
+        } catch (error) {
+          console.error("프로필 삭제 실패:", error);
+        }
+      },
+
+      // 7. 로그아웃
+      onLogout: async () => {
+        try {
+          await signOut(auth);
+          set({ user: null, currentProfile: null });
+        } catch (err) {
+          console.error("로그아웃 실패:", err);
+        }
+      },
+
+      toggleCommunity: async () => {
+        const { user, currentProfile } = get();
+        if (!user || !currentProfile) return;
+
+        // 1. 상태 반전 (UI 즉시 반영용)
+        const newStatus = !currentProfile.isCommunity;
+        
+        // 2. Zustand 스토어 업데이트
+        set((state) => ({
+          user: {
+            ...state.user!,
+            profile: state.user!.profile.map((p) => 
+              p.id === currentProfile.id ? { ...p, isCommunity: newStatus } : p
+            ),
+          },
+          currentProfile: { ...currentProfile, isCommunity: newStatus }
+        }));
+
+        // 3. Firestore 업데이트 (비동기 처리)
+        try {
+          const userDocRef = doc(db, "users", user.uid || user.userId);
+          await updateDoc(userDocRef, {
+            profile: get().user?.profile // 전체 프로필 배열을 업데이트
+          });
+        } catch (error) {
+          console.error("커뮤니티 설정 변경 실패:", error);
+          // 에러 발생 시 원상복구 로직 필요하면 추가
+        }
+      },
+    }),
+    {
+      name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.
+      
+      // 💡 [중요] 전체 스토어 상태 중에서 오직 'currentProfile'만 로컬 스토리지에 저장되도록 필터링합니다.
+      // 이렇게 해야 유저 정보가 꼬이거나 불필요한 대용량 데이터가 스토리지에 쌓이지 않습니다.
+      partialize: (state) => ({ currentProfile: state.currentProfile }), 
     }
-  },
-
-  onSetProfile: (profile) => {
-    if (typeof window !== "undefined") {
-      if (profile) {
-        window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-      } else {
-        window.localStorage.removeItem(PROFILE_STORAGE_KEY);
-      }
-    }
-    set({ currentProfile: profile });
-  },
-
-  onAddProfile: (profile) => {
-    const user = get().user;
-    const profiles = user?.profiles?.length ? user.profiles : DEFAULT_PROFILES;
-    const nextId = Math.max(0, ...profiles.map((item) => item.id)) + 1;
-    const nextProfiles = [...profiles, normalizeProfile({ ...profile, id: nextId })];
-
-    saveProfiles(nextProfiles);
-    set({ user: user ? { ...user, profiles: nextProfiles } : user });
-  },
-
-  onUpdateProfile: (profile) => {
-    const user = get().user;
-    const profiles = user?.profiles?.length ? user.profiles : DEFAULT_PROFILES;
-    const nextProfile = normalizeProfile(profile);
-    const nextProfiles = profiles.map((item) => (item.id === profile.id ? nextProfile : item));
-    const nextCurrentProfile = get().currentProfile?.id === profile.id ? nextProfile : get().currentProfile;
-
-    saveProfiles(nextProfiles);
-    if (nextCurrentProfile) {
-      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(nextCurrentProfile));
-    }
-    set({
-      user: user ? { ...user, profiles: nextProfiles } : user,
-      currentProfile: nextCurrentProfile,
-    });
-  },
-
-  onDeleteProfile: (profileId) => {
-    const user = get().user;
-    const profiles = user?.profiles?.length ? user.profiles : DEFAULT_PROFILES;
-    if (profiles.length <= 1) return;
-
-    const nextProfiles = profiles.filter((profile) => profile.id !== profileId);
-    const nextCurrentProfile = get().currentProfile?.id === profileId ? null : get().currentProfile;
-
-    saveProfiles(nextProfiles);
-    if (!nextCurrentProfile && typeof window !== "undefined") {
-      window.localStorage.removeItem(PROFILE_STORAGE_KEY);
-    }
-    set({
-      user: user ? { ...user, profiles: nextProfiles } : user,
-      currentProfile: nextCurrentProfile,
-    });
-  },
-
-  onSetMember: (member) => {
-    set({ currentMember: member });
-  },
-}));
+  )
+);

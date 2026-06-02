@@ -10,11 +10,13 @@ export interface MediaBase {
 //영화타입
 export interface Movie extends MediaBase {
     title: string;
+    name?: string;
     release_date: string;
 }
 //TV타입
 export interface TV extends MediaBase {
     name: string;
+    title?: string;
 }
 //시즌
 export interface Season {

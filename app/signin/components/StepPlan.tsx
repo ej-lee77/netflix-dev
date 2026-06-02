@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { updatePlan, useSignUpStore } from "@/store/useSignUpStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -134,9 +135,15 @@ export default function StepPlan({ onNext }: StepPlanProps) {
   const [selected, setSelected] = useState<string>("standard");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const handleNext = () => {
+  const uid = useSignUpStore((s) => s.uid);
+
+  const handleNext = async () => {
     const planData = PLANS.find((p) => p.id === selected);
     if (!planData) return;
+
+    // Firestore에 planType 저장
+    if (uid) await updatePlan(uid, selected); // "basic" | "standard" | "premium"
+
     onNext({
       name: planData.name,
       billing,
