@@ -1,18 +1,17 @@
 "use client";
 
-import React, { Suspense, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { updateEmail, updateProfile } from "firebase/auth";
-import { FreeMode, Navigation } from "swiper/modules";
-import { Swiper, SwiperSlide } from "swiper/react";
 import { auth } from "@/firebase/firebase";
 import ProfilePinGate from "@/components/ProfilePinGate";
-import { useAuthStore } from "@/store/useAuthStore";
-import type { UserProfile } from "@/types/auth"; // 👈 Profile에서 UserProfile로 타입 변경
-import "swiper/css";
-import "swiper/css/free-mode";
-import "swiper/css/navigation";
+import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
+import type {
+  MaturityRating,
+  ProfileSettings,
+  UserProfile,
+} from "@/types/auth";
 import "../../scss/profileSettings.scss";
 
 type ModalKey =
@@ -48,14 +47,8 @@ type ProfileIconSection = {
   icons: string[];
 };
 
-const DEFAULT_SUBTITLE_SETTINGS: SubtitleSettings = {
-  size: "medium",
-  font: "block",
-  shadow: "drop",
-  shadowColor: "black",
-  background: "black",
-  window: "white",
-};
+const DEFAULT_SUBTITLE_SETTINGS: SubtitleSettings =
+  DEFAULT_PROFILE_SETTINGS.subtitles;
 
 const SETTING_ITEMS: SettingsItem[] = [
   {
@@ -99,16 +92,62 @@ const subtitleLabels = {
   window: { none: "없음", black: "검정색", white: "흰색" },
 };
 
-const MATURITY_RATINGS = ["전체관람가", "7+", "12+", "15+", "19+"];
+const MATURITY_VALUES: MaturityRating[] = [
+  "전체관람가",
+  "12+",
+  "15+",
+  "19+",
+];
 
-const iconPaths = (folder: string, count: number) =>
+const MATURITY_AGE_ICONS: Record<MaturityRating, string> = {
+  전체관람가: "/images/age/ALL.svg",
+  "12+": "/images/age/12.svg",
+  "15+": "/images/age/15.svg",
+  "19+": "/images/age/19.svg",
+};
+
+const normalizeMaturityRating = (rating?: string | null): MaturityRating => {
+  if (rating === "전체관람가" || rating === "12+" || rating === "15+" || rating === "19+") {
+    return rating;
+  }
+  return rating === "7+" ? "12+" : "19+";
+};
+
+const normalizeProfileSetting = (
+  settings?: Partial<ProfileSettings> | null,
+): ProfileSettings => ({
+  maturityRating: normalizeMaturityRating(settings?.maturityRating),
+  subtitles: {
+    ...DEFAULT_PROFILE_SETTINGS.subtitles,
+    ...(settings?.subtitles ?? {}),
+  },
+  playback: {
+    ...DEFAULT_PROFILE_SETTINGS.playback,
+    ...(settings?.playback ?? {}),
+  },
+  hiddenWatchingVideos: settings?.hiddenWatchingVideos ?? [],
+});
+
+const ratingFromViewAge = (viewAge?: string): MaturityRating => {
+  const normalized = `${viewAge ?? ""}`.replace("+", "");
+  if (normalized === "12" || normalized === "15" || normalized === "19") {
+    return `${normalized}+` as MaturityRating;
+  }
+  return normalized === "7" ? "12+" : "전체관람가";
+};
+
+const viewAgeFromRating = (rating: MaturityRating) =>
+  rating === "전체관람가" ? "all" : rating.replace("+", "");
+
+const iconPaths = (folder: string, count: number, extension = "png") =>
   Array.from(
     { length: count },
-    (_, index) => `/images/profile/image/${folder}/${index + 1}.png`,
+    (_, index) => `/images/profile/image/${folder}/${index + 1}.${extension}`,
   );
 
 const PROFILE_ICON_SECTIONS: ProfileIconSection[] = [
   { title: "대표 아이콘", icons: iconPaths("default_icons", 23) },
+  { title: "데몬과 헌터스", icons: iconPaths("demons_and_hunters", 6, "jpg") },
   { title: "앨리스 인 보더랜드", icons: iconPaths("alice_in_borderland", 12) },
   { title: "아케인", icons: iconPaths("arcane", 12) },
   { title: "뷰티 인 블랙", icons: iconPaths("beauty_in_black", 12) },
@@ -126,7 +165,10 @@ const PROFILE_ICON_SECTIONS: ProfileIconSection[] = [
   { title: "종이의 집", icons: iconPaths("money_heist", 10) },
   { title: "마이 멜로디 & 쿠로미", icons: iconPaths("my_melody_kuromi", 16) },
   { title: "원피스", icons: iconPaths("one_piece", 17) },
-  { title: "오렌지 이즈 더 뉴 블랙", icons: iconPaths("orange_is_the_new_black", 11) },
+  {
+    title: "오렌지 이즈 더 뉴 블랙",
+    icons: iconPaths("orange_is_the_new_black", 11),
+  },
   { title: "피키 블라인더스", icons: iconPaths("peaky_blinders", 6) },
   { title: "레트로 애니메이션", icons: iconPaths("retro_animation", 8) },
   { title: "소닉 프라임", icons: iconPaths("sonic_prime", 21) },
@@ -256,29 +298,35 @@ function SettingsRow({
 
 function ProfileSettingsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const profileId = Number(searchParams.get("profileId"));
   const { user, onUpdateProfile } = useAuthStore();
-  
+
   // 💡 기존 코드의 user.profiles 및 user.profile 불일치 오타 통합 싱크 수정
-  const profiles = user?.profile || []; 
-  
+  const profiles = user?.profile || [];
+
   const profile =
     profiles.find((item: UserProfile) => item.id === profileId) ??
     profiles[0] ??
-    ({ id: 0, nickname: "프로필", imgUrl: "/images/profile/image/default_icons/17.png" } as UserProfile);
+    ({
+      id: 0,
+      nickname: "프로필",
+      imgUrl: "/images/profile/image/default_icons/17.png",
+    } as UserProfile);
 
   const isDefaultProfile = profile.id === profiles[0]?.id;
+  const profileSetting = normalizeProfileSetting(profile.settings);
   const [activeModal, setActiveModal] = useState<ModalKey>(null);
   const [savedSubtitle, setSavedSubtitle] = useState<SubtitleSettings>(
-    DEFAULT_SUBTITLE_SETTINGS,
+    profileSetting.subtitles,
   );
   const [draftSubtitle, setDraftSubtitle] = useState<SubtitleSettings>(
-    DEFAULT_SUBTITLE_SETTINGS,
+    profileSetting.subtitles,
   );
   const [pin, setPin] = useState(["", "", "", ""]);
   const pinInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [pinError, setPinError] = useState("");
-  
+
   // 💡 Profile => UserProfile 필드명 싱크 맞춤 (profile.name ➡️ profile.nickname)
   const [draftProfileName, setDraftProfileName] = useState(
     profile.nickname ?? "프로필",
@@ -298,11 +346,11 @@ function ProfileSettingsContent() {
     second: "",
   });
   const [contactError, setContactError] = useState("");
-  const [maturityRating, setMaturityRating] = useState("19+");
+  const [maturityRating, setMaturityRating] = useState<MaturityRating>(
+    profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
+  );
   const [toggles, setToggles] = useState({
-    autoplayNext: true,
-    autoplayPreview: true,
-    dataSaver: false,
+    autoplayPreview: profileSetting.playback.autoplayPreview,
     notiNew: true,
     notiRecommend: false,
   });
@@ -364,12 +412,46 @@ function ProfileSettingsContent() {
     setActiveModal(modalKey);
   };
 
+  useEffect(() => {
+    if (!activeModal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [activeModal]);
+
+  useEffect(() => {
+    const nextSetting = normalizeProfileSetting(profile.settings);
+    setSavedSubtitle(nextSetting.subtitles);
+    setDraftSubtitle(nextSetting.subtitles);
+    setMaturityRating(
+      nextSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
+    );
+    setToggles((current) => ({
+      ...current,
+      autoplayPreview: nextSetting.playback.autoplayPreview,
+    }));
+  }, [profile.id, profile.settings, profile.viewAge]);
+
+  const updateProfileSettings = (nextSettings: Partial<ProfileSettings>) => {
+    const mergedSettings = normalizeProfileSetting({
+      ...profileSetting,
+      ...nextSettings,
+    });
+
+    onUpdateProfile({
+      ...profile,
+      viewAge: viewAgeFromRating(mergedSettings.maturityRating),
+      settings: mergedSettings,
+    });
+  };
+
   const saveSubtitleSettings = () => {
     setSavedSubtitle(draftSubtitle);
-    window.localStorage.setItem(
-      `netflix-subtitle-settings-${profile.id}`,
-      JSON.stringify(draftSubtitle),
-    );
+    updateProfileSettings({ subtitles: draftSubtitle });
     setActiveModal(null);
   };
 
@@ -382,8 +464,25 @@ function ProfileSettingsContent() {
       ...profile,
       nickname: draftProfileName.trim() || "프로필",
       imgUrl: draftProfileAvatar,
+      settings: profileSetting,
     });
     setActiveModal(null);
+  };
+
+  const saveMaturitySettings = () => {
+    updateProfileSettings({ maturityRating });
+    setActiveModal(null);
+  };
+
+  const savePlaybackSettings = () => {
+    updateProfileSettings({
+      playback: { autoplayPreview: toggles.autoplayPreview },
+    });
+    setActiveModal(null);
+  };
+
+  const openWatchingHistory = (hideMode = false) => {
+    router.push(`/mypage/playlist?tab=history${hideMode ? "&mode=hide" : ""}`);
   };
 
   const selectProfileIcon = (iconSrc: string) => {
@@ -531,18 +630,18 @@ function ProfileSettingsContent() {
     activeModal === "profile"
       ? "프로필 변경"
       : activeModal === "lock"
-      ? "프로필 잠금"
-      : activeModal === "maturity"
-        ? "자녀 보호 설정 조정"
-      : activeModal === "subtitles"
-        ? "자막 표시 설정"
-        : activeModal === "playback"
-          ? "재생 설정"
-          : activeModal === "notifications"
-            ? "알림 설정"
-            : activeModal === "activity"
-              ? "시청 기록"
-              : "";
+        ? "프로필 잠금"
+        : activeModal === "maturity"
+          ? "자녀 보호 설정 조정"
+          : activeModal === "subtitles"
+            ? "자막 표시 설정"
+            : activeModal === "playback"
+              ? "재생 설정"
+              : activeModal === "notifications"
+                ? "알림 설정"
+                : activeModal === "activity"
+                  ? "시청 기록"
+                  : "";
 
   return (
     <div className="profile-settings-page">
@@ -618,6 +717,7 @@ function ProfileSettingsContent() {
           role="dialog"
           aria-modal="true"
           aria-label={modalTitle}
+          onClick={closeModal}
         >
           <div
             className={`profile-settings-modal${
@@ -627,12 +727,13 @@ function ProfileSettingsContent() {
                   ? " is-lock"
                   : activeModal === "profile" && isIconPickerOpen
                     ? " is-icons"
-                  : activeModal === "maturity"
-                    ? " is-account is-maturity"
-                  : activeModal === "profile"
-                    ? " is-account"
-                  : ""
+                    : activeModal === "maturity"
+                      ? " is-account is-maturity"
+                      : activeModal === "profile"
+                        ? " is-account"
+                        : ""
             }`}
+            onClick={(event) => event.stopPropagation()}
           >
             <div className="profile-settings-modal-head">
               <h2>{modalTitle}</h2>
@@ -664,27 +765,18 @@ function ProfileSettingsContent() {
 
                       <section className="profile-icon-section">
                         <h4>최근에 사용한 아이콘</h4>
-                        <Swiper
-                          modules={[FreeMode, Navigation]}
-                          freeMode
-                          navigation
-                          slidesPerView="auto"
-                          spaceBetween={10}
-                          className="profile-icon-swiper"
-                        >
-                          <SwiperSlide className="profile-icon-slide">
-                            <button
-                              type="button"
-                              className="is-selected"
-                              onClick={() =>
-                                selectProfileIcon(draftProfileAvatar)
-                              }
-                              aria-label="최근에 사용한 프로필 아이콘 선택"
-                            >
-                              <img src={draftProfileAvatar} alt="" />
-                            </button>
-                          </SwiperSlide>
-                        </Swiper>
+                        <div className="profile-icon-picker-grid">
+                          <button
+                            type="button"
+                            className="is-selected"
+                            onClick={() =>
+                              selectProfileIcon(draftProfileAvatar)
+                            }
+                            aria-label="최근에 사용한 프로필 아이콘 선택"
+                          >
+                            <img src={draftProfileAvatar} alt="" />
+                          </button>
+                        </div>
                       </section>
 
                       {PROFILE_ICON_SECTIONS.map((section) => (
@@ -693,34 +785,23 @@ function ProfileSettingsContent() {
                           className="profile-icon-section"
                         >
                           <h4>{section.title}</h4>
-                          <Swiper
-                            modules={[FreeMode, Navigation]}
-                            freeMode
-                            navigation
-                            slidesPerView="auto"
-                            spaceBetween={10}
-                            className="profile-icon-swiper"
-                          >
+                          <div className="profile-icon-picker-grid">
                             {section.icons.map((iconSrc) => (
-                              <SwiperSlide
+                              <button
                                 key={iconSrc}
-                                className="profile-icon-slide"
+                                type="button"
+                                className={
+                                  draftProfileAvatar === iconSrc
+                                    ? "is-selected"
+                                    : ""
+                                }
+                                onClick={() => selectProfileIcon(iconSrc)}
+                                aria-label={`${section.title} 프로필 아이콘 선택`}
                               >
-                                <button
-                                  type="button"
-                                  className={
-                                    draftProfileAvatar === iconSrc
-                                      ? "is-selected"
-                                      : ""
-                                  }
-                                  onClick={() => selectProfileIcon(iconSrc)}
-                                  aria-label={`${section.title} 프로필 아이콘 선택`}
-                                >
-                                  <img src={iconSrc} alt="" />
-                                </button>
-                              </SwiperSlide>
+                                <img src={iconSrc} alt="" />
+                              </button>
                             ))}
-                          </Swiper>
+                          </div>
                         </section>
                       ))}
                     </div>
@@ -775,9 +856,7 @@ function ProfileSettingsContent() {
                           </span>
                           <input
                             value={draftContact.first}
-                            inputMode={
-                              contactEdit === "phone" ? "tel" : "text"
-                            }
+                            inputMode={contactEdit === "phone" ? "tel" : "text"}
                             onChange={(event) =>
                               setDraftContact((current) => ({
                                 ...current,
@@ -803,16 +882,11 @@ function ProfileSettingsContent() {
                       </div>
 
                       {contactError && (
-                        <p className="profile-contact-error">
-                          {contactError}
-                        </p>
+                        <p className="profile-contact-error">{contactError}</p>
                       )}
 
                       <div className="profile-edit-actions">
-                        <button
-                          type="submit"
-                          className="is-primary"
-                        >
+                        <button type="submit" className="is-primary">
                           저장
                         </button>
                         <button
@@ -839,10 +913,7 @@ function ProfileSettingsContent() {
                     >
                       <div className="profile-edit-main">
                         <div className="profile-edit-avatar">
-                          <img
-                            src={draftProfileAvatar}
-                            alt=""
-                          />
+                          <img src={draftProfileAvatar} alt="" />
                           <button
                             type="button"
                             onClick={() => setIsIconPickerOpen(true)}
@@ -869,21 +940,8 @@ function ProfileSettingsContent() {
                           <button
                             type="button"
                             className="profile-contact-row"
-                            onClick={() => openContactEdit("name")}
-                          >
-                            <span className="profile-contact-icon">♙</span>
-                            <span>
-                              <strong>이름</strong>
-                              <em>{profileDisplayName}</em>
-                            </span>
-                            <i aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            className="profile-contact-row"
                             onClick={() => openContactEdit("email")}
                           >
-                            <span className="profile-contact-icon">✉</span>
                             <span>
                               <strong>이메일</strong>
                               <em>{firebaseEmail || "등록된 이메일 없음"}</em>
@@ -895,7 +953,6 @@ function ProfileSettingsContent() {
                             className="profile-contact-row"
                             onClick={() => openContactEdit("phone")}
                           >
-                            <span className="profile-contact-icon">▯</span>
                             <span>
                               <strong>휴대폰</strong>
                               <em>{"등록된 번호 없음"}</em>
@@ -906,10 +963,7 @@ function ProfileSettingsContent() {
                       </section>
 
                       <div className="profile-edit-actions">
-                        <button
-                          type="submit"
-                          className="is-primary"
-                        >
+                        <button type="submit" className="is-primary">
                           저장
                         </button>
                         <button type="button" onClick={closeModal}>
@@ -963,7 +1017,11 @@ function ProfileSettingsContent() {
                   {pinError && <p className="profile-pin-error">{pinError}</p>}
 
                   <div className="profile-edit-actions">
-                    <button type="button" className="is-primary" onClick={savePin}>
+                    <button
+                      type="button"
+                      className="is-primary"
+                      onClick={savePin}
+                    >
                       저장
                     </button>
                     <button type="button" onClick={closeModal}>
@@ -973,37 +1031,154 @@ function ProfileSettingsContent() {
                 </div>
               )}
 
-              {/* 💡 나머지 모달 내용들의 UI 뼈대 유지 */}
               {activeModal === "subtitles" && (
                 <div className="profile-subtitle-settings">
-                  <div className={`subtitle-preview-box ${previewClass}`}>
-                    <div className="subtitle-text">화면에 자막이 이런 모양으로 표시됩니다.</div>
+                  <div className="subtitle-preview-wrap">
+                    <span>미리보기</span>
+                    <div className="subtitle-preview">
+                      <img src="/images/profile/setting/miri.png" alt="" />
+                      <p className={previewClass}>
+                        화면에 자막이 이런 모양으로 표시됩니다.
+                      </p>
+                    </div>
                   </div>
-                  <div className="subtitle-form-grid">
-                    <SelectBox
-                      label="글자 크기"
-                      value={draftSubtitle.size}
-                      options={[
-                        { value: "small", label: subtitleLabels.size.small },
-                        { value: "medium", label: subtitleLabels.size.medium },
-                        { value: "large", label: subtitleLabels.size.large },
-                      ]}
-                      onChange={(val) => updateSubtitle("size", val as SubtitleSettings["size"])}
-                    />
-                    <SelectBox
-                      label="글꼴"
-                      value={draftSubtitle.font}
-                      options={[
-                        { value: "block", label: subtitleLabels.font.block },
-                        { value: "gothic", label: subtitleLabels.font.gothic },
-                        { value: "serif", label: subtitleLabels.font.serif },
-                        { value: "round", label: subtitleLabels.font.round },
-                      ]}
-                      onChange={(val) => updateSubtitle("font", val as SubtitleSettings["font"])}
-                    />
+                  <div className="subtitle-form">
+                    <div className="subtitle-split">
+                      <SelectBox
+                        label="글자 크기"
+                        value={draftSubtitle.size}
+                        options={[
+                          { value: "small", label: subtitleLabels.size.small },
+                          {
+                            value: "medium",
+                            label: subtitleLabels.size.medium,
+                          },
+                          { value: "large", label: subtitleLabels.size.large },
+                        ]}
+                        onChange={(val) =>
+                          updateSubtitle(
+                            "size",
+                            val as SubtitleSettings["size"],
+                          )
+                        }
+                      />
+                      <SelectBox
+                        label="글꼴"
+                        value={draftSubtitle.font}
+                        options={[
+                          { value: "block", label: subtitleLabels.font.block },
+                          {
+                            value: "gothic",
+                            label: subtitleLabels.font.gothic,
+                          },
+                          { value: "serif", label: subtitleLabels.font.serif },
+                          { value: "round", label: subtitleLabels.font.round },
+                        ]}
+                        onChange={(val) =>
+                          updateSubtitle(
+                            "font",
+                            val as SubtitleSettings["font"],
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="subtitle-split">
+                      <SelectBox
+                        label="그림자 효과"
+                        value={draftSubtitle.shadow}
+                        options={[
+                          { value: "none", label: subtitleLabels.shadow.none },
+                          { value: "drop", label: subtitleLabels.shadow.drop },
+                          {
+                            value: "outline",
+                            label: subtitleLabels.shadow.outline,
+                          },
+                        ]}
+                        onChange={(val) =>
+                          updateSubtitle(
+                            "shadow",
+                            val as SubtitleSettings["shadow"],
+                          )
+                        }
+                      />
+                      <SelectBox
+                        label="그림자 색상"
+                        value={draftSubtitle.shadowColor}
+                        options={[
+                          {
+                            value: "black",
+                            label: subtitleLabels.shadowColor.black,
+                          },
+                          {
+                            value: "white",
+                            label: subtitleLabels.shadowColor.white,
+                          },
+                        ]}
+                        onChange={(val) =>
+                          updateSubtitle(
+                            "shadowColor",
+                            val as SubtitleSettings["shadowColor"],
+                          )
+                        }
+                        swatch={draftSubtitle.shadowColor}
+                      />
+                    </div>
+                    <div className="subtitle-split">
+                      <SelectBox
+                        label="배경"
+                        value={draftSubtitle.background}
+                        options={[
+                          {
+                            value: "none",
+                            label: subtitleLabels.background.none,
+                          },
+                          {
+                            value: "black",
+                            label: subtitleLabels.background.black,
+                          },
+                          {
+                            value: "white",
+                            label: subtitleLabels.background.white,
+                          },
+                        ]}
+                        onChange={(val) =>
+                          updateSubtitle(
+                            "background",
+                            val as SubtitleSettings["background"],
+                          )
+                        }
+                        swatch={draftSubtitle.background}
+                      />
+                      <SelectBox
+                        label="창"
+                        value={draftSubtitle.window}
+                        options={[
+                          { value: "none", label: subtitleLabels.window.none },
+                          {
+                            value: "black",
+                            label: subtitleLabels.window.black,
+                          },
+                          {
+                            value: "white",
+                            label: subtitleLabels.window.white,
+                          },
+                        ]}
+                        onChange={(val) =>
+                          updateSubtitle(
+                            "window",
+                            val as SubtitleSettings["window"],
+                          )
+                        }
+                        swatch={draftSubtitle.window}
+                      />
+                    </div>
                   </div>
                   <div className="profile-edit-actions">
-                    <button type="button" className="is-primary" onClick={saveSubtitleSettings}>
+                    <button
+                      type="button"
+                      className="is-primary"
+                      onClick={saveSubtitleSettings}
+                    >
                       저장
                     </button>
                     <button type="button" onClick={resetSubtitleSettings}>
@@ -1011,6 +1186,180 @@ function ProfileSettingsContent() {
                     </button>
                     <button type="button" onClick={closeModal}>
                       취소
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModal === "maturity" && (
+                <div className="profile-maturity-settings">
+                  <div className="profile-maturity-heading">
+                    <div className="profile-maturity-avatar">
+                      <img
+                        src={
+                          profile.imgUrl ??
+                          "/images/profile/image/default_icons/17.png"
+                        }
+                        alt=""
+                      />
+                    </div>
+                    <h3>{profileDisplayName} 님의 관람등급을 설정하세요</h3>
+                  </div>
+                  <p>
+                    선택한 등급 이하의 콘텐츠만 이 프로필에서 표시됩니다.
+                    어린이용 프로필로 사용할 경우 낮은 등급을 선택하세요.
+                  </p>
+
+                  <div
+                    className="profile-rating-slider"
+                    style={
+                      {
+                        "--rating-progress": `${
+                          (MATURITY_VALUES.indexOf(maturityRating) /
+                            (MATURITY_VALUES.length - 1)) *
+                          100
+                        }%`,
+                      } as React.CSSProperties
+                    }
+                  >
+                    <div className="profile-rating-labels">
+                      {MATURITY_VALUES.map((rating, index) => {
+                        const activeIndex =
+                          MATURITY_VALUES.indexOf(maturityRating);
+                        const isActive = index <= activeIndex;
+
+                        return (
+                        <button
+                          type="button"
+                          key={rating}
+                          className={
+                            isActive ? "is-active" : ""
+                          }
+                          onClick={() => setMaturityRating(rating)}
+                          aria-pressed={rating === maturityRating}
+                          aria-label={`${rating} 관람등급 선택`}
+                        >
+                          <strong>
+                            <img src={MATURITY_AGE_ICONS[rating]} alt={rating} />
+                          </strong>
+                        </button>
+                        );
+                      })}
+                    </div>
+                    <div className="profile-rating-visual" aria-hidden="true">
+                      <span className="profile-rating-fill" />
+                    </div>
+                  </div>
+
+                  <OptionRow
+                    label="현재 관람등급"
+                    desc={`${maturityRating} 이하 콘텐츠가 표시됩니다.`}
+                  />
+                  <div className="profile-edit-actions">
+                    <button
+                      type="button"
+                      className="is-primary"
+                      onClick={saveMaturitySettings}
+                    >
+                      저장
+                    </button>
+                    <button type="button" onClick={closeModal}>
+                      취소
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModal === "playback" && (
+                <div className="subtitle-settings">
+                  <OptionRow
+                    label="미리보기 자동재생"
+                    desc="탐색 중 예고편과 미리보기를 자동으로 재생합니다."
+                  >
+                    <Toggle
+                      on={toggles.autoplayPreview}
+                      onChange={() => flip("autoplayPreview")}
+                    />
+                  </OptionRow>
+                  <div className="profile-edit-actions">
+                    <button
+                      type="button"
+                      className="is-primary"
+                      onClick={savePlaybackSettings}
+                    >
+                      저장
+                    </button>
+                    <button type="button" onClick={closeModal}>
+                      취소
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModal === "notifications" && (
+                <div className="subtitle-settings">
+                  <OptionRow
+                    label="신작 알림"
+                    desc="새 콘텐츠와 공개 예정작 알림을 받습니다."
+                  >
+                    <Toggle
+                      on={toggles.notiNew}
+                      onChange={() => flip("notiNew")}
+                    />
+                  </OptionRow>
+                  <OptionRow
+                    label="추천 콘텐츠 알림"
+                    desc="시청 취향에 맞춘 추천 알림을 받습니다."
+                  >
+                    <Toggle
+                      on={toggles.notiRecommend}
+                      onChange={() => flip("notiRecommend")}
+                    />
+                  </OptionRow>
+                  <div className="profile-edit-actions">
+                    <button
+                      type="button"
+                      className="is-primary"
+                      onClick={closeModal}
+                    >
+                      저장
+                    </button>
+                    <button type="button" onClick={closeModal}>
+                      취소
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {activeModal === "activity" && (
+                <div className="profile-empty-settings">
+                  <OptionRow
+                    label="시청 기록"
+                    desc="최근 시청한 콘텐츠와 이어보기 기록을 관리합니다."
+                  >
+                    <button
+                      type="button"
+                      className="profile-settings-modal-btn"
+                      onClick={() => openWatchingHistory(false)}
+                    >
+                      보기
+                    </button>
+                  </OptionRow>
+                  <OptionRow
+                    label="기록 숨기기"
+                    desc="선택한 콘텐츠를 시청 기록에서 숨길 수 있습니다."
+                  >
+                    <button
+                      type="button"
+                      className="profile-settings-modal-btn danger"
+                      onClick={() => openWatchingHistory(true)}
+                    >
+                      관리
+                    </button>
+                  </OptionRow>
+                  <div className="profile-edit-actions">
+                    <button type="button" onClick={closeModal}>
+                      닫기
                     </button>
                   </div>
                 </div>

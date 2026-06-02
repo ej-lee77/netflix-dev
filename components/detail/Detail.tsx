@@ -1519,7 +1519,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
             <iframe
               style={{ height: "90vh", width: "100%" }}
-              src={`https://www.youtube.com/embed/${popupVideoKey}?autoplay=1&mute=1`}
+              src={`https://www.youtube.com/embed/${popupVideoKey}?autoplay=1&mute=1&cc_load_policy=1&cc_lang_pref=ko`}
               title="Trailer"
             />
           </div>
