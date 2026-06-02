@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"; // updateDoc 추가
 import { auth, db } from "@/firebase/firebase";
-import type { UserDocument } from "@/types/auth";
+import type { UserDocument, PayInfo } from "@/types/auth";
 
 // ─── Firestore 저장 함수 ───────────────────────────────────────────────────────
 
@@ -27,11 +27,11 @@ export const signUp = async (
     email: user.email!,
     planType: "",         // 플랜 선택 단계에서 채워짐
     payment: {
-      pay: "", 
-      bank: "",  
-      num: "", 
+      pay: "",
+      bank: "",
+      num: "",
       payDate: "",
-      nextDate: "" 
+      nextDate: ""
     },
     profile: [
       {
@@ -47,6 +47,7 @@ export const signUp = async (
             customPlaylists: [],  // 커스텀 플레이리스트 ID 목록
           },
           genreStats: {},     // 장르별 시청 횟수 통계
+          moodStats: {},
         },
         community: {
           followers: [],  // 나를 팔로우하는 유저 ID 목록
@@ -75,6 +76,28 @@ export const signUp = async (
   await sendEmailVerification(user);
 
   return user.uid;
+};
+
+/**
+ * 결제 수단 저장 함수
+ * StepPayment에서 결제 완료 후 호출
+ * 카드 번호는 보안상 마지막 4자리만 저장
+ */
+export const updatePayment = async (
+  uid: string,
+  payment: PayInfo
+): Promise<void> => {
+  await updateDoc(doc(db, "users", uid), {
+    payment,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const updatePlan = async (uid: string, planType: string): Promise<void> => {
+  await updateDoc(doc(db, "users", uid), {
+    planType,
+    updatedAt: serverTimestamp(),
+  });
 };
 
 // ─── uid 임시 저장 스토어 ──────────────────────────────────────────────────────
