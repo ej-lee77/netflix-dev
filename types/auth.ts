@@ -40,6 +40,7 @@ export interface UserProfile {
   bages: BadgeList;
 
   alarm: string[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
+  isCommunity: boolean;
 }
 
 export interface UserGenreStats {
