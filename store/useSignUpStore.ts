@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"; // updateDoc 추가
 import { auth, db } from "@/firebase/firebase";
-import type { UserDocument, PaymentMethod } from "@/types/auth";
+import type { UserDocument, PayInfo } from "@/types/auth";
 
 // ─── Firestore 저장 함수 ───────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ export const signUp = async (
  */
 export const updatePayment = async (
   uid: string,
-  payment: PaymentMethod
+  payment: PayInfo
 ): Promise<void> => {
   await updateDoc(doc(db, "users", uid), {
     payment,
