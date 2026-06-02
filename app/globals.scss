@@ -188,7 +188,7 @@ body {
 }
 
 .inner {
-  width: 1600px;
+  width: 1920px;
   margin: 0 auto;
 }
 
@@ -208,17 +208,17 @@ main {
     margin-top: $section-gap;
 
     .inner {
-      width: min(1600px, calc(100vw - #{$main-menu-width}));
+      width: min(1920px, calc(100vw - #{$main-menu-width}));
       margin-left: 0;
       margin-right: 0;
-      padding-left: clamp(24px, calc((100vw - $main-menu-width - 1600px) / 2), 80px);
-
+      padding-left: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
+      padding-right: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
     }
 
     .section-title-outer {
       width: calc(100vw - #{$main-menu-width});
-      padding-left: clamp(24px, calc((100vw - #{$main-menu-width} - 1600px) / 2), 80px);
-      padding-right: clamp(24px, calc((100vw - #{$main-menu-width} - 1600px) / 2), 80px);
+      padding-left: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
+      padding-right: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
     }
   }
 }

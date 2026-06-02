@@ -6,6 +6,7 @@ import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
+import VideoPlayer from "@/components/common/VideoPlayer";
 import "./detail.module.scss";
 
 interface DetailClientProps {
@@ -161,7 +162,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     certifications, onFetchCertification,
   } = useMovieStore();
 
-  const { myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList } = usePlayListStore();
+  const { playList, myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList, onUpdateProgress, onUpdateEpisodeProgress } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
 
   const [showPopup, setShowPopup] = useState(false);
@@ -175,6 +176,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [ratedStar, setRatedStar] = useState(0);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [hoveredRelatedId, setHoveredRelatedId] = useState<number | null>(null);
+  const [hoveredEpisodeId, setHoveredEpisodeId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
   const [isAddingMyList, setIsAddingMyList] = useState(false);
   const [isAddingWish, setIsAddingWish] = useState(false);
@@ -478,6 +480,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     const PAGE_SIZE = 6;
     const totalPages = Math.ceil(episodes.length / PAGE_SIZE);
     const paged = episodes.slice((episodePage - 1) * PAGE_SIZE, episodePage * PAGE_SIZE);
+    const playListItem = playList.find((item) => item.id === mediaId && item.mediaType === type);
     const getVisibleEpisodePages = () => {
       const maxVisible = 5;
       if (totalPages <= maxVisible) return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -541,7 +544,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             return (
               <div
                 key={ep.id}
-                onClick={() => setSelectEpisodeId(ep.id)}
+                onClick={async () => {
+                  setSelectEpisodeId(ep.id);
+                  await onAddPlayList(mediaItem!);
+                  await openVideo();
+                }}
+                onMouseEnter={() => setHoveredEpisodeId(ep.id)}
+                onMouseLeave={() => setHoveredEpisodeId(null)}
                 style={{
                   display: "flex",
                   gap: 14,
@@ -555,20 +564,26 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               >
                 <div style={{ position: "relative", flexShrink: 0, width: 180, height: 110, borderRadius: 6, overflow: "hidden", background: "#2a2a35" }}>
                   {stillUrl && (
-                    <img src={stillUrl} alt={ep.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={stillUrl} alt={ep.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s ease", transform: hoveredEpisodeId === ep.id ? "scale(1.05)" : "scale(1)" }} />
                   )}
                   <div style={{
                     position: "absolute", inset: 0,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     background: "rgba(0,0,0,0.25)",
-                    opacity: isActive ? 1 : 0,
-                    transition: "opacity 0.15s",
+                    opacity: (selectEpisodeId !== null && isActive) || hoveredEpisodeId === ep.id ? 1 : 0,
+                    transition: "opacity 0.2s",
                   }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14 }}>▶</div>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20 }}>▶</div>
                   </div>
-                  {isActive && (
-                    <div style={{ position: "absolute", bottom: 0, left: 0, height: 3, width: "65%", background: "#e50914" }} />
-                  )}
+                  {(() => {
+                    const epProgress = playListItem?.episodeProgress?.[ep.id] ?? 0;
+                    const barWidth = isActive
+                      ? (epProgress > 0 ? epProgress : 0)
+                      : epProgress;
+                    return barWidth > 0 ? (
+                      <div style={{ position: "absolute", bottom: 0, left: 0, height: 3, width: `${barWidth}%`, background: "#e50914" }} />
+                    ) : null;
+                  })()}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
@@ -1279,18 +1294,18 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           </div>
 
           {/* Metadata */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 8 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, minWidth: 0, paddingBottom: 4 }}>
             <div>
               <span style={{
                 display: "inline-flex",
                 alignItems: "center",
-                height: 30,
-                padding: "0 11px",
-                borderRadius: 5,
+                height: 25,
+                padding: "0 8px",
+                borderRadius: 3,
                 background: "rgba(255,255,255,0.14)",
                 color: "rgba(255,255,255,0.72)",
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 500,
                 letterSpacing: 0,
               }}>
                 {heroTypeBadgeText}
@@ -1315,7 +1330,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   alignItems: "center",
                   justifyContent: "center",
                   minWidth: 38,
-                  height: 24,
+                  height: 20,
                   padding: "0 8px",
                   border: "1px solid rgba(255,255,255,0.35)",
                   borderRadius: 3,
@@ -1509,21 +1524,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
       {/* Video popup */}
       {showPopup && popupVideoKey && (
-        <div style={{ position: "fixed", background: "#000", zIndex: 10000, width: "100%", height: "100%", top: 0, left: 0 }}>
-          <button
-            style={{ position: "absolute", right: 20, top: 20, background: "rgba(255,255,255,0.1)", padding: "8px 16px", color: "#fff", border: "none", cursor: "pointer", zIndex: 50 }}
-            onClick={() => setShowPopup(false)}
-          >
-            닫기
-          </button>
-          <div style={{ display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
-            <iframe
-              style={{ height: "90vh", width: "100%" }}
-              src={`https://www.youtube.com/embed/${popupVideoKey}?autoplay=1&mute=1&cc_load_policy=1&cc_lang_pref=ko`}
-              title="Trailer"
-            />
-          </div>
-        </div>
+        <VideoPlayer
+          videoKey={popupVideoKey}
+          title={title}
+          onClose={() => setShowPopup(false)}
+          onTimeUpdate={(currentTime, duration) => {
+            if (duration <= 0) return;
+            const progress = Math.round((currentTime / duration) * 100);
+            if (progress === 0) return;
+            onUpdateProgress(mediaId, type, progress);
+            if (isTv && activeEpisodeId) {
+              onUpdateEpisodeProgress(mediaId, type, activeEpisodeId, progress);
+            }
+          }}
+        />
       )}
 
     </div>

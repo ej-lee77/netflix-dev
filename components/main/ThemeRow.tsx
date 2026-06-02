@@ -2,7 +2,6 @@
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
-import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -21,76 +20,42 @@ const GENRE_MAP: Record<number, string> = {
   10759: "액션", 10762: "어린이", 10765: "SF", 10768: "전쟁",
 };
 
-interface MediaListProps {
-  category: "movie" | "tv" | "netflix";
+export interface ThemeItem {
+  id: number;
+  title: string;
+  poster_path: string;
+  backdrop_path: string;
+  vote_average: number;
+  overview: string;
+  release_date?: string;
+  genre_ids: number[];
+  mediaType: "movie" | "tv";
 }
 
-export default function CategoryList({ category }: MediaListProps) {
+interface ThemeRowProps {
+  title: string;
+  items: ThemeItem[];
+  href?: string;
+}
+
+export default function ThemeRow({ title, items, href }: ThemeRowProps) {
   const router = useRouter();
-  const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos, netflixOriginals, certifications, onFetchCertification } = useMovieStore();
-  const { currentProfile } = useAuthStore();
+  const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
+
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
-  const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
-  const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
-  const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
+  const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const movieSource = [
-    ...popMovies.slice(profileOffset),
-    ...popMovies.slice(0, profileOffset),
-  ];
-  const tvSource = [
-    ...tvs.slice(profileOffset),
-    ...tvs.slice(0, profileOffset),
-  ];
-
-  const currentList =
-    category === "movie"
-      ? movieSource.slice(0, 18).map((movie) => ({
-        id: movie.id,
-        title: movie.title,
-        poster_path: movie.poster_path,
-        backdrop_path: movie.backdrop_path,
-        vote_average: movie.vote_average,
-        overview: movie.overview,
-        release_date: movie.release_date,
-        genre_ids: movie.genre_ids ?? [],
-        videos: popVideos[movie.id],
-        fetchVideo: () => onFetchVideo(movie.id),
-      }))
-      : category === "netflix"
-        ? netflixOriginals.slice(0, 18).map((tv) => ({
-          id: tv.id,
-          title: tv.name,
-          poster_path: tv.poster_path,
-          backdrop_path: tv.backdrop_path,
-          vote_average: tv.vote_average,
-          overview: tv.overview,
-          release_date: undefined as string | undefined,
-          genre_ids: tv.genre_ids ?? [],
-          videos: tvVideos[tv.id],
-          fetchVideo: () => onFetchTvVideos(tv.id),
-        }))
-        : tvSource.slice(0, 18).map((tv) => ({
-          id: tv.id,
-          title: tv.name,
-          poster_path: tv.poster_path,
-          backdrop_path: tv.backdrop_path,
-          vote_average: tv.vote_average,
-          overview: tv.overview,
-          release_date: undefined as string | undefined,
-          genre_ids: tv.genre_ids ?? [],
-          videos: tvVideos[tv.id],
-          fetchVideo: () => onFetchTvVideos(tv.id),
-        }));
-
-  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
-    setHover(id);
+  const handleMouseEnter = async (item: ThemeItem) => {
+    setHover(item.id);
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
-    videoTimer.current = setTimeout(() => setVideoReady(id), 1500);
-    await Promise.all([fetchVideo(), onFetchCertification(id, mediaType)]);
+    videoTimer.current = setTimeout(() => setVideoReady(item.id), 1500);
+    const fetchVideo = item.mediaType === "movie"
+      ? () => onFetchVideo(item.id)
+      : () => onFetchTvVideos(item.id);
+    await Promise.all([fetchVideo(), onFetchCertification(item.id, item.mediaType)]);
   };
 
   const handleMouseLeave = () => {
@@ -99,10 +64,12 @@ export default function CategoryList({ category }: MediaListProps) {
     if (videoTimer.current) clearTimeout(videoTimer.current);
   };
 
+  if (items.length === 0) return null;
+
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" />
+        <SectionTitle title={title} href={href ?? "/category"} />
       </div>
 
       <div className="swiper-outer">
@@ -120,19 +87,20 @@ export default function CategoryList({ category }: MediaListProps) {
           onSlideChange={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
           className="media-swiper"
         >
-          {currentList.map((item, index) => {
-            const trailer = item.videos?.find((v) => v.type === "Trailer" || v.type === "Teaser");
+          {items.map((item, index) => {
+            const videos = item.mediaType === "movie" ? popVideos[item.id] : tvVideos[item.id];
+            const trailer = videos?.find((v) => v.type === "Trailer" || v.type === "Teaser");
             const trailerKey = trailer?.key || null;
+            const certKey = `${item.mediaType}-${item.id}`;
 
             return (
               <SwiperSlide key={item.id} className="category-slide">
                 <li
                   className="category-item"
-                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo, category === "netflix" ? "tv" : category)}
+                  onMouseEnter={() => handleMouseEnter(item)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`)}
+                  onClick={() => router.push(`/detail/${item.mediaType}/${item.id}`)}
                 >
-                  {/* 기본 포스터 */}
                   <div className="img-box">
                     <img
                       className="poster-img"
@@ -141,11 +109,10 @@ export default function CategoryList({ category }: MediaListProps) {
                     />
                   </div>
 
-                  {/* 호버 팝업 카드 */}
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : ""}`}>
                       <div className="hover-video">
-                        {autoplayPreview && trailerKey && videoReady === item.id ? (
+                        {trailerKey && videoReady === item.id ? (
                           <iframe
                             src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0`}
                             title="트레일러"
@@ -162,8 +129,8 @@ export default function CategoryList({ category }: MediaListProps) {
                       <div className="hover-info">
                         <div className="hover-title-row">
                           <h3 className="hover-title">{item.title}</h3>
-                          {certifications[`${category === "netflix" ? "tv" : category}-${item.id}`] && (
-                            <span className="hover-age">{certifications[`${category === "netflix" ? "tv" : category}-${item.id}`]}</span>
+                          {certifications[certKey] && (
+                            <span className="hover-age">{certifications[certKey]}</span>
                           )}
                         </div>
                         <div className="hover-meta">
@@ -196,7 +163,7 @@ export default function CategoryList({ category }: MediaListProps) {
                             </svg>
                             재생하기
                           </button>
-                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`} className="btn-detail">
+                          <Link href={`/detail/${item.mediaType}/${item.id}`} className="btn-detail">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="10" />
                               <line x1="12" y1="16" x2="12" y2="12" />
