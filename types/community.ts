@@ -7,6 +7,8 @@ export interface ReviewDocument {
   dislikesCount: number;    // 싫어요 수
   isSpoiler: boolean;       // 스포일러 여부
   reportsCount: number;     // 신고 횟수
+  createdAt: string;
+  isDelete: boolean;
 
   // 파이어베이스 연동 및 관리를 위한 필수 확장 필드
   userId: string;           // 리뷰 작성자 ID
@@ -30,4 +32,10 @@ export interface FeedDocument {
   likesCount: number;       // 좋아요
   reportsCount: number;     // 신고
   comments: FeedComment;    // 댓글
+}
+
+export interface ReviewStore {
+  reviews: ReviewDocument[];
+  movieMap: Record<string, any>;
+  fetchUserReviews: (userId: string) => Promise<void>;
 }

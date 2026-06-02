@@ -8,17 +8,51 @@ import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
 import { BADGE_LIST } from "@/data/badge";
+import { useCommunityStore } from "@/store/useCommunityStore";
+
+const GENRE_COLORS: { [key: string]: string } = {
+  "SF": "#6366f1",       // 인디고
+  "액션": "#3b82f6",     // 블루
+  "스릴러": "#ef4444",   // 레드
+  "판타지": "#a855f7",   // 퍼플
+  "드라마": "#10b981",   // 그린
+  "코미디": "#f59e0b",   // 앰버
+  "로맨스": "#ec4899",   // 핑크
+  "다큐멘터리": "#64748b", // 슬레이트
+  "기타": "#94a3b8"      // 기본 회색
+};
+
+// 사용 시 함수 형태로 호출
+const getGenreColor = (genreName: string) => {
+  return GENRE_COLORS[genreName] || GENRE_COLORS["기타"];
+};
 
 export default function MyPage() {
-  const { user, currentProfile, onLogout } = useAuthStore();
+  const { user, currentProfile, onLogout, toggleCommunity } = useAuthStore();
   const { playList, onLoadPlayList } = usePlayListStore();
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
 
-  // 🌟 커뮤니티 모드 제어 State
-  const [hideCommunity, setHideCommunity] = useState<boolean>(false);
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const userId = user?.userId; // 사용자 ID
+  const { reviews, fetchUserReviews } = useCommunityStore(); // 파이어베이스 리뷰 스토어
+  const { mediaDetails, onFetchMediaDetail } = useMovieStore(); // TMDB 영화 데이터 스토어
 
-  // 💡 현재 시청 중인 활성화 프로필 추적 (우선순위: 선택 프로필 -> 첫 번째 프로필)
+  useEffect(() => {
+    if (userId) fetchUserReviews(userId);
+  }, [userId]);
+
+  // 리뷰에 해당하는 영화 데이터만 선택적으로 가져오기
+  useEffect(() => {
+    reviews.forEach(review => {
+      if (!mediaDetails[`movie-${review.videoId}`]) {
+        onFetchMediaDetail(review.videoId, 'movie');
+      }
+    });
+  }, [reviews]);
+
+  // 스토어의 값을 기준으로 UI 판단 (true면 표시, false면 숨김)
+  const isCommunityEnabled = currentProfile?.isCommunity ?? true;
+  const hideCommunity = !isCommunityEnabled;
+
   const activeProfile = useMemo(() => {
     return currentProfile ?? user?.profile?.[0] ?? null;
   }, [currentProfile, user]);
@@ -27,19 +61,7 @@ export default function MyPage() {
     onLoadPlayList();
     if (popMovies.length === 0) onFetchPopular();
     if (tvs.length === 0) onFetchTvs();
-
-    const savedMode = localStorage.getItem("hide_community_ui");
-    if (savedMode === "true") {
-      setHideCommunity(true);
-    }
-    setIsHydrated(true);
   }, []);
-
-  const handleToggleCommunity = () => {
-    const nextState = !hideCommunity;
-    setHideCommunity(nextState);
-    localStorage.setItem("hide_community_ui", String(nextState));
-  };
 
   const menuIcons = useMemo(() => {
     return {
@@ -66,8 +88,17 @@ export default function MyPage() {
       { href: "/goods", icon: menuIcons.badge, title: "뱃지 관리", desc: "대표 칭호 및 장착 설정", isCommunity: false }
     ];
 
+    // hideCommunity가 true(숨김)일 때 isCommunity: true인 항목 필터링
     return hideCommunity ? allItems.filter(item => !item.isCommunity) : allItems;
-  }, [hideCommunity, menuIcons]);
+  }, [hideCommunity, menuIcons]); // 의존성 배열에 hideCommunity 유지
+
+  const filteredActivities = useMemo(() => {
+    const alarms = activeProfile?.alarm || [];
+    
+    return alarms
+      .filter((alarm) => alarm.category === 'review' || alarm.category === 'feed')
+      .slice(0, 5); // 최근 활동 5개만 표시
+  }, [activeProfile]);
 
   // 💡 [수정] 가짜 데이터(mockUserData) 대신 실제 스토어의 activeProfile 기반 통계 계산
   const profileData = useMemo(() => {
@@ -115,31 +146,50 @@ export default function MyPage() {
       .sort((a, b) => (b.isEquipped ? 1 : 0) - (a.isEquipped ? 1 : 0))
       .slice(0, 5);
   }, [activeProfile]);
-
+  
   const genreMoodStats = useMemo(() => {
-    // 💡 실제 프로필 내부에 장르 통계(genreStats)가 잡혀있다면 그것을 활용하고, 없으면 기본 목업 데이터 제공
-    const currentGenreStats = activeProfile?.movies?.genreStats;
+    const gStats = activeProfile?.movies?.genreStats || {};
+    const mStats = activeProfile?.movies?.moodStats || {};
     
-    const baseGenres = [
-      { name: "SF", count: currentGenreStats?.SF || 24, percentage: 35, color: "#6366f1" },
-      { name: "액션", count: currentGenreStats?.Action || 18, percentage: 26, color: "#3b82f6" },
-      { name: "스릴러", count: currentGenreStats?.Thriller || 12, percentage: 17, color: "#ef4444" },
-      { name: "판타지", count: currentGenreStats?.Fantasy || 8, percentage: 11, color: "#a855f7" },
-      { name: "드라마", count: currentGenreStats?.Drama || 5, percentage: 7, color: "#10b981" },
-    ];
+    const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
+
+    if (totalCount === 0) {
+      return {
+        isEmpty: true,
+        genres: [],
+        moods: [],
+        topGenre: { name: "없음" },
+        topMood: { tag: "없음" }
+      };
+    }
+
+    // 1. 장르 데이터 처리
+    const totalGenre = Object.values(gStats).reduce((a, b) => a + b, 0);
+    const genres = Object.entries(gStats)
+      .map(([name, count]) => ({
+        name,
+        count,
+        percentage: totalGenre > 0 ? Math.round((count / totalGenre) * 100) : 0,
+        color: getGenreColor(name)
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // 2. 무드 데이터 처리
+    const moods = Object.entries(mStats)
+      .map(([tag, count]) => ({
+        tag,
+        count,
+        type: "neutral", // 추후 로직에 따라 positive/negative 할당
+        img: `/images/header/menu/mood-${tag}.svg`
+      }))
+      .sort((a, b) => b.count - a.count);
 
     return {
-      genres: baseGenres.sort((a, b) => b.count - a.count), // 편수 높은 순 정렬
-      moods: [
-        { tag: "심오한", type: "positive", img: "/images/header/menu/mood-thoughtful.svg" },
-        { tag: "신나는", type: "positive", img: "/images/header/menu/mood-exciting.svg" },
-        { tag: "유쾌한", type: "positive", img: "/images/header/menu/mood-funny.svg" },
-        { tag: "잔잔한", type: "neutral", img: "/images/header/menu/mood-chill.svg" },
-        { tag: "어두운", type: "negative", img: "/images/header/menu/mood-dark.svg" },
-        { tag: "감성적인", type: "neutral", img: "/images/header/menu/mood-emotional.svg" },
-        { tag: "낭만적인", type: "positive", img: "/images/header/menu/mood-romantic.svg" },
-        { tag: "무서운", type: "negative", img: "/images/header/menu/mood-scary.svg" }
-      ]
+      genres,
+      moods,
+      topGenre: genres[0] || { name: "없음", count: 0 },
+      topMood: moods[0] || { tag: "없음" },
+      totalGenre
     };
   }, [activeProfile]);
 
@@ -176,9 +226,8 @@ export default function MyPage() {
         <div className="mypage-mode-controller">
           <p>🎬 피드/리뷰 기능을 숨길 수 있습니다.</p>
           <button 
-            type="button" 
             className={`toggle-mode-btn ${hideCommunity ? "active" : ""}`}
-            onClick={handleToggleCommunity}
+            onClick={toggleCommunity} // 스토어 액션 직접 연결
           >
             <span>{hideCommunity ? "🔒 커뮤니티 숨김 모드" : "🔓 커뮤니티 표시 모드"}</span>
             <div className="switch-track">
@@ -291,115 +340,144 @@ export default function MyPage() {
           </div>
           
           <div className="analysis-grid">
-            <div className="analysis-card genre-card-box">
-              <h3>선호 장르 TOP 3</h3>
-              <div className="genre-chart-container">
-                <table className="genre-stat-table">
-                  <thead>
-                    <tr>
-                      <th>순위</th>
-                      <th>장르명</th>
-                      <th>비율 및 그래프</th>
-                      <th>시청 편수</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {genreMoodStats.genres.slice(0, 3).map((g, index) => (
-                      <tr key={index}>
-                        <td className="rank-num">{index + 1}</td>
-                        <td className="genre-name">{g.name}</td>
-                        <td className="graph-td">
-                          <div className="progress-bar-wrapper">
-                            <div 
-                              className="progress-bar-fill" 
-                              style={{ width: `${g.percentage}%`, backgroundColor: g.color }}
-                            ></div>
-                            <span className="percent-text">{g.percentage}%</span>
-                          </div>
-                        </td>
-                        <td className="count-text">{g.count}편</td>
+            {genreMoodStats.isEmpty ? (
+              <div className="empty-analysis-card">
+                <img src="/images/header/search.svg" alt="데이터 없음" />
+                <h3>아직 분석할 데이터가 부족해요</h3>
+                <p>영상을 시청하고 나만의 취향을 확인해보세요!</p>
+                <Link href="/" className="go-browse-btn">영상 탐색하러 가기</Link>
+              </div>
+            ) : (
+              <>
+              <div className="analysis-card genre-card-box">
+                <h3>선호 장르 TOP 3</h3>
+                <div className="genre-chart-container">
+                  <table className="genre-stat-table">
+                    <thead>
+                      <tr>
+                        <th>순위</th>
+                        <th>장르명</th>
+                        <th>비율 및 그래프</th>
+                        <th>시청 편수</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </thead>
+                    <tbody>
+                      {genreMoodStats.genres.slice(0, 3).map((g, index) => (
+                        <tr key={index}>
+                          <td className="rank-num">{index + 1}</td>
+                          <td className="genre-name">{g.name}</td>
+                          <td className="graph-td">
+                            <div className="progress-bar-wrapper">
+                              <div 
+                                className="progress-bar-fill" 
+                                style={{ width: `${g.percentage}%`, backgroundColor: g.color }}
+                              ></div>
+                              <span className="percent-text">{g.percentage}%</span>
+                            </div>
+                          </td>
+                          <td className="count-text">{g.count}편</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>                
+              <div className="analysis-card mood-card-box">
+                <h3>선호하는 무드</h3>
+                <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
+                <div className="mood-tag-cloud">
+                  {genreMoodStats.moods.map((m, index) => (
+                    <span key={index} className={`mood-tag-item ${m.type}`}>
+                      <img src={m.img} alt={m.tag} />
+                      {m.tag}
+                    </span>
+                  ))}
+                </div>
 
-            <div className="analysis-card mood-card-box">
-              <h3>선호하는 무드</h3>
-              <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
-              <div className="mood-tag-cloud">
-                {genreMoodStats.moods.map((m, index) => (
-                  <span key={index} className={`mood-tag-item ${m.type}`}>
-                    <img src={m.img} alt={m.tag} />
-                    {m.tag}
-                  </span>
-                ))}
+                <div className="mood-summary-box">
+                  💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와 
+                  <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                </div>
               </div>
-              <div className="mood-summary-box">
-                💡 주로 <strong>{genreMoodStats.genres[0].name}</strong> 장르와 <strong>{genreMoodStats.moods[0].tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </section>
+
         
         {/* 2단 섹션: 커뮤니티 활성화 상태일 때만 출력 */}
-        {!hideCommunity && isHydrated && (
+        {!hideCommunity && (
           <div className="two-col-section">
-            <section>
+            <section className="section-block">
               <div className="section-h">
                 <h2>팔로워 활동</h2>
-                <span className="more"><Link href="/alarm?tab=friend">더보기 →</Link></span>
+                <span className="more">더보기</span>
               </div>
-              <ul className="activity-list">
-                {friendActivities.map((act) => (
-                  <li key={act.id} className="activity-item">
-                    <div className="friend-avatar"></div>
-                    <div className="activity-body">
-                      <p>
-                        <strong>{act.friend}</strong>님이{" "}
-                        <Link href={`/detail/movie/${act.id}`} className="target">
-                          {act.title}
-                        </Link>
-                        {act.action}
-                      </p>
-                      <span className="time">{act.time}</span>
-                    </div>
-                    {act.poster && (
-                      <div className="activity-thumb">
-                        <img src={`https://image.tmdb.org/t/p/w200${act.poster}`} alt="" />
+
+              {filteredActivities.length > 0 ? (
+                <div className="activity-list">
+                  {filteredActivities.map((item, index) => (
+                    <div key={index} className="activity-item">
+                      <div className="friend-avatar">
+                        {/* 알림 제공자 썸네일 혹은 기본 이미지 */}
                       </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                      <div className="activity-body">
+                        <p>
+                          <strong>{item.title}</strong> 님이 {item.category === 'review' ? '리뷰를' : '새 피드를'} 작성했습니다.
+                        </p>
+                        <p className="content-preview">{item.content}</p>
+                        <span className="time">방금 전</span>
+                      </div>
+                      <div className="activity-thumb">
+                        <img src={item.link} alt="썸네일" /> {/* link를 이미지 URL로 활용 */}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-block">최근 팔로워 활동이 없습니다.</div>
+              )}
             </section>
 
-            <section>
+            <section className="section-block">
               <div className="section-h">
-                <h2>최근 리뷰</h2>
-                <span className="more"><Link href="/mypage/community?tab=review">전체 {profileData.stats.review}개 →</Link></span>
+                <h2>나의 최근 리뷰</h2>
+                <span className="more">더보기</span>
               </div>
-              <ul className="review-list">
-                {myReviews.map((r) => (
-                  <li key={r.id} className="review-item">
-                    <Link href={`/detail/movie/${r.id}`} className="review-thumb">
-                      {r.poster && <img src={`https://image.tmdb.org/t/p/w200${r.poster}`} alt={r.title} />}
-                    </Link>
-                    <div className="review-body">
-                      <div className="review-head">
-                        <h3>{r.title}</h3>
-                        <span className="stars">{r.stars}</span>
+
+              {reviews.length > 0 ? (
+                <div className="review-list">
+                  {reviews.map((review) => {
+                    const movie = mediaDetails[`movie-${review.videoId}`];
+                    return (
+                      <div key={review.reviewId} className="review-item">
+                        <div className="review-thumb">
+                          <img 
+                            src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : '/placeholder.png'} 
+                            alt={movie?.title || movie?.name || '영화 포스터'} 
+                          />
+                        </div>
+                        <div className="review-body">
+                          <div className="review-head">
+                            <h3>{movie?.title || movie?.name || '로딩 중...'}</h3>
+                            <span className="stars">👍 {review.likesCount}</span>
+                          </div>
+                          <p className="text">
+                            {review.isSpoiler && <span className="spoiler-badge">[스포일러]</span>}
+                            {review.content}
+                          </p>
+                          <div className="meta">
+                            <span>{new Date(review.createdAt).toLocaleDateString()}</span>
+                            <span>신고 {review.reportsCount}회</span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text">{r.text}</p>
-                      <div className="meta">
-                        <span>♡ {r.likes}</span>
-                        <span>{r.time}</span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-block">작성하신 리뷰가 없습니다.</div>
+              )}
             </section>
           </div>
         )}

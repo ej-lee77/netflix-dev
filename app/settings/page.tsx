@@ -163,6 +163,7 @@ function SettingsContent() {
           customPlaylists: [],  // 커스텀 플레이리스트 ID 목록
         },
         genreStats: {},     // 장르별 시청 횟수 통계
+        moodStats: {},
       },
       community: {
         followers: [],  // 나를 팔로우하는 유저 ID 목록
