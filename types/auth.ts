@@ -21,7 +21,7 @@ export interface AuthState {
   onSetProfile: (profile: UserProfile | null) => void;
   onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
   onUpdateProfile: (profile: UserProfile) => Promise<void>;
-  onDeleteProfile: (profileId: string | number) => Promise<void>; 
+  onDeleteProfile: (profileId: string | number) => Promise<void>;
 }
 
 export interface UserProfile {
@@ -47,7 +47,7 @@ export interface UserGenreStats {
   [genreName: string]: number;
 }
 
-export interface PlayList{
+export interface PlayList {
   playlistVideos: string[]; // 플레이리스트 영상 ID 목록
   customPlaylists: string[]; // 커스텀 플레이리스트 ID 목록 - 필요없음
 }
@@ -59,25 +59,25 @@ export interface MovieList {
   genreStats: UserGenreStats;
 }
 
-export interface BadgeInfo{
+export interface BadgeInfo {
   id: string; //뱃지 아이디
   progress: number; //진행도
   isComplete: boolean; //획득유무
 }
 
-export interface BadgeList{
+export interface BadgeList {
   earnedBadges: BadgeInfo[];   // 획득 뱃지 ID 목록
   equippedBadges: string;  // 장착 뱃지 ID 하나만
 }
 
-export interface CommunityList{
+export interface CommunityList {
   followers: string[];   // 팔로워 유저 ID 목록
   following: string[]; // 팔로잉 유저 ID 목록
   reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
   feeds: string[]; //피드 ID 목록 내 피드 말고 
 }
 
-export interface PayInfo{
+export interface PayInfo {
   pay: string;   //결제방법
   bank: string;  //은행아니면 통신사
   num: string; //카드번호, 계좌번호, 핸드폰번호
@@ -86,12 +86,36 @@ export interface PayInfo{
 }
 
 export interface UserDocument {
-    uid?: string;
-    userId: string; // 문서 ID로 사용됨
-    
-    // 기본정보
-    email: string;
-    planType: string;
-    payment: PayInfo;
-    profile: UserProfile[];
+  uid?: string;
+  userId: string; // 문서 ID로 사용됨
+
+  // 기본정보
+  email: string;
+  planType: string;
+  payment: PayInfo;
+  profile: UserProfile[];
+}
+
+export interface PaymentMethod {
+  type: "card" | "kakao" | "naver" | "";  // 결제 수단 종류
+  cardNumber: string;   // 카드 번호 (마지막 4자리만 저장 권장)
+  cardHolder: string;   // 카드 소유자명
+  expiryDate: string;   // 유효기간 MM/YY
+}
+
+export interface UserDocument {
+  userId: string;
+
+  email: string;
+  name: string;
+  phoneNumber: string;
+  planType: string;
+  profile: UserProfile;
+  payment: PaymentMethod;   // ← 추가
+
+  movies: MovieList;
+  community: CommunityList;
+  headerMenus: string[];
+  bages: BadgeList;
+  alarm: string[];
 }

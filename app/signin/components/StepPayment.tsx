@@ -4,6 +4,7 @@ import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { updatePayment, useSignUpStore } from "@/store/useSignUpStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,8 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   };
 
   // ── 결제하기 ────────────────────────────────────────────────────────────────
+  const uid = useSignUpStore((s) => s.uid);
+
   const handlePay = async () => {
     if (activeTab === "card") {
       if (!cardNumber || !expiry || !cvc || !birthDate || !cardPw) {
@@ -96,16 +99,16 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
         return;
       }
     }
-    
+
     setError("");
     setIsLoading(true);
-    
+
     try {
       // 결제 가상 딜레이
       await new Promise((res) => setTimeout(res, 1500));
-      
+
       const currentUser = auth.currentUser;
-      
+
       if (!currentUser) {
         setError("로그인 세션이 만료되었습니다. 다시 로그인 해주세요.");
         return;
@@ -367,7 +370,7 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
           className="payment-agree-item"
           onClick={() => setAgreeAuto((v) => !v)}
           role="button" tabIndex={0}
-          onKeyDown={(e) => { if(e.key === "Enter") setAgreeAuto((v) => !v); }}
+          onKeyDown={(e) => { if (e.key === "Enter") setAgreeAuto((v) => !v); }}
         >
           <div className={`payment-cb${agreeAuto ? " checked" : ""}`} />
           <span className="payment-agree-text">이 결제수단으로 매월 자동 결제에 동의합니다 (필수)</span>
@@ -376,7 +379,7 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
           className="payment-agree-item"
           onClick={() => setAgreeSave((v) => !v)}
           role="button" tabIndex={0}
-          onKeyDown={(e) => { if(e.key === "Enter") setAgreeSave((v) => !v); }}
+          onKeyDown={(e) => { if (e.key === "Enter") setAgreeSave((v) => !v); }}
         >
           <div className={`payment-cb${agreeSave ? " checked" : ""}`} />
           <span className="payment-agree-text">결제 정보 안전하게 저장 (다음 결제부터 간편하게)</span>
