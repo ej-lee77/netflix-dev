@@ -176,6 +176,7 @@ function SettingsContent() {
         equippedBadges: "", // 현재 장착 중인 뱃지 ID
       },
       alarm: [],  // 알림 설정한 영상 ID 목록
+      isCommunity: true
     });
     closeProfileAdd();
   };

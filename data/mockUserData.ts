@@ -100,7 +100,8 @@ export const mockUserData: UserDocument = {
       ]
     },
     
-    alarm: ["movie_id_999", "movie_id_888"]
+    alarm: ["movie_id_999", "movie_id_888"],
+    isCommunity: true
 
   }]
 };
