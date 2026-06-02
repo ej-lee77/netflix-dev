@@ -2,7 +2,7 @@ import type { Movie, TV } from "./movie";
 
 export interface PlayListItem{
     id: number;
-    title: string;
+    title?: string;
     // name?: string;
     poster_path: string;
     backdrop_path?: string;
@@ -14,7 +14,8 @@ export interface PlayListItem{
 
 export interface PlayListState{
     playList: PlayListItem[],
-    myList: PlayListItem[],
+    myList: string[],
+    customPlaylists: PlaylistDocument[],
     onAddPlayList: (item: Movie | TV)=>Promise<boolean>,
     onRemovePlayList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
@@ -23,6 +24,7 @@ export interface PlayListState{
     onLoadMyList: ()=>Promise<void>,
     onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
     onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number)=>void,
+    createMyCustomPlaylist: (data: any)=>Promise<void>,
 }
 
 // 플리 타입
@@ -34,6 +36,8 @@ export interface PlaylistDocument {
   isShare: boolean;        // 공개여부
   tags: string[];          // 태그 (장르, 무드)
   likesCount: number;      // 좋아요
+  createdAt: string;
+  isDelete: boolean;
 
   // 파이어베이스 연동 및 관리를 위한 필수 확장 필드
   userId: string;         // 플레이리스트 생성자 (유저 ID)

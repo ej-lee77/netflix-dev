@@ -9,6 +9,7 @@ import { useWishlistStore } from "@/store/useWishlistStore";
 import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
+import { useMovieStore } from "@/store/useMovieStore";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv";
@@ -101,9 +102,11 @@ function ActivityContent() {
     onLoadMyList,
     onRemovePlayList,
     onRemoveMyList,
+    createMyCustomPlaylist
   } = usePlayListStore();
   const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
   const { user, currentProfile, onUpdateProfile } = useAuthStore();
+  const { fetchMediaDetail } = useMovieStore();
   const searchParams = useSearchParams();
   const hideMode = searchParams.get("mode") === "hide";
 
@@ -127,6 +130,7 @@ function ActivityContent() {
   const [modifyMoodTags, setModifyMoodTags] = useState<string[]>([]);
   const [modifyIsPublic, setModifyIsPublic] = useState(false);
   const [modifyItemKeys, setModifyItemKeys] = useState<string[]>([]);
+  const [listItems, setListItems] = useState<any[]>([]);
 
   // 헤더 메뉴에서 ?tab=wishlist / ?tab=playlists 로 들어오면 해당 탭 열기
   useEffect(() => {
@@ -143,9 +147,7 @@ function ActivityContent() {
   useEffect(() => {
     onLoadPlayList();
     onLoadMyList();
-
   }, [onLoadPlayList, onLoadMyList]);
-
   useEffect(() => {
     if (!modifyPlaylistId && !createPlaylistOpen) return;
 
@@ -180,8 +182,31 @@ function ActivityContent() {
   }, [onLoadWishlist, user]);
 
   const hiddenWatchingVideos = currentProfile?.settings?.hiddenWatchingVideos ?? [];
+  useEffect(() => {
+    const loadListDetails = async () => {
+      
+      // myList의 각 키("movie-123")를 [type, id]로 분리하여 fetch 호출
+      const promises = myList.map(async (key) => {
+        const [mediaType, id] = key.split('-');
+        // 이제 fetchMediaDetail이 데이터를 리턴하므로 바로 사용 가능
+        return await fetchMediaDetail(id, mediaType as 'movie' | 'tv');
+      });
+
+      // 모든 데이터를 병렬로 가져옴
+      const details = await Promise.all(promises);
+      
+      // 결과값 중 null/undefined 제외하고 저장
+      setListItems(details.filter(Boolean));
+    };
+
+    if (myList.length > 0) {
+      loadListDetails();
+    } else {
+      setListItems([]);
+    }
+  }, [myList, fetchMediaDetail]);
+
   const watchItems = playList;
-  const listItems = myList;
   const watchingItems = watchItems.slice(0, 6);
   const visibleHistoryItems = hideMode
     ? watchItems
@@ -217,7 +242,7 @@ function ActivityContent() {
     await onRemoveWish(id);
   };
 
-  const selectedItems = listItems.filter((item) => selectedKeys.includes(getItemKey(item)));
+  const selectedItems = listItems.filter((item) => selectedKeys.includes(item));
   const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
   const currentSelectionPage = Math.min(selectionPage, totalSelectionPages);
   const pagedSelectionItems = listItems.slice(
@@ -241,33 +266,40 @@ function ActivityContent() {
     ));
   };
 
-  const handleCreatePlaylist = () => {
+  const handleCreatePlaylist = async () => {
     const title = playlistTitle.trim();
     const description = playlistDescription.trim();
-    if (!title || selectedKeys.length === 0) return;
+    
+    // 입력값 유효성 검사
+    if (!title || selectedKeys.length === 0) {
+        alert("제목과 최소 하나 이상의 영상을 선택해주세요.");
+        return;
+    }
 
-    const nextPlaylists = [
-      {
-        id: `${Date.now()}`,
-        title,
-        description,
-        moodTags: selectedMoodTags,
-        isPublic: playlistIsPublic,
-        itemKeys: selectedKeys,
-        createdAt: new Date().toISOString(),
-      },
-      ...customPlaylists,
-    ];
+    try {
+        // 스토어의 addPlaylist 메서드 호출 (파이어베이스 저장 + 상태 갱신)
+        await createMyCustomPlaylist({
+            name: title,
+            content: description,
+            videoIds: selectedKeys,
+            isShare: playlistIsPublic,
+            tags: selectedMoodTags,
+        });
 
-    setCustomPlaylists(nextPlaylists);
-    saveCustomPlaylists(nextPlaylists);
-    setPlaylistTitle("");
-    setPlaylistDescription("");
-    setSelectedMoodTags([]);
-    setPlaylistIsPublic(false);
-    setSelectedKeys([]);
-    setSelectionPage(1);
-    setCreatePlaylistOpen(false);
+        // 성공 시 폼 초기화 및 닫기
+        setPlaylistTitle("");
+        setPlaylistDescription("");
+        setSelectedMoodTags([]);
+        setPlaylistIsPublic(false);
+        setSelectedKeys([]);
+        setSelectionPage(1);
+        setCreatePlaylistOpen(false);
+        
+        console.log("플레이리스트가 성공적으로 생성되었습니다.");
+    } catch (error) {
+        console.error("생성 중 에러 발생:", error);
+        alert("플레이리스트 저장에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const openCreatePlaylistModal = () => {
@@ -390,7 +422,7 @@ function ActivityContent() {
   const renderModifyCard = () => {
     if (!modifyPlaylistId) return null;
 
-    const selectedModifyItems = listItems.filter((item) => modifyItemKeys.includes(getItemKey(item)));
+    const selectedModifyItems = listItems.filter((item) => modifyItemKeys.includes(item));
 
     return (
       <div

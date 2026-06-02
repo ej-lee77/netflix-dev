@@ -333,7 +333,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const relatedItems = recommended
     .filter((item: RecommendedItem) => item.id !== mediaId)
     .slice(0, 6);
-  const isMyListAdded = myList.some((item) => item.id === mediaId && item.mediaType === type);
+  const itemKey = `${type}-${mediaId}`; // 예: "movie-123"
+  const isMyListAdded = myList.includes(itemKey);
   const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1,
     author: ["민지", "준호", "서연", "도윤", "하린", "지우"][index % 6],
