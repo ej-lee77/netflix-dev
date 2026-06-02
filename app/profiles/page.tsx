@@ -16,14 +16,15 @@ const AVATAR_OPTIONS = [
   "/images/profile/image/default_icons/22.png",
 ];
 
-const iconPaths = (folder: string, count: number) =>
+const iconPaths = (folder: string, count: number, extension = "png") =>
   Array.from(
     { length: count },
-    (_, index) => `/images/profile/image/${folder}/${index + 1}.png`,
+    (_, index) => `/images/profile/image/${folder}/${index + 1}.${extension}`,
   );
 
 const PROFILE_ICON_SECTIONS = [
   { title: "대표 아이콘", icons: iconPaths("default_icons", 23) },
+  { title: "데몬과 헌터스", icons: iconPaths("demons_and_hunters", 6, "jpg") },
   { title: "앨리스 인 보더랜드", icons: iconPaths("alice_in_borderland", 12) },
   { title: "아케인", icons: iconPaths("arcane", 12) },
   { title: "뷰티 인 블랙", icons: iconPaths("beauty_in_black", 12) },

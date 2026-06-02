@@ -21,6 +21,13 @@ export default function Header() {
   const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(null);
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 80);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const profiles = user?.profile || [];
   const activeProfile = currentProfile;
@@ -72,7 +79,7 @@ export default function Header() {
 
   return (
     <>
-      <header>
+      <header className={isScrolled ? "scrolled" : ""}>
         <div className="flex-item">
           <div className="flex-item gap-6">
             <h1>

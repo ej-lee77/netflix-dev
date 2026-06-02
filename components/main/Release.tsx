@@ -1,6 +1,7 @@
 "use client";
 import { useMovieStore } from '@/store/useMovieStore';
 import React, { useEffect, useState } from 'react'
+import Link from 'next/link';
 import "./scss/release.scss"
 import SectionTitle from '../common/SectionTitle';
 
@@ -42,8 +43,9 @@ export default function Release() {
       <div className="release-masonry">
         {cards.map((movie, index) => {
           const size: CardSize = SIZE_CYCLE[index % SIZE_CYCLE.length];
+          const mediaType = (movie as any).first_air_date ? 'tv' : 'movie';
           return (
-            <div key={movie.id} className={`release-card card-${size}`}>
+            <Link key={movie.id} href={`/detail/${mediaType}/${movie.id}`} className={`release-card card-${size}`}>
               <img
                 src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}
                 alt={movie.title}
@@ -54,7 +56,7 @@ export default function Release() {
                 <h3 className="card-title">{movie.title}</h3>
                 <p className="card-overview">{movie.overview}</p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

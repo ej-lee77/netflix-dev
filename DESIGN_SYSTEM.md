@@ -9,6 +9,7 @@
 2. [타이포그래피](#2-타이포그래피)
 3. [간격 & 레이아웃](#3-간격--레이아웃)
 4. [컴포넌트](#4-컴포넌트)
+   - 4-8. [스와이퍼 네비게이션 버튼](#4-8-스와이퍼-네비게이션-버튼-swiper-navigation)
 5. [이미지 & 미디어](#5-이미지--미디어)
 6. [인터랙션 & 애니메이션](#6-인터랙션--애니메이션)
 7. [사용 금지 패턴](#7-사용-금지-패턴)
@@ -391,6 +392,62 @@ border-bottom:        1px solid rgba(255,255,255,0.10)
 좌우 padding:           40px
 섹션 간 gap:            12–16px
 ```
+
+---
+
+### 4-8. 스와이퍼 네비게이션 버튼 (Swiper Navigation)
+
+> 모든 스와이퍼 섹션의 이전/다음 버튼 기본 스타일. 임의로 변경하지 않는다.
+
+```
+배경:              none
+보더:              none
+색상:              #ffffff
+z-index:           10
+
+기본 상태:         opacity 0 (숨김)
+섹션 hover 시:     opacity 1 (등장)  ← transition: opacity 0.2s ease
+버튼 hover 시:     opacity 0.7
+비활성(disabled):  opacity 0 + pointer-events: none
+
+화살표 크기:       font-size 20px
+화살표 굵기:       font-weight 900
+```
+
+#### SCSS 패턴
+```scss
+.swiper-button-prev,
+.swiper-button-next {
+  background: none;
+  border: none;
+  color: $w-color;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  &::after {
+    font-size: 20px;
+    font-weight: 900;
+  }
+
+  &.swiper-button-disabled {
+    opacity: 0 !important;
+    pointer-events: none;
+  }
+}
+
+// 섹션 hover 시 버튼 등장
+.{section-class}:hover {
+  .swiper-button-prev,
+  .swiper-button-next {
+    opacity: 1;
+
+    &:hover { opacity: 0.7; }
+  }
+}
+```
+
+> ⚠️ 버튼이 항상 보이도록 `opacity: 1` 고정 설정 금지. 반드시 섹션 hover에 연동한다.
 
 ---
 

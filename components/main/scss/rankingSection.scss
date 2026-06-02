@@ -15,8 +15,39 @@
 
   .ranking-swiper-wrap {
     position: relative;
-    padding-left: clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
+    padding-left: clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
     overflow: hidden;
+    .ranking-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+
+      &:disabled {
+        opacity: 0 !important;
+        pointer-events: none;
+      }
+    }
+
+    .ranking-nav-prev { left: 0; }
+    .ranking-nav-next { right: 0; }
+
+    &:hover {
+      .ranking-nav-btn:not(:disabled) {
+        opacity: 1;
+      }
+    }
   }
 
   .ranking-swiper {
@@ -369,7 +400,7 @@
   .ranking-progress {
     position: relative;
     height: 4px;
-    margin: 18px clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px) 0;
+    margin: 18px clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px) 0;
     max-width: none;
     width: auto;
     overflow: hidden;

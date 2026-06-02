@@ -1,11 +1,55 @@
 import { auth, db } from "@/firebase/firebase"; 
-import { AuthState, type Profile, type UserInfo, type UserDocument } from "@/types/auth";
+import {
+  AuthState,
+  type Profile,
+  type ProfileSettings,
+  type UserDocument,
+  type UserInfo,
+} from "@/types/auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
 const FALLBACK_PROFILE_IMAGE = "/images/profile/image/default_icons/17.png";
+
+export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
+  maturityRating: "19+",
+  subtitles: {
+    size: "medium",
+    font: "block",
+    shadow: "drop",
+    shadowColor: "black",
+    background: "black",
+    window: "white",
+  },
+  playback: {
+    autoplayPreview: true,
+  },
+  hiddenWatchingVideos: [],
+};
+
+const normalizeMaturityRating = (rating?: string | null): ProfileSettings["maturityRating"] => {
+  if (rating === "전체관람가" || rating === "12+" || rating === "15+" || rating === "19+") {
+    return rating;
+  }
+  return rating === "7+" ? "12+" : DEFAULT_PROFILE_SETTINGS.maturityRating;
+};
+
+export const normalizeProfileSettings = (
+  settings?: Partial<ProfileSettings> | null,
+): ProfileSettings => ({
+  maturityRating: normalizeMaturityRating(settings?.maturityRating),
+  subtitles: {
+    ...DEFAULT_PROFILE_SETTINGS.subtitles,
+    ...(settings?.subtitles ?? {}),
+  },
+  playback: {
+    ...DEFAULT_PROFILE_SETTINGS.playback,
+    ...(settings?.playback ?? {}),
+  },
+  hiddenWatchingVideos: settings?.hiddenWatchingVideos ?? [],
+});
 
 // 이미지 경로 정규화 함수
 const normalizeProfileImage = (imgUrl: string | null | undefined) => {
@@ -25,6 +69,8 @@ const normalizeProfileImage = (imgUrl: string | null | undefined) => {
 const normalizeProfile = (profile: any): any => ({
   ...profile,
   imgUrl: normalizeProfileImage(profile.imgUrl),
+  viewAge: profile.viewAge ?? "19",
+  settings: normalizeProfileSettings(profile.settings),
 });
 
 export const useAuthStore = create<AuthState>()(
