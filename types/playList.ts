@@ -8,6 +8,8 @@ export interface PlayListItem{
     backdrop_path?: string;
     mediaType: "movie" | "tv";
     playTime: string;
+    progress?: number; // 0~100
+    episodeProgress?: Record<number, number>; // episodeId → 0~100
 }
 
 export interface PlayListState{
@@ -18,7 +20,9 @@ export interface PlayListState{
     onLoadPlayList: ()=>Promise<void>,
     onAddMyList: (item: Movie | TV)=>Promise<boolean>,
     onRemoveMyList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
-    onLoadMyList: ()=>Promise<void>
+    onLoadMyList: ()=>Promise<void>,
+    onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
+    onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number)=>void,
 }
 
 // 플리 타입

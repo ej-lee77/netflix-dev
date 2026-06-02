@@ -41,9 +41,13 @@ const getKeyFromParts = (id: number, mediaType: MediaType) => (
 );
 
 const putLatestFirst = (items: PlayListItem[], newItem: PlayListItem) => {
+    const existing = items.find((item) => getItemKey(item) === getItemKey(newItem));
     const filtered = items.filter((item) => getItemKey(item) !== getItemKey(newItem));
+    const merged = existing
+        ? { ...newItem, progress: existing.progress, episodeProgress: existing.episodeProgress }
+        : newItem;
 
-    return [newItem, ...filtered].slice(0, MAX_LIST_COUNT);
+    return [merged, ...filtered].slice(0, MAX_LIST_COUNT);
 };
 
 const removeItem = (items: PlayListItem[], id: number, mediaType: MediaType) => {
@@ -241,5 +245,25 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             console.log("Failed to load playlist videos", err);
             set({ myList: loadLocalList(LOCAL_MY_LIST_KEY) });
         }
-    }
+    },
+    onUpdateProgress: (id, mediaType, progress) => {
+        const current = get().playList;
+        const updated = current.map((item) =>
+            item.id === id && item.mediaType === mediaType
+                ? { ...item, progress }
+                : item
+        );
+        saveLocalList(LOCAL_PLAYLIST_KEY, updated);
+        set({ playList: updated });
+    },
+    onUpdateEpisodeProgress: (id, mediaType, episodeId, progress) => {
+        const current = get().playList;
+        const updated = current.map((item) =>
+            item.id === id && item.mediaType === mediaType
+                ? { ...item, episodeProgress: { ...(item.episodeProgress ?? {}), [episodeId]: progress } }
+                : item
+        );
+        saveLocalList(LOCAL_PLAYLIST_KEY, updated);
+        set({ playList: updated });
+    },
 }));
