@@ -2,7 +2,7 @@ import type { Movie, TV } from "./movie";
 
 export interface PlayListItem{
     id: number;
-    title: string;
+    title?: string;
     // name?: string;
     poster_path: string;
     backdrop_path?: string;

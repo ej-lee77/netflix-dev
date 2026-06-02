@@ -2,7 +2,8 @@ import { create } from "zustand";
 import type { Movie, TV } from "@/types/movie";
 import type { PlayListItem, PlayListState } from "@/types/playList";
 import { auth, db } from "../firebase/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { useAuthStore } from "./useAuthStore";
 
 const LOCAL_PLAYLIST_KEY = "netflix-play-list";
 const LOCAL_MY_LIST_KEY = "netflix-my-list";
@@ -191,45 +192,60 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
         }
     },
     onAddMyList: async (item) => {
-        const listItem = makePlayListItem(item);
-        const currentMyList = get().myList.length ? get().myList : loadLocalList(LOCAL_MY_LIST_KEY);
-        const newMyList = putLatestFirst(currentMyList, listItem);
-
-        saveLocalList(LOCAL_MY_LIST_KEY, newMyList);
-        set({ myList: newMyList });
-
         try {
-            return await syncAddUserMovieId("playlistVideos", getItemKey(listItem));
+            const user = useAuthStore.getState().user;
+            console.log("현재 스토어의 유저 정보:", user);
+            // 1. 유저 정보 확인 (zustand 스토어에서 직접 가져오기)
+            const userId = useAuthStore.getState().user?.uId;
+            
+            // 로그인 상태 확인
+            if (!userId) {
+                console.error("로그인이 필요합니다.");
+                return false;
+            }
+
+            // 2. 파이어스토어 데이터 업데이트
+            const userDocRef = doc(db, "users", userId);
+            
+            // ListItem 키 추출 (함수 호출)
+            const itemKey = getItemKey(makePlayListItem(item));
+
+            await updateDoc(userDocRef, {
+                "movies.playlistVideos": arrayUnion(itemKey)
+            });
+
+            console.log("파이어베이스 동기화 성공");
+            return true;
+
         } catch (err) {
-            console.log("Failed to sync playlist videos", err);
+            console.error("Failed to sync playlist videos to Firestore", err);
             return false;
         }
     },
     onRemoveMyList: async (id, mediaType) => {
+        // 1. 로컬 상태 업데이트
         const currentMyList = get().myList.length ? get().myList : loadLocalList(LOCAL_MY_LIST_KEY);
         const filteredMyList = removeItem(currentMyList, id, mediaType);
 
         saveLocalList(LOCAL_MY_LIST_KEY, filteredMyList);
         set({ myList: filteredMyList });
 
+        // 2. 파이어스토어 동기화 (arrayRemove 사용)
         try {
-            const user = auth.currentUser;
-            if (!user) return true;
+            const userId = useAuthStore.getState().user?.userId;
+            if (!userId) return true; // 로그인 안 되어 있으면 로컬 삭제만 진행
 
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (!userDoc.exists()) return false;
+            const userDocRef = doc(db, "users", userId);
 
-            const prevKeys = getUserMovieIds(userDoc.data(), "playlistVideos");
-            const nextKeys = removeKey(prevKeys, id, mediaType);
-
+            // arrayRemove는 배열 내 특정 값(ID)만 찾아서 제거합니다.
+            // getItemKey가 생성하는 형식(예: "movie-123")과 Firestore에 저장된 값이 일치해야 합니다.
             await updateDoc(userDocRef, {
-                [getUserMoviePath("playlistVideos")]: nextKeys
+                "movies.playlistVideos": arrayRemove(getKeyFromParts(id, mediaType))
             });
 
             return true;
         } catch (err) {
-            console.log("Failed to remove playlist video", err);
+            console.error("Failed to remove playlist video from Firestore", err);
             return false;
         }
     },
