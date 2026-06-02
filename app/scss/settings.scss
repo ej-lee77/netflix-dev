@@ -585,7 +585,7 @@
   }
 }
 
-.acset-profile-modal-actions {
+.acset-profile-modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -608,6 +608,10 @@
     &.is-primary {
       border-color: g.$main-color;
       background: g.$main-color;
+
+      &:hover {
+        background: #f40612;
+      }
     }
   }
 }

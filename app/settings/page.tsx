@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { deleteUser } from "firebase/auth";
@@ -24,14 +24,15 @@ const AVATAR_OPTIONS = [
   "/images/profile/image/default_icons/22.png",
 ];
 
-const iconPaths = (folder: string, count: number) =>
+const iconPaths = (folder: string, count: number, extension = "png") =>
   Array.from(
     { length: count },
-    (_, index) => `/images/profile/image/${folder}/${index + 1}.png`
+    (_, index) => `/images/profile/image/${folder}/${index + 1}.${extension}`
   );
 
 const PROFILE_ICON_SECTIONS = [
   { title: "대표 아이콘", icons: iconPaths("default_icons", 23) },
+  { title: "데몬과 헌터스", icons: iconPaths("demons_and_hunters", 6, "jpg") },
   { title: "앨리스 인 보더랜드", icons: iconPaths("alice_in_borderland", 12) },
   { title: "아케인", icons: iconPaths("arcane", 12) },
   { title: "뷰티 인 블랙", icons: iconPaths("beauty_in_black", 12) },
@@ -62,29 +63,17 @@ const PROFILE_ICON_SECTIONS = [
   { title: "WWE RAW", icons: iconPaths("wwe_raw", 8) },
 ];
 
-type TabKey = "account" | "membership" | "profile" | "app";
+type TabKey = "account" | "membership" | "profile";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "account", label: "계정 정보" },
   { key: "membership", label: "멤버십 / 결제" },
   { key: "profile", label: "프로필 관리" },
-  { key: "app", label: "앱 설정" },
 ];
 
 // ==========================================
 // Sub-components
 // ==========================================
-function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      className={`acset-toggle${on ? " on" : ""}`}
-      onClick={onChange}
-      aria-pressed={on}
-    />
-  );
-}
-
 function Row({
   label,
   desc,
@@ -172,8 +161,7 @@ function SettingsContent() {
   const [draftProfileName, setDraftProfileName] = useState("새 프로필");
   const [draftProfileAvatar, setDraftProfileAvatar] = useState(AVATAR_OPTIONS[0]);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
-
+  
   const activeTab = TABS.find((tab) => tab.key === active);
 
   const openProfileAdd = () => {
@@ -191,6 +179,17 @@ function SettingsContent() {
     setDraftProfileAvatar(AVATAR_OPTIONS[0]);
     setIsAvatarPickerOpen(false);
   };
+
+  useEffect(() => {
+    if (!isProfileAddOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isProfileAddOpen]);
 
   const handleAddProfile = () => {
     if (profileCount >= MAX_PROFILES) return;
@@ -354,10 +353,12 @@ function SettingsContent() {
                     <div className="acset-profile-avatar">
                       <img
                         src={profile.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                        alt={profile.name ?? "프로필"}
+                        alt={profile.nickname ?? profile.name ?? "프로필"}
                       />
                     </div>
-                    <span className="acset-profile-name">{profile.name}</span>
+                    <span className="acset-profile-name">
+                      {profile.nickname ?? profile.name ?? "프로필"}
+                    </span>
                   </Link>
                 ))}
                 {profileCount < MAX_PROFILES && (
@@ -374,23 +375,6 @@ function SettingsContent() {
                 )}
               </div>
             )}
-
-            {active === "app" && (
-              <>
-                <Row label="언어">
-                  <select className="acset-select" defaultValue="ko">
-                    <option value="ko">한국어</option>
-                    <option value="en">English</option>
-                  </select>
-                </Row>
-                <Row label="다크 모드">
-                  <Toggle
-                    on={darkMode}
-                    onChange={() => setDarkMode((value) => !value)}
-                  />
-                </Row>
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -401,8 +385,12 @@ function SettingsContent() {
           role="dialog"
           aria-modal="true"
           aria-label="프로필 추가"
+          onClick={closeProfileAdd}
         >
-          <div className="acset-profile-modal">
+          <div
+            className="acset-profile-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="acset-profile-modal-head">
               <h2>프로필 추가</h2>
               <button type="button" onClick={closeProfileAdd} aria-label="닫기">
@@ -487,7 +475,7 @@ function SettingsContent() {
               </div>
             )}
 
-            <div className="acset-profile-modal-actions">
+            <div className="acset-profile-modal-footer">
               <button type="button" onClick={closeProfileAdd}>
                 취소
               </button>
