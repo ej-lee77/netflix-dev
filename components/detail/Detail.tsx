@@ -333,7 +333,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const relatedItems = recommended
     .filter((item: RecommendedItem) => item.id !== mediaId)
     .slice(0, 6);
-  const isMyListAdded = myList.some((item) => item.id === mediaId && item.mediaType === type);
+  const itemKey = `${type}-${mediaId}`; // 예: "movie-123"
+  const isMyListAdded = myList.includes(itemKey);
   const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1,
     author: ["민지", "준호", "서연", "도윤", "하린", "지우"][index % 6],
@@ -407,8 +408,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
     setIsAddingWish(true);
     try {
-      if (isWished(mediaItem.id)) {
-        await onRemoveWish(mediaItem.id);
+      if (isWished(itemKey)) {
+        await onRemoveWish(mediaItem);
       } else {
         await onAddWish(mediaItem);
       }
@@ -1436,12 +1437,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 className="detail-circle-hover"
                 onClick={handleWish}
                 disabled={isAddingWish}
-                aria-pressed={mediaItem ? wishlistIds.includes(String(mediaItem.id)) : false}
+                aria-pressed={mediaItem ? wishlistIds.includes(String(itemKey)) : false}
                 aria-label="위시리스트에 추가"
                 style={{
-                  background: mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "#e50914" : "rgba(229,9,20,0.1)",
+                  background: mediaItem && wishlistIds.includes(String(itemKey)) ? "#e50914" : "rgba(229,9,20,0.1)",
                   border: "1px solid #e50914",
-                  color: mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "#fff" : "#e50914",
+                  color: mediaItem && wishlistIds.includes(String(itemKey)) ? "#fff" : "#e50914",
                   width: 40,
                   height: 40,
                   borderRadius: "50%",

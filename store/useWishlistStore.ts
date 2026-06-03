@@ -3,13 +3,14 @@ import type { WishItem, WishlistState } from "@/types/wishlist";
 import { auth, db } from "../firebase/firebase";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useAuthStore } from "./useAuthStore";
+import { getItemKey, getMediaType } from "./usePlayListStore";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
 // 현재 로그인 uid
 function getUid(): string | null {
   if (auth.currentUser?.uid) return auth.currentUser.uid;
-  return useAuthStore.getState().user?.uid ?? null;
+  return useAuthStore.getState().user?.userId ?? null;
 }
 
 // 장르 분류 (16=애니메이션)
@@ -22,52 +23,38 @@ function resolveGenre(
 }
 
 // ID로 TMDB 상세 조회 → movie 먼저, 실패하면 tv 시도
-async function fetchWishItemById(id: string): Promise<WishItem | null> {
-  // 1) movie 시도
-  try {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=ko-KR`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const genreIds: number[] = data.genres?.map((g: { id: number }) => g.id) ?? [];
-      return {
-        id: Number(id),
-        title: data.title ?? data.original_title ?? "",
-        poster_path: data.poster_path ?? "",
-        mediaType: "movie",
-        genre: resolveGenre(genreIds, "movie"),
-        vote_average: data.vote_average ?? 0,
-        addedAt: "",
-      };
-    }
-  } catch {
-    // 넘어가서 tv 시도
+export async function fetchWishItemById(itemKey: string): Promise<WishItem | null> {
+  // 1. 내부에서 바로 분리
+  const [mediaType, id] = itemKey.split('-');
+  
+  if (!mediaType || !id) {
+    console.error(`[키 형식 오류] 잘못된 키 값입니다: ${itemKey}`);
+    return null;
   }
 
-  // 2) tv 시도
-  try {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=ko-KR`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const genreIds: number[] = data.genres?.map((g: { id: number }) => g.id) ?? [];
-      return {
-        id: Number(id),
-        title: data.name ?? data.original_name ?? "",
-        poster_path: data.poster_path ?? "",
-        mediaType: "tv",
-        genre: resolveGenre(genreIds, "tv"),
-        vote_average: data.vote_average ?? 0,
-        addedAt: "",
-      };
-    }
-  } catch {
-    // 둘 다 실패
-  }
+  // 2. 변형된 값을 사용하여 API 호출
+  const url = `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${TMDB_KEY}&language=ko-KR`;
 
-  return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const genreIds: number[] = data.genres?.map((g: { id: number }) => g.id) ?? [];
+    
+    return {
+      id: Number(id),
+      title: mediaType === "movie" ? (data.title ?? data.original_title ?? "") : (data.name ?? data.original_name ?? ""),
+      poster_path: data.poster_path ?? "",
+      mediaType: mediaType as "movie" | "tv", // 강제 타입 캐스팅
+      genre: resolveGenre(genreIds, mediaType as "movie" | "tv"),
+      vote_average: data.vote_average ?? 0,
+      addedAt: "",
+    };
+  } catch (err) {
+    console.error(`[TMDB 조회 실패] ${itemKey}:`, err);
+    return null;
+  }
 }
 
 export const useWishlistStore = create<WishlistState>((set, get) => ({
@@ -76,122 +63,177 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   // ── 찜 추가 ──────────────────────────────────────────────────────────────
   onAddWish: async (item) => {
-    const uid = getUid();
-    const idStr = String(item.id);
-    console.log("[찜 시도] uid =", uid, "| id =", idStr);
-    if (!uid) {
-      console.warn("[찜] 로그인이 필요합니다 (uid 없음)");
-      return;
-    }
+      try {
+          const authState = useAuthStore.getState();
+          const userId = authState.user?.userId;
+          const currentProfile = authState.currentProfile;
 
-    try {
-      const userDocRef = doc(db, "users", uid);
-      const userDoc = await getDoc(userDocRef);
+          if (!userId || !currentProfile) return;
 
-      // 기존 movies.wishlist (ID 배열) 가져오기
-      const prevIds: string[] = userDoc.exists()
-        ? userDoc.data()?.movies?.wishlist ?? []
-        : [];
+          const userDocRef = doc(db, "users", userId);
+          const userDocSnap = await getDoc(userDocRef);
 
-      // 이미 있으면 무시
-      if (prevIds.includes(idStr)) return;
+          if (!userDocSnap.exists()) return;
 
-      // 맨 앞에 추가 (최신순)
-      const newIds = [idStr, ...prevIds];
+          const userData = userDocSnap.data();
+          const profiles = userData.profile || [];
 
-      // Firestore에 ID 배열만 저장 (movies.wishlist)
-      if (userDoc.exists()) {
-        await updateDoc(userDocRef, { "movies.wishlist": newIds });
-      } else {
-        await setDoc(userDocRef, { movies: { wishlist: newIds } }, { merge: true });
+          // 1. 현재 프로필의 인덱스 찾기
+          const profileIndex = profiles.findIndex((p: any) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          // 2. 현재 프로필 복사본 생성
+          const updatedProfiles = [...profiles];
+          const targetProfile = { ...updatedProfiles[profileIndex] };
+
+          // 3. 유틸리티 함수로 키 생성 (예: "movie-12345")
+          const mediaType = getMediaType(item as any);
+          const itemKey = getItemKey({ id: item.id, mediaType });
+
+          // 기존 wishlist 배열 가져오기 (없으면 빈 배열)
+          const prevWishlist = targetProfile.movies?.wishlist || [];
+
+          // 이미 있으면 중복 추가 방지
+          if (prevWishlist.includes(itemKey)) return;
+
+          // 4. 프로필 내부의 wishlist 업데이트 (새로운 키 사용)
+          targetProfile.movies = {
+              ...targetProfile.movies,
+              wishlist: [itemKey, ...prevWishlist]
+          };
+
+          updatedProfiles[profileIndex] = targetProfile;
+
+          // 5. 전체 프로필 배열을 Firestore에 반영
+          await updateDoc(userDocRef, {
+              profile: updatedProfiles
+          });
+
+          // 6. 상태 관리(Zustand) 업데이트
+          const newWishlistIds = targetProfile.movies.wishlist;
+          
+          // 화면용 객체 생성 로직
+          const genreIds: number[] = (item as any).genre_ids ?? (item as any).genres?.map((g: { id: number }) => g.id) ?? [];
+          
+          const newItem: WishItem = {
+              id: item.id,
+              title: "title" in item ? item.title : (item as any).name,
+              poster_path: item.poster_path ?? "",
+              mediaType,
+              genre: resolveGenre(genreIds, mediaType),
+              vote_average: item.vote_average ?? 0,
+              addedAt: "",
+          };
+
+          set({
+              wishlistIds: newWishlistIds,
+              wishlist: [newItem, ...get().wishlist.filter((w) => w.id !== item.id)],
+          });
+
+          console.log("프로필 내 위시리스트 성공적으로 업데이트 (Key:", itemKey, ")");
+      } catch (err) {
+          console.error("위시리스트 업데이트 실패:", err);
       }
-
-      // 화면용 객체도 즉시 갱신 (방금 추가한 작품을 맨 앞에)
-      const mediaType: "movie" | "tv" = "title" in item ? "movie" : "tv";
-      const genreIds: number[] =
-        (item as any).genre_ids ??
-        (item as any).genres?.map((g: { id: number }) => g.id) ??
-        [];
-      const newItem: WishItem = {
-        id: item.id,
-        title: "title" in item ? item.title : (item as any).name,
-        poster_path: item.poster_path ?? "",
-        mediaType,
-        genre: resolveGenre(genreIds, mediaType),
-        vote_average: item.vote_average ?? 0,
-        addedAt: "",
-      };
-
-      set({
-        wishlistIds: newIds,
-        wishlist: [newItem, ...get().wishlist.filter((w) => w.id !== item.id)],
-      });
-      console.log("[찜 추가 성공] 현재 찜 개수:", newIds.length);
-    } catch (err) {
-      console.error("[찜 추가 실패] Firestore 쓰기 오류:", err);
-    }
   },
-
   // ── 찜 해제 ──────────────────────────────────────────────────────────────
-  onRemoveWish: async (id) => {
-    const uid = getUid();
-    if (!uid) return;
-    const idStr = String(id);
+  onRemoveWish: async (item) => {
+      try {
+          const authState = useAuthStore.getState();
+          const userId = authState.user?.userId;
+          const currentProfile = authState.currentProfile;
 
-    try {
-      const userDocRef = doc(db, "users", uid);
-      const userDoc = await getDoc(userDocRef);
+          if (!userId || !currentProfile) return;
 
-      if (userDoc.exists()) {
-        const prevIds: string[] = userDoc.data()?.movies?.wishlist ?? [];
-        const newIds = prevIds.filter((x) => x !== idStr);
+          const userDocRef = doc(db, "users", userId);
+          const userDocSnap = await getDoc(userDocRef);
 
-        await updateDoc(userDocRef, { "movies.wishlist": newIds });
+          if (!userDocSnap.exists()) return;
 
-        set({
-          wishlistIds: newIds,
-          wishlist: get().wishlist.filter((w) => w.id !== id),
-        });
+          const userData = userDocSnap.data();
+          const profiles = userData.profile || [];
+
+          // 1. 현재 프로필 인덱스 찾기
+          const profileIndex = profiles.findIndex((p: any) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          // 2. 유틸리티 함수로 제거할 키 생성 (예: "movie-12345")
+          const mediaType = getMediaType(item as any);
+          const itemKey = getItemKey({ id: item.id, mediaType });
+
+          // 3. 프로필 복사 및 삭제 로직
+          const updatedProfiles = [...profiles];
+          const targetProfile = { ...updatedProfiles[profileIndex] };
+          
+          const prevWishlist = targetProfile.movies?.wishlist || [];
+          const newWishlist = prevWishlist.filter((key: string) => key !== itemKey);
+
+          targetProfile.movies = {
+              ...targetProfile.movies,
+              wishlist: newWishlist
+          };
+
+          updatedProfiles[profileIndex] = targetProfile;
+
+          // 4. Firestore 업데이트
+          await updateDoc(userDocRef, {
+              profile: updatedProfiles
+          });
+
+          // 5. 상태 업데이트
+          set({
+              wishlistIds: newWishlist,
+              wishlist: get().wishlist.filter((w) => w.id !== item.id),
+          });
+
+          console.log("프로필 내 위시리스트 성공적으로 제거 (Key:", itemKey, ")");
+      } catch (err) {
+          console.error("위시리스트 제거 실패:", err);
       }
-    } catch (err) {
-      console.error("[찜 해제 실패]:", err);
-    }
   },
-
   // ── 찜 목록 불러오기 (ID → TMDB API로 정보 채움) ─────────────────────────
   onLoadWishlist: async () => {
-    const uid = getUid();
-    if (!uid) {
-      set({ wishlist: [], wishlistIds: [] });
-      return;
-    }
+      const authState = useAuthStore.getState();
+      const userId = authState.user?.userId;
+      const currentProfile = authState.currentProfile;
 
-    try {
-      const userDocRef = doc(db, "users", uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        set({ wishlist: [], wishlistIds: [] });
-        return;
+      if (!userId || !currentProfile) {
+          set({ wishlist: [], wishlistIds: [] });
+          return;
       }
 
-      const ids: string[] = userDoc.data()?.movies?.wishlist ?? [];
-      set({ wishlistIds: ids });
+      try {
+          const userDocRef = doc(db, "users", userId);
+          const userDocSnap = await getDoc(userDocRef);
 
-      if (ids.length === 0) {
-        set({ wishlist: [] });
-        return;
+          if (!userDocSnap.exists()) {
+              set({ wishlist: [], wishlistIds: [] });
+              return;
+          }
+
+          const userData = userDocSnap.data();
+          const profiles = userData.profile || [];
+
+          // 1. 현재 프로필 정보 찾기
+          const targetProfile = profiles.find((p: any) => p.id === currentProfile.id);
+          
+          // 2. 프로필 내부의 wishlist ID 가져오기
+          const ids: string[] = targetProfile?.movies?.wishlist ?? [];
+          set({ wishlistIds: ids });
+
+          if (ids.length === 0) {
+              set({ wishlist: [] });
+              return;
+          }
+
+          // 3. TMDB 조회 (기존 로직 유지)
+          const results = await Promise.all(ids.map((id) => fetchWishItemById(id)));
+          const items = results.filter((r): r is WishItem => r !== null);
+
+          set({ wishlist: items });
+          console.log("프로필 내 위시리스트 로드 성공");
+      } catch (err) {
+          console.error("[찜 목록 불러오기 실패]:", err);
       }
-
-      // 각 ID를 TMDB에서 조회 (movie→tv 순). 병렬 처리.
-      const results = await Promise.all(ids.map((id) => fetchWishItemById(id)));
-      // null(조회 실패) 제외, 원래 순서 유지
-      const items = results.filter((r): r is WishItem => r !== null);
-
-      set({ wishlist: items });
-    } catch (err) {
-      console.error("[찜 목록 불러오기 실패]:", err);
-    }
   },
 
   // ── 찜 여부 확인 (ID 배열 기준) ──────────────────────────────────────────

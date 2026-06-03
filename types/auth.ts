@@ -85,6 +85,7 @@ export interface PlayList {
 
 export interface MovieList {
   watchingVideos: string[];
+  histVideos?: string[];
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
@@ -118,7 +119,6 @@ export interface PayInfo {
 }
 
 export interface UserDocument {
-  uid?: string;
   userId: string; // 문서 ID로 사용됨
 
   // 기본정보
