@@ -85,6 +85,7 @@ export interface PlayList {
 
 export interface MovieList {
   watchingVideos: string[];
+  histVideos?: string[];
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;

@@ -14,7 +14,7 @@ export interface WishlistState {
   wishlist: WishItem[];     // 화면 표시용 (TMDB API로 채운 객체 배열)
   wishlistIds: string[];    // Firestore movies.wishlist 에 저장되는 ID 배열 (팀 표준)
   onAddWish: (item: Movie | TV) => Promise<void>;
-  onRemoveWish: (id: number) => Promise<void>;
+  onRemoveWish: (item: Movie | TV) => Promise<void>;
   onLoadWishlist: () => Promise<void>;
-  isWished: (id: number) => boolean;
+  isWished: (id: string) => boolean;
 }

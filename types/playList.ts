@@ -2,18 +2,19 @@ import type { Movie, TV } from "./movie";
 
 export interface PlayListItem{
     id: number;
-    title?: string;
+    title: string;
     // name?: string;
-    poster_path: string;
-    backdrop_path?: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
     mediaType: "movie" | "tv";
     playTime: string;
-    progress?: number; // 0~100
-    episodeProgress?: Record<number, number>; // episodeId → 0~100
+    progress: number; // 0~100
+    episodeProgress: Record<number, number>; // episodeId → 0~100
 }
 
 export interface PlayListState{
     playList: PlayListItem[],
+    playHist: string[],
     myList: string[],
     customPlaylists: PlaylistDocument[],
     onAddPlayList: (item: Movie | TV)=>Promise<boolean>,

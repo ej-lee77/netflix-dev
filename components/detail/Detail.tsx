@@ -408,8 +408,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
     setIsAddingWish(true);
     try {
-      if (isWished(mediaItem.id)) {
-        await onRemoveWish(mediaItem.id);
+      if (isWished(itemKey)) {
+        await onRemoveWish(mediaItem);
       } else {
         await onAddWish(mediaItem);
       }
@@ -1437,12 +1437,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 className="detail-circle-hover"
                 onClick={handleWish}
                 disabled={isAddingWish}
-                aria-pressed={mediaItem ? wishlistIds.includes(String(mediaItem.id)) : false}
+                aria-pressed={mediaItem ? wishlistIds.includes(String(itemKey)) : false}
                 aria-label="위시리스트에 추가"
                 style={{
-                  background: mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "#e50914" : "rgba(229,9,20,0.1)",
+                  background: mediaItem && wishlistIds.includes(String(itemKey)) ? "#e50914" : "rgba(229,9,20,0.1)",
                   border: "1px solid #e50914",
-                  color: mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "#fff" : "#e50914",
+                  color: mediaItem && wishlistIds.includes(String(itemKey)) ? "#fff" : "#e50914",
                   width: 40,
                   height: 40,
                   borderRadius: "50%",
