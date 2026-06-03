@@ -2,7 +2,9 @@ import { create } from "zustand";
 import type { Movie, TV } from "@/types/movie";
 import type { PlayListItem, PlayListState } from "@/types/playList";
 import { auth, db } from "../firebase/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { useAuthStore } from "./useAuthStore";
+import { PlaylistDocument } from "@/types/playList";
 
 const LOCAL_PLAYLIST_KEY = "netflix-play-list";
 const LOCAL_MY_LIST_KEY = "netflix-my-list";
@@ -23,12 +25,12 @@ const getMediaType = (item: Movie | TV): MediaType => (
     "title" in item ? "movie" : "tv"
 );
 
-const makePlayListItem = (item: Movie | TV): PlayListItem => ({
+const makePlayListItem = (item: Movie | TV, mediaType = getMediaType(item)): PlayListItem => ({
     id: item.id,
     title: "title" in item ? item.title : item.name,
     poster_path: item.poster_path,
     backdrop_path: item.backdrop_path,
-    mediaType: getMediaType(item),
+    mediaType,
     playTime: new Date().toISOString()
 });
 
@@ -41,9 +43,13 @@ const getKeyFromParts = (id: number, mediaType: MediaType) => (
 );
 
 const putLatestFirst = (items: PlayListItem[], newItem: PlayListItem) => {
+    const existing = items.find((item) => getItemKey(item) === getItemKey(newItem));
     const filtered = items.filter((item) => getItemKey(item) !== getItemKey(newItem));
+    const merged = existing
+        ? { ...newItem, progress: existing.progress, episodeProgress: existing.episodeProgress }
+        : newItem;
 
-    return [newItem, ...filtered].slice(0, MAX_LIST_COUNT);
+    return [merged, ...filtered].slice(0, MAX_LIST_COUNT);
 };
 
 const removeItem = (items: PlayListItem[], id: number, mediaType: MediaType) => {
@@ -138,6 +144,7 @@ const loadHydratedList = async (fieldName: UserListField, localKey: string) => {
 export const usePlayListStore = create<PlayListState>((set, get) => ({
     playList: [],
     myList: [],
+    customPlaylists: [],
     onAddPlayList: async (item) => {
         const playItem = makePlayListItem(item);
         const currentPlayList = get().playList.length ? get().playList : loadLocalList(LOCAL_PLAYLIST_KEY);
@@ -190,56 +197,214 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             set({ playList: loadLocalList(LOCAL_PLAYLIST_KEY) });
         }
     },
-    onAddMyList: async (item) => {
-        const listItem = makePlayListItem(item);
-        const currentMyList = get().myList.length ? get().myList : loadLocalList(LOCAL_MY_LIST_KEY);
-        const newMyList = putLatestFirst(currentMyList, listItem);
-
-        saveLocalList(LOCAL_MY_LIST_KEY, newMyList);
-        set({ myList: newMyList });
+    fetchMyCustomPlaylists: async () => {
+        const { user } = useAuthStore.getState();
+        if (!user?.userId) return;
 
         try {
-            return await syncAddUserMovieId("playlistVideos", getItemKey(listItem));
+            const q = query(
+                collection(db, "playlists"), 
+                where("userId", "==", user.userId),
+                where("isDelete", "==", false)
+            );
+            
+            const snapshot = await getDocs(q);
+            const playlists = snapshot.docs.map(doc => ({ 
+                ...doc.data(), 
+                listId: doc.id 
+            })) as PlaylistDocument[];
+            
+            set({ customPlaylists: playlists });
+            
+            // 가져온 모든 플레이리스트의 비디오 아이디들에 대해 
+            // 상세 정보 미리 캐싱하기 (선택 사항)
+            playlists.forEach(list => {
+                list.videoIds.forEach(key => {
+                    const [type, id] = key.split('-');
+                    get().fetchMediaDetail(id, type as "movie" | "tv");
+                });
+            });
+        } catch (error) {
+            console.error("플레이리스트 로드 실패:", error);
+        }
+    },
+    createMyCustomPlaylist: async (data) => {
+        const { user } = useAuthStore.getState();
+        const userId = user?.userId || auth.currentUser?.uid;
+        if (!userId) return;
+
+        try {
+            const newDoc: Omit<PlaylistDocument, 'listId'> = {
+                ...data,
+                userId,
+                likesCount: 0,
+                createdAt: new Date().toISOString(),
+                isDelete: false
+            };
+            
+            const docRef = await addDoc(collection(db, "playlists"), newDoc);
+            
+            set((state) => ({ 
+                customPlaylists: [{ ...newDoc, listId: docRef.id }, ...state.customPlaylists] 
+            }));
+        } catch (error) {
+            console.error("플레이리스트 생성 실패:", error);
+            throw error; // 컴포넌트에서 에러 핸들링을 위해 던져줌
+        }
+    },
+    onAddMyList: async (item, mediaType) => {
+        try {
+            const authState = useAuthStore.getState();
+            const userId = authState.user?.userId || auth.currentUser?.uid;
+            const currentProfile = authState.currentProfile;
+
+            if (!userId || !currentProfile) return false;
+
+            const userDocRef = doc(db, "users", userId);
+            
+            // 1. 현재 파이어스토어의 전체 유저 문서를 가져옵니다.
+            const userDocSnap = await getDoc(userDocRef);
+            if (!userDocSnap.exists()) return false;
+
+            const userData = userDocSnap.data();
+            const profiles = userData.profile || [];
+
+            // 2. 현재 프로필의 인덱스를 찾습니다.
+            const profileIndex = profiles.findIndex((p: any) => p.id === currentProfile.id);
+            if (profileIndex === -1) return false;
+
+            // 3. 기존 프로필 데이터는 그대로 유지하고, movies.playlist.playlistVideos만 업데이트합니다.
+            const itemKey = getItemKey(makePlayListItem(item, mediaType));
+            
+            // 기존 배열에 안전하게 값을 추가
+            const updatedProfiles = [...profiles];
+            const targetProfile = { ...updatedProfiles[profileIndex] }; // 프로필 복사
+            
+            // movies와 playlist 객체가 없을 경우를 대비해 구조 보존
+            targetProfile.movies = {
+                ...targetProfile.movies,
+                playlist: {
+                    ...targetProfile.movies?.playlist,
+                    playlistVideos: [
+                        ...(targetProfile.movies?.playlist?.playlistVideos || []),
+                        itemKey
+                    ]
+                }
+            };
+
+            updatedProfiles[profileIndex] = targetProfile;
+
+            // 4. 전체 프로필 배열을 업데이트
+            await updateDoc(userDocRef, {
+                profile: updatedProfiles
+            });
+
+            set({ myList: targetProfile.movies?.playlist?.playlistVideos });
+
+            console.log("프로필 데이터 보존하며 성공적으로 업데이트");
+            return true;
         } catch (err) {
-            console.log("Failed to sync playlist videos", err);
+            console.error("업데이트 실패:", err);
             return false;
         }
     },
     onRemoveMyList: async (id, mediaType) => {
-        const currentMyList = get().myList.length ? get().myList : loadLocalList(LOCAL_MY_LIST_KEY);
-        const filteredMyList = removeItem(currentMyList, id, mediaType);
-
-        saveLocalList(LOCAL_MY_LIST_KEY, filteredMyList);
-        set({ myList: filteredMyList });
-
         try {
-            const user = auth.currentUser;
-            if (!user) return true;
+            const authState = useAuthStore.getState();
+            const userId = authState.user?.userId || auth.currentUser?.uid;
+            const currentProfile = authState.currentProfile;
 
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (!userDoc.exists()) return false;
+            if (!userId || !currentProfile) return false;
 
-            const prevKeys = getUserMovieIds(userDoc.data(), "playlistVideos");
-            const nextKeys = removeKey(prevKeys, id, mediaType);
+            const userDocRef = doc(db, "users", userId);
+            const itemKey = getKeyFromParts(id, mediaType);
 
+            // 1. 파이어스토어에서 현재 유저 데이터 전체를 가져옵니다. (데이터 보존을 위해 필수)
+            const userDocSnap = await getDoc(userDocRef);
+            if (!userDocSnap.exists()) return false;
+            
+            const userData = userDocSnap.data();
+            const profiles = userData.profile || [];
+
+            // 2. 현재 프로필의 인덱스를 찾습니다.
+            const profileIndex = profiles.findIndex((p: any) => p.id === currentProfile.id);
+            if (profileIndex === -1) return false;
+
+            // 3. 기존 프로필 배열 복사 및 해당 프로필의 playlistVideos만 수정
+            const updatedProfiles = [...profiles];
+            const targetProfile = { ...updatedProfiles[profileIndex] };
+
+            // 기존 배열에서 해당 itemKey만 제거
+            const currentVideos = targetProfile.movies?.playlist?.playlistVideos || [];
+            targetProfile.movies = {
+                ...targetProfile.movies,
+                playlist: {
+                    ...targetProfile.movies?.playlist,
+                    playlistVideos: currentVideos.filter((key: string) => key !== itemKey)
+                }
+            };
+
+            updatedProfiles[profileIndex] = targetProfile;
+
+            // 4. 전체 프로필 배열을 업데이트 (데이터가 사라지지 않도록 전체 배열을 다시 저장)
             await updateDoc(userDocRef, {
-                [getUserMoviePath("playlistVideos")]: nextKeys
+                profile: updatedProfiles
             });
 
+            // 5. 로컬 상태(Zustand) 업데이트 (객체 형태 유지)
+            set((state) => ({
+                myList: state.myList.filter((item) => item !== itemKey)
+            }));
+
+            console.log("기존 프로필 정보 보존하며 삭제 완료");
             return true;
         } catch (err) {
-            console.log("Failed to remove playlist video", err);
+            console.error("삭제 실패:", err);
             return false;
         }
     },
     onLoadMyList: async () => {
         try {
-            const myList = await loadHydratedList("playlistVideos", LOCAL_MY_LIST_KEY);
-            set({ myList });
+            const { user, currentProfile } = useAuthStore.getState();
+            const userId = user?.userId || auth.currentUser?.uid;
+            if (!userId || !currentProfile) {
+                set({ myList: [] }); // 비로그인 시 빈 배열
+                return;
+            }
+
+            const userDocRef = doc(db, "users", userId);
+            const snap = await getDoc(userDocRef);
+            
+            if (snap.exists()) {
+                const userData = snap.data();
+                const profile = userData.profile.find((p: any) => p.id === currentProfile.id);
+                const keys = profile?.movies?.playlist?.playlistVideos || [];
+                
+                set({ myList: keys });
+            }
         } catch (err) {
-            console.log("Failed to load playlist videos", err);
-            set({ myList: loadLocalList(LOCAL_MY_LIST_KEY) });
+            console.error("Load failed:", err);
+            set({ myList: [] }); // 에러 시 초기화
         }
-    }
+    },
+    onUpdateProgress: (id, mediaType, progress) => {
+        const current = get().playList;
+        const updated = current.map((item) =>
+            item.id === id && item.mediaType === mediaType
+                ? { ...item, progress }
+                : item
+        );
+        saveLocalList(LOCAL_PLAYLIST_KEY, updated);
+        set({ playList: updated });
+    },
+    onUpdateEpisodeProgress: (id, mediaType, episodeId, progress) => {
+        const current = get().playList;
+        const updated = current.map((item) =>
+            item.id === id && item.mediaType === mediaType
+                ? { ...item, episodeProgress: { ...(item.episodeProgress ?? {}), [episodeId]: progress } }
+                : item
+        );
+        saveLocalList(LOCAL_PLAYLIST_KEY, updated);
+        set({ playList: updated });
+    },
 }));

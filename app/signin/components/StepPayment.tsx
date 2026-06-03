@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { updatePayment, useSignUpStore } from "@/store/useSignUpStore";
+import type { PayInfo } from "@/types/auth";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,8 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
 
   // ── 결제하기 ────────────────────────────────────────────────────────────────
   const uid = useSignUpStore((s) => s.uid);
+  // 결제수단
+  const setPayInfo = useSignUpStore((s) => s.setPayInfo);
 
   const handlePay = async () => {
     if (activeTab === "card") {
@@ -104,23 +107,64 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
     setIsLoading(true);
 
     try {
-      // 결제 가상 딜레이
       await new Promise((res) => setTimeout(res, 1500));
 
       const currentUser = auth.currentUser;
-
       if (!currentUser) {
         setError("로그인 세션이 만료되었습니다. 다시 로그인 해주세요.");
         return;
       }
 
-      // 💥 BUG FIX: Firebase 인스턴스를 무지성으로 스프레드하지 않고, 
-      // 필요한 핵심 정보만 명확한 리터럴 객체로 조립하여 전달합니다.
+
+
+      // 결제 정보 Firestore 저장 ← 추가
+      if (uid) {
+        const nextDate = (() => {
+          const d = new Date();
+          if (plan.billing === "annual") d.setFullYear(d.getFullYear() + 1);
+          else d.setMonth(d.getMonth() + 1);
+          return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+        })();
+
+        const paymentInfo: PayInfo =
+          activeTab === "card" ? {
+            pay: "card",
+            bank: "",
+            num: cardNumber.replace(/\s/g, "").slice(-4),
+            payDate: `${expiry}-${cvc}`,
+            nextDate,
+          }
+            : activeTab === "quick" ? {
+              pay: selectedQuickPay,
+              bank: "",
+              num: "",
+              payDate: "",
+              nextDate,
+            }
+              : activeTab === "transfer" ? {
+                pay: "transfer",
+                bank: selectedBank,
+                num: "",
+                payDate: "",
+                nextDate,
+              }
+                : {
+                  pay: "phone",
+                  bank: carrier,
+                  num: phoneNumber,
+                  payDate: "",
+                  nextDate,
+                };
+
+        await updatePayment(uid, paymentInfo);
+        setPayInfo(paymentInfo);
+      }
+
       onLogin({
         uid: currentUser.uid,
         email: currentUser.email ?? "",
         displayName: currentUser.displayName ?? "사용자",
-        profile: defaultProfiles, // AuthState 양식에 맞게 프로필 지정
+        profile: defaultProfiles,
       } as any);
 
       onComplete();

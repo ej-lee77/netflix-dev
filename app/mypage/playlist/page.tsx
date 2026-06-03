@@ -6,9 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
-import { useAuthStore } from "@/store/useAuthStore";
+import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
+import { useMovieStore } from "@/store/useMovieStore";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv";
@@ -101,10 +102,13 @@ function ActivityContent() {
     onLoadMyList,
     onRemovePlayList,
     onRemoveMyList,
+    createMyCustomPlaylist
   } = usePlayListStore();
   const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
-  const { user } = useAuthStore();
+  const { user, currentProfile, onUpdateProfile } = useAuthStore();
+  const { fetchMediaDetail } = useMovieStore();
   const searchParams = useSearchParams();
+  const hideMode = searchParams.get("mode") === "hide";
 
   const [activeTab, setActiveTab] = useState<ActivityTab>("watching");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -126,6 +130,7 @@ function ActivityContent() {
   const [modifyMoodTags, setModifyMoodTags] = useState<string[]>([]);
   const [modifyIsPublic, setModifyIsPublic] = useState(false);
   const [modifyItemKeys, setModifyItemKeys] = useState<string[]>([]);
+  const [listItems, setListItems] = useState<any[]>([]);
 
   // 헤더 메뉴에서 ?tab=wishlist / ?tab=playlists 로 들어오면 해당 탭 열기
   useEffect(() => {
@@ -142,9 +147,7 @@ function ActivityContent() {
   useEffect(() => {
     onLoadPlayList();
     onLoadMyList();
-
   }, [onLoadPlayList, onLoadMyList]);
-
   useEffect(() => {
     if (!modifyPlaylistId && !createPlaylistOpen) return;
 
@@ -178,12 +181,39 @@ function ActivityContent() {
     load();
   }, [onLoadWishlist, user]);
 
+  const hiddenWatchingVideos = currentProfile?.settings?.hiddenWatchingVideos ?? [];
+  useEffect(() => {
+    const loadListDetails = async () => {
+      
+      // myList의 각 키("movie-123")를 [type, id]로 분리하여 fetch 호출
+      const promises = myList.map(async (key) => {
+        const [mediaType, id] = key.split('-');
+        // 이제 fetchMediaDetail이 데이터를 리턴하므로 바로 사용 가능
+        return await fetchMediaDetail(id, mediaType as 'movie' | 'tv');
+      });
+
+      // 모든 데이터를 병렬로 가져옴
+      const details = await Promise.all(promises);
+      
+      // 결과값 중 null/undefined 제외하고 저장
+      setListItems(details.filter(Boolean));
+    };
+
+    if (myList.length > 0) {
+      loadListDetails();
+    } else {
+      setListItems([]);
+    }
+  }, [myList, fetchMediaDetail]);
+
   const watchItems = playList;
-  const listItems = myList;
   const watchingItems = watchItems.slice(0, 6);
-  const filteredHistory = filter === "all" ? watchItems : watchItems.filter((item) => item.mediaType === filter);
-  const movieCount = watchItems.filter((item) => item.mediaType === "movie").length;
-  const tvCount = watchItems.filter((item) => item.mediaType === "tv").length;
+  const visibleHistoryItems = hideMode
+    ? watchItems
+    : watchItems.filter((item) => !hiddenWatchingVideos.includes(getItemKey(item)));
+  const filteredHistory = filter === "all" ? visibleHistoryItems : visibleHistoryItems.filter((item) => item.mediaType === filter);
+  const movieCount = visibleHistoryItems.filter((item) => item.mediaType === "movie").length;
+  const tvCount = visibleHistoryItems.filter((item) => item.mediaType === "tv").length;
 
   // ── 찜하기 필터/정렬 ──────────────────────────────────────────────────
   const wishCount = (key: WishFilterType) => {
@@ -236,33 +266,56 @@ function ActivityContent() {
     ));
   };
 
-  const handleCreatePlaylist = () => {
+  const handleCreatePlaylist = async () => {
     const title = playlistTitle.trim();
     const description = playlistDescription.trim();
-    if (!title || selectedKeys.length === 0) return;
+    
+    // 입력값 유효성 검사
+    if (!title || selectedKeys.length === 0) {
+        alert("제목과 최소 하나 이상의 영상을 선택해주세요.");
+        return;
+    }
 
-    const nextPlaylists = [
-      {
-        id: `${Date.now()}`,
-        title,
-        description,
-        moodTags: selectedMoodTags,
-        isPublic: playlistIsPublic,
-        itemKeys: selectedKeys,
-        createdAt: new Date().toISOString(),
-      },
-      ...customPlaylists,
-    ];
+    try {
+        // 스토어의 addPlaylist 메서드 호출 (파이어베이스 저장 + 상태 갱신)
+        await createMyCustomPlaylist({
+            name: title,
+            content: description,
+            videoIds: selectedKeys,
+            isShare: playlistIsPublic,
+            tags: selectedMoodTags,
+        });
 
-    setCustomPlaylists(nextPlaylists);
-    saveCustomPlaylists(nextPlaylists);
-    setPlaylistTitle("");
-    setPlaylistDescription("");
-    setSelectedMoodTags([]);
-    setPlaylistIsPublic(false);
-    setSelectedKeys([]);
-    setSelectionPage(1);
-    setCreatePlaylistOpen(false);
+        const nextPlaylists = [
+          {
+            id: `${Date.now()}`,
+            title,
+            description,
+            moodTags: selectedMoodTags,
+            isPublic: playlistIsPublic,
+            itemKeys: selectedKeys,
+            createdAt: new Date().toISOString(),
+          },
+          ...customPlaylists,
+        ];
+
+        setCustomPlaylists(nextPlaylists);
+        saveCustomPlaylists(nextPlaylists);
+
+        // 성공 시 폼 초기화 및 닫기
+        setPlaylistTitle("");
+        setPlaylistDescription("");
+        setSelectedMoodTags([]);
+        setPlaylistIsPublic(false);
+        setSelectedKeys([]);
+        setSelectionPage(1);
+        setCreatePlaylistOpen(false);
+        
+        console.log("플레이리스트가 성공적으로 생성되었습니다.");
+    } catch (error) {
+        console.error("생성 중 에러 발생:", error);
+        alert("플레이리스트 저장에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const openCreatePlaylistModal = () => {
@@ -348,6 +401,24 @@ function ActivityContent() {
     await onRemovePlayList(item.id, item.mediaType);
   };
 
+  const handleHideHistoryItem = async (item: PlayListItem) => {
+    if (!currentProfile) return;
+
+    const itemKey = getItemKey(item);
+    if (hiddenWatchingVideos.includes(itemKey)) return;
+
+    await onUpdateProfile({
+      ...currentProfile,
+      settings: {
+        ...currentProfile.settings,
+        maturityRating: currentProfile.settings?.maturityRating ?? DEFAULT_PROFILE_SETTINGS.maturityRating,
+        subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
+        playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
+        hiddenWatchingVideos: [...hiddenWatchingVideos, itemKey],
+      },
+    });
+  };
+
   const handleDeleteMyListItem = async (item: PlayListItem) => {
     await onRemoveMyList(item.id, item.mediaType);
 
@@ -367,7 +438,7 @@ function ActivityContent() {
   const renderModifyCard = () => {
     if (!modifyPlaylistId) return null;
 
-    const selectedModifyItems = listItems.filter((item) => modifyItemKeys.includes(getItemKey(item)));
+    const selectedModifyItems = listItems.filter((item) => modifyItemKeys.includes(item));
 
     return (
       <div
@@ -669,7 +740,7 @@ function ActivityContent() {
   const renderHistory = () => (
     <section className="activity-section">
       <div className="section-head">
-        <h2>시청기록</h2>
+        <h2>{hideMode ? "시청기록 숨기기" : "시청기록"}</h2>
         <select className="sort-select" defaultValue="recent" aria-label="정렬">
           <option value="recent">최근 시청순</option>
           <option value="title">제목순</option>
@@ -679,7 +750,7 @@ function ActivityContent() {
       <div className="filter-row">
         <div className="filter-chips">
           <button className={filter === "all" ? "chip active" : "chip"} onClick={() => setFilter("all")}>
-            전체 {watchItems.length}
+            전체 {visibleHistoryItems.length}
           </button>
           <button className={filter === "movie" ? "chip active" : "chip"} onClick={() => setFilter("movie")}>
             영화 {movieCount}
@@ -697,10 +768,10 @@ function ActivityContent() {
               <button
                 type="button"
                 className="mini-delete-btn"
-                onClick={() => handleDeleteWatchingItem(item)}
-                aria-label={`${item.title} 시청기록 삭제`}
+                onClick={() => hideMode ? handleHideHistoryItem(item) : handleDeleteWatchingItem(item)}
+                aria-label={`${item.title} ${hideMode ? "시청기록 숨기기" : "시청기록 삭제"}`}
               >
-                -
+                {hideMode ? "숨기기" : "-"}
               </button>
               <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
                 <div className="mini-poster__image">

@@ -161,4 +161,6 @@ export interface MovieState {
 
     certifications: { [key: string]: string },
     onFetchCertification: (id: number, mediaType: "movie" | "tv") => Promise<void>,
+
+    fetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<any>;
 }

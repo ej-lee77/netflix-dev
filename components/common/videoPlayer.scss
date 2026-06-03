@@ -1,0 +1,384 @@
+@use "@/app/globals" as g;
+
+.vp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 300000;
+  background: #000;
+  overflow: hidden;
+}
+
+/* YouTube iframe */
+.vp-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+
+  iframe {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    pointer-events: none;
+  }
+}
+
+/* 클릭 영역 */
+.vp-click-area {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+}
+
+/* 피드백 아이콘 */
+.vp-feedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 10;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: vp-pop 0.55s ease forwards;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    fill: #fff;
+  }
+}
+
+@keyframes vp-pop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+
+  40% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+}
+
+/* 컨트롤 오버레이 */
+.vp-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+
+  &--on {
+    opacity: 1;
+    >* {
+      pointer-events: all;
+    }
+  }
+
+  &--off {
+    opacity: 0;
+    >* {
+      pointer-events: none;
+    }
+  }
+}
+
+/* 상단 바 */
+.vp-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 32px 80px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+}
+
+.vp-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: scale(1.08);
+  }
+}
+
+.vp-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* 하단 바 */
+.vp-bottom {
+  padding: 60px 32px 28px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 진행바 줄 */
+.vp-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vp-time {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 36px;
+  text-align: center;
+}
+
+.vp-track {
+  flex: 1;
+  position: relative;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  pointer-events: all;
+  transition: height 0.15s;
+
+  &:hover {
+    height: 6px;
+
+    .vp-fill::after {
+      opacity: 1;
+    }
+  }
+}
+
+.vp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: #e50914;
+  border-radius: 99px;
+  pointer-events: none;
+  transition: width 0.1s linear;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+}
+
+.vp-track {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 버튼 줄 */
+.vp-btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vp-left-btns,
+.vp-right-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 공통 버튼 */
+.vp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    fill: #fff;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    transform: scale(1.08);
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  &--play {
+    width: 46px;
+    height: 46px;
+
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+  }
+}
+
+/* 10초 skip 버튼 */
+.vp-skip-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+
+  svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .vp-skip-icon {
+    width: 26px;
+    height: 26px;
+    filter: invert(1);
+  }
+
+  .vp-skip-num {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -40%);
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    pointer-events: none;
+    font-family: -apple-system, sans-serif;
+    letter-spacing: -0.3px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    transform: scale(1.08);
+  }
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+/* 볼륨 그룹 */
+.vp-volume-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .vp-btn {
+    flex-shrink: 0;
+  }
+
+  .vp-btn svg {
+    fill: none;
+  }
+}
+
+.vp-vol-range {
+  width: 0;
+  opacity: 0;
+  cursor: pointer;
+  transition: width 0.2s ease, opacity 0.2s ease;
+  accent-color: #fff;
+  height: 4px;
+
+  .vp-volume-group:hover & {
+    width: 88px;
+    opacity: 1;
+  }
+}
+
+/* range 공통 리셋 */
+input[type="range"].vp-progress-range,
+input[type="range"].vp-vol-range {
+  -webkit-appearance: none;
+  background: transparent;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    margin-top: -5px;
+  }
+
+  &::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  &::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+  }
+}
