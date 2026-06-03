@@ -30,6 +30,7 @@ export interface UserProfile {
   nickname: string;
   imgUrl: string;
   viewAge: string;
+  settings?: ProfileSettings;
   // 영상관련 (기본 필드 형태)
   movies: MovieList;
 
@@ -42,6 +43,28 @@ export interface UserProfile {
 
   alarm: AlarmInfo[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
   isCommunity: boolean;
+}
+
+export type MaturityRating = "전체관람가" | "12+" | "15+" | "19+";
+
+export interface SubtitleSettings {
+  size: "small" | "medium" | "large";
+  font: "block" | "gothic" | "serif" | "round";
+  shadow: "none" | "drop" | "outline";
+  shadowColor: "black" | "white";
+  background: "none" | "black" | "white";
+  window: "none" | "black" | "white";
+}
+
+export interface PlaybackSettings {
+  autoplayPreview: boolean;
+}
+
+export interface ProfileSettings {
+  maturityRating: MaturityRating;
+  subtitles: SubtitleSettings;
+  playback: PlaybackSettings;
+  hiddenWatchingVideos: string[];
 }
 
 export interface AlarmInfo {
@@ -62,6 +85,7 @@ export interface PlayList {
 
 export interface MovieList {
   watchingVideos: string[];
+  histVideos?: string[];
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
@@ -95,7 +119,6 @@ export interface PayInfo {
 }
 
 export interface UserDocument {
-  uid?: string;
   userId: string; // 문서 ID로 사용됨
 
   // 기본정보

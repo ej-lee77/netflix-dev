@@ -1,0 +1,59 @@
+@use "@/app/globals" as g;
+
+.split-banner {
+  padding: 0 clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px);
+  margin-bottom: 48px;
+
+  .split-panels {
+    display: flex;
+    gap: 5px;
+  }
+
+  .split-panel-wrap {
+    flex: 1;
+    height: clamp(200px, 28vw, 420px);
+    background-repeat: no-repeat;
+    border-radius: 6px;
+    cursor: pointer;
+    filter: brightness(0.8);
+    transition: filter 0.25s ease;
+    position: relative;
+
+    &:hover {
+      filter: brightness(1.05);
+    }
+  }
+
+  .split-panel-still {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    border-radius: 6px;
+    transition: opacity 0.3s ease;
+  }
+
+  .split-panel-logo {
+    position: absolute;
+    bottom: 16px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    z-index: 1;
+  }
+
+  .split-panel-right-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    transition: opacity 0.3s ease;
+
+    img {
+      max-width: unset;
+    }
+  }
+}

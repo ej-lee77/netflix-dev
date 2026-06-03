@@ -4,40 +4,54 @@
 .watching-section {
   padding: 40px 0;
 
-  .section-title {
-    font-size: g.$text-32;
-    font-weight: 500;
+  .watching-swiper-wrap {
+    position: relative;
+    padding-left: clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
+    overflow: hidden;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    background: none;
+    border: none;
     color: g.$w-color;
-    margin-bottom: 14px;
-    padding-left: 4px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    &::after {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    &.swiper-button-disabled {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+  }
+
+  &:hover {
+    .swiper-button-prev,
+    .swiper-button-next {
+      opacity: 1;
+
+      &:hover {
+        opacity: 0.7;
+      }
+    }
   }
 
   /* Swiper 영역 */
   .watching-swiper {
     width: 100%;
-    overflow: hidden;
+    overflow: visible;
 
-    /* Swiper navigation 화살표 색상 보정 */
-    .swiper-button-next,
-    .swiper-button-prev {
-      color: g.$w-color;
-
-      &::after {
-        font-size: g.$text-24;
-      }
     }
-  }
 
   /* 카드 */
   .watching-card {
     display: block;
     color: g.$w-color;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-    &:hover {
-      transform: scale(1.03);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    }
   }
 
   /* 썸네일 박스 */
@@ -48,13 +62,48 @@
     border-radius: 5px;
     overflow: hidden;
     background-color: #222;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      transition: transform 0.3s ease;
     }
+  }
+
+  .watching-play-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+  }
+
+  .watching-play-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+  }
+
+  .watching-card:hover {
+    .watching-thumb {
+      transform: scale(1.03);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+    .watching-thumb img { transform: scale(1.05); }
+    .watching-play-overlay { opacity: 1; }
   }
 
   /* 시청률 진행바 (와이어프레임의 빨간 하단 바) */
@@ -65,6 +114,7 @@
     width: 100%;
     height: 3px;
     background-color: rgba(255, 255, 255, 0.18);
+    z-index: 3;
 
     .progress-fill {
       display: block;

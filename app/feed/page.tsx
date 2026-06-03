@@ -14,6 +14,9 @@ import {
 } from "./feedData";
 import "../scss/feed.scss";
 
+const BEST_REVIEWER_BADGE_IMAGE = "/images/badge/social_review_master.png";
+const BEST_REVIEWER_BADGE_ALT = "베스트 리뷰어";
+
 const renderRatingStars = (rating: number) => (
   <span className="rating-stars" aria-label={`${rating.toFixed(1)}점`}>
     {[1, 2, 3, 4, 5].map((star) => {
@@ -35,10 +38,16 @@ const renderRatingStars = (rating: number) => (
 
 const getStarFill = (rating: number, star: number) => Math.max(0, Math.min(1, rating - (star - 1))) * 100;
 
+const getNextStarRating = (currentRating: number, star: number) => {
+  const halfRating = star - 0.5;
+
+  return currentRating === halfRating ? star : halfRating;
+};
+
 export default function FeedPage() {
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
   const { currentProfile } = useAuthStore();
-  const { reviews, onAddComment, onAddReview, onToggleLike } = useFeedStore();
+  const { reviews, onAddComment, onAddReview, onDeleteComment, onDeleteReview, onHydrateReviews, onToggleLike, onUpdateComment, onUpdateReview } = useFeedStore();
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
   const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<number[]>([]);
   const [reportedReviewIds, setReportedReviewIds] = useState<number[]>([]);
@@ -46,7 +55,9 @@ export default function FeedPage() {
   const [selectedReportReason, setSelectedReportReason] = useState("");
   const [copiedReviewId, setCopiedReviewId] = useState<number | null>(null);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [commentTargetReviewId, setCommentTargetReviewId] = useState<number | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
   const [reviewSearch, setReviewSearch] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<FeedMediaOption | null>(null);
@@ -57,6 +68,7 @@ export default function FeedPage() {
 
   const closeWriteModal = useCallback(() => {
     setWriteModalOpen(false);
+    setEditingReviewId(null);
     setReviewSearch("");
     setSelectedMedia(null);
     setNewRating(0);
@@ -67,8 +79,13 @@ export default function FeedPage() {
 
   const closeCommentModal = useCallback(() => {
     setCommentTargetReviewId(null);
+    setEditingCommentId(null);
     setCommentText("");
   }, []);
+
+  useEffect(() => {
+    onHydrateReviews();
+  }, [onHydrateReviews]);
 
   useEffect(() => {
     if (popMovies.length === 0) onFetchPopular();
@@ -148,9 +165,34 @@ export default function FeedPage() {
     void navigator.clipboard.writeText(shareUrl);
   };
 
+  const handleOpenEditReview = (review: FeedReview) => {
+    setEditingReviewId(review.id);
+    setSelectedMedia({
+      id: review.mediaId,
+      mediaType: review.mediaType,
+      title: review.mediaTitle,
+      posterPath: review.mediaPoster,
+      meta: review.mediaMeta,
+    });
+    setReviewSearch(review.mediaTitle);
+    setNewRating(review.rating);
+    setNewReviewText(review.reviewText);
+    setNewHasSpoiler(review.spoiler);
+    setNewIsPublic(review.public);
+    setWriteModalOpen(true);
+  };
+
   const handleSubmitComment = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedCommentReview || !commentText.trim()) return;
+
+    if (editingCommentId) {
+      onUpdateComment(selectedCommentReview.id, editingCommentId, commentText.trim());
+      setEditingCommentId(null);
+      setCommentText("");
+      return;
+    }
+
     const nextCommentId = selectedCommentReview.commentsList.reduce((maxId, comment) => (
       Math.max(maxId, comment.id)
     ), selectedCommentReview.id * 100);
@@ -160,6 +202,7 @@ export default function FeedPage() {
       author: "나",
       avatarInitial: "나",
       avatarImage: currentProfile?.imgUrl,
+      isMine: true,
       time: "방금 전",
       text: commentText.trim(),
       likes: 0,
@@ -170,9 +213,43 @@ export default function FeedPage() {
     setCommentText("");
   };
 
+  const handleOpenEditComment = (commentId: number, text: string) => {
+    setEditingCommentId(commentId);
+    setCommentText(text);
+  };
+
+  const handleDeleteComment = (reviewId: number, commentId: number) => {
+    onDeleteComment(reviewId, commentId);
+    if (editingCommentId === commentId) {
+      setEditingCommentId(null);
+      setCommentText("");
+    }
+  };
+
   const handleSubmitReview = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedMedia || newRating === 0 || !newReviewText.trim()) return;
+    const editingReview = editingReviewId
+      ? reviews.find((review) => review.id === editingReviewId)
+      : null;
+
+    if (editingReview) {
+      onUpdateReview({
+        ...editingReview,
+        mediaId: selectedMedia.id,
+        mediaType: selectedMedia.mediaType,
+        mediaTitle: selectedMedia.title,
+        mediaPoster: selectedMedia.posterPath,
+        mediaMeta: selectedMedia.meta,
+        rating: newRating,
+        reviewText: newReviewText.trim(),
+        spoiler: newHasSpoiler,
+        public: newIsPublic,
+      });
+      closeWriteModal();
+      return;
+    }
+
     const nextReviewId = reviews.reduce((maxId, review) => Math.max(maxId, review.id), 0) + 1;
 
     const nextReview: FeedReview = {
@@ -180,6 +257,7 @@ export default function FeedPage() {
       author: "나",
       avatarInitial: "나",
       avatarImage: currentProfile?.imgUrl,
+      isMine: true,
       isFollowing: false,
       time: "방금 전",
       mediaId: selectedMedia.id,
@@ -218,7 +296,7 @@ export default function FeedPage() {
           <form onSubmit={handleSubmitReview}>
             <div className="feed-modal-head">
               <div>
-                <h3 id="feed-write-title">리뷰 작성</h3>
+                <h3 id="feed-write-title">{editingReviewId ? "리뷰 수정" : "리뷰 작성"}</h3>
                 <p>작품을 선택하고 커뮤니티에 공개할 리뷰를 남겨보세요.</p>
               </div>
               <button type="button" className="feed-modal-close" onClick={closeWriteModal} aria-label="리뷰 작성 닫기">
@@ -264,8 +342,7 @@ export default function FeedPage() {
                           type="button"
                           className="feed-half-star"
                           key={star}
-                          onClick={() => setNewRating(star)}
-                          onDoubleClick={() => setNewRating(star - 0.5)}
+                          onClick={() => setNewRating((currentRating) => getNextStarRating(currentRating, star))}
                           aria-label={`${star}점, 더블 클릭하면 ${star - 0.5}점`}
                           style={{ "--fill": `${getStarFill(newRating, star)}%` } as React.CSSProperties}
                         >
@@ -302,7 +379,8 @@ export default function FeedPage() {
                   onClick={() => setNewIsPublic((value) => !value)}
                   aria-pressed={newIsPublic}
                 >
-                  {newIsPublic ? "커뮤니티 공개" : "비공개"}
+                  {/* {newIsPublic ? "커뮤니티 공개" : "비공개"} */}
+                  커뮤니티 공개
                 </button>
               </div>
             </div>
@@ -316,7 +394,7 @@ export default function FeedPage() {
                 className="feed-submit-btn"
                 disabled={!selectedMedia || newRating === 0 || !newReviewText.trim()}
               >
-                등록
+                {editingReviewId ? "수정" : "등록"}
               </button>
             </div>
           </form>
@@ -358,11 +436,35 @@ export default function FeedPage() {
                   </div>
                   <div className="comment-content">
                     <div className="comment-meta">
-                      <strong>{comment.author}</strong>
+                      <strong>
+                        {comment.author}
+                        {comment.isBestReviewer && (
+                          <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
+                        )}
+                      </strong>
                       <span>{comment.time}</span>
                     </div>
                     <p>{comment.text}</p>
-                    <button type="button">좋아요 {comment.likes}</button>
+                    <div className="comment-actions">
+                      <button type="button">좋아요 {comment.likes}</button>
+                      {comment.isMine && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditComment(comment.id, comment.text)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="comment-delete-btn"
+                            onClick={() => handleDeleteComment(selectedCommentReview.id, comment.id)}
+                          >
+                            삭제
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -379,7 +481,7 @@ export default function FeedPage() {
               placeholder="댓글을 입력해 주세요"
             />
             <button type="submit" disabled={!commentText.trim()}>
-              등록
+              {editingCommentId ? "수정" : "등록"}
             </button>
           </form>
         </section>
@@ -422,7 +524,12 @@ export default function FeedPage() {
                       {review.avatarImage ? <img src={review.avatarImage} alt="" /> : review.avatarInitial}
                     </div>
                     <div className="post-meta">
-                      <h3>{review.author}</h3>
+                      <h3>
+                        {review.author}
+                        {review.isBestReviewer && (
+                          <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
+                        )}
+                      </h3>
                       <div className="post-info">
                         <span className="time">{review.time}</span>
                         {!review.public && <span className="private-tag">비공개</span>}
@@ -518,6 +625,24 @@ export default function FeedPage() {
                     >
                       {copiedReviewId === review.id ? "복사됨" : "공유"}
                     </button>
+                    {review.isMine && (
+                      <div className="review-owner-actions">
+                        <button
+                          type="button"
+                          className="action"
+                          onClick={() => handleOpenEditReview(review)}
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          className="action delete-review-btn"
+                          onClick={() => onDeleteReview(review.id)}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </article>
               );
