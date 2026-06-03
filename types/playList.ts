@@ -20,12 +20,15 @@ export interface PlayListState{
     onAddPlayList: (item: Movie | TV)=>Promise<boolean>,
     onRemovePlayList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
-    onAddMyList: (item: Movie | TV)=>Promise<boolean>,
+    onAddMyList: (item: Movie | TV, mediaType?: "movie" | "tv")=>Promise<boolean>,
     onRemoveMyList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadMyList: ()=>Promise<void>,
     onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
     onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number)=>void,
     createMyCustomPlaylist: (data: any)=>Promise<void>,
+    fetchMyCustomPlaylists: ()=>Promise<void>,
+    updateCustomPlaylist: (listId: string, updatedData: Partial<PlaylistDocument>) => Promise<void>;
+    deleteCustomPlaylist: (listId: string) => Promise<void>;
 }
 
 // 플리 타입
