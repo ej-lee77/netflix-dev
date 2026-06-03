@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/wishlist.scss";
+import { Movie, TV } from "@/types/movie";
+import { WishItem } from "@/types/wishlist";
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -38,6 +40,28 @@ function formatAddedTime(addedAt: string): string {
   if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전 찜`;
   return `${Math.floor(diffDays / 30)}달 전 찜`;
 }
+
+export const convertToMedia = (item: WishItem): Movie | TV => {
+  const base = {
+    id: item.id,
+    poster_path: item.poster_path,
+    vote_average: item.vote_average,
+    // 필요 시 MediaBase의 다른 공통 속성들도 여기에 추가
+  };
+
+  if (item.mediaType === "movie") {
+    return {
+      ...base,
+      title: item.title,
+      release_date: "", // WishItem에 없는 정보는 기본값 설정
+    } as Movie;
+  } else {
+    return {
+      ...base,
+      name: item.title, // TV는 name을 사용
+    } as TV;
+  }
+};
 
 export default function WishlistPage() {
   const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
@@ -89,9 +113,13 @@ export default function WishlistPage() {
   const currentSortLabel = SORT_OPTIONS.find((o) => o.key === sort)?.label;
 
   // 찜 해제 핸들러
-  const handleRemove = async (e: React.MouseEvent, id: number) => {
+  const handleRemove = async (e: React.MouseEvent, item: WishItem) => {
     e.preventDefault();
-    await onRemoveWish(id);
+
+    // WishItem을 다시 Movie | TV 형태로 변형
+    const mediaItem = convertToMedia(item);
+    
+    await onRemoveWish(mediaItem);
   };
 
   return (
@@ -201,7 +229,7 @@ export default function WishlistPage() {
                       type="button"
                       className="wish-remove"
                       aria-label="찜 해제"
-                      onClick={(e) => handleRemove(e, item.id)}
+                      onClick={(e) => handleRemove(e, item)}
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
