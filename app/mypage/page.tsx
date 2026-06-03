@@ -321,7 +321,7 @@ export default function MyPage() {
                 >
                   <div className="poster-img">
                     {item.poster_path && (
-                      <img src={`https://image.tmorg/t/p/w300${item.poster_path}`} alt={item.title} />
+                      <img src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} alt={item.title} />
                     )}
                   </div>
                   <p>{item.title}</p>
