@@ -13,6 +13,7 @@ import { useMovieStore } from "@/store/useMovieStore";
 import { Movie, TV } from "@/types/movie";
 import { WishItem } from "@/types/wishlist";
 import { convertToMedia } from "../wishlist/page";
+import { PlaylistDocument } from "@/types/playList";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv";
@@ -76,21 +77,21 @@ const getProgress = (item: PlayListItem) => 35 + (item.id % 50);
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString("ko-KR");
 
-const loadCustomPlaylists = () => {
-  if (typeof window === "undefined") return [];
+// const loadCustomPlaylists = () => {
+//   if (typeof window === "undefined") return [];
 
-  try {
-    const stored = window.localStorage.getItem(CUSTOM_PLAYLIST_KEY);
-    return stored ? JSON.parse(stored) as CustomPlaylist[] : [];
-  } catch {
-    return [];
-  }
-};
+//   try {
+//     const stored = window.localStorage.getItem(CUSTOM_PLAYLIST_KEY);
+//     return stored ? JSON.parse(stored) as CustomPlaylist[] : [];
+//   } catch {
+//     return [];
+//   }
+// };
 
-const saveCustomPlaylists = (items: CustomPlaylist[]) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(CUSTOM_PLAYLIST_KEY, JSON.stringify(items));
-};
+// const saveCustomPlaylists = (items: CustomPlaylist[]) => {
+//   if (typeof window === "undefined") return;
+//   window.localStorage.setItem(CUSTOM_PLAYLIST_KEY, JSON.stringify(items));
+// };
 
 export default function PlaylistPage() {
   return (
@@ -105,11 +106,15 @@ function ActivityContent() {
     playList,
     playHist,
     myList,
+    customPlaylists, 
     onLoadPlayList,
     onLoadMyList,
     onRemovePlayList,
     onRemoveMyList,
-    createMyCustomPlaylist
+    createMyCustomPlaylist,
+    fetchMyCustomPlaylists,
+    updateCustomPlaylist,
+    deleteCustomPlaylist
   } = usePlayListStore();
   const { wishlist, onLoadWishlist, onRemoveWish } = useWishlistStore();
   const { user, currentProfile, onUpdateProfile } = useAuthStore();
@@ -130,7 +135,7 @@ function ActivityContent() {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionPage, setSelectionPage] = useState(1);
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
-  const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
+  // const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
   const [modifyPlaylistId, setModifyPlaylistId] = useState<string | null>(null);
   const [modifyTitle, setModifyTitle] = useState("");
   const [modifyDescription, setModifyDescription] = useState("");
@@ -138,6 +143,7 @@ function ActivityContent() {
   const [modifyIsPublic, setModifyIsPublic] = useState(false);
   const [modifyItemKeys, setModifyItemKeys] = useState<string[]>([]);
   const [listItems, setListItems] = useState<any[]>([]);
+  const [playlistDetailsCache, setPlaylistDetailsCache] = useState<Record<string, any>>({});
 
   const getDetailedHistory = async (histKeys: string[]): Promise<PlayListItem[]> => {
       const detailPromises = histKeys.map(async (key) => {
@@ -177,7 +183,8 @@ function ActivityContent() {
   useEffect(() => {
     onLoadPlayList();
     onLoadMyList();
-  }, [onLoadPlayList, onLoadMyList]);
+    fetchMyCustomPlaylists();
+  }, [onLoadPlayList, onLoadMyList, fetchMyCustomPlaylists]);
   useEffect(() => {
     if (!modifyPlaylistId && !createPlaylistOpen) return;
 
@@ -214,19 +221,23 @@ function ActivityContent() {
   const hiddenWatchingVideos = currentProfile?.settings?.hiddenWatchingVideos ?? [];
   useEffect(() => {
     const loadListDetails = async () => {
-      
-      // myList의 각 키("movie-123")를 [type, id]로 분리하여 fetch 호출
       const promises = myList.map(async (key) => {
         const [mediaType, id] = key.split('-');
-        // 이제 fetchMediaDetail이 데이터를 리턴하므로 바로 사용 가능
-        return await fetchMediaDetail(id, mediaType as 'movie' | 'tv');
+        const data = await fetchMediaDetail(id, mediaType as 'movie' | 'tv');
+        
+        if (!data) return null;
+
+        // 핵심: API 데이터에 mediaType을 강제로 결합
+        return {
+          ...data,
+          id: Number(id),
+          mediaType: mediaType as 'movie' | 'tv',
+        };
       });
 
-      // 모든 데이터를 병렬로 가져옴
       const details = await Promise.all(promises);
-      
-      // 결과값 중 null/undefined 제외하고 저장
-      setListItems(details.filter(Boolean));
+      // 타입 가드를 적용하여 PlayListItem 타입 준수
+      setListItems(details.filter((item): item is PlayListItem => item !== null));
     };
 
     if (myList.length > 0) {
@@ -235,6 +246,42 @@ function ActivityContent() {
       setListItems([]);
     }
   }, [myList, fetchMediaDetail]);
+
+  useEffect(() => {
+    if (customPlaylists.length === 0) return;
+
+    const loadAllPlaylistDetails = async () => {
+      // 1. 모든 플레이리스트의 videoIds를 합쳐서 중복 제거
+      const allVideoIds = Array.from(
+        new Set(customPlaylists.flatMap((p) => p.videoIds))
+      );
+
+      // 2. 아직 캐시에 없는 아이디만 골라내기
+      const missingKeys = allVideoIds.filter((key) => !playlistDetailsCache[key]);
+      if (missingKeys.length === 0) return;
+
+      // 3. API 병렬 호출
+      const promises = missingKeys.map(async (key) => {
+        const [mediaType, id] = key.split('-');
+        const data = await fetchMediaDetail(id, mediaType as 'movie' | 'tv');
+        return { key, data: data ? { ...data, mediaType, id: Number(id) } : null };
+      });
+
+      const results = await Promise.all(promises);
+
+      // 4. 캐시 업데이트
+      setPlaylistDetailsCache((prev) => {
+        const next = { ...prev };
+        results.forEach((res) => {
+          if (res.data) next[res.key] = res.data;
+        });
+        return next;
+      });
+    };
+
+    loadAllPlaylistDetails();
+  }, [customPlaylists]);
+
 
   const watchItems = playList;
   const watchingItems = watchItems.slice(0, 6);
@@ -365,23 +412,24 @@ function ActivityContent() {
     setCreatePlaylistOpen(false);
   };
 
-  const handleDeletePlaylist = (playlistId: string) => {
-    const nextPlaylists = customPlaylists.filter((playlist) => playlist.id !== playlistId);
+  const handleDeletePlaylist = async (playlistId: string) => {
+      // 1. 스토어(DB)에서 삭제
+      await deleteCustomPlaylist(playlistId);
 
-    setCustomPlaylists(nextPlaylists);
-    saveCustomPlaylists(nextPlaylists);
-    if (modifyPlaylistId === playlistId) {
-      closeModifyCard();
-    }
+      // 2. 만약 수정 중인 모달이 열려있다면 닫기
+      if (modifyPlaylistId === playlistId) {
+          closeModifyCard();
+      }
   };
 
-  const openModifyCard = (playlist: CustomPlaylist) => {
-    setModifyPlaylistId(playlist.id);
-    setModifyTitle(playlist.title);
-    setModifyDescription(playlist.description || "");
-    setModifyMoodTags(playlist.moodTags || []);
-    setModifyIsPublic(Boolean(playlist.isPublic));
-    setModifyItemKeys(playlist.itemKeys);
+  const openModifyCard = (playlist: PlaylistDocument) => {
+      // PlaylistDocument의 필드명으로 모두 변경
+      setModifyPlaylistId(playlist.listId);       // id → listId
+      setModifyTitle(playlist.name);              // title → name
+      setModifyDescription(playlist.content || ""); // description → content
+      setModifyMoodTags(playlist.tags || []);     // moodTags → tags
+      setModifyIsPublic(Boolean(playlist.isShare)); // isPublic → isShare
+      setModifyItemKeys(playlist.videoIds);       // itemKeys → videoIds
   };
 
   const closeModifyCard = () => {
@@ -409,30 +457,23 @@ function ActivityContent() {
     ));
   };
 
-  const handleSaveModifyPlaylist = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!modifyPlaylistId) return;
+  const handleSaveModifyPlaylist = async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!modifyPlaylistId) return;
 
-    const title = modifyTitle.trim();
-    const description = modifyDescription.trim();
-    if (!title || modifyItemKeys.length === 0) return;
+      // 업데이트할 데이터 객체 생성
+      const updatedData: Partial<PlaylistDocument> = {
+          name: modifyTitle.trim(),
+          content: modifyDescription.trim(),
+          tags: modifyMoodTags,
+          isShare: modifyIsPublic,
+          videoIds: modifyItemKeys
+      };
 
-    const nextPlaylists = customPlaylists.map((playlist) => (
-      playlist.id === modifyPlaylistId
-        ? {
-          ...playlist,
-          title,
-          description,
-          moodTags: modifyMoodTags,
-          isPublic: modifyIsPublic,
-          itemKeys: modifyItemKeys,
-        }
-        : playlist
-    ));
-
-    setCustomPlaylists(nextPlaylists);
-    saveCustomPlaylists(nextPlaylists);
-    closeModifyCard();
+      // 스토어 메서드 호출
+      await updateCustomPlaylist(modifyPlaylistId, updatedData);
+      
+      closeModifyCard();
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
@@ -459,24 +500,21 @@ function ActivityContent() {
 
   const handleDeleteMyListItem = async (item: PlayListItem) => {
     await onRemoveMyList(item.id, item.mediaType);
-
-    const itemKey = getItemKey(item);
-    setSelectedKeys((prev) => prev.filter((key) => key !== itemKey));
-
-    const nextPlaylists = customPlaylists.map((playlist) => ({
-      ...playlist,
-      itemKeys: playlist.itemKeys.filter((key) => key !== itemKey),
-    }));
-    setCustomPlaylists(nextPlaylists);
-    saveCustomPlaylists(nextPlaylists);
-    setModifyItemKeys((prev) => prev.filter((key) => key !== itemKey));
   };
 
   //renderModifyCard : 제목, 설명, 무드태그, 공개여부, 추가된 컨텐츠 수정 팝업창
   const renderModifyCard = () => {
     if (!modifyPlaylistId) return null;
 
-    const selectedModifyItems = listItems.filter((item) => modifyItemKeys.includes(item));
+    // 1. 현재 수정 중인 플레이리스트 객체를 찾습니다.
+    const targetPlaylist = customPlaylists.find((p) => p.listId === modifyPlaylistId);
+    
+    // 2. listItems 대신, 캐시에서 해당 플레이리스트의 아이템들만 가져옵니다.
+    const selectedModifyItems = targetPlaylist 
+      ? targetPlaylist.videoIds
+          .map((key) => playlistDetailsCache[key])
+          .filter(Boolean) // null/undefined 제거
+      : [];
 
     return (
       <div
@@ -568,7 +606,7 @@ function ActivityContent() {
             <div className="modify-section">
               <strong>추가된 콘텐츠</strong>
               <div className="modify-content-grid">
-                {listItems.map((item) => {
+                {selectedModifyItems.map((item) => { // listItems 대신 selectedModifyItems 사용
                   const key = getItemKey(item);
                   const isSelected = modifyItemKeys.includes(key);
 
@@ -924,35 +962,43 @@ function ActivityContent() {
     </section>
   );
 
-  const renderPlaylistMosaic = (playlist: CustomPlaylist) => {
-    const playlistItems = listItems.filter((item) => playlist.itemKeys.includes(getItemKey(item)));
+  const renderPlaylistMosaic = (playlist: PlaylistDocument) => {
+    // 1. 캐시에서 매칭되는 아이템들을 찾음
+    const playlistItems = playlist.videoIds
+        .map((key) => playlistDetailsCache[key])
+        .filter(Boolean);
+
     const previewItems = playlistItems.slice(0, 4);
 
     return (
-      <article className="custom-playlist-card" key={playlist.id}>
+      <article className="custom-playlist-card" key={playlist.listId}>
         <button
           type="button"
           className="playlist-delete-btn"
-          onClick={() => handleDeletePlaylist(playlist.id)}
-          aria-label={`${playlist.title} 플레이리스트 삭제`}
+          onClick={() => handleDeletePlaylist(playlist.listId)}
+          aria-label={`${playlist.name} 플레이리스트 삭제`}
         >
           -
         </button>
+
         <div className="playlist-mosaic">
           {previewItems.map((item) => (
             <div key={getItemKey(item)}>
-              {(item.backdrop_path || item.poster_path) && <img src={getBackdropUrl(item)} alt={item.title} />}
+              {(item.backdrop_path || item.poster_path) && (
+                <img src={getBackdropUrl(item)} alt={typeof item === 'object' && 'title' in item ? item.title : '작품'} />
+              )}
             </div>
           ))}
           {playlistItems.length > 4 && <span>+{playlistItems.length - 4}</span>}
         </div>
-        <h3>{playlist.title}</h3>
-        {playlist.description && <p className="playlist-description">{playlist.description}</p>}
-        {playlist.moodTags && playlist.moodTags.length > 0 && (
-          <div className="playlist-tag-row">
-            {playlist.moodTags.map((tag) => {
-              const icon = getMoodIcon(tag);
 
+        <h3>{playlist.name}</h3>
+        {playlist.content && <p className="playlist-description">{playlist.content}</p>}
+
+        {playlist.tags && playlist.tags.length > 0 && (
+          <div className="playlist-tag-row">
+            {playlist.tags.map((tag) => {
+              const icon = getMoodIcon(tag);
               return (
                 <span key={tag}>
                   {icon && <img src={icon} alt="" />}
@@ -962,16 +1008,18 @@ function ActivityContent() {
             })}
           </div>
         )}
-        <span className={playlist.isPublic ? "playlist-visibility public" : "playlist-visibility"}>
-          {playlist.isPublic ? "피드 공개" : "비공개"}
+
+        <span className={playlist.isShare ? "playlist-visibility public" : "playlist-visibility"}>
+          {playlist.isShare ? "피드 공개" : "비공개"}
         </span>
+
         <div className="playlist-extra-area">
           <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
           <button
             className="playcard-more-btn"
             type="button"
             onClick={() => openModifyCard(playlist)}
-            aria-label={`${playlist.title} 플레이리스트 수정`}
+            aria-label={`${playlist.name} 플레이리스트 수정`}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -981,7 +1029,6 @@ function ActivityContent() {
             </svg>
           </button>
         </div>
-
       </article>
     );
   };
