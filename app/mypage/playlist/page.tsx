@@ -10,6 +10,9 @@ import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
 import { useMovieStore } from "@/store/useMovieStore";
+import { Movie, TV } from "@/types/movie";
+import { WishItem } from "@/types/wishlist";
+import { convertToMedia } from "../wishlist/page";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv";
@@ -62,9 +65,12 @@ const getPosterUrl = (path?: string) => (
   path ? `https://image.tmdb.org/t/p/w500${path}` : ""
 );
 
-const getBackdropUrl = (item: PlayListItem) => (
-  getPosterUrl(item.backdrop_path || item.poster_path)
-);
+const getBackdropUrl = (item: PlayListItem): string => {
+  const imagePath = item.backdrop_path || item.poster_path;
+  
+  // 이미지 경로가 아예 없는 경우(null 또는 빈 문자열)를 위한 기본 이미지 처리
+  return imagePath ? getPosterUrl(imagePath) : "/default-backdrop.jpg"; 
+};
 
 const getProgress = (item: PlayListItem) => 35 + (item.id % 50);
 
@@ -97,6 +103,7 @@ export default function PlaylistPage() {
 function ActivityContent() {
   const {
     playList,
+    playHist,
     myList,
     onLoadPlayList,
     onLoadMyList,
@@ -131,6 +138,29 @@ function ActivityContent() {
   const [modifyIsPublic, setModifyIsPublic] = useState(false);
   const [modifyItemKeys, setModifyItemKeys] = useState<string[]>([]);
   const [listItems, setListItems] = useState<any[]>([]);
+
+  const getDetailedHistory = async (histKeys: string[]): Promise<PlayListItem[]> => {
+      const detailPromises = histKeys.map(async (key) => {
+          const [mediaType, id] = key.split("-");
+          const data = await fetchMediaDetail(id, mediaType as "movie" | "tv");
+          
+          if (!data) return null;
+
+          return {
+              id: Number(id),
+              title: data.title || data.name || "제목 없음",
+              poster_path: data.poster_path ?? "",
+              mediaType: mediaType as "movie" | "tv",
+              playTime: "", 
+              progress: 100,
+              episodeProgress: {}
+          };
+      });
+
+      const results = await Promise.all(detailPromises);
+      
+      return results.filter((item): item is PlayListItem => item !== null);
+  };
 
   // 헤더 메뉴에서 ?tab=wishlist / ?tab=playlists 로 들어오면 해당 탭 열기
   useEffect(() => {
@@ -208,10 +238,30 @@ function ActivityContent() {
 
   const watchItems = playList;
   const watchingItems = watchItems.slice(0, 6);
+  // 키에서 mediaType 추출하는 헬퍼 (예: "movie-123" -> "movie")
+  const getMediaTypeFromKey = (key: string) => key.split("-")[0];
+
+  const [historyItems, setHistoryItems] = useState<PlayListItem[]>([]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+        const items = await getDetailedHistory(playHist);
+        setHistoryItems(items);
+    };
+    loadHistory();
+  }, [playHist]);
+
+  // 1. 상태 변수 이름 통일 (historyData -> historyItems)
   const visibleHistoryItems = hideMode
-    ? watchItems
-    : watchItems.filter((item) => !hiddenWatchingVideos.includes(getItemKey(item)));
-  const filteredHistory = filter === "all" ? visibleHistoryItems : visibleHistoryItems.filter((item) => item.mediaType === filter);
+    ? historyItems
+    : historyItems.filter((item) => !hiddenWatchingVideos.includes(getItemKey(item)));
+
+  // 2. 카테고리 필터링 (키를 파싱할 필요 없이 객체 속성 사용)
+  const filteredHistory = filter === "all" 
+    ? visibleHistoryItems 
+    : visibleHistoryItems.filter((item) => item.mediaType === filter);
+
+  // 3. 타입별 카운트 (객체 속성 사용)
   const movieCount = visibleHistoryItems.filter((item) => item.mediaType === "movie").length;
   const tvCount = visibleHistoryItems.filter((item) => item.mediaType === "tv").length;
 
@@ -237,9 +287,13 @@ function ActivityContent() {
 
   const currentWishSortLabel = wishSortOptions.find((o) => o.key === wishSort)?.label;
 
-  const handleRemoveWish = async (e: React.MouseEvent, id: number) => {
+  const handleRemoveWish = async (e: React.MouseEvent, item: WishItem) => {
     e.preventDefault();
-    await onRemoveWish(id);
+
+    // WishItem을 다시 Movie | TV 형태로 변형
+    const mediaItem = convertToMedia(item);
+    
+    await onRemoveWish(mediaItem);
   };
 
   const selectedItems = listItems.filter((item) => selectedKeys.includes(getItemKey(item)));
@@ -867,7 +921,7 @@ function ActivityContent() {
               <button
                 type="button"
                 className="mini-delete-btn"
-                onClick={(e) => handleRemoveWish(e, item.id)}
+                onClick={(e) => handleRemoveWish(e, item)}
                 aria-label={`${item.title} 찜 해제`}
               >
                 삭제
