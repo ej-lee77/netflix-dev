@@ -20,7 +20,7 @@ export interface PlayListState{
     onAddPlayList: (item: Movie | TV)=>Promise<boolean>,
     onRemovePlayList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
-    onAddMyList: (item: Movie | TV)=>Promise<boolean>,
+    onAddMyList: (item: Movie | TV, mediaType?: "movie" | "tv")=>Promise<boolean>,
     onRemoveMyList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadMyList: ()=>Promise<void>,
     onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
