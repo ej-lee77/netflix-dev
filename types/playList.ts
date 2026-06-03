@@ -26,6 +26,9 @@ export interface PlayListState{
     onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
     onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number)=>void,
     createMyCustomPlaylist: (data: any)=>Promise<void>,
+    fetchMyCustomPlaylists: ()=>Promise<void>,
+    updateCustomPlaylist: (listId: string, updatedData: Partial<PlaylistDocument>) => Promise<void>;
+    deleteCustomPlaylist: (listId: string) => Promise<void>;
 }
 
 // 플리 타입
