@@ -3,13 +3,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
-import { getPosterUrl } from "../feedData";
+import { getInitial, getPosterUrl, getRelativeTime } from "@/types/feedData";
 import "../../scss/feed.scss";
-
-const BEST_REVIEWER_BADGE_IMAGE = "/images/badge/social_review_master.png";
-const BEST_REVIEWER_BADGE_ALT = "베스트 리뷰어";
 
 const renderRatingStars = (rating: number) => (
   <span className="rating-stars" aria-label={`${rating.toFixed(1)}점`}>
@@ -32,60 +30,66 @@ const renderRatingStars = (rating: number) => (
 
 export default function FeedDetailPage() {
   const params = useParams<{ id: string }>();
-  const { currentProfile } = useAuthStore();
+  const { user, currentProfile } = useAuthStore();
   const { reviews, onAddComment, onDeleteComment, onHydrateReviews, onUpdateComment } = useFeedStore();
   const [commentText, setCommentText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const currentUserId = user?.userId || (user as { uid?: string } | null)?.uid || auth.currentUser?.uid;
 
   const review = useMemo(() => (
-    reviews.find((item) => String(item.id) === params.id) ?? null
+    reviews.find((item) => item.feedId === params.id) ?? null
   ), [params.id, reviews]);
 
   useEffect(() => {
-    onHydrateReviews();
-  }, [onHydrateReviews]);
+    void onHydrateReviews();
+  }, [currentProfile?.id, currentUserId, onHydrateReviews]);
 
   const handleSubmitComment = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!review || !commentText.trim()) return;
+    if (!currentUserId) {
+      window.alert("로그인이 필요합니다.");
+      return;
+    }
+    if (!currentProfile) {
+      window.alert("프로필을 선택해 주세요.");
+      return;
+    }
 
     if (editingCommentId) {
-      onUpdateComment(review.id, editingCommentId, commentText.trim());
+      void onUpdateComment(review.feedId, editingCommentId, commentText.trim());
       setEditingCommentId(null);
       setCommentText("");
       return;
     }
 
-    const nextCommentId = review.commentsList.reduce((maxId, comment) => (
-      Math.max(maxId, comment.id)
-    ), review.id * 100);
-
+    const now = new Date().toISOString();
     const nextComment = {
-      id: nextCommentId + 1,
-      author: "나",
-      avatarInitial: "나",
-      avatarImage: currentProfile?.imgUrl,
-      isMine: true,
-      time: "방금 전",
-      text: commentText.trim(),
-      likes: 0,
-      liked: false,
+      commentId: "",
+      userId: currentUserId,
+      profileId: currentProfile.id,
+      content: commentText.trim(),
+      reportsCount: 0,
+      likesCount: 0,
+      createdAt: now,
+      updatedAt: now,
+      isDelete: false,
     };
 
-    onAddComment(review.id, nextComment);
+    void onAddComment(review.feedId, nextComment);
     setCommentText("");
   };
 
-  const handleOpenEditComment = (commentId: number, text: string) => {
+  const handleOpenEditComment = (commentId: string, text: string) => {
     setEditingCommentId(commentId);
     setCommentText(text);
   };
 
-  const handleDeleteComment = (commentId: number) => {
+  const handleDeleteComment = (commentId: string) => {
     if (!review) return;
 
-    onDeleteComment(review.id, commentId);
+    void onDeleteComment(review.feedId, commentId);
     if (editingCommentId === commentId) {
       setEditingCommentId(null);
       setCommentText("");
@@ -97,7 +101,7 @@ export default function FeedDetailPage() {
 
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
-    void navigator.clipboard.writeText(`${window.location.origin}/feed/${review.id}`);
+    void navigator.clipboard.writeText(`${window.location.origin}/feed/${review.feedId}`);
   };
 
   if (!review) {
@@ -121,20 +125,21 @@ export default function FeedDetailPage() {
         </Link>
 
         <article className="feed-post feed-detail-card">
-          <div className="post-head">
-            <div className="post-avatar">
-              {review.avatarImage ? <img src={review.avatarImage} alt="" /> : review.avatarInitial}
-            </div>
+	          <div className="post-head">
+	            <div className="post-avatar">
+	              {review.authorImage ? (
+	                <img src={review.authorImage} alt="" />
+	              ) : (
+	                getInitial(review.author)
+	              )}
+	            </div>
             <div className="post-meta">
               <h3>
                 {review.author}
-                {review.isBestReviewer && (
-                  <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
-                )}
               </h3>
               <div className="post-info">
-                <span className="time">{review.time}</span>
-                {!review.public && <span className="private-tag">비공개</span>}
+                <span className="time">{getRelativeTime(review.createdAt)}</span>
+                {!review.isPublic && <span className="private-tag">비공개</span>}
               </div>
             </div>
             <div className="detail-rating">
@@ -152,13 +157,13 @@ export default function FeedDetailPage() {
             <div className="review-info">
               <h4>{review.mediaTitle}</h4>
               <p className="meta">{review.mediaMeta}</p>
-              <p className="review-text">{review.reviewText}</p>
+              <p className="review-text">{review.content}</p>
             </div>
           </div>
 
           <div className="post-actions">
             <button type="button" className={`action ${review.liked ? "liked" : ""}`}>
-              {review.liked ? "♥" : "♡"} {review.likes}
+              {review.liked ? "♥" : "♡"} {review.likesCount}
             </button>
             {/* <span className="action readonly">댓글 {review.comments}</span> */}
             <button
@@ -191,35 +196,36 @@ export default function FeedDetailPage() {
           <div className="comment-list detail-comment-list">
             {review.commentsList.length > 0 ? (
               review.commentsList.map((comment) => (
-                <div className="comment-item" key={comment.id}>
-                  <div className="comment-avatar">
-                    {comment.avatarImage ? <img src={comment.avatarImage} alt="" /> : comment.avatarInitial}
-                  </div>
+	                <div className="comment-item" key={comment.commentId}>
+	                  <div className="comment-avatar">
+	                    {comment.authorImage ? (
+	                      <img src={comment.authorImage} alt="" />
+	                    ) : (
+	                      getInitial(comment.author)
+	                    )}
+	                  </div>
                   <div className="comment-content">
                     <div className="comment-meta">
                       <strong>
                         {comment.author}
-                        {comment.isBestReviewer && (
-                          <img className="reviewer-badge" src={BEST_REVIEWER_BADGE_IMAGE} alt={BEST_REVIEWER_BADGE_ALT} />
-                        )}
                       </strong>
-                      <span>{comment.time}</span>
+                      <span>{getRelativeTime(comment.updatedAt || comment.createdAt)}</span>
                     </div>
-                    <p>{comment.text}</p>
+                    <p>{comment.content}</p>
                     <div className="comment-actions">
-                      <button type="button">좋아요 {comment.likes}</button>
+                      <button type="button">좋아요 {comment.likesCount}</button>
                       {comment.isMine && (
                         <>
                           <button
                             type="button"
-                            onClick={() => handleOpenEditComment(comment.id, comment.text)}
+                            onClick={() => handleOpenEditComment(comment.commentId, comment.content)}
                           >
                             수정
                           </button>
                           <button
                             type="button"
                             className="comment-delete-btn"
-                            onClick={() => handleDeleteComment(comment.id)}
+                            onClick={() => handleDeleteComment(comment.commentId)}
                           >
                             삭제
                           </button>
