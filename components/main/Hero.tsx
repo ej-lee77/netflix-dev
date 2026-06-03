@@ -164,8 +164,10 @@ async function fetchHeroItems() {
     tvRes.json() as Promise<TrendingResponse>,
   ]);
 
+  const blockedIds = new Set([297640]);
+
   const validItem = (item: HeroItem) =>
-    item.overview && item.backdrop_path && item.poster_path;
+    !blockedIds.has(item.id) && item.overview && item.backdrop_path && item.poster_path;
 
   const movies = (movieData.results ?? [])
     .filter(validItem)
@@ -300,8 +302,9 @@ export default function Hero() {
 
         if (ignore) return;
 
+        const randomIndex = Math.floor(Math.random() * nextItems.length);
         setItems(nextItems);
-        setActiveIndex(0);
+        setActiveIndex(nextItems.length ? randomIndex : 0);
         setLoadState(nextItems.length ? "ready" : "error");
       } catch (error) {
         console.error(error);

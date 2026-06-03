@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
@@ -25,6 +26,7 @@ interface MediaListProps {
 }
 
 export default function CategoryList({ category }: MediaListProps) {
+  const router = useRouter();
   const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos, netflixOriginals, certifications, onFetchCertification } = useMovieStore();
   const { currentProfile } = useAuthStore();
   const [hover, setHover] = useState<number | null>(null);
@@ -58,36 +60,36 @@ export default function CategoryList({ category }: MediaListProps) {
         fetchVideo: () => onFetchVideo(movie.id),
       }))
       : category === "netflix"
-      ? netflixOriginals.slice(0, 18).map((tv) => ({
-        id: tv.id,
-        title: tv.name,
-        poster_path: tv.poster_path,
-        backdrop_path: tv.backdrop_path,
-        vote_average: tv.vote_average,
-        overview: tv.overview,
-        release_date: undefined as string | undefined,
-        genre_ids: tv.genre_ids ?? [],
-        videos: tvVideos[tv.id],
-        fetchVideo: () => onFetchTvVideos(tv.id),
-      }))
-      : tvSource.slice(0, 18).map((tv) => ({
-        id: tv.id,
-        title: tv.name,
-        poster_path: tv.poster_path,
-        backdrop_path: tv.backdrop_path,
-        vote_average: tv.vote_average,
-        overview: tv.overview,
-        release_date: undefined as string | undefined,
-        genre_ids: tv.genre_ids ?? [],
-        videos: tvVideos[tv.id],
-        fetchVideo: () => onFetchTvVideos(tv.id),
-      }));
+        ? netflixOriginals.slice(0, 18).map((tv) => ({
+          id: tv.id,
+          title: tv.name,
+          poster_path: tv.poster_path,
+          backdrop_path: tv.backdrop_path,
+          vote_average: tv.vote_average,
+          overview: tv.overview,
+          release_date: undefined as string | undefined,
+          genre_ids: tv.genre_ids ?? [],
+          videos: tvVideos[tv.id],
+          fetchVideo: () => onFetchTvVideos(tv.id),
+        }))
+        : tvSource.slice(0, 18).map((tv) => ({
+          id: tv.id,
+          title: tv.name,
+          poster_path: tv.poster_path,
+          backdrop_path: tv.backdrop_path,
+          vote_average: tv.vote_average,
+          overview: tv.overview,
+          release_date: undefined as string | undefined,
+          genre_ids: tv.genre_ids ?? [],
+          videos: tvVideos[tv.id],
+          fetchVideo: () => onFetchTvVideos(tv.id),
+        }));
 
   const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
     setHover(id);
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
-    videoTimer.current = setTimeout(() => setVideoReady(id), 2000);
+    videoTimer.current = setTimeout(() => setVideoReady(id), 1500);
     await Promise.all([fetchVideo(), onFetchCertification(id, mediaType)]);
   };
 
@@ -100,7 +102,7 @@ export default function CategoryList({ category }: MediaListProps) {
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} />
+        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" />
       </div>
 
       <div className="swiper-outer">
@@ -128,6 +130,7 @@ export default function CategoryList({ category }: MediaListProps) {
                   className="category-item"
                   onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo, category === "netflix" ? "tv" : category)}
                   onMouseLeave={handleMouseLeave}
+                  onClick={() => router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`)}
                 >
                   {/* 기본 포스터 */}
                   <div className="img-box">
@@ -144,7 +147,7 @@ export default function CategoryList({ category }: MediaListProps) {
                       <div className="hover-video">
                         {autoplayPreview && trailerKey && videoReady === item.id ? (
                           <iframe
-                            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&cc_load_policy=1&cc_lang_pref=ko`}
+                            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0`}
                             title="트레일러"
                             allow="autoplay"
                           />
@@ -187,7 +190,7 @@ export default function CategoryList({ category }: MediaListProps) {
                           <p className="hover-overview">{item.overview}</p>
                         )}
                         <div className="hover-actions">
-                          <button type="button" className="btn-play">
+                          <button type="button" className="btn-play" onClick={(e) => e.stopPropagation()}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>

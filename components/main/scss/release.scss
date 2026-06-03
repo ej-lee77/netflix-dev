@@ -5,7 +5,7 @@
     column-count: 1;
     column-gap: 12px;
     column-fill: balance;
-    padding: 0 clamp(24px, calc((100vw - g.$main-menu-width - 1600px) / 2), 80px);
+    padding: 0 clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
   }
 
   @media (min-width: 640px)  { .release-masonry { column-count: 2; } }
@@ -22,6 +22,9 @@
     cursor: pointer;
     margin-bottom: 12px;
     background: #1a1a1a;
+    display: block;
+    text-decoration: none;
+    color: inherit;
 
     &:hover .card-image {
       transform: scale(1.05);
