@@ -7,6 +7,7 @@ import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import './scss/watchingList.scss';
+import SectionTitle from '../common/SectionTitle';
 
 /**
  * 시청중(Watching) 섹션
@@ -20,19 +21,16 @@ export default function WatchingList() {
         onLoadPlayList();
     }, []);
 
-    //임시 시청률 계산기: 실제 진행률 필드가 생기기 전까지 시각용
-    const getProgress = (id: number) => {
-        return 15 + (id % 80); // 15% ~ 94% 범위
-    };
-
     //시청기록이 비어있을 때는 섹션 자체를 노출하지 않음
     if (!playList || playList.length === 0) return null;
 
     return (
         <section className="watching-section">
-            <div className="inner">
-                <h2 className="section-title">시청중</h2>
+            <div className="section-title-outer">
+                <SectionTitle title="시청중" href="/mypage" />
+            </div>
 
+            <div className="watching-swiper-wrap">
                 <Swiper
                     modules={[Navigation]}
                     navigation
@@ -42,10 +40,9 @@ export default function WatchingList() {
                     className="watching-swiper"
                 >
                     {playList.map((item) => {
-                        const progress = getProgress(item.id);
                         return (
                             <SwiperSlide key={`${item.mediaType}-${item.id}`}>
-                                <Link href={`/detail/${item.mediaType}/${item.id}`} className="watching-card">
+                                <Link href={`/detail/${item.mediaType}/${item.id}?play=1`} className="watching-card">
                                     <div className="watching-thumb">
                                         <img
                                             src={item.backdrop_path
@@ -53,11 +50,14 @@ export default function WatchingList() {
                                                 : `https://image.tmdb.org/t/p/w500${item.poster_path}`}
                                             alt={item.title}
                                         />
-                                        {/* 시청률 진행바 */}
+                                        <div className="watching-play-overlay">
+                                            <div className="watching-play-btn">▶</div>
+                                        </div>
+                                        {/* 실제 시청 진행바 */}
                                         <div className="progress-bar">
                                             <span
                                                 className="progress-fill"
-                                                style={{ width: `${progress}%` }}
+                                                style={{ width: `${item.progress ?? 0}%` }}
                                             />
                                         </div>
                                     </div>

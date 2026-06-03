@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { auth } from "@/firebase/firebase";
 import { updatePlan, useSignUpStore } from "@/store/useSignUpStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
@@ -17,6 +18,7 @@ export interface SelectedPlan {
 
 interface StepPlanProps {
   onNext: (plan: SelectedPlan) => void;
+  currentPlanType?: string;
 }
 
 interface PlanData {
@@ -130,19 +132,18 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPlan({ onNext }: StepPlanProps) {
+export default function StepPlan({ onNext, currentPlanType }: StepPlanProps) {
   const [billing, setBilling] = useState<BillingCycle>("monthly"); // 기본: 월간
   const [selected, setSelected] = useState<string>("standard");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const uid = useSignUpStore((s) => s.uid);
+  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
 
   const handleNext = async () => {
     const planData = PLANS.find((p) => p.id === selected);
     if (!planData) return;
 
-    // Firestore에 planType 저장
-    if (uid) await updatePlan(uid, selected); // "basic" | "standard" | "premium"
+    if (uid) await updatePlan(uid, selected);
 
     onNext({
       name: planData.name,
@@ -183,18 +184,23 @@ export default function StepPlan({ onNext }: StepPlanProps) {
       <div className="plan-grid">
         {PLANS.map((plan) => {
           const isSelected = selected === plan.id;
+          const isCurrent = currentPlanType === plan.id;
           return (
             <div
               key={plan.id}
-              className={`plan-card${plan.recommended && isSelected ? " recommended" : ""}${isSelected ? " selected" : ""}`}
+              className={`plan-card${plan.recommended && isSelected ? " recommended" : ""}
+              ${isSelected ? " selected" : ""} ${isCurrent ? " current" : ""}`}
               onClick={() => setSelected(plan.id)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === "Enter" && setSelected(plan.id)}
             >
+              {/* 추천 뱃지 */}
               {plan.recommended && (
                 <span className="plan-top-badge">추천</span>
               )}
+              {/* 사용중 뱃지 ← 추가 */}
+              {isCurrent && <span className="plan-current-badge">사용중</span>}
 
               <p className="plan-name">{plan.name}</p>
 

@@ -32,22 +32,23 @@ export default function MyPage() {
   const { playList, onLoadPlayList } = usePlayListStore();
   const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
 
-  const userId = user?.userId; // 사용자 ID
-  const { reviews, fetchUserReviews } = useCommunityStore(); // 파이어베이스 리뷰 스토어
-  const { mediaDetails, onFetchMediaDetail } = useMovieStore(); // TMDB 영화 데이터 스토어
+  const userId = user?.userId;
+  const { reviews, fetchUserReviews } = useCommunityStore();
+  const { mediaDetails, onFetchMediaDetail } = useMovieStore();
 
+  // 1. 리뷰 로드 호출
   useEffect(() => {
     if (userId) fetchUserReviews(userId);
-  }, [userId]);
+  }, [userId, fetchUserReviews]);
 
-  // 리뷰에 해당하는 영화 데이터만 선택적으로 가져오기
+  // 2. 영화 상세 정보 보완
   useEffect(() => {
     reviews.forEach(review => {
       if (!mediaDetails[`movie-${review.videoId}`]) {
         onFetchMediaDetail(review.videoId, 'movie');
       }
     });
-  }, [reviews]);
+  }, [reviews, mediaDetails, onFetchMediaDetail]);
 
   // 스토어의 값을 기준으로 UI 판단 (true면 표시, false면 숨김)
   const isCommunityEnabled = currentProfile?.isCommunity ?? true;
@@ -411,7 +412,7 @@ export default function MyPage() {
             <section className="section-block">
               <div className="section-h">
                 <h2>팔로워 활동</h2>
-                <span className="more">더보기</span>
+                <span className="more"><Link href="/alarm?tab=friend">더보기</Link></span>
               </div>
 
               {filteredActivities.length > 0 ? (
@@ -442,7 +443,7 @@ export default function MyPage() {
             <section className="section-block">
               <div className="section-h">
                 <h2>나의 최근 리뷰</h2>
-                <span className="more">더보기</span>
+                <span className="more"><Link href="/mypage/community">더보기</Link></span>
               </div>
 
               {reviews.length > 0 ? (

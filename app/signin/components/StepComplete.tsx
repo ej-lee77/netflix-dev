@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useSignUpStore } from "@/store/useSignUpStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -40,13 +41,26 @@ function getNow(): string {
 }
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
-
 export default function StepComplete({ plan }: StepCompleteProps) {
   const router = useRouter();
+  const uid = useSignUpStore((s) => s.uid);
+  const payInfo = useSignUpStore((s) => s.payInfo);  // ← 아래에서 추가 예정
 
   const isAnnual = plan.billing === "annual";
   const orderId = generateOrderId();
   const paidAmount = isAnnual ? plan.annualTotal : plan.monthlyPrice;
+
+  // 결제 수단 표기 텍스트
+  const payLabel = (() => {
+    if (!payInfo) return "결제 완료";
+    if (payInfo.pay === "card") return `카드 ****-${payInfo.num}`;
+    if (payInfo.pay === "kakao") return "카카오페이";
+    if (payInfo.pay === "naver") return "네이버페이";
+    if (payInfo.pay === "transfer") return `계좌이체 (${payInfo.bank})`;
+    if (payInfo.pay === "phone") return `휴대폰 결제 (${payInfo.bank})`;
+    return "결제 완료";
+  })();
+
 
   return (
     <div className="complete-page">
@@ -70,7 +84,7 @@ export default function StepComplete({ plan }: StepCompleteProps) {
           </div>
           <div className="receipt-row">
             <span className="receipt-label">결제 수단</span>
-            <span className="receipt-value">신한카드 ****-1234</span>
+            <span className="receipt-value">{payLabel}</span>
           </div>
           <div className="receipt-row">
             <span className="receipt-label">결제 일시</span>

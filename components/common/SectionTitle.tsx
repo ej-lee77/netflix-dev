@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "./sectionTitle.scss";
 
 type SectionTitleProps = {
@@ -5,6 +6,7 @@ type SectionTitleProps = {
     subTitle?: string;
     showMore?: boolean;
     onMoreClick?: () => void;
+    href?: string;
 };
 
 export default function SectionTitle({
@@ -12,6 +14,7 @@ export default function SectionTitle({
     subTitle,
     showMore = true,
     onMoreClick,
+    href,
 }: SectionTitleProps) {
     return (
         <div className="section-header">
@@ -28,12 +31,9 @@ export default function SectionTitle({
             </div>
 
             {showMore && (
-                <button
-                    className="see-all"
-                    onClick={onMoreClick}
-                >
-                    전체보기 ›
-                </button>
+                href
+                    ? <Link href={href} className="see-all">전체보기 ›</Link>
+                    : <button className="see-all" onClick={onMoreClick}>전체보기 ›</button>
             )}
         </div>
     );

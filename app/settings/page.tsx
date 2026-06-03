@@ -1,12 +1,15 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { deleteUser } from "firebase/auth";
-import { auth } from "@/firebase/firebase";
+import { auth, db } from "@/firebase/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import type { PayInfo } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/settings.scss";
+
 
 // ==========================================
 // Constants & Helpers (컴포넌트 외부에 배치)
@@ -21,14 +24,15 @@ const AVATAR_OPTIONS = [
   "/images/profile/image/default_icons/22.png",
 ];
 
-const iconPaths = (folder: string, count: number) =>
+const iconPaths = (folder: string, count: number, extension = "png") =>
   Array.from(
     { length: count },
-    (_, index) => `/images/profile/image/${folder}/${index + 1}.png`
+    (_, index) => `/images/profile/image/${folder}/${index + 1}.${extension}`
   );
 
 const PROFILE_ICON_SECTIONS = [
   { title: "대표 아이콘", icons: iconPaths("default_icons", 23) },
+  { title: "데몬과 헌터스", icons: iconPaths("demons_and_hunters", 6, "jpg") },
   { title: "앨리스 인 보더랜드", icons: iconPaths("alice_in_borderland", 12) },
   { title: "아케인", icons: iconPaths("arcane", 12) },
   { title: "뷰티 인 블랙", icons: iconPaths("beauty_in_black", 12) },
@@ -59,29 +63,17 @@ const PROFILE_ICON_SECTIONS = [
   { title: "WWE RAW", icons: iconPaths("wwe_raw", 8) },
 ];
 
-type TabKey = "account" | "membership" | "profile" | "app";
+type TabKey = "account" | "membership" | "profile";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "account", label: "계정 정보" },
   { key: "membership", label: "멤버십 / 결제" },
   { key: "profile", label: "프로필 관리" },
-  { key: "app", label: "앱 설정" },
 ];
 
 // ==========================================
 // Sub-components
 // ==========================================
-function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      className={`acset-toggle${on ? " on" : ""}`}
-      onClick={onChange}
-      aria-pressed={on}
-    />
-  );
-}
-
 function Row({
   label,
   desc,
@@ -109,17 +101,58 @@ function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
-  
+
   const [active, setActive] = useState<TabKey>(
     TABS.some((tab) => tab.key === initialTab)
       ? (initialTab as TabKey)
       : "account"
   );
-  
+
   const { user, onAddProfile } = useAuthStore();
-  
+
+  // Firestore에서 플랜/결제 정보 불러오기
+  const [planType, setPlanType] = useState<string>("");
+  const [payInfo, setPayInfo] = useState<PayInfo | null>(null);
+  const [membershipLoading, setMembershipLoading] = useState(false);
+
+  useEffect(() => {
+    if (active !== "membership") return; // membership 탭일 때만 실행
+
+    const uid = user?.uid ?? auth.currentUser?.uid;
+    if (!uid) return;
+
+    setMembershipLoading(true);
+    getDoc(doc(db, "users", uid))
+      .then((snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data();
+        setPlanType(data.planType ?? "");
+        setPayInfo(data.payment ?? null);
+      })
+      .finally(() => setMembershipLoading(false));
+  }, [user?.uid, active]); // active 추가
+
+  // 플랜 이름 변환
+  const planLabel = (() => {
+    if (planType === "basic") return "베이직";
+    if (planType === "standard") return "스탠다드";
+    if (planType === "premium") return "프리미엄";
+    return planType || "없음";
+  })();
+
+  // 결제 수단 텍스트
+  const payLabel = (() => {
+    if (!payInfo?.pay) return "등록된 결제 수단 없음";
+    if (payInfo.pay === "card") return `카드 ****-${payInfo.num}`;
+    if (payInfo.pay === "kakao") return "카카오페이";
+    if (payInfo.pay === "naver") return "네이버페이";
+    if (payInfo.pay === "transfer") return `계좌이체 (${payInfo.bank})`;
+    if (payInfo.pay === "phone") return `휴대폰 결제 (${payInfo.bank})`;
+    return "결제 수단";
+  })();
+
   // 💥 BUG FIX: profiles에는 배열 자체를 대입하고 fallback은 빈 배열로 처리합니다.
-  const profileList = user?.profile ?? []; 
+  const profileList = user?.profile ?? [];
   const profileCount = profileList.length;
 
   const [deleteError, setDeleteError] = useState("");
@@ -128,7 +161,6 @@ function SettingsContent() {
   const [draftProfileName, setDraftProfileName] = useState("새 프로필");
   const [draftProfileAvatar, setDraftProfileAvatar] = useState(AVATAR_OPTIONS[0]);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   
   const activeTab = TABS.find((tab) => tab.key === active);
 
@@ -147,6 +179,17 @@ function SettingsContent() {
     setDraftProfileAvatar(AVATAR_OPTIONS[0]);
     setIsAvatarPickerOpen(false);
   };
+
+  useEffect(() => {
+    if (!isProfileAddOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isProfileAddOpen]);
 
   const handleAddProfile = () => {
     if (profileCount >= MAX_PROFILES) return;
@@ -169,7 +212,7 @@ function SettingsContent() {
         followers: [],  // 나를 팔로우하는 유저 ID 목록
         following: [],  // 내가 팔로우하는 유저 ID 목록
         reviews: [],    // 좋아요/싫어요/신고한 리뷰 ID 목록
-        feeds: [],      // 좋아요/신고한 피드 ID 목록
+        feeds: [],      // 다른 피드에 남긴 댓글/좋아요 활동 기록
       },
       headerMenus: [],  // 헤더에 표시할 메뉴 ID 목록
       bages: {
@@ -217,6 +260,7 @@ function SettingsContent() {
       setIsDeletingAccount(false);
     }
   };
+
 
   return (
     <div className="acset-page">
@@ -273,27 +317,27 @@ function SettingsContent() {
 
             {active === "membership" && (
               <>
-                <div className="acset-plan-box">
-                  <div>
-                    <div className="acset-plan-name">스탠다드</div>
-                    <div className="acset-plan-price">
-                      월 13,500원 · 다음 결제일 2026.06.15
+                {membershipLoading ? (
+                  <p className="acset-row-desc" style={{ padding: "20px 0" }}>불러오는 중...</p>
+                ) : (
+                  <>
+                    <div className="acset-plan-box">
+                      <div>
+                        <div className="acset-plan-name">{planLabel}</div>
+                        <div className="acset-plan-price">
+                          다음 결제일 {payInfo?.nextDate ?? "-"}
+                        </div>
+                      </div>
+                      <div className="acset-plan-actions">
+                        <Link href="/plan" className="acset-btn">플랜 변경</Link>
+                        <button type="button" className="acset-btn danger">해지</button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="acset-plan-actions">
-                    <Link href="/plan" className="acset-btn">
-                      플랜 변경
-                    </Link>
-                    <button type="button" className="acset-btn danger">
-                      해지
-                    </button>
-                  </div>
-                </div>
-                <Row label="결제 수단">
-                  <button type="button" className="acset-btn">
-                    관리
-                  </button>
-                </Row>
+                    <Row label="결제 수단" desc={payLabel}>
+                      <button type="button" className="acset-btn">관리</button>
+                    </Row>
+                  </>
+                )}
               </>
             )}
 
@@ -309,10 +353,12 @@ function SettingsContent() {
                     <div className="acset-profile-avatar">
                       <img
                         src={profile.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                        alt={profile.name ?? "프로필"}
+                        alt={profile.nickname ?? profile.name ?? "프로필"}
                       />
                     </div>
-                    <span className="acset-profile-name">{profile.name}</span>
+                    <span className="acset-profile-name">
+                      {profile.nickname ?? profile.name ?? "프로필"}
+                    </span>
                   </Link>
                 ))}
                 {profileCount < MAX_PROFILES && (
@@ -329,23 +375,6 @@ function SettingsContent() {
                 )}
               </div>
             )}
-
-            {active === "app" && (
-              <>
-                <Row label="언어">
-                  <select className="acset-select" defaultValue="ko">
-                    <option value="ko">한국어</option>
-                    <option value="en">English</option>
-                  </select>
-                </Row>
-                <Row label="다크 모드">
-                  <Toggle
-                    on={darkMode}
-                    onChange={() => setDarkMode((value) => !value)}
-                  />
-                </Row>
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -356,8 +385,12 @@ function SettingsContent() {
           role="dialog"
           aria-modal="true"
           aria-label="프로필 추가"
+          onClick={closeProfileAdd}
         >
-          <div className="acset-profile-modal">
+          <div
+            className="acset-profile-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="acset-profile-modal-head">
               <h2>프로필 추가</h2>
               <button type="button" onClick={closeProfileAdd} aria-label="닫기">
@@ -442,7 +475,7 @@ function SettingsContent() {
               </div>
             )}
 
-            <div className="acset-profile-modal-actions">
+            <div className="acset-profile-modal-footer">
               <button type="button" onClick={closeProfileAdd}>
                 취소
               </button>

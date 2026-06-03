@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"; // updateDoc 추가
 import { auth, db } from "@/firebase/firebase";
 import type { UserDocument, PayInfo } from "@/types/auth";
@@ -25,45 +28,45 @@ export const signUp = async (
   const userDoc: UserDocument = {
     userId: user.uid,
     email: user.email!,
-    planType: "",         // 플랜 선택 단계에서 채워짐
+    planType: "", // 플랜 선택 단계에서 채워짐
     payment: {
       pay: "",
       bank: "",
       num: "",
       payDate: "",
-      nextDate: ""
+      nextDate: "",
     },
     profile: [
       {
         id: 1,
-        nickname: "",       // 추후 마이페이지에서 설정
+        nickname: "", // 추후 마이페이지에서 설정
         imgUrl: "/images/profile/image/default_icons/17.png",
         viewAge: "",
         movies: {
           watchingVideos: [], // 시청 중인 영상 ID 목록
-          wishlist: [],       // 찜한 영상 ID 목록
+          wishlist: [], // 찜한 영상 ID 목록
           playlist: {
-            playlistVideos: [],   // 플레이리스트 영상 ID 목록
-            customPlaylists: [],  // 커스텀 플레이리스트 ID 목록
+            playlistVideos: [], // 플레이리스트 영상 ID 목록
+            customPlaylists: [], // 커스텀 플레이리스트 ID 목록
           },
-          genreStats: {},     // 장르별 시청 횟수 통계
+          genreStats: {}, // 장르별 시청 횟수 통계
           moodStats: {},
         },
         community: {
-          followers: [],  // 나를 팔로우하는 유저 ID 목록
-          following: [],  // 내가 팔로우하는 유저 ID 목록
-          reviews: [],    // 좋아요/싫어요/신고한 리뷰 ID 목록
-          feeds: [],      // 좋아요/신고한 피드 ID 목록
+          followers: [], // 나를 팔로우하는 유저 ID 목록
+          following: [], // 내가 팔로우하는 유저 ID 목록
+          reviews: [], // 좋아요/싫어요/신고한 리뷰 ID 목록
+          feeds: [], // 다른 피드에 남긴 댓글/좋아요 활동 기록 (신고 추가해야함)
         },
-        headerMenus: [],  // 헤더에 표시할 메뉴 ID 목록
+        headerMenus: [], // 헤더에 표시할 메뉴 ID 목록
         bages: {
-          earnedBadges: [],   // 획득한 뱃지 목록
+          earnedBadges: [], // 획득한 뱃지 목록
           equippedBadges: "", // 현재 장착 중인 뱃지 ID
         },
-        alarm: [],  // 알림 설정한 영상 ID 목록
-        isCommunity: true
-      }
-    ]
+        alarm: [], // 알림 설정한 영상 ID 목록
+        isCommunity: true,
+      },
+    ],
   };
 
   // Firestore users 컬렉션에 문서 저장 (문서 ID = uid)
@@ -85,7 +88,7 @@ export const signUp = async (
  */
 export const updatePayment = async (
   uid: string,
-  payment: PayInfo
+  payment: PayInfo,
 ): Promise<void> => {
   await updateDoc(doc(db, "users", uid), {
     payment,
@@ -93,7 +96,10 @@ export const updatePayment = async (
   });
 };
 
-export const updatePlan = async (uid: string, planType: string): Promise<void> => {
+export const updatePlan = async (
+  uid: string,
+  planType: string,
+): Promise<void> => {
   await updateDoc(doc(db, "users", uid), {
     planType,
     updatedAt: serverTimestamp(),
@@ -109,12 +115,16 @@ export const updatePlan = async (uid: string, planType: string): Promise<void> =
  */
 interface SignUpState {
   uid: string | null;
-  setUid: (uid: string) => void; // 회원가입 직후 uid 저장
-  clear: () => void;             // 가입 완료 후 초기화
+  payInfo: PayInfo | null; // ← 추가
+  setUid: (uid: string) => void;
+  setPayInfo: (payInfo: PayInfo) => void; // ← 추가
+  clear: () => void;
 }
 
 export const useSignUpStore = create<SignUpState>((set) => ({
   uid: null,
+  payInfo: null, // ← 추가
   setUid: (uid) => set({ uid }),
-  clear: () => set({ uid: null }),
+  setPayInfo: (payInfo) => set({ payInfo }), // ← 추가
+  clear: () => set({ uid: null, payInfo: null }), // ← payInfo도 초기화
 }));

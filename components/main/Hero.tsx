@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -163,8 +164,10 @@ async function fetchHeroItems() {
     tvRes.json() as Promise<TrendingResponse>,
   ]);
 
+  const blockedIds = new Set([297640]);
+
   const validItem = (item: HeroItem) =>
-    item.overview && item.backdrop_path && item.poster_path;
+    !blockedIds.has(item.id) && item.overview && item.backdrop_path && item.poster_path;
 
   const movies = (movieData.results ?? [])
     .filter(validItem)
@@ -276,6 +279,8 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
 
 export default function Hero() {
   const router = useRouter();
+  const { currentProfile } = useAuthStore();
+  const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeCertification, setActiveCertification] = useState("");
@@ -297,8 +302,9 @@ export default function Hero() {
 
         if (ignore) return;
 
+        const randomIndex = Math.floor(Math.random() * nextItems.length);
         setItems(nextItems);
-        setActiveIndex(0);
+        setActiveIndex(nextItems.length ? randomIndex : 0);
         setLoadState(nextItems.length ? "ready" : "error");
       } catch (error) {
         console.error(error);
@@ -505,7 +511,7 @@ export default function Hero() {
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
-    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
   const visiblePosters = [-2, -1, 0, 1, 2]
     .map((offset) => {
       const index = (activeIndex + offset + items.length) % items.length;
@@ -528,7 +534,7 @@ export default function Hero() {
         className={`hero-video-poster${isVideoVisible ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
-      {(previousVideoKey || currentVideoKey) && (
+      {autoplayPreview && (previousVideoKey || currentVideoKey) && (
         <>
           {previousVideoKey && (
             <iframe
