@@ -25,12 +25,12 @@ const getMediaType = (item: Movie | TV): MediaType => (
     "title" in item ? "movie" : "tv"
 );
 
-const makePlayListItem = (item: Movie | TV): PlayListItem => ({
+const makePlayListItem = (item: Movie | TV, mediaType = getMediaType(item)): PlayListItem => ({
     id: item.id,
     title: "title" in item ? item.title : item.name,
     poster_path: item.poster_path,
     backdrop_path: item.backdrop_path,
-    mediaType: getMediaType(item),
+    mediaType,
     playTime: new Date().toISOString()
 });
 
@@ -230,12 +230,13 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     },
     createMyCustomPlaylist: async (data) => {
         const { user } = useAuthStore.getState();
-        if (!user?.userId) return;
+        const userId = user?.userId || auth.currentUser?.uid;
+        if (!userId) return;
 
         try {
             const newDoc: Omit<PlaylistDocument, 'listId'> = {
                 ...data,
-                userId: user.userId,
+                userId,
                 likesCount: 0,
                 createdAt: new Date().toISOString(),
                 isDelete: false
@@ -251,10 +252,10 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             throw error; // 컴포넌트에서 에러 핸들링을 위해 던져줌
         }
     },
-    onAddMyList: async (item) => {
+    onAddMyList: async (item, mediaType) => {
         try {
             const authState = useAuthStore.getState();
-            const userId = authState.user?.userId;
+            const userId = authState.user?.userId || auth.currentUser?.uid;
             const currentProfile = authState.currentProfile;
 
             if (!userId || !currentProfile) return false;
@@ -273,7 +274,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             if (profileIndex === -1) return false;
 
             // 3. 기존 프로필 데이터는 그대로 유지하고, movies.playlist.playlistVideos만 업데이트합니다.
-            const itemKey = getItemKey(makePlayListItem(item));
+            const itemKey = getItemKey(makePlayListItem(item, mediaType));
             
             // 기존 배열에 안전하게 값을 추가
             const updatedProfiles = [...profiles];
@@ -310,7 +311,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     onRemoveMyList: async (id, mediaType) => {
         try {
             const authState = useAuthStore.getState();
-            const userId = authState.user?.userId;
+            const userId = authState.user?.userId || auth.currentUser?.uid;
             const currentProfile = authState.currentProfile;
 
             if (!userId || !currentProfile) return false;
@@ -365,12 +366,13 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     onLoadMyList: async () => {
         try {
             const { user, currentProfile } = useAuthStore.getState();
-            if (!user?.userId || !currentProfile) {
+            const userId = user?.userId || auth.currentUser?.uid;
+            if (!userId || !currentProfile) {
                 set({ myList: [] }); // 비로그인 시 빈 배열
                 return;
             }
 
-            const userDocRef = doc(db, "users", user.userId);
+            const userDocRef = doc(db, "users", userId);
             const snap = await getDoc(userDocRef);
             
             if (snap.exists()) {

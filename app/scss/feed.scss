@@ -93,10 +93,25 @@
   }
 
   .feed-post {
+    position: relative;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
     border-radius: g.$radius-lg;
     overflow: visible;
+  }
+
+  .feed-card-link {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: g.$radius-lg;
+  }
+
+  .feed-card-layer,
+  .report-menu,
+  .spoiler-reveal-btn {
+    position: relative;
+    z-index: 2;
   }
 
   .post-head {
@@ -754,7 +769,7 @@
     }
   }
 
-  .feed-search-field input,
+  .feed-search-input,
   .feed-review-field textarea {
     width: 100%;
     box-sizing: border-box;
@@ -769,9 +784,61 @@
     }
   }
 
-  .feed-search-field input {
-    height: 42px;
-    padding: 0 14px;
+  .feed-search-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 5px 10px;
+
+    input {
+      min-width: 120px;
+      flex: 1;
+      height: 30px;
+      padding: 0 4px;
+      border: 0;
+      background: transparent;
+      color: g.$w-color;
+      outline: none;
+    }
+  }
+
+  .feed-selected-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 210px;
+    height: 28px;
+    padding: 0 5px 0 8px;
+    border: 1px solid rgba(229, 9, 20, 0.58);
+    border-radius: 999px;
+    background: rgba(229, 9, 20, 0.14);
+    color: g.$w-color;
+    flex-shrink: 0;
+    font-size: g.$text-12;
+    font-weight: 900;
+
+    img {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      color: g.$w-color;
+      cursor: pointer;
+      font-size: g.$text-13;
+      line-height: 1;
+    }
   }
 
   .feed-review-field textarea {
@@ -836,6 +903,120 @@
       font-size: g.$text-12;
       font-style: normal;
     }
+  }
+
+  .feed-search-results-wrap {
+    margin-bottom: 16px;
+  }
+
+  .feed-media-status {
+    display: flex;
+    align-items: center;
+    min-height: 58px;
+    margin-bottom: 16px;
+    padding: 0 14px;
+    border: 1px solid #2b2b2b;
+    border-radius: g.$radius-md;
+    background: #101010;
+    color: #9a9a9a;
+    font-size: g.$text-13;
+
+    &.is-error {
+      border-color: rgba(229, 9, 20, 0.45);
+      color: #ff8b92;
+    }
+  }
+
+  .feed-poster-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    aspect-ratio: 2 / 3;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #2f2f2f, #171717);
+    color: #777;
+    flex-shrink: 0;
+    font-size: g.$text-16;
+    font-weight: 900;
+  }
+
+  .feed-review-finder {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .feed-review-finder__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+
+    strong {
+      color: g.$w-color;
+      font-size: g.$text-13;
+      font-weight: 900;
+    }
+
+    span {
+      color: #777;
+      font-size: g.$text-12;
+    }
+  }
+
+  .feed-review-option-grid {
+    display: grid;
+    gap: 6px;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 0;
+      min-height: 30px;
+      padding: 5px 7px;
+      border: 1px solid #2f2f2f;
+      border-radius: g.$radius-md;
+      background: #101010;
+      color: #d0d0d0;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 800;
+      transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease;
+
+      &:hover {
+        border-color: rgba(229, 9, 20, 0.62);
+        background: rgba(229, 9, 20, 0.12);
+        color: g.$w-color;
+      }
+    }
+
+    img {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .feed-review-option-grid--mood {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .feed-review-option-grid--genre {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .feed-rating-control {
@@ -1008,6 +1189,17 @@
 
     .feed-media-results {
       grid-template-columns: 1fr;
+    }
+
+    .feed-review-finder__header {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .feed-review-option-grid--mood,
+    .feed-review-option-grid--genre {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .feed-modal-backdrop {

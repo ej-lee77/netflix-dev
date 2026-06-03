@@ -395,7 +395,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       if (isMyListAdded) {
         await onRemoveMyList(mediaId, type);
       } else {
-        await onAddMyList(mediaItem);
+        await onAddMyList(mediaItem, type);
       }
     } finally {
       setIsAddingMyList(false);
