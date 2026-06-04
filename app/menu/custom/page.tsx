@@ -3,36 +3,71 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { mainMenus, customMenus } from "@/data/mainMenu";
+import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/menuCustom.scss";
 
 // 전체 선택 풀 생성 (순서 매핑용)
 const allSelectablePool = [...mainMenus, ...customMenus];
+const DEFAULT_HEADER_MENU_PATHS = [
+  "/category",
+  "/mypage/playlist?tab=playlists",
+  "/mypage/playlist?tab=history",
+];
+const normalizeMenuPath = (path: string) =>
+  path === "/mypage/playhist" ? "/mypage/playlist?tab=history" : path;
+const uniqueMenuPaths = (paths: string[]) => Array.from(new Set(paths.map(normalizeMenuPath)));
 
 export default function MenuCustomPage() {
   const [selectedMenuPaths, setSelectedMenuPaths] = useState<string[]>([]);
+  const { currentProfile, onUpdateProfile } = useAuthStore();
+  const currentProfileId = currentProfile?.id;
+  const currentProfileHeaderMenus = currentProfile?.headerMenus;
 
   // 1. 초기 세팅값 LocalStorage 로드
   useEffect(() => {
+    if (currentProfileId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedMenuPaths(
+        currentProfileHeaderMenus?.length
+          ? uniqueMenuPaths(currentProfileHeaderMenus)
+          : DEFAULT_HEADER_MENU_PATHS,
+      );
+      return;
+    }
+
     const saved = localStorage.getItem("custom_header_menus");
     if (saved) {
       try {
-        setSelectedMenuPaths(JSON.parse(saved));
+        const normalizedPaths = uniqueMenuPaths(JSON.parse(saved) as string[]);
+        setSelectedMenuPaths(normalizedPaths);
+        localStorage.setItem("custom_header_menus", JSON.stringify(normalizedPaths));
       } catch (e) {
         console.error(e);
       }
     } else {
-      const defaultPaths = [
-        "/category",
-        "/mypage/playlist?tab=playlists",
-        "/mypage/playhist",
-      ];
+      const defaultPaths = DEFAULT_HEADER_MENU_PATHS;
       setSelectedMenuPaths(defaultPaths);
       localStorage.setItem("custom_header_menus", JSON.stringify(defaultPaths));
     }
-  }, []);
+  }, [currentProfileId, currentProfileHeaderMenus]);
 
   // 2. 토글 핸들러 (클릭한 순서대로 배열 끝에 추가됨)
-  const handleToggleMenu = (path: string) => {
+  const saveHeaderMenus = async (paths: string[]) => {
+    const normalizedPaths = uniqueMenuPaths(paths);
+
+    setSelectedMenuPaths(normalizedPaths);
+    localStorage.setItem("custom_header_menus", JSON.stringify(normalizedPaths));
+    window.dispatchEvent(new Event("customMenuStorageUpdate"));
+
+    if (!currentProfile) return;
+
+    await onUpdateProfile({
+      ...currentProfile,
+      headerMenus: normalizedPaths,
+    });
+  };
+
+  const handleToggleMenu = async (path: string) => {
     let updatedPaths: string[];
 
     if (selectedMenuPaths.includes(path)) {
@@ -45,20 +80,11 @@ export default function MenuCustomPage() {
       updatedPaths = [...selectedMenuPaths, path];
     }
 
-    setSelectedMenuPaths(updatedPaths);
-    localStorage.setItem("custom_header_menus", JSON.stringify(updatedPaths));
-    window.dispatchEvent(new Event("customMenuStorageUpdate"));
+    await saveHeaderMenus(updatedPaths);
   };
 
-  const handleReset = () => {
-    const defaultPaths = [
-      "/category",
-      "/mypage/playlist?tab=playlists",
-      "/mypage/playhist",
-    ];
-    setSelectedMenuPaths(defaultPaths);
-    localStorage.setItem("custom_header_menus", JSON.stringify(defaultPaths));
-    window.dispatchEvent(new Event("customMenuStorageUpdate"));
+  const handleReset = async () => {
+    await saveHeaderMenus(DEFAULT_HEADER_MENU_PATHS);
   };
 
   // 데이터 그룹 분리

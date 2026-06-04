@@ -2,27 +2,17 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { customMenus } from "@/data/mainMenu"; // 1. 메인 메뉴 데이터 임포트
+import { useRouter } from "next/navigation";
+import {
+  addRecentSearch,
+  clearRecentSearches,
+  genreOptions,
+  loadRecentSearches,
+  moodOptions,
+  removeRecentSearch,
+} from "@/lib/searchOptions";
 import "./scss/searchOverlay.scss";
 
-// 2. customMenus 데이터를 기반으로 검색 옵션 동적 가공
-const genreOptions = customMenus
-  .filter((menu) => menu.path.startsWith("/genre/"))
-  .map((menu) => ({
-    label: menu.title,                             // "액션", "애니메이션" 등
-    value: menu.path.replace("/genre/", ""),       // "action", "animation" 등 slug 추출
-    icon: menu.imgUrl,                             // 이미지 경로 그대로 매핑
-  }));
-
-const moodOptions = customMenus
-  .filter((menu) => menu.path.startsWith("/mood/"))
-  .map((menu) => ({
-    label: menu.title,                             // "잔잔한", "어두운" 등
-    value: menu.path.replace("/mood/", ""),       // "chill", "dark" 등 slug 추출
-    icon: menu.imgUrl,                             // 이미지 경로 그대로 매핑
-  }));
-
-const recentSearches = ["오펜하이머", "봉준호", "스릴러 한국영화", "로맨틱 코미디"];
 const recommendedSearches = ["파묘", "서울의 봄", "듄: 파트2", "웡카", "노량", "쿵푸팬더4"];
 const creators = ["송강호", "전도연", "이병헌", "박찬욱", "봉준호", "놀란"];
 
@@ -32,10 +22,16 @@ interface SearchOverlayProps {
 }
 
 export default function HeaderSearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
-  const [activeMoods, setActiveMoods] = useState<string[]>(["exciting"]);
-  const [activeGenres, setActiveGenres] = useState<string[]>(["thriller"]);
+  const router = useRouter();
+  const [keyword, setKeyword] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [activeMoods, setActiveMoods] = useState<string[]>([]);
+  const [activeGenres, setActiveGenres] = useState<string[]>([]);
+  const activeTags = [
+    ...genreOptions.filter((option) => activeGenres.includes(option.value)),
+    ...moodOptions.filter((option) => activeMoods.includes(option.value)),
+  ];
   
-  // 💡 새로고침 방지용 애니메이션 트리거 상태 추가
   const [isAnimate, setIsAnimate] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,20 +40,49 @@ export default function HeaderSearchOverlay({ isOpen, onClose }: SearchOverlayPr
       inputRef.current?.focus();
       document.body.style.overflow = "hidden";
       
-      // 💡 브라우저가 오버레이 돔(DOM)을 인식한 직후에 애니메이션 클래스를 붙여 
-      //    새로고침 없이도 즉시 백드롭 필터(블러) 렌더링을 시작하게 만듭니다.
       const timer = setTimeout(() => {
+        setRecentSearches(loadRecentSearches());
         setIsAnimate(true);
       }, 10);
       
       return () => clearTimeout(timer);
     } else {
-      setIsAnimate(false);
       document.body.style.overflow = "";
+      const timer = window.setTimeout(() => {
+        setIsAnimate(false);
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const goToResults = (nextKeyword = keyword) => {
+    const params = new URLSearchParams();
+    const trimmedKeyword = nextKeyword.trim();
+
+    if (trimmedKeyword) params.set("q", trimmedKeyword);
+    if (activeGenres.length > 0) params.set("genres", activeGenres.join(","));
+    if (activeMoods.length > 0) params.set("moods", activeMoods.join(","));
+
+    if (params.toString()) {
+      if (trimmedKeyword) {
+        setRecentSearches(addRecentSearch(trimmedKeyword, recentSearches));
+      }
+      router.push(`/search/results?${params.toString()}`);
+      onClose();
+    }
+  };
+
+  const handleRemoveRecentSearch = (event: React.MouseEvent, targetKeyword: string) => {
+    event.stopPropagation();
+    setRecentSearches(removeRecentSearch(targetKeyword, recentSearches));
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches(clearRecentSearches());
+  };
 
   const toggleOption = (
     value: string,
@@ -86,33 +111,89 @@ export default function HeaderSearchOverlay({ isOpen, onClose }: SearchOverlayPr
               type="search" 
               placeholder="제목, 배우, 감독 검색..." 
               aria-label="검색어 입력" 
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  goToResults();
+                }
+              }}
             />
             <button type="button" className="close-btn" onClick={onClose} aria-label="닫기">
               <span aria-hidden="true">×</span>
             </button>
           </div>
 
+          {activeTags.length > 0 && (
+            <div className="search-overlay__selected-tags" aria-label="선택한 검색 태그">
+              {activeTags.map((option) => (
+                <button
+                  type="button"
+                  key={`${option.group}-${option.value}`}
+                  onClick={() => {
+                    if (option.group === "genre") {
+                      setActiveGenres(activeGenres.filter((value) => value !== option.value));
+                    } else {
+                      setActiveMoods(activeMoods.filter((value) => value !== option.value));
+                    }
+                  }}
+                >
+                  <span>{option.label}</span>
+                  <em aria-hidden="true">×</em>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* 2. 최근 / 추천 검색어 */}
           <div className="search-overlay__top-row">
             <section className="overlay-block overlay-block--recent">
-              <h3>최근 검색어</h3>
-              <ul className="horizontal-tags">
-                {recentSearches.map((keyword) => (
-                  <li key={keyword}>
-                    <button type="button" className="tag-item">
+              <div className="overlay-block__header">
+                <h3>최근 검색어</h3>
+                {recentSearches.length > 0 && (
+                  <button type="button" onClick={handleClearRecentSearches}>
+                    모두 삭제
+                  </button>
+                )}
+              </div>
+              {recentSearches.length > 0 ? (
+                <ul className="horizontal-tags horizontal-tags--recent">
+                  {recentSearches.map((keyword) => (
+                    <li key={keyword}>
+                      <button
+                        type="button"
+                        className="tag-item tag-item--keyword"
+                        onClick={() => goToResults(keyword)}
+                      >
                       <span>{keyword}</span>
-                      <em aria-hidden="true">×</em>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      </button>
+                      <button
+                        type="button"
+                        className="tag-remove-btn"
+                        aria-label={`${keyword} 최근 검색어 삭제`}
+                        onClick={(event) => handleRemoveRecentSearch(event, keyword)}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="overlay-recent-empty">최근 검색어가 없어요.</div>
+              )}
             </section>
 
             <section className="overlay-block overlay-block--recommend">
               <h3>추천 검색어</h3>
               <div className="horizontal-tags">
                 {recommendedSearches.map((keyword, index) => (
-                  <button className={`tag-item ${index === 0 ? "active" : ""}`} type="button" key={keyword}>
+                  <button
+                    className={`tag-item ${index === 0 ? "active" : ""}`}
+                    type="button"
+                    key={keyword}
+                    onClick={() => goToResults(keyword)}
+                  >
                     {keyword}
                   </button>
                 ))}
@@ -132,6 +213,12 @@ export default function HeaderSearchOverlay({ isOpen, onClose }: SearchOverlayPr
                     type="button"
                     key={option.value}
                     onClick={() => toggleOption(option.value, activeMoods, setActiveMoods)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && isActive) {
+                        event.preventDefault();
+                        goToResults();
+                      }
+                    }}
                   >
                     <Image src={option.icon} alt="" width={24} height={24} />
                     <span>{option.label}</span>
@@ -153,6 +240,12 @@ export default function HeaderSearchOverlay({ isOpen, onClose }: SearchOverlayPr
                     type="button"
                     key={option.value}
                     onClick={() => toggleOption(option.value, activeGenres, setActiveGenres)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && isActive) {
+                        event.preventDefault();
+                        goToResults();
+                      }
+                    }}
                   >
                     <Image src={option.icon} alt="" width={24} height={24} />
                     <span>{option.label}</span>
@@ -167,7 +260,12 @@ export default function HeaderSearchOverlay({ isOpen, onClose }: SearchOverlayPr
             <h3>배우 · 감독으로 찾기</h3>
             <div className="scroll-row scroll-row--creator">
               {creators.map((creator) => (
-                <button type="button" className="creator-item" key={creator}>
+                <button
+                  type="button"
+                  className="creator-item"
+                  key={creator}
+                  onClick={() => goToResults(creator)}
+                >
                   <span className="avatar" aria-hidden="true">{creator.slice(0, 1)}</span>
                   <strong>{creator}</strong>
                 </button>
