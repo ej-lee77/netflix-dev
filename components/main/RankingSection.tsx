@@ -9,11 +9,21 @@ import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
 import { useMovieStore } from "@/store/useMovieStore";
 import type { Movie } from "@/types/movie";
-
 import "swiper/css";
 import "swiper/css/free-mode";
+import "swiper/css/navigation";
 import "./scss/rankingSection.scss";
 import SectionTitle from "../common/SectionTitle";
+
+export interface RankingItem {
+  id: number;
+  title: string;
+  poster_path: string;
+  backdrop_path: string;
+  vote_average: number;
+  overview: string;
+  media_type?: "movie" | "tv";
+}
 
 const IMG_BASE = "https://image.tmdb.org/t/p/";
 
@@ -26,7 +36,12 @@ function getStars(rating: number) {
   return "★".repeat(count) + "☆".repeat(5 - count);
 }
 
-export default function RankingSection() {
+interface RankingSectionProps {
+  title?: string;
+  items?: RankingItem[];
+}
+
+export default function RankingSection({ title, items: externalItems }: RankingSectionProps = {}) {
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
 
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -37,18 +52,18 @@ export default function RankingSection() {
   const isSwiperDraggingRef = useRef(false);
 
   useEffect(() => {
-    if (!koreanMovies.length) {
+    if (!externalItems && !koreanMovies.length) {
       onFetchKoreanMovies();
     }
-  }, [onFetchKoreanMovies, koreanMovies.length]);
+  }, [externalItems, onFetchKoreanMovies, koreanMovies.length]);
 
-  const rankingItems = useMemo(
-    () =>
-      koreanMovies
-        .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
-        .slice(0, 10),
-    [koreanMovies],
-  );
+  const rankingItems: RankingItem[] = useMemo(() => {
+    if (externalItems) return externalItems.slice(0, 10);
+    return koreanMovies
+      .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
+      .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }))
+      .slice(0, 10);
+  }, [externalItems, koreanMovies]);
 
   useEffect(() => {
     if (!activeId && rankingItems[0]) {
@@ -124,10 +139,38 @@ export default function RankingSection() {
   return (
     <section className="ranking-section">
       <div className="section-title-outer">
-        <SectionTitle title='오늘의 넷플릭스 TOP 10' />
+        <SectionTitle title={title ?? '오늘의 넷플릭스 TOP 10'} href="/category" />
       </div>
 
       <div className="ranking-swiper-wrap">
+        <button
+          className="ranking-nav-btn ranking-nav-prev"
+          aria-label="이전"
+          onClick={() => {
+            const currentIndex = rankingItems.findIndex((m) => m.id === activeId);
+            const prevIndex = currentIndex - 1;
+            if (prevIndex >= 0) selectRankingItem(rankingItems[prevIndex].id, prevIndex);
+          }}
+          disabled={rankingItems.findIndex((m) => m.id === activeId) <= 0}
+        >
+          <svg width="28" height="48" viewBox="0 0 11 20" fill="none">
+            <path d="M10 1L1 10L10 19" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          className="ranking-nav-btn ranking-nav-next"
+          aria-label="다음"
+          onClick={() => {
+            const currentIndex = rankingItems.findIndex((m) => m.id === activeId);
+            const nextIndex = currentIndex + 1;
+            if (nextIndex < rankingItems.length) selectRankingItem(rankingItems[nextIndex].id, nextIndex);
+          }}
+          disabled={rankingItems.findIndex((m) => m.id === activeId) >= rankingItems.length - 1}
+        >
+          <svg width="28" height="48" viewBox="0 0 11 20" fill="none">
+            <path d="M1 1L10 10L1 19" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
         <Swiper
           modules={[FreeMode]}
           freeMode={false}
@@ -154,7 +197,7 @@ export default function RankingSection() {
             isSwiperDraggingRef.current = false;
           }}
         >
-          {rankingItems.map((movie: Movie, index: number) => {
+          {rankingItems.map((movie: RankingItem, index: number) => {
             const isActive = movie.id === activeId;
             const cardRoleProps = isActive
               ? {}
@@ -204,7 +247,7 @@ export default function RankingSection() {
                     }}
                   >
                     <span className="ranking-detail-rank">
-                      {(movie as Movie & { media_type?: string }).media_type === "tv" ? "시리즈" : "영화"}
+                      {movie.media_type === "tv" ? "시리즈" : "영화"}
                     </span>
 
                     <strong className="ranking-detail-title">
@@ -222,13 +265,13 @@ export default function RankingSection() {
                     </span>
 
                     <span className="ranking-detail-actions">
-                      <Link href={`/detail/${(movie as Movie & { media_type?: string }).media_type ?? "movie"}/${movie.id}?play=1`} className="ranking-btn-play">
+                      <Link href={`/detail/${movie.media_type ?? "movie"}/${movie.id}?play=1`} className="ranking-btn-play">
                         <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
                         재생
                       </Link>
-                      <Link href={`/detail/${(movie as Movie & { media_type?: string }).media_type ?? "movie"}/${movie.id}`} className="ranking-btn-info">
+                      <Link href={`/detail/${movie.media_type ?? "movie"}/${movie.id}`} className="ranking-btn-info">
                         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" style={{ fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="16" x2="12" y2="12" />

@@ -86,6 +86,7 @@ export interface PlayList {
 
 export interface MovieList {
   watchingVideos: string[];
+  histVideos?: string[];
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
@@ -107,7 +108,14 @@ export interface CommunityList {
   followers: string[];   // 팔로워 유저 ID 목록
   following: string[]; // 팔로잉 유저 ID 목록
   reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
-  feeds: string[]; //피드 ID 목록 내 피드 말고 
+  feeds: FeedActivity[]; // 내가 작성한 피드가 아니라 다른 피드에 남긴 댓글/좋아요 활동
+}
+
+export interface FeedActivity {
+  feedId: string;
+  type: "comment" | "like";
+  commentId?: string;
+  createdAt: string;
 }
 
 export interface PayInfo {
@@ -119,7 +127,6 @@ export interface PayInfo {
 }
 
 export interface UserDocument {
-  uid?: string;
   userId: string; // 문서 ID로 사용됨
 
   // 기본정보

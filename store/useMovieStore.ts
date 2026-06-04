@@ -353,4 +353,20 @@ export const useMovieStore = create<MovieState>((set, get) => ({
             certifications: { ...state.certifications, [key]: cert }
         }));
     },
+    fetchMediaDetail: async (id, mediaType) => {
+        const mediaId = Number(id);
+        const key = `${mediaType}-${mediaId}`;
+
+        // 2. 없으면 API 호출
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=ko-KR`);
+            const data = await res.json();
+            console.log("플리데이터", data);
+            // 4. 데이터 반환
+            return data;
+        } catch (error) {
+            console.error("데이터 가져오기 실패:", error);
+            return null;
+        }
+    },
 }))

@@ -212,7 +212,7 @@ function SettingsContent() {
         followers: [],  // 나를 팔로우하는 유저 ID 목록
         following: [],  // 내가 팔로우하는 유저 ID 목록
         reviews: [],    // 좋아요/싫어요/신고한 리뷰 ID 목록
-        feeds: [],      // 좋아요/신고한 피드 ID 목록
+        feeds: [],      // 다른 피드에 남긴 댓글/좋아요 활동 기록
       },
       headerMenus: [],  // 헤더에 표시할 메뉴 ID 목록
       bages: {

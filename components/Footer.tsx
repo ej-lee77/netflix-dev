@@ -30,10 +30,10 @@ const BUSINESS_INFO = [
 ];
 
 const SOCIAL = [
-  { src: "/images/footer/sns-youtube.svg",   alt: "YouTube",   href: "https://www.youtube.com/channel/UCiEEF51uRAeZeCo8CJFhGWw/featured" },
-  { src: "/images/footer/sns-twitter.svg",   alt: "Twitter",   href: "https://twitter.com/NetflixKR" },
+  { src: "/images/footer/sns-youtube.svg", alt: "YouTube", href: "https://www.youtube.com/channel/UCiEEF51uRAeZeCo8CJFhGWw/featured" },
+  { src: "/images/footer/sns-twitter.svg", alt: "Twitter", href: "https://twitter.com/NetflixKR" },
   { src: "/images/footer/sns-instagram.svg", alt: "Instagram", href: "https://www.instagram.com/netflixkr/" },
-  { src: "/images/footer/sns-facebook.svg",  alt: "Facebook",  href: "https://www.facebook.com/NetflixKR" },
+  { src: "/images/footer/sns-facebook.svg", alt: "Facebook", href: "https://www.facebook.com/NetflixKR" },
 ];
 
 const LANGUAGES = ["한국어", "English", "日本語", "中文"];
@@ -85,8 +85,8 @@ export default function Footer() {
         {/* 하단 바 */}
         <div className="footer-bottom-bar">
           <div className="footer-copyright">
-            <p>© 2026 NFLIX, Inc. All rights reserved.</p>
-            <p>NFLIX는 가상의 스트리밍 서비스로, 실제 Netflix와 무관합니다.</p>
+            <p>© 2026 NETFLIX, Inc. All rights reserved.</p>
+            <p>NETFLIX는 가상의 스트리밍 서비스로, 실제 Netflix와 무관합니다.</p>
           </div>
 
           <div className="lang-wrap">

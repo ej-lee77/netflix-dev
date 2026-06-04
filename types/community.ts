@@ -32,10 +32,12 @@ export interface FeedDocument {
   likesCount: number;       // 좋아요
   reportsCount: number;     // 신고
   comments: FeedComment;    // 댓글
+  createdAt: string;
+  isDelete: boolean;
 }
 
-export interface ReviewStore {
+export interface CommunityStore {
   reviews: ReviewDocument[];
-  movieMap: Record<string, any>;
+  // 스토어 내부에서 DB 로직을 수행
   fetchUserReviews: (userId: string) => Promise<void>;
 }
