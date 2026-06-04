@@ -1,25 +1,29 @@
 @use "@/app/globals" as g;
 
 .profile-select {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 190000;
+  min-height: 100svh;
   background-color: #141414;
   color: g.$w-color;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 72px 24px;
+  padding: 48px 24px;
+  overflow-y: auto;
 }
 
 .profile-select-inner {
   display: flex;
-  width: min(100%, 1180px);
+  width: min(100%, 1040px);
   flex-direction: column;
   align-items: center;
-  gap: 44px;
+  gap: 34px;
 }
 
 .ps-title {
-  font-size: clamp(2rem, 4vw, 4rem);
+  font-size: clamp(1.85rem, 3.4vw, 3.35rem);
   font-weight: 500;
   text-align: center;
 }
@@ -27,9 +31,9 @@
 .ps-grid {
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 170px));
+  grid-template-columns: repeat(auto-fit, minmax(104px, 146px));
   justify-content: center;
-  gap: 32px;
+  gap: 26px;
   list-style: none;
   padding: 0;
 }
@@ -40,7 +44,7 @@
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   border: 0;
   color: rgba(255, 255, 255, 0.58);
   background: transparent;
@@ -59,7 +63,7 @@
 .ps-avatar {
   position: relative;
   width: 100%;
-  max-width: 170px;
+  max-width: 146px;
   aspect-ratio: 1;
   border: 3px solid transparent;
   border-radius: 5px;
@@ -80,7 +84,7 @@
   justify-content: center;
   border: 2px dashed rgba(255, 255, 255, 0.42);
   color: rgba(255, 255, 255, 0.7);
-  font-size: clamp(3rem, 7vw, 5.5rem);
+  font-size: clamp(2.5rem, 5.5vw, 4.6rem);
   line-height: 1;
 }
 
@@ -99,26 +103,26 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 2.2rem;
+  font-size: 1.95rem;
 }
 
 .ps-name {
   max-width: 100%;
   color: inherit;
-  font-size: 1.3rem;
+  font-size: 1.12rem;
   font-weight: 500;
   overflow-wrap: anywhere;
   text-align: center;
 }
 
 .ps-manage {
-  min-width: 150px;
-  padding: 10px 28px;
+  min-width: 132px;
+  padding: 9px 24px;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 3px;
   color: rgba(255, 255, 255, 0.72);
   background: transparent;
-  font-size: 1rem;
+  font-size: 0.94rem;
   font-weight: 500;
   cursor: pointer;
   transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
@@ -399,12 +403,12 @@
 
 @media (max-width: 640px) {
   .profile-select {
-    padding-inline: 18px;
+    padding: 36px 18px;
   }
 
   .ps-grid {
-    grid-template-columns: repeat(2, minmax(108px, 145px));
-    gap: 24px;
+    grid-template-columns: repeat(2, minmax(96px, 128px));
+    gap: 20px;
   }
 
   .profile-editor-body {

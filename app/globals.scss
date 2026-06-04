@@ -8,7 +8,7 @@ $w-color: #ffffff; // 흰색
 $d-color: #000000; // 검정색
 $g-color: #999999; // 회색 (DS: --gray1)
 // TEXT-SIZE
-$text-12: 0.75rem; // 12px  
+$text-12: 0.75rem; // 12px
 $text-13: 0.8125rem; // 13px
 $text-14: 0.875rem; // 14px
 $text-16: 1rem; // 16px
@@ -147,6 +147,78 @@ $section-gap: 40px;
   font-size: $text-12;
 }
 
+.profile-switch-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 210000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 7, 0, 0.96);
+  opacity: 0;
+  pointer-events: all;
+
+  &.is-enter {
+    animation: profileSwitchFadeIn 180ms ease-out forwards;
+  }
+
+  &.is-exit {
+    opacity: 1;
+    animation: profileSwitchFadeOut 720ms ease-in-out forwards;
+  }
+}
+
+.profile-switch-overlay__stage {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  display: grid;
+  place-items: center;
+}
+
+.profile-switch-overlay__loader {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  object-fit: contain;
+  animation: profileSwitchSpin 900ms linear infinite;
+}
+
+.profile-switch-overlay__avatar {
+  position: relative;
+  z-index: 1;
+  width: 75px;
+  height: 75px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+@keyframes profileSwitchFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes profileSwitchFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes profileSwitchSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -211,14 +283,30 @@ main {
       width: min(1920px, calc(100vw - #{$main-menu-width}));
       margin-left: 0;
       margin-right: 0;
-      padding-left: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
-      padding-right: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
+      padding-left: clamp(
+        24px,
+        calc((100vw - #{$main-menu-width} - 1920px) / 2),
+        80px
+      );
+      padding-right: clamp(
+        24px,
+        calc((100vw - #{$main-menu-width} - 1920px) / 2),
+        80px
+      );
     }
 
     .section-title-outer {
       width: calc(100vw - #{$main-menu-width});
-      padding-left: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
-      padding-right: clamp(24px, calc((100vw - #{$main-menu-width} - 1920px) / 2), 80px);
+      padding-left: clamp(
+        24px,
+        calc((100vw - #{$main-menu-width} - 1920px) / 2),
+        80px
+      );
+      padding-right: clamp(
+        24px,
+        calc((100vw - #{$main-menu-width} - 1920px) / 2),
+        80px
+      );
     }
   }
 }

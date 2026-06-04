@@ -3,6 +3,7 @@ import {
   AuthState,
   type Profile,
   type ProfileSettings,
+  type UserProfile,
   type UserDocument,
   type UserInfo,
 } from "@/types/auth";
@@ -67,12 +68,13 @@ const normalizeProfileImage = (imgUrl: string | null | undefined) => {
 };
 
 // 프로필 데이터 내부 이미지 주소 정규화
-const normalizeProfile = (profile: any): any => ({
+const normalizeProfile = <T extends Partial<UserProfile>>(profile: T): T & UserProfile => ({
   ...profile,
   imgUrl: normalizeProfileImage(profile.imgUrl),
   viewAge: profile.viewAge ?? "19",
+  headerMenus: profile.headerMenus ?? [],
   settings: normalizeProfileSettings(profile.settings),
-});
+} as T & UserProfile);
 
 export const useAuthStore = create<AuthState>()(
   persist(

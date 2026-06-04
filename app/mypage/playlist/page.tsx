@@ -121,6 +121,7 @@ function ActivityContent() {
   const { fetchMediaDetail } = useMovieStore();
   const searchParams = useSearchParams();
   const hideMode = searchParams.get("mode") === "hide";
+  const embedMode = searchParams.get("embed") === "1";
 
   const [activeTab, setActiveTab] = useState<ActivityTab>("watching");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -1164,6 +1165,27 @@ function ActivityContent() {
       )}
     </section>
   );
+
+  if (embedMode) {
+    return (
+      <div className="media-list-page activity-page activity-embed-page">
+        <style>{`
+          header,
+          footer,
+          .login-banner {
+            display: none !important;
+          }
+
+          main {
+            min-height: 100vh;
+          }
+        `}</style>
+        <div className="inner">
+          {renderHistory()}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="media-list-page activity-page">

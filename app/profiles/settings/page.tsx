@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { updateEmail, updateProfile } from "firebase/auth";
 import { auth } from "@/firebase/firebase";
 import ProfilePinGate from "@/components/ProfilePinGate";
@@ -21,7 +21,6 @@ type ModalKey =
   | "subtitles"
   | "playback"
   | "notifications"
-  | "activity"
   | null;
 
 type SubtitleSettings = {
@@ -74,12 +73,6 @@ const SETTING_ITEMS: SettingsItem[] = [
     iconSrc: "/images/profile/setting/6.svg",
     title: "알림 설정",
     desc: "신작 및 추천 콘텐츠 알림 관리",
-  },
-  {
-    modalKey: "activity",
-    iconSrc: "/images/profile/setting/7.svg",
-    title: "시청 기록",
-    desc: "시청 기록 및 평가 관리",
   },
 ];
 
@@ -298,7 +291,6 @@ function SettingsRow({
 
 function ProfileSettingsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const profileId = Number(searchParams.get("profileId"));
   const { user, onUpdateProfile } = useAuthStore();
 
@@ -486,10 +478,6 @@ function ProfileSettingsContent() {
     setActiveModal(null);
   };
 
-  const openWatchingHistory = (hideMode = false) => {
-    router.push(`/mypage/playlist?tab=history${hideMode ? "&mode=hide" : ""}`);
-  };
-
   const selectProfileIcon = (iconSrc: string) => {
     setDraftProfileAvatar(iconSrc);
     setIsIconPickerOpen(false);
@@ -644,9 +632,7 @@ function ProfileSettingsContent() {
               ? "재생 설정"
               : activeModal === "notifications"
                 ? "알림 설정"
-                : activeModal === "activity"
-                  ? "시청 기록"
-                  : "";
+                : "";
 
   return (
     <div className="profile-settings-page">
@@ -976,14 +962,6 @@ function ProfileSettingsContent() {
                         </button>
                       </div>
 
-                      <div className="profile-edit-delete">
-                        <button type="button" disabled={isDefaultProfile}>
-                          프로필 삭제
-                        </button>
-                        {isDefaultProfile && (
-                          <p>기본 프로필은 삭제할 수 없습니다.</p>
-                        )}
-                      </div>
                     </form>
                   )}
                 </div>
@@ -1341,40 +1319,6 @@ function ProfileSettingsContent() {
                     </button>
                     <button type="button" onClick={closeModal}>
                       취소
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeModal === "activity" && (
-                <div className="profile-empty-settings">
-                  <OptionRow
-                    label="시청 기록"
-                    desc="최근 시청한 콘텐츠와 이어보기 기록을 관리합니다."
-                  >
-                    <button
-                      type="button"
-                      className="profile-settings-modal-btn"
-                      onClick={() => openWatchingHistory(false)}
-                    >
-                      보기
-                    </button>
-                  </OptionRow>
-                  <OptionRow
-                    label="기록 숨기기"
-                    desc="선택한 콘텐츠를 시청 기록에서 숨길 수 있습니다."
-                  >
-                    <button
-                      type="button"
-                      className="profile-settings-modal-btn danger"
-                      onClick={() => openWatchingHistory(true)}
-                    >
-                      관리
-                    </button>
-                  </OptionRow>
-                  <div className="profile-edit-actions">
-                    <button type="button" onClick={closeModal}>
-                      닫기
                     </button>
                   </div>
                 </div>

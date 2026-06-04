@@ -3,6 +3,7 @@
 import React, { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProfilePinGate, { getProfilePin } from "@/components/ProfilePinGate";
+import ProfileSwitchOverlay from "@/components/ProfileSwitchOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { UserProfile } from "@/types/auth"; // 👈 UserProfile 타입으로 유지
 import "../scss/profileSelect.scss";
@@ -71,6 +72,8 @@ function ProfileSelectContent() {
   const [draftName, setDraftName] = useState("");
   const [draftAvatar, setDraftAvatar] = useState(AVATAR_OPTIONS[0]);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [switchingProfile, setSwitchingProfile] = useState<UserProfile | null>(null);
+  const [switchOverlayPhase, setSwitchOverlayPhase] = useState<"enter" | "exit">("enter");
 
   const openEditor = (profile?: UserProfile) => {
     const fallbackAvatar = AVATAR_OPTIONS[profiles.length % AVATAR_OPTIONS.length];
@@ -92,6 +95,14 @@ function ProfileSelectContent() {
   const isDefaultProfile = (profile: UserProfile | null) =>
     Boolean(profile && profiles[0]?.id === profile.id);
 
+  const runProfileSwitch = async (profile: UserProfile) => {
+    setSwitchOverlayPhase("enter");
+    setSwitchingProfile(profile);
+    await new Promise((resolve) => window.setTimeout(resolve, 2000));
+    onSetProfile(profile);
+    router.replace("/");
+  };
+
   const handleSelect = (profile: UserProfile) => {
     if (manageMode) {
       openEditor(profile);
@@ -103,15 +114,14 @@ function ProfileSelectContent() {
       return;
     }
 
-    onSetProfile(profile);
-    router.push("/");
+    void runProfileSwitch(profile);
   };
 
   const confirmPendingProfile = () => {
     if (!pendingProfile) return;
-    onSetProfile(pendingProfile);
+    const selectedProfile = pendingProfile;
     setPendingProfile(null);
-    router.push("/");
+    void runProfileSwitch(selectedProfile);
   };
 
   const handleSave = () => {
@@ -288,6 +298,7 @@ function ProfileSelectContent() {
           onSuccess={confirmPendingProfile}
         />
       )}
+      <ProfileSwitchOverlay phase={switchOverlayPhase} profile={switchingProfile} />
     </section>
   );
 }

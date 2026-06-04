@@ -1863,3 +1863,18 @@
     }
   }
 }
+
+.activity-embed-page {
+  min-height: auto;
+  padding: 24px;
+  background: #111;
+
+  .inner {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .activity-section {
+    margin: 0;
+  }
+}
