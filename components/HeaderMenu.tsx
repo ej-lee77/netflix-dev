@@ -5,13 +5,24 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // 전체 메뉴 풀 생성 (매핑 처리용)
 const allSelectablePool = [...mainMenus, ...customMenus];
+const DEFAULT_HEADER_MENU_PATHS = [
+    "/category",
+    "/mypage/playlist?tab=playlists",
+    "/mypage/playlist?tab=history",
+];
+const normalizeMenuPath = (path: string) =>
+    path === "/mypage/playhist" ? "/mypage/playlist?tab=history" : path;
+const uniqueMenuPaths = (paths: string[]) => Array.from(new Set(paths.map(normalizeMenuPath)));
 
 export default function HeaderMenu() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const currentProfile = useAuthStore((state) => state.currentProfile);
+    const [, setStorageRevision] = useState(0);
 
     const queryString = searchParams.toString();
     const currentUrl = queryString ? `${pathname}?${queryString}` : pathname;
@@ -20,41 +31,51 @@ export default function HeaderMenu() {
         menuPath.includes("?") ? currentUrl === menuPath : pathname === menuPath
     );
 
-    // 사용자가 커스텀 페이지에서 채택하여 빌드한 동적 메뉴 데이터 상태
-    const [dynamicMenus, setDynamicMenus] = useState<typeof customMenus>([]);
+    const dynamicMenus = (() => {
+        if (currentProfile) {
+            const profileMenuPaths = currentProfile.headerMenus?.length
+                ? uniqueMenuPaths(currentProfile.headerMenus)
+                : DEFAULT_HEADER_MENU_PATHS;
+            return profileMenuPaths
+                .map((path) => allSelectablePool.find((m) => m.path === path))
+                .filter((menu): menu is typeof mainMenus[number] => !!menu);
+        }
 
-    const loadCustomMenus = () => {
+        if (typeof window === "undefined") {
+            return DEFAULT_HEADER_MENU_PATHS
+                .map((path) => allSelectablePool.find((m) => m.path === path))
+                .filter((menu): menu is typeof mainMenus[number] => !!menu);
+        }
+
         const saved = localStorage.getItem("custom_header_menus");
         if (saved) {
             try {
                 const savedPaths: string[] = JSON.parse(saved);
+                const normalizedPaths = uniqueMenuPaths(savedPaths);
                 
                 // 사용자가 로컬스토리지에 저장한 '순서'대로 헤더에 노출되도록 패스 배열 기준으로 매핑합니다.
-                const mapped = savedPaths
+                return normalizedPaths
                     .map((path) => allSelectablePool.find((m) => m.path === path))
                     .filter((menu): menu is typeof mainMenus[number] => !!menu);
-
-                setDynamicMenus(mapped);
             } catch (e) {
                 console.error("메뉴 동기화 실패:", e);
             }
-        } else {
-            // 저장된 내역이 없을 때 보여줄 가변 메뉴 기본값 리스트
-            const defaultPaths = [
-                "/category",
-                "/mypage/playlist?tab=playlists",
-                "/mypage/playhist",
-            ];
-            const defaultFiltered = allSelectablePool.filter((m) => defaultPaths.includes(m.path));
-            setDynamicMenus(defaultFiltered);
         }
-    };
+
+        // 저장된 내역이 없을 때 보여줄 가변 메뉴 기본값 리스트
+        return DEFAULT_HEADER_MENU_PATHS
+            .map((path) => allSelectablePool.find((m) => m.path === path))
+            .filter((menu): menu is typeof mainMenus[number] => !!menu);
+    })();
 
     useEffect(() => {
-        loadCustomMenus();
-        window.addEventListener("customMenuStorageUpdate", loadCustomMenus);
+        const handleCustomMenuStorageUpdate = () => {
+            setStorageRevision((revision) => revision + 1);
+        };
+
+        window.addEventListener("customMenuStorageUpdate", handleCustomMenuStorageUpdate);
         return () => {
-            window.removeEventListener("customMenuStorageUpdate", loadCustomMenus);
+            window.removeEventListener("customMenuStorageUpdate", handleCustomMenuStorageUpdate);
         };
     }, []);
 

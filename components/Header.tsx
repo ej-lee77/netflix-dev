@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import HeaderMenu from "./HeaderMenu";
 import ProfilePinGate, { getProfilePin } from "./ProfilePinGate";
+import ProfileSwitchOverlay from "./ProfileSwitchOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { UserProfile } from "@/types/auth"; 
 import "./scss/header.scss";
@@ -19,6 +20,8 @@ export default function Header() {
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(null);
+  const [switchingProfile, setSwitchingProfile] = useState<UserProfile | null>(null);
+  const [switchOverlayPhase, setSwitchOverlayPhase] = useState<"enter" | "exit">("enter");
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -36,6 +39,18 @@ export default function Header() {
     user && !currentProfile && !AUTH_PATHS.includes(pathname ?? "") && !isProfileRoute
   );
 
+  const runProfileSwitch = async (selectedProfile: UserProfile) => {
+    setSwitchOverlayPhase("enter");
+    setSwitchingProfile(selectedProfile);
+    await new Promise((resolve) => window.setTimeout(resolve, 650));
+    onSetProfile(selectedProfile);
+    router.replace("/");
+    await new Promise((resolve) => window.setTimeout(resolve, 650));
+    setSwitchOverlayPhase("exit");
+    await new Promise((resolve) => window.setTimeout(resolve, 720));
+    setSwitchingProfile(null);
+  };
+
   const handleProfileChange = (selectedProfile: UserProfile) => {
     if (selectedProfile.id === currentProfile?.id) {
       setIsProfileMenuOpen(false);
@@ -48,15 +63,20 @@ export default function Header() {
       return;
     }
 
-    onSetProfile(selectedProfile);
     setIsProfileMenuOpen(false);
-    router.push("/");
+    void runProfileSwitch(selectedProfile);
   };
 
   const confirmPendingProfile = () => {
     if (!pendingProfile) return;
-    onSetProfile(pendingProfile);
+    const selectedProfile = pendingProfile;
     setPendingProfile(null);
+    void runProfileSwitch(selectedProfile);
+  };
+
+  const handleLogout = async () => {
+    setIsProfileMenuOpen(false);
+    await onLogout();
     router.push("/");
   };
 
@@ -166,7 +186,7 @@ export default function Header() {
                       </li>
                     </ul>
 
-                    <button className="profile-logout" type="button" onClick={onLogout}>
+                    <button className="profile-logout" type="button" onClick={handleLogout}>
                       넷플릭스에서 로그아웃
                     </button>
                   </div>
@@ -193,6 +213,7 @@ export default function Header() {
           onSuccess={confirmPendingProfile}
         />
       )}
+      <ProfileSwitchOverlay phase={switchOverlayPhase} profile={switchingProfile} />
     </>
   );
 }

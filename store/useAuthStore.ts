@@ -3,6 +3,7 @@ import {
   AuthState,
   type Profile,
   type ProfileSettings,
+  type UserProfile,
   type UserDocument,
   type UserInfo,
 } from "@/types/auth";
@@ -24,6 +25,7 @@ export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
     window: "white",
   },
   playback: {
+    autoplayNext: true,
     autoplayPreview: true,
   },
   hiddenWatchingVideos: [],
@@ -66,12 +68,13 @@ const normalizeProfileImage = (imgUrl: string | null | undefined) => {
 };
 
 // 프로필 데이터 내부 이미지 주소 정규화
-const normalizeProfile = (profile: any): any => ({
+const normalizeProfile = <T extends Partial<UserProfile>>(profile: T): T & UserProfile => ({
   ...profile,
   imgUrl: normalizeProfileImage(profile.imgUrl),
   viewAge: profile.viewAge ?? "19",
+  headerMenus: profile.headerMenus ?? [],
   settings: normalizeProfileSettings(profile.settings),
-});
+} as T & UserProfile);
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -270,8 +273,15 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        const nextProfiles = currentProfiles.filter((profile) => profile.id !== profileId);
-        const isDeletingCurrent = get().currentProfile?.id === profileId;
+        const targetProfileId = String(profileId);
+
+        if (String(currentProfiles[0]?.id) === targetProfileId) {
+          alert("기본 프로필은 삭제할 수 없습니다.");
+          return;
+        }
+
+        const nextProfiles = currentProfiles.filter((profile) => String(profile.id) !== targetProfileId);
+        const isDeletingCurrent = String(get().currentProfile?.id) === targetProfileId;
         const nextCurrentProfile = isDeletingCurrent ? null : get().currentProfile;
 
         try {

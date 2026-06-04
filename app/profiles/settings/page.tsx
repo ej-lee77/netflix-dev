@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { updateEmail, updateProfile } from "firebase/auth";
 import { auth } from "@/firebase/firebase";
 import ProfilePinGate from "@/components/ProfilePinGate";
@@ -21,7 +21,6 @@ type ModalKey =
   | "subtitles"
   | "playback"
   | "notifications"
-  | "activity"
   | null;
 
 type SubtitleSettings = {
@@ -67,19 +66,13 @@ const SETTING_ITEMS: SettingsItem[] = [
     modalKey: "playback",
     iconSrc: "/images/profile/setting/5.svg",
     title: "재생 설정",
-    desc: "자동 재생, 미리보기, 데이터 절약 설정",
+    desc: "자동 재생, 미리보기",
   },
   {
     modalKey: "notifications",
     iconSrc: "/images/profile/setting/6.svg",
     title: "알림 설정",
     desc: "신작 및 추천 콘텐츠 알림 관리",
-  },
-  {
-    modalKey: "activity",
-    iconSrc: "/images/profile/setting/7.svg",
-    title: "시청 기록",
-    desc: "시청 기록 및 평가 관리",
   },
 ];
 
@@ -92,12 +85,7 @@ const subtitleLabels = {
   window: { none: "없음", black: "검정색", white: "흰색" },
 };
 
-const MATURITY_VALUES: MaturityRating[] = [
-  "전체관람가",
-  "12+",
-  "15+",
-  "19+",
-];
+const MATURITY_VALUES: MaturityRating[] = ["전체관람가", "12+", "15+", "19+"];
 
 const MATURITY_AGE_ICONS: Record<MaturityRating, string> = {
   전체관람가: "/images/age/ALL.svg",
@@ -107,7 +95,12 @@ const MATURITY_AGE_ICONS: Record<MaturityRating, string> = {
 };
 
 const normalizeMaturityRating = (rating?: string | null): MaturityRating => {
-  if (rating === "전체관람가" || rating === "12+" || rating === "15+" || rating === "19+") {
+  if (
+    rating === "전체관람가" ||
+    rating === "12+" ||
+    rating === "15+" ||
+    rating === "19+"
+  ) {
     return rating;
   }
   return rating === "7+" ? "12+" : "19+";
@@ -298,7 +291,6 @@ function SettingsRow({
 
 function ProfileSettingsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const profileId = Number(searchParams.get("profileId"));
   const { user, onUpdateProfile } = useAuthStore();
 
@@ -350,6 +342,7 @@ function ProfileSettingsContent() {
     profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
   );
   const [toggles, setToggles] = useState({
+    autoplayNext: profileSetting.playback.autoplayNext,
     autoplayPreview: profileSetting.playback.autoplayPreview,
     notiNew: true,
     notiRecommend: false,
@@ -432,6 +425,7 @@ function ProfileSettingsContent() {
     );
     setToggles((current) => ({
       ...current,
+      autoplayNext: nextSetting.playback.autoplayNext,
       autoplayPreview: nextSetting.playback.autoplayPreview,
     }));
   }, [profile.id, profile.settings, profile.viewAge]);
@@ -476,13 +470,12 @@ function ProfileSettingsContent() {
 
   const savePlaybackSettings = () => {
     updateProfileSettings({
-      playback: { autoplayPreview: toggles.autoplayPreview },
+      playback: {
+        autoplayNext: toggles.autoplayNext,
+        autoplayPreview: toggles.autoplayPreview,
+      },
     });
     setActiveModal(null);
-  };
-
-  const openWatchingHistory = (hideMode = false) => {
-    router.push(`/mypage/playlist?tab=history${hideMode ? "&mode=hide" : ""}`);
   };
 
   const selectProfileIcon = (iconSrc: string) => {
@@ -639,9 +632,7 @@ function ProfileSettingsContent() {
               ? "재생 설정"
               : activeModal === "notifications"
                 ? "알림 설정"
-                : activeModal === "activity"
-                  ? "시청 기록"
-                  : "";
+                : "";
 
   return (
     <div className="profile-settings-page">
@@ -971,14 +962,6 @@ function ProfileSettingsContent() {
                         </button>
                       </div>
 
-                      <div className="profile-edit-delete">
-                        <button type="button" disabled={isDefaultProfile}>
-                          프로필 삭제
-                        </button>
-                        {isDefaultProfile && (
-                          <p>기본 프로필은 삭제할 수 없습니다.</p>
-                        )}
-                      </div>
                     </form>
                   )}
                 </div>
@@ -1229,20 +1212,21 @@ function ProfileSettingsContent() {
                         const isActive = index <= activeIndex;
 
                         return (
-                        <button
-                          type="button"
-                          key={rating}
-                          className={
-                            isActive ? "is-active" : ""
-                          }
-                          onClick={() => setMaturityRating(rating)}
-                          aria-pressed={rating === maturityRating}
-                          aria-label={`${rating} 관람등급 선택`}
-                        >
-                          <strong>
-                            <img src={MATURITY_AGE_ICONS[rating]} alt={rating} />
-                          </strong>
-                        </button>
+                          <button
+                            type="button"
+                            key={rating}
+                            className={isActive ? "is-active" : ""}
+                            onClick={() => setMaturityRating(rating)}
+                            aria-pressed={rating === maturityRating}
+                            aria-label={`${rating} 관람등급 선택`}
+                          >
+                            <strong>
+                              <img
+                                src={MATURITY_AGE_ICONS[rating]}
+                                alt={rating}
+                              />
+                            </strong>
+                          </button>
                         );
                       })}
                     </div>
@@ -1272,6 +1256,15 @@ function ProfileSettingsContent() {
 
               {activeModal === "playback" && (
                 <div className="subtitle-settings">
+                  <OptionRow
+                    label="자동재생"
+                    desc="시리즈의 다음 회차를 자동으로 재생합니다."
+                  >
+                    <Toggle
+                      on={toggles.autoplayNext}
+                      onChange={() => flip("autoplayNext")}
+                    />
+                  </OptionRow>
                   <OptionRow
                     label="미리보기 자동재생"
                     desc="탐색 중 예고편과 미리보기를 자동으로 재생합니다."
@@ -1326,40 +1319,6 @@ function ProfileSettingsContent() {
                     </button>
                     <button type="button" onClick={closeModal}>
                       취소
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeModal === "activity" && (
-                <div className="profile-empty-settings">
-                  <OptionRow
-                    label="시청 기록"
-                    desc="최근 시청한 콘텐츠와 이어보기 기록을 관리합니다."
-                  >
-                    <button
-                      type="button"
-                      className="profile-settings-modal-btn"
-                      onClick={() => openWatchingHistory(false)}
-                    >
-                      보기
-                    </button>
-                  </OptionRow>
-                  <OptionRow
-                    label="기록 숨기기"
-                    desc="선택한 콘텐츠를 시청 기록에서 숨길 수 있습니다."
-                  >
-                    <button
-                      type="button"
-                      className="profile-settings-modal-btn danger"
-                      onClick={() => openWatchingHistory(true)}
-                    >
-                      관리
-                    </button>
-                  </OptionRow>
-                  <div className="profile-edit-actions">
-                    <button type="button" onClick={closeModal}>
-                      닫기
                     </button>
                   </div>
                 </div>

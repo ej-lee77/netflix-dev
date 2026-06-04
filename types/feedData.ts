@@ -11,6 +11,7 @@ export interface FeedComment extends CommunityFeedComment {
   createdAt: string;
   updatedAt?: string;
   isDelete: boolean;
+  likedUserIds?: string[];
 }
 
 export interface FeedReview extends Omit<
