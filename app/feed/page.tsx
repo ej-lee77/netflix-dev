@@ -299,6 +299,7 @@ export default function FeedPage() {
     onDeleteReview,
     onHydrateReviews,
     onReportReview,
+    onToggleCommentLike,
     onToggleLike,
     onUpdateComment,
     onUpdateReview,
@@ -712,6 +713,7 @@ export default function FeedPage() {
       content: commentText.trim(),
       reportsCount: 0,
       likesCount: 0,
+      likedUserIds: [],
       createdAt: now,
       updatedAt: now,
       isDelete: false,
@@ -732,6 +734,12 @@ export default function FeedPage() {
       setEditingCommentId(null);
       setCommentText("");
     }
+  };
+
+  const handleToggleCommentLike = (reviewId: string, commentId: string) => {
+    if (!requireFeedAuth()) return;
+
+    void onToggleCommentLike(reviewId, commentId);
   };
 
   const handleSubmitReview = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -1110,7 +1118,19 @@ export default function FeedPage() {
                     </div>
                     <p>{comment.content}</p>
                     <div className="comment-actions">
-                      <button type="button">좋아요 {comment.likesCount}</button>
+                      <button
+                        type="button"
+                        className={comment.liked ? "comment-like-btn liked" : "comment-like-btn"}
+                        onClick={() =>
+                          handleToggleCommentLike(
+                            selectedCommentReview.feedId,
+                            comment.commentId,
+                          )
+                        }
+                        aria-pressed={comment.liked}
+                      >
+                        {comment.liked ? "♥" : "♡"} 좋아요 {comment.likesCount}
+                      </button>
                       {comment.isMine && (
                         <>
                           <button

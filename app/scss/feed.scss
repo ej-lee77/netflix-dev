@@ -33,20 +33,24 @@
   }
 
   .feed-write-btn {
-    height: 40px;
-    padding: 0 18px;
+    height: 46px;
+    padding: 0 22px;
     border: 0;
-    border-radius: g.$radius-md;
+    border-radius: 4px;
     background: g.$main-color;
     color: g.$w-color;
-    font-size: g.$text-13;
-    font-weight: 800;
+    font-size: g.$text-16;
+    font-weight: 700;
     cursor: pointer;
+    transition:
+      background 0.15s ease,
+      transform 0.15s ease;
 
     &:hover,
     &:focus-visible {
       background: #b00710;
       outline: none;
+      transform: scale(1.02);
     }
   }
 
@@ -63,7 +67,8 @@
       border: 1px solid #3a3a3a;
       color: g.$g-color;
       border-radius: 100px;
-      font-size: g.$text-13;
+      font-size: g.$text-12;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s;
@@ -72,7 +77,6 @@
         background: g.$main-color;
         border-color: g.$main-color;
         color: g.$w-color;
-        font-weight: 600;
       }
 
       &:hover:not(.active) {
@@ -454,10 +458,13 @@
       border: none;
       color: g.$g-color;
       font-size: g.$text-12;
+      font-weight: 700;
       text-decoration: none;
       cursor: pointer;
       border-radius: g.$radius-md;
-      transition: all 0.2s;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease;
 
       &:hover {
         background: rgba(255, 255, 255, 0.05);
@@ -466,13 +473,11 @@
 
       &.liked {
         color: g.$main-color;
-        font-weight: 600;
       }
 
       &.copied {
         background: rgba(255, 255, 255, 0.08);
         color: g.$w-color;
-        font-weight: 800;
       }
 
       &.readonly {
@@ -616,7 +621,22 @@
       background: transparent;
       color: #9a9a9a;
       font-size: g.$text-12;
+      font-weight: 700;
       cursor: pointer;
+    }
+
+    .comment-like-btn {
+      transition: color 0.18s ease;
+
+      &:hover,
+      &:focus-visible {
+        color: #ff4d55;
+        outline: none;
+      }
+
+      &.liked {
+        color: g.$main-color;
+      }
     }
 
     .comment-delete-btn {
@@ -1025,8 +1045,8 @@
       background: #101010;
       color: #d0d0d0;
       cursor: pointer;
-      font-size: 11px;
-      font-weight: 800;
+      font-size: g.$text-12;
+      font-weight: 700;
       transition:
         border-color 0.18s ease,
         background 0.18s ease,

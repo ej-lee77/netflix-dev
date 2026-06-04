@@ -34,6 +34,7 @@ interface FeedState {
   onUpdateComment: (feedId: string, commentId: string, content: string) => Promise<void>;
   onDeleteComment: (feedId: string, commentId: string) => Promise<void>;
   onToggleLike: (feedId: string) => Promise<void>;
+  onToggleCommentLike: (feedId: string, commentId: string) => Promise<void>;
   onReportReview: (feedId: string, shouldReport: boolean, reason?: string) => Promise<void>;
 }
 
@@ -41,6 +42,8 @@ export interface FeedCommentView extends FeedComment {
   author: string;
   authorImage?: string;
   isMine: boolean;
+  liked: boolean;
+  likedUserIds: string[];
 }
 
 export interface FeedView extends FeedReview {
@@ -296,6 +299,7 @@ const normalizeComment = (commentId: string, data: FirestoreRecord): FeedComment
   createdAt: readString(data, "createdAt"),
   updatedAt: readString(data, "updatedAt"),
   isDelete: readBoolean(data, "isDelete"),
+  likedUserIds: readStringArray(data, "likedUserIds"),
 });
 
 const normalizeFeed = (feedId: string, data: FirestoreRecord): FeedReview => ({
@@ -319,16 +323,23 @@ const buildCommentView = async (
   comment: FeedComment,
   currentUserId?: string,
   currentProfileId?: number,
-): Promise<FeedCommentView> => ({
-  ...comment,
-  author: await getAuthorName(comment.userId, comment.profileId),
-  authorImage: await getAuthorImage(comment.userId, comment.profileId),
-  isMine: Boolean(
-    currentUserId &&
-    comment.userId === currentUserId &&
-    (!comment.profileId || comment.profileId === currentProfileId)
-  ),
-});
+): Promise<FeedCommentView> => {
+  const likedUserIds = comment.likedUserIds || [];
+  const currentActorId = currentUserId && currentProfileId ? `${currentUserId}:${currentProfileId}` : currentUserId;
+
+  return {
+    ...comment,
+    author: await getAuthorName(comment.userId, comment.profileId),
+    authorImage: await getAuthorImage(comment.userId, comment.profileId),
+    isMine: Boolean(
+      currentUserId &&
+      comment.userId === currentUserId &&
+      (!comment.profileId || comment.profileId === currentProfileId)
+    ),
+    liked: Boolean(currentActorId && likedUserIds.includes(currentActorId)),
+    likedUserIds,
+  };
+};
 
 const buildFeedView = async (
   review: FeedReview,
@@ -522,6 +533,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       content: comment.content,
       reportsCount: 0,
       likesCount: 0,
+      likedUserIds: [],
       createdAt: now,
       updatedAt: now,
       isDelete: false,
@@ -625,6 +637,45 @@ export const useFeedStore = create<FeedState>((set, get) => ({
             likedUserIds: nextLiked
               ? [...new Set([...review.likedUserIds, actorId])]
               : review.likedUserIds.filter((id) => id !== actorId),
+          }
+          : review
+      )),
+    }));
+  },
+
+  onToggleCommentLike: async (feedId, commentId) => {
+    const { userId, currentProfile, actorId } = getAuthContext();
+    if (!userId || !currentProfile || !actorId) return;
+
+    const targetReview = get().reviews.find((review) => review.feedId === feedId);
+    const targetComment = targetReview?.commentsList.find((comment) => comment.commentId === commentId);
+    if (!targetReview || !targetComment) return;
+
+    const nextLiked = !targetComment.liked;
+    const nextLikesCount = Math.max(0, targetComment.likesCount + (nextLiked ? 1 : -1));
+
+    await updateDoc(doc(db, FEEDS_COLLECTION, feedId, COMMENTS_COLLECTION, commentId), {
+      likesCount: nextLikesCount,
+      likedUserIds: nextLiked ? arrayUnion(actorId) : arrayRemove(actorId),
+    });
+
+    set((state) => ({
+      reviews: state.reviews.map((review) => (
+        review.feedId === feedId
+          ? {
+            ...review,
+            commentsList: review.commentsList.map((comment) => (
+              comment.commentId === commentId
+                ? {
+                  ...comment,
+                  liked: nextLiked,
+                  likesCount: nextLikesCount,
+                  likedUserIds: nextLiked
+                    ? [...new Set([...comment.likedUserIds, actorId])]
+                    : comment.likedUserIds.filter((id) => id !== actorId),
+                }
+                : comment
+            )),
           }
           : review
       )),

@@ -37,6 +37,7 @@ export default function FeedDetailPage() {
     onAddComment,
     onDeleteComment,
     onHydrateReviews,
+    onToggleCommentLike,
     onToggleLike,
     onUpdateComment,
   } = useFeedStore();
@@ -85,6 +86,7 @@ export default function FeedDetailPage() {
       content: commentText.trim(),
       reportsCount: 0,
       likesCount: 0,
+      likedUserIds: [],
       createdAt: now,
       updatedAt: now,
       isDelete: false,
@@ -136,6 +138,13 @@ export default function FeedDetailPage() {
     if (!requireFeedAuth()) return;
 
     void onToggleLike(feedId);
+  };
+
+  const handleCommentLike = (commentId: string) => {
+    if (!review) return;
+    if (!requireFeedAuth()) return;
+
+    void onToggleCommentLike(review.feedId, commentId);
   };
 
   if (!review) {
@@ -264,7 +273,14 @@ export default function FeedDetailPage() {
                     </div>
                     <p>{comment.content}</p>
                     <div className="comment-actions">
-                      <button type="button">좋아요 {comment.likesCount}</button>
+                      <button
+                        type="button"
+                        className={comment.liked ? "comment-like-btn liked" : "comment-like-btn"}
+                        onClick={() => handleCommentLike(comment.commentId)}
+                        aria-pressed={comment.liked}
+                      >
+                        {comment.liked ? "♥" : "♡"} 좋아요 {comment.likesCount}
+                      </button>
                       {comment.isMine && (
                         <>
                           <button
