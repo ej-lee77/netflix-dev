@@ -1,48 +1,64 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  addRecentSearch,
+  clearRecentSearches,
+  genreOptions,
+  loadRecentSearches,
+  moodOptions,
+  removeRecentSearch,
+} from "@/lib/searchOptions";
 import "./search.scss";
 
-type SearchOption = {
-  label: string;
-  value: string;
-  icon: string;
-};
-
-const moodOptions: SearchOption[] = [
-  { label: "힐링", value: "chill", icon: "/images/header/menu/mood-chill.svg" },
-  { label: "다크", value: "dark", icon: "/images/header/menu/mood-dark.svg" },
-  { label: "감성적", value: "emotional", icon: "/images/header/menu/mood-emotional.svg" },
-  { label: "신나는", value: "exciting", icon: "/images/header/menu/mood-exciting.svg" },
-  { label: "웃긴", value: "funny", icon: "/images/header/menu/mood-funny.svg" },
-  { label: "로맨틱", value: "romantic", icon: "/images/header/menu/mood-romantic.svg" },
-  { label: "무서운", value: "scary", icon: "/images/header/menu/mood-scary.svg" },
-  { label: "생각나는", value: "thoughtful", icon: "/images/header/menu/mood-thoughtful.svg" },
-];
-
-const genreOptions: SearchOption[] = [
-  { label: "액션", value: "action", icon: "/images/header/menu/genre-action.svg" },
-  { label: "애니메이션", value: "animation", icon: "/images/header/menu/genre-animation.svg" },
-  { label: "코미디", value: "comedy", icon: "/images/header/menu/genre-comedy.svg" },
-  { label: "다큐멘터리", value: "documentary", icon: "/images/header/menu/genre-documentary.svg" },
-  { label: "드라마", value: "drama", icon: "/images/header/menu/genre-drama.svg" },
-  { label: "판타지", value: "fantasy", icon: "/images/header/menu/genre-fantasy.svg" },
-  { label: "공포", value: "horror", icon: "/images/header/menu/genre-horror.svg" },
-  { label: "미스터리", value: "mystery", icon: "/images/header/menu/genre-mystery.svg" },
-  { label: "로맨스", value: "romance", icon: "/images/header/menu/genre-romance.svg" },
-  { label: "SF", value: "scifi", icon: "/images/header/menu/genre-scifi.svg" },
-  { label: "스릴러", value: "thriller", icon: "/images/header/menu/genre-thriller.svg" },
-  { label: "전쟁", value: "war", icon: "/images/header/menu/genre-war.svg" },
-];
-
-const recentSearches = ["오펜하이머", "봉준호", "스릴러 한국영화", "로맨틱 코미디"];
 const recommendedSearches = ["파묘", "서울의 봄", "듄: 파트2", "웡카", "노량", "쿵푸팬더4", "패스트", "아가일"];
 const creators = ["송강호", "전도연", "이병헌", "박찬욱", "봉준호", "놀란", "스필버그", "타란티노"];
 
 export default function SearchPage() {
-  const [activeMoods, setActiveMoods] = useState<string[]>(["exciting"]);
-  const [activeGenres, setActiveGenres] = useState<string[]>(["thriller"]);
+  const router = useRouter();
+  const [keyword, setKeyword] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [activeMoods, setActiveMoods] = useState<string[]>([]);
+  const [activeGenres, setActiveGenres] = useState<string[]>([]);
+  const activeTags = [
+    ...genreOptions.filter((option) => activeGenres.includes(option.value)),
+    ...moodOptions.filter((option) => activeMoods.includes(option.value)),
+  ];
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setRecentSearches(loadRecentSearches());
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  const goToResults = (nextKeyword = keyword) => {
+    const params = new URLSearchParams();
+    const trimmedKeyword = nextKeyword.trim();
+
+    if (trimmedKeyword) params.set("q", trimmedKeyword);
+    if (activeGenres.length > 0) params.set("genres", activeGenres.join(","));
+    if (activeMoods.length > 0) params.set("moods", activeMoods.join(","));
+
+    if (params.toString()) {
+      if (trimmedKeyword) {
+        setRecentSearches(addRecentSearch(trimmedKeyword, recentSearches));
+      }
+      router.push(`/search/results?${params.toString()}`);
+    }
+  };
+
+  const handleRemoveRecentSearch = (event: React.MouseEvent, targetKeyword: string) => {
+    event.stopPropagation();
+    setRecentSearches(removeRecentSearch(targetKeyword, recentSearches));
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches(clearRecentSearches());
+  };
 
   const toggleOption = (
     value: string,
@@ -61,26 +77,86 @@ export default function SearchPage() {
       <div className="search-page__inner">
         <div className="search-page__field">
           <Image src="/images/header/search.svg" alt="" width={22} height={22} />
-          <input type="search" placeholder="제목, 배우, 감독 검색..." aria-label="검색어 입력" />
+          <input
+            type="search"
+            placeholder="제목, 배우, 감독 검색..."
+            aria-label="검색어 입력"
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                goToResults();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="search-page__submit"
+            onClick={() => goToResults()}
+            disabled={!keyword.trim() && activeGenres.length === 0 && activeMoods.length === 0}
+          >
+            검색
+          </button>
         </div>
+
+        {activeTags.length > 0 && (
+          <div className="search-page__selected-tags" aria-label="선택한 검색 태그">
+            {activeTags.map((option) => (
+              <button
+                type="button"
+                key={`${option.group}-${option.value}`}
+                onClick={() => {
+                  if (option.group === "genre") {
+                    setActiveGenres(activeGenres.filter((value) => value !== option.value));
+                  } else {
+                    setActiveMoods(activeMoods.filter((value) => value !== option.value));
+                  }
+                }}
+              >
+                <span>{option.label}</span>
+                <em aria-hidden="true">×</em>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="search-page__top-grid">
           <section className="search-block search-block--recent">
             <div className="search-block__header">
               <h2>최근 검색어</h2>
-              <button type="button">모두 삭제</button>
+              {recentSearches.length > 0 && (
+                <button type="button" onClick={handleClearRecentSearches}>
+                  모두 삭제
+                </button>
+              )}
             </div>
 
-            <ul className="recent-list">
-              {recentSearches.map((keyword) => (
-                <li key={keyword}>
-                  <button type="button">
-                    <span>{keyword}</span>
-                    <span aria-hidden="true">x</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {recentSearches.length > 0 ? (
+              <ul className="recent-list">
+                {recentSearches.map((keyword) => (
+                  <li key={keyword}>
+                    <button
+                      type="button"
+                      className="recent-keyword-btn"
+                      onClick={() => goToResults(keyword)}
+                    >
+                      <span>{keyword}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="recent-remove-btn"
+                      aria-label={`${keyword} 최근 검색어 삭제`}
+                      onClick={(event) => handleRemoveRecentSearch(event, keyword)}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="recent-empty">최근 검색어가 없어요.</div>
+            )}
           </section>
 
           <section className="search-block">
@@ -91,7 +167,12 @@ export default function SearchPage() {
 
             <div className="keyword-cloud">
               {recommendedSearches.map((keyword, index) => (
-                <button className={index === 0 ? "active" : ""} type="button" key={keyword}>
+                <button
+                  className={index === 0 ? "active" : ""}
+                  type="button"
+                  key={keyword}
+                  onClick={() => goToResults(keyword)}
+                >
                   {keyword}
                 </button>
               ))}
@@ -115,6 +196,12 @@ export default function SearchPage() {
                   type="button"
                   key={option.value}
                   onClick={() => toggleOption(option.value, activeMoods, setActiveMoods)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && isActive) {
+                      event.preventDefault();
+                      goToResults();
+                    }
+                  }}
                 >
                   <span className="option-card__icon">
                     <Image src={option.icon} alt="" width={42} height={42} />
@@ -142,6 +229,12 @@ export default function SearchPage() {
                   type="button"
                   key={option.value}
                   onClick={() => toggleOption(option.value, activeGenres, setActiveGenres)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && isActive) {
+                      event.preventDefault();
+                      goToResults();
+                    }
+                  }}
                 >
                   <span className="option-card__icon">
                     <Image src={option.icon} alt="" width={42} height={42} />
@@ -161,7 +254,7 @@ export default function SearchPage() {
 
           <div className="creator-list">
             {creators.map((creator) => (
-              <button type="button" key={creator}>
+              <button type="button" key={creator} onClick={() => goToResults(creator)}>
                 <span aria-hidden="true">{creator.slice(0, 1)}</span>
                 <strong>{creator}</strong>
               </button>

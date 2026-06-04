@@ -34,13 +34,16 @@ interface FeedState {
   onUpdateComment: (feedId: string, commentId: string, content: string) => Promise<void>;
   onDeleteComment: (feedId: string, commentId: string) => Promise<void>;
   onToggleLike: (feedId: string) => Promise<void>;
-  onReportReview: (feedId: string) => Promise<void>;
+  onToggleCommentLike: (feedId: string, commentId: string) => Promise<void>;
+  onReportReview: (feedId: string, shouldReport: boolean, reason?: string) => Promise<void>;
 }
 
 export interface FeedCommentView extends FeedComment {
   author: string;
   authorImage?: string;
   isMine: boolean;
+  liked: boolean;
+  likedUserIds: string[];
 }
 
 export interface FeedView extends FeedReview {
@@ -138,7 +141,11 @@ const isFeedActivity = (value: unknown): value is FeedActivity => (
   typeof value === "object" &&
   value !== null &&
   typeof (value as FeedActivity).feedId === "string" &&
-  ((value as FeedActivity).type === "comment" || (value as FeedActivity).type === "like")
+  (
+    (value as FeedActivity).type === "comment" ||
+    (value as FeedActivity).type === "like" ||
+    (value as FeedActivity).type === "report"
+  )
 );
 
 const syncProfileFeedActivity = async (
@@ -146,6 +153,7 @@ const syncProfileFeedActivity = async (
   type: FeedActivityType,
   shouldInclude: boolean,
   commentId?: string,
+  reason?: string,
 ) => {
   const { user, currentProfile } = useAuthStore.getState();
   const userId = user?.userId || (user as { uid?: string } | null)?.uid || auth.currentUser?.uid;
@@ -172,6 +180,7 @@ const syncProfileFeedActivity = async (
         feedId,
         type,
         ...(commentId ? { commentId } : {}),
+        ...(reason ? { reason } : {}),
         createdAt: new Date().toISOString(),
       },
     ]
@@ -191,9 +200,10 @@ const safelySyncProfileFeedActivity = async (
   type: FeedActivityType,
   shouldInclude: boolean,
   commentId?: string,
+  reason?: string,
 ) => {
   try {
-    await syncProfileFeedActivity(feedId, type, shouldInclude, commentId);
+    await syncProfileFeedActivity(feedId, type, shouldInclude, commentId, reason);
   } catch (error) {
     console.error("피드 활동 기록 실패:", error);
   }
@@ -289,6 +299,7 @@ const normalizeComment = (commentId: string, data: FirestoreRecord): FeedComment
   createdAt: readString(data, "createdAt"),
   updatedAt: readString(data, "updatedAt"),
   isDelete: readBoolean(data, "isDelete"),
+  likedUserIds: readStringArray(data, "likedUserIds"),
 });
 
 const normalizeFeed = (feedId: string, data: FirestoreRecord): FeedReview => ({
@@ -312,16 +323,23 @@ const buildCommentView = async (
   comment: FeedComment,
   currentUserId?: string,
   currentProfileId?: number,
-): Promise<FeedCommentView> => ({
-  ...comment,
-  author: await getAuthorName(comment.userId, comment.profileId),
-  authorImage: await getAuthorImage(comment.userId, comment.profileId),
-  isMine: Boolean(
-    currentUserId &&
-    comment.userId === currentUserId &&
-    (!comment.profileId || comment.profileId === currentProfileId)
-  ),
-});
+): Promise<FeedCommentView> => {
+  const likedUserIds = comment.likedUserIds || [];
+  const currentActorId = currentUserId && currentProfileId ? `${currentUserId}:${currentProfileId}` : currentUserId;
+
+  return {
+    ...comment,
+    author: await getAuthorName(comment.userId, comment.profileId),
+    authorImage: await getAuthorImage(comment.userId, comment.profileId),
+    isMine: Boolean(
+      currentUserId &&
+      comment.userId === currentUserId &&
+      (!comment.profileId || comment.profileId === currentProfileId)
+    ),
+    liked: Boolean(currentActorId && likedUserIds.includes(currentActorId)),
+    likedUserIds,
+  };
+};
 
 const buildFeedView = async (
   review: FeedReview,
@@ -465,6 +483,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   onUpdateReview: async (review) => {
     if (!review.feedId) return;
 
+    const { userId, currentProfile } = getAuthContext();
     const updatedAt = new Date().toISOString();
     const feedDocRef = doc(db, FEEDS_COLLECTION, review.feedId);
     const updatedFields = {
@@ -477,9 +496,18 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     };
 
     await updateDoc(feedDocRef, updatedFields);
+    const currentReview = get().reviews.find((item) => item.feedId === review.feedId);
+    const followingIds = currentProfile?.community?.following || [];
+    const nextReview = await buildFeedView(
+      { ...review, ...updatedFields },
+      currentReview?.commentsList || [],
+      userId,
+      followingIds,
+    );
+
     set((state) => ({
       reviews: state.reviews.map((item) => (
-        item.feedId === review.feedId ? { ...item, ...updatedFields } : item
+        item.feedId === review.feedId ? nextReview : item
       )),
     }));
   },
@@ -505,6 +533,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       content: comment.content,
       reportsCount: 0,
       likesCount: 0,
+      likedUserIds: [],
       createdAt: now,
       updatedAt: now,
       isDelete: false,
@@ -614,12 +643,56 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }));
   },
 
-  onReportReview: async (feedId) => {
+  onToggleCommentLike: async (feedId, commentId) => {
+    const { userId, currentProfile, actorId } = getAuthContext();
+    if (!userId || !currentProfile || !actorId) return;
+
+    const targetReview = get().reviews.find((review) => review.feedId === feedId);
+    const targetComment = targetReview?.commentsList.find((comment) => comment.commentId === commentId);
+    if (!targetReview || !targetComment) return;
+
+    const nextLiked = !targetComment.liked;
+    const nextLikesCount = Math.max(0, targetComment.likesCount + (nextLiked ? 1 : -1));
+
+    await updateDoc(doc(db, FEEDS_COLLECTION, feedId, COMMENTS_COLLECTION, commentId), {
+      likesCount: nextLikesCount,
+      likedUserIds: nextLiked ? arrayUnion(actorId) : arrayRemove(actorId),
+    });
+
+    set((state) => ({
+      reviews: state.reviews.map((review) => (
+        review.feedId === feedId
+          ? {
+            ...review,
+            commentsList: review.commentsList.map((comment) => (
+              comment.commentId === commentId
+                ? {
+                  ...comment,
+                  liked: nextLiked,
+                  likesCount: nextLikesCount,
+                  likedUserIds: nextLiked
+                    ? [...new Set([...comment.likedUserIds, actorId])]
+                    : comment.likedUserIds.filter((id) => id !== actorId),
+                }
+                : comment
+            )),
+          }
+          : review
+      )),
+    }));
+  },
+
+  onReportReview: async (feedId, shouldReport, reason) => {
+    const { userId, currentProfile } = getAuthContext();
+    if (!userId || !currentProfile) return;
+
     const targetReview = get().reviews.find((review) => review.feedId === feedId);
     if (!targetReview) return;
+    if (targetReview.userId === userId && targetReview.profileId === currentProfile.id) return;
 
-    const reportsCount = targetReview.reportsCount + 1;
+    const reportsCount = Math.max(0, targetReview.reportsCount + (shouldReport ? 1 : -1));
     await updateDoc(doc(db, FEEDS_COLLECTION, feedId), { reportsCount });
+    await safelySyncProfileFeedActivity(feedId, "report", shouldReport, undefined, reason);
 
     set((state) => ({
       reviews: state.reviews.map((review) => (

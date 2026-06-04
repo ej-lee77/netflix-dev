@@ -102,6 +102,44 @@
     }
   }
 
+  .search-overlay__selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: -16px;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      border: 1px solid rgba(229, 9, 20, 0.5);
+      border-radius: 100px;
+      background: rgba(229, 9, 20, 0.12);
+      color: #e50914;
+      cursor: pointer;
+      font: inherit;
+      font-size: g.$text-12;
+      font-weight: 700;
+      padding: 0 12px;
+      transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+
+      &:hover {
+        border-color: #e50914;
+        background: rgba(229, 9, 20, 0.18);
+        color: #fff;
+      }
+    }
+
+    em {
+      color: rgba(255, 255, 255, 0.5);
+      font-style: normal;
+    }
+  }
+
   // 공통 타이틀 속성
   .overlay-block h3, 
   .overlay-finder h3 {
@@ -109,6 +147,32 @@
     font-weight: 700;
     color: rgba(255, 255, 255, 0.4);
     margin-bottom: 12px;
+  }
+
+  .overlay-block__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    h3 {
+      margin-bottom: 0;
+    }
+
+    button {
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.42);
+      cursor: pointer;
+      font-size: g.$text-12;
+
+      &:hover,
+      &:focus-visible {
+        color: #fff;
+        outline: none;
+      }
+    }
   }
 
   // 2. 최근/추천 태그 정렬형태 (가로 2열 래핑 구조)
@@ -149,6 +213,62 @@
       }
       &.active { color: #ff4c57; font-weight: bold; }
     }
+  }
+
+  .horizontal-tags--recent {
+    li {
+      display: inline-flex;
+      align-items: center;
+      height: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      transition:
+        border-color 0.15s ease,
+        background 0.15s ease;
+
+      &:hover {
+        border-color: g.$main-color;
+        background: rgba(229, 9, 20, 0.08);
+      }
+    }
+
+    .tag-item--keyword {
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding-right: 6px;
+    }
+
+    .tag-remove-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 100%;
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.38);
+      cursor: pointer;
+      font-size: g.$text-14;
+      line-height: 1;
+
+      &:hover,
+      &:focus-visible {
+        color: #fff;
+        outline: none;
+      }
+    }
+  }
+
+  .overlay-recent-empty {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: g.$text-13;
   }
 
   // 3, 4. 스크롤 로우 (장르, 무드 카드 콤팩트화)
