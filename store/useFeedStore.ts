@@ -34,7 +34,7 @@ interface FeedState {
   onUpdateComment: (feedId: string, commentId: string, content: string) => Promise<void>;
   onDeleteComment: (feedId: string, commentId: string) => Promise<void>;
   onToggleLike: (feedId: string) => Promise<void>;
-  onReportReview: (feedId: string) => Promise<void>;
+  onReportReview: (feedId: string, shouldReport: boolean, reason?: string) => Promise<void>;
 }
 
 export interface FeedCommentView extends FeedComment {
@@ -138,7 +138,11 @@ const isFeedActivity = (value: unknown): value is FeedActivity => (
   typeof value === "object" &&
   value !== null &&
   typeof (value as FeedActivity).feedId === "string" &&
-  ((value as FeedActivity).type === "comment" || (value as FeedActivity).type === "like")
+  (
+    (value as FeedActivity).type === "comment" ||
+    (value as FeedActivity).type === "like" ||
+    (value as FeedActivity).type === "report"
+  )
 );
 
 const syncProfileFeedActivity = async (
@@ -146,6 +150,7 @@ const syncProfileFeedActivity = async (
   type: FeedActivityType,
   shouldInclude: boolean,
   commentId?: string,
+  reason?: string,
 ) => {
   const { user, currentProfile } = useAuthStore.getState();
   const userId = user?.userId || (user as { uid?: string } | null)?.uid || auth.currentUser?.uid;
@@ -172,6 +177,7 @@ const syncProfileFeedActivity = async (
         feedId,
         type,
         ...(commentId ? { commentId } : {}),
+        ...(reason ? { reason } : {}),
         createdAt: new Date().toISOString(),
       },
     ]
@@ -191,9 +197,10 @@ const safelySyncProfileFeedActivity = async (
   type: FeedActivityType,
   shouldInclude: boolean,
   commentId?: string,
+  reason?: string,
 ) => {
   try {
-    await syncProfileFeedActivity(feedId, type, shouldInclude, commentId);
+    await syncProfileFeedActivity(feedId, type, shouldInclude, commentId, reason);
   } catch (error) {
     console.error("피드 활동 기록 실패:", error);
   }
@@ -465,6 +472,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   onUpdateReview: async (review) => {
     if (!review.feedId) return;
 
+    const { userId, currentProfile } = getAuthContext();
     const updatedAt = new Date().toISOString();
     const feedDocRef = doc(db, FEEDS_COLLECTION, review.feedId);
     const updatedFields = {
@@ -477,9 +485,18 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     };
 
     await updateDoc(feedDocRef, updatedFields);
+    const currentReview = get().reviews.find((item) => item.feedId === review.feedId);
+    const followingIds = currentProfile?.community?.following || [];
+    const nextReview = await buildFeedView(
+      { ...review, ...updatedFields },
+      currentReview?.commentsList || [],
+      userId,
+      followingIds,
+    );
+
     set((state) => ({
       reviews: state.reviews.map((item) => (
-        item.feedId === review.feedId ? { ...item, ...updatedFields } : item
+        item.feedId === review.feedId ? nextReview : item
       )),
     }));
   },
@@ -614,12 +631,17 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }));
   },
 
-  onReportReview: async (feedId) => {
+  onReportReview: async (feedId, shouldReport, reason) => {
+    const { userId, currentProfile } = getAuthContext();
+    if (!userId || !currentProfile) return;
+
     const targetReview = get().reviews.find((review) => review.feedId === feedId);
     if (!targetReview) return;
+    if (targetReview.userId === userId && targetReview.profileId === currentProfile.id) return;
 
-    const reportsCount = targetReview.reportsCount + 1;
+    const reportsCount = Math.max(0, targetReview.reportsCount + (shouldReport ? 1 : -1));
     await updateDoc(doc(db, FEEDS_COLLECTION, feedId), { reportsCount });
+    await safelySyncProfileFeedActivity(feedId, "report", shouldReport, undefined, reason);
 
     set((state) => ({
       reviews: state.reviews.map((review) => (
