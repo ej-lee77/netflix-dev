@@ -1,17 +1,13 @@
 // 리뷰 타입
 export interface ReviewDocument {
-  reviewId: string;         // 리뷰 고유 ID
-  content: string;          // 리뷰 내용
-  videoId: string;          // 영상 아이디
-  likesCount: number;       // 좋아요 수
-  dislikesCount: number;    // 싫어요 수
-  isSpoiler: boolean;       // 스포일러 여부
-  reportsCount: number;     // 신고 횟수
+  reviewId: string;// 리뷰 고유 ID
+  content: string;// 리뷰 내용
+  videoId: string;// 영상 아이디
+  likesCount: number;// 좋아요 수
+  isSpoiler: boolean; // 스포일러 여부
+  reportsCount: number;// 신고 횟수
   createdAt: string;
-  isDelete: boolean;
-
-  // 파이어베이스 연동 및 관리를 위한 필수 확장 필드
-  userId: string;           // 리뷰 작성자 ID
+  profileId: number;// 리뷰 작성자 ID
 }
 
 // 1. 댓글 인터페이스 (Sub-collection용)
@@ -40,4 +36,5 @@ export interface CommunityStore {
   reviews: ReviewDocument[];
   // 스토어 내부에서 DB 로직을 수행
   fetchUserReviews: (userId: string) => Promise<void>;
+  addReview: (newReview: Omit<ReviewDocument, "reviewId">) => Promise<void>;
 }
