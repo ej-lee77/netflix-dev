@@ -1,0 +1,121 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import {
+  fetchTrendingTrailerKey,
+  getTrendingYear,
+  type TrendingMediaItem,
+} from "@/lib/trendingContent";
+import "./trendingVideoSection.scss";
+
+type TrendingVideoSectionProps = {
+  items: TrendingMediaItem[];
+  title?: string;
+  variant?: "overlay" | "results";
+  onSelect?: () => void;
+};
+
+const getItemKey = (item: TrendingMediaItem) => `${item.media_type}-${item.id}`;
+
+export default function TrendingVideoSection({
+  items,
+  title = "지금 많이 찾는 작품",
+  variant = "results",
+  onSelect,
+}: TrendingVideoSectionProps) {
+  const [activeItemKey, setActiveItemKey] = useState("");
+  const [trailerKeys, setTrailerKeys] = useState<Record<string, string | null>>({});
+  const trailerControllers = useRef<Record<string, AbortController>>({});
+
+  useEffect(
+    () => () => {
+      Object.values(trailerControllers.current).forEach((controller) => {
+        controller.abort();
+      });
+      trailerControllers.current = {};
+    },
+    [],
+  );
+
+  const loadTrailer = (item: TrendingMediaItem) => {
+    const itemKey = getItemKey(item);
+    setActiveItemKey(itemKey);
+
+    if (itemKey in trailerKeys || trailerControllers.current[itemKey]) return;
+
+    const controller = new AbortController();
+    trailerControllers.current[itemKey] = controller;
+
+    fetchTrendingTrailerKey(item, controller.signal)
+      .then((trailerKey) => {
+        setTrailerKeys((prev) => ({ ...prev, [itemKey]: trailerKey }));
+      })
+      .catch((error: Error) => {
+        if (error.name !== "AbortError") {
+          setTrailerKeys((prev) => ({ ...prev, [itemKey]: null }));
+        }
+      })
+      .finally(() => {
+        delete trailerControllers.current[itemKey];
+      });
+  };
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className={`trending-video-section trending-video-section--${variant}`}>
+      <h3>{title}</h3>
+      <div className="trending-video-grid">
+        {items.map((item) => {
+          const itemKey = getItemKey(item);
+          const trailerKey = trailerKeys[itemKey];
+          const isTrailerActive = activeItemKey === itemKey && Boolean(trailerKey);
+          const year = getTrendingYear(item);
+
+          return (
+            <Link
+              href={`/detail/${item.media_type}/${item.id}`}
+              className="trending-video-card"
+              key={itemKey}
+              onClick={onSelect}
+              onFocus={() => loadTrailer(item)}
+              onMouseEnter={() => loadTrailer(item)}
+              onMouseLeave={() => setActiveItemKey("")}
+            >
+              <span className="trending-video-card__media">
+                {isTrailerActive ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${trailerKey}&modestbranding=1&rel=0`}
+                    title={`${item.title} 트레일러`}
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                  />
+                ) : item.poster_path ? (
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                    alt=""
+                    width={342}
+                    height={513}
+                  />
+                ) : (
+                  <em>이미지 없음</em>
+                )}
+                <span className="trending-video-card__play" aria-hidden="true">
+                  ▶
+                </span>
+              </span>
+              <span className="trending-video-card__body">
+                <strong>{item.title}</strong>
+                <span>
+                  ★ {item.vote_average.toFixed(1)}
+                  {year && ` · ${year}`}
+                </span>
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

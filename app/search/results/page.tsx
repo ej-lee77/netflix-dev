@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,6 +9,11 @@ import {
   getSearchOptionLabels,
   getSearchOptionQuery,
 } from "@/lib/searchOptions";
+import {
+  fetchTrendingMedia,
+  type TrendingMediaItem,
+} from "@/lib/trendingContent";
+import TrendingVideoSection from "@/components/search/TrendingVideoSection";
 import "../search.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -71,7 +77,9 @@ const normalizeMediaItem = (
   item: TmdbMediaCandidate,
   fallbackMediaType?: MediaType,
 ): MediaItem | null => {
-  const mediaType = isMediaType(item.media_type) ? item.media_type : fallbackMediaType;
+  const mediaType = isMediaType(item.media_type)
+    ? item.media_type
+    : fallbackMediaType;
   const title = item.title || item.name;
 
   if (!item.id || !mediaType || !title || item.adult) return null;
@@ -100,10 +108,15 @@ const uniqueAndSortItems = (items: MediaItem[]) => {
     }
   });
 
-  return Array.from(itemMap.values()).sort((a, b) => b.popularity - a.popularity);
+  return Array.from(itemMap.values()).sort(
+    (a, b) => b.popularity - a.popularity,
+  );
 };
 
-const mergeKeywordFirst = (keywordItems: MediaItem[], taggedItems: MediaItem[]) => {
+const mergeKeywordFirst = (
+  keywordItems: MediaItem[],
+  taggedItems: MediaItem[],
+) => {
   const seenKeys = new Set<string>();
   const mergedItems: MediaItem[] = [];
 
@@ -209,9 +222,11 @@ const fetchKeywordResults = async (
     .map((item) => normalizeMediaItem(item))
     .filter((item): item is MediaItem => Boolean(item));
 
-  return uniqueAndSortItems([...directItems, ...knownForItems, ...creditItems]).filter(
-    (item) => typeFilter === "all" || item.media_type === typeFilter,
-  );
+  return uniqueAndSortItems([
+    ...directItems,
+    ...knownForItems,
+    ...creditItems,
+  ]).filter((item) => typeFilter === "all" || item.media_type === typeFilter);
 };
 
 const fetchTaggedResults = async (
@@ -220,7 +235,10 @@ const fetchTaggedResults = async (
   typeFilter: MediaTypeFilter,
   signal: AbortSignal,
 ) => {
-  if (!TMDB_KEY || (selectedGenres.length === 0 && selectedMoods.length === 0)) {
+  if (
+    !TMDB_KEY ||
+    (selectedGenres.length === 0 && selectedMoods.length === 0)
+  ) {
     return [];
   }
 
@@ -275,9 +293,14 @@ function SearchResultsContent() {
     () => parseParamList(searchParams.get("moods")),
     [searchParams],
   );
-  const typeFilter = (searchParams.get("type") as MediaTypeFilter | null) ?? "all";
+  const typeParam = searchParams.get("type") ?? undefined;
+
+  const typeFilter: MediaTypeFilter = isMediaType(typeParam)
+    ? typeParam
+    : "all";
 
   const [items, setItems] = useState<MediaItem[]>([]);
+  const [popularItems, setPopularItems] = useState<TrendingMediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -306,7 +329,12 @@ function SearchResultsContent() {
 
     Promise.all([
       fetchKeywordResults(keyword, typeFilter, controller.signal),
-      fetchTaggedResults(selectedGenres, selectedMoods, typeFilter, controller.signal),
+      fetchTaggedResults(
+        selectedGenres,
+        selectedMoods,
+        typeFilter,
+        controller.signal,
+      ),
     ])
       .then(([keywordItems, taggedItems]) => {
         setItems(mergeKeywordFirst(keywordItems, taggedItems).slice(0, 72));
@@ -314,7 +342,9 @@ function SearchResultsContent() {
       .catch((error: Error) => {
         if (error.name === "AbortError") return;
         setItems([]);
-        setErrorMessage("검색 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        setErrorMessage(
+          "검색 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+        );
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -325,6 +355,18 @@ function SearchResultsContent() {
       controller.abort();
     };
   }, [hasQuery, keyword, selectedGenres, selectedMoods, typeFilter]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchTrendingMedia(typeFilter, controller.signal, 6)
+      .then(setPopularItems)
+      .catch((error: Error) => {
+        if (error.name !== "AbortError") setPopularItems([]);
+      });
+
+    return () => controller.abort();
+  }, [typeFilter]);
 
   const changeTypeFilter = (nextType: MediaTypeFilter) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -353,7 +395,7 @@ function SearchResultsContent() {
       </section>
 
       <section className="search-results-content inner">
-        <div className="type-filter">
+        <div className="type-filter" aria-label="콘텐츠 유형">
           <button
             type="button"
             className={typeFilter === "all" ? "active" : ""}
@@ -383,7 +425,9 @@ function SearchResultsContent() {
           <div className="empty">{errorMessage}</div>
         ) : items.length > 0 ? (
           <>
-            <div className="search-results-count">{items.length}개 작품</div>
+            <div className="search-results-count">
+              {items.length.toLocaleString()}개 작품
+            </div>
             <div className="poster-grid">
               {items.map((item) => (
                 <Link
@@ -393,14 +437,18 @@ function SearchResultsContent() {
                 >
                   <div className="poster">
                     {item.poster_path ? (
-                      <img
-                        src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                         alt={item.title}
+                        width={228}
+                        height={342}
                       />
                     ) : (
-                      <div className="no-image">No Image</div>
+                      <div className="no-image">이미지 없음</div>
                     )}
-                    <span className="rating">★ {item.vote_average.toFixed(1)}</span>
+                    <span className="rating">
+                      ★ {item.vote_average.toFixed(1)}
+                    </span>
                   </div>
                   <h3>{item.title}</h3>
                   <p className="year">
@@ -411,9 +459,18 @@ function SearchResultsContent() {
             </div>
           </>
         ) : (
-          <div className="empty">
-            {hasQuery ? "검색 결과가 없어요." : "검색어 또는 태그를 선택해 주세요."}
-          </div>
+          <>
+            <div className="empty">
+              {hasQuery
+                ? "검색 결과가 없어요."
+                : "검색어 또는 태그를 선택해 주세요."}
+            </div>
+            <TrendingVideoSection
+              items={popularItems}
+              title="지금 많이 찾는 추천 영상"
+              variant="results"
+            />
+          </>
         )}
       </section>
     </main>
