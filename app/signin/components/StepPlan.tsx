@@ -19,6 +19,8 @@ export interface SelectedPlan {
 interface StepPlanProps {
   onNext: (plan: SelectedPlan) => void;
   currentPlanType?: string;
+  currentBilling?: string;
+  submitLabel?: string;
 }
 
 interface PlanData {
@@ -132,18 +134,28 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPlan({ onNext, currentPlanType }: StepPlanProps) {
+export default function StepPlan({ onNext, currentPlanType, currentBilling, submitLabel = "다음" }: StepPlanProps) {
   const [billing, setBilling] = useState<BillingCycle>("monthly"); // 기본: 월간
   const [selected, setSelected] = useState<string>("standard");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
 
+  // 기존과 같은 플랜일경우 경고표시
+  const [error, setError] = useState<string>("");
+
   const handleNext = async () => {
     const planData = PLANS.find((p) => p.id === selected);
     if (!planData) return;
 
-    if (uid) await updatePlan(uid, selected);
+    // 같은 플랜 + 같은 billing 체크 ← 추가
+    if (currentPlanType === selected && currentBilling === billing) {
+      setError("현재 구독 중인 플랜과 동일해요. 다른 플랜을 선택해주세요.");
+      return;
+    }
+
+    setError("");
+    if (uid) await updatePlan(uid, selected, billing);
 
     onNext({
       name: planData.name,
@@ -184,7 +196,8 @@ export default function StepPlan({ onNext, currentPlanType }: StepPlanProps) {
       <div className="plan-grid">
         {PLANS.map((plan) => {
           const isSelected = selected === plan.id;
-          const isCurrent = currentPlanType === plan.id;
+          // 수정 — 플랜 종류 + 결제 주기 둘 다 같아야 사용중
+          const isCurrent = currentPlanType === plan.id && currentBilling === billing;
           return (
             <div
               key={plan.id}
@@ -298,10 +311,19 @@ export default function StepPlan({ onNext, currentPlanType }: StepPlanProps) {
         ))}
       </ul>
 
-      {/* ── 다음 버튼 ─────────────────────────────────────────────────────── */}
+      {/* 에러 */}
+      {error && (
+        <div className="plan-next-wrap">
+          <p className="signin-error" style={{ width: "100%", textAlign: "center", marginBottom: "30px" }}>
+            {error}
+          </p>
+        </div>
+      )}
+
+      {/* 다음 버튼 */}
       <div className="plan-next-wrap">
         <button type="button" className="plan-next-btn" onClick={handleNext}>
-          다음
+          {submitLabel}
         </button>
       </div>
     </div>

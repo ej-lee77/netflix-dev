@@ -121,6 +121,7 @@ function ActivityContent() {
   const { fetchMediaDetail } = useMovieStore();
   const searchParams = useSearchParams();
   const hideMode = searchParams.get("mode") === "hide";
+  const embedMode = searchParams.get("embed") === "1";
 
   const [activeTab, setActiveTab] = useState<ActivityTab>("watching");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -343,7 +344,7 @@ function ActivityContent() {
     await onRemoveWish(mediaItem);
   };
 
-  const selectedItems = listItems.filter((item) => selectedKeys.includes(getItemKey(item)));
+  const selectedItems = listItems.filter((item) => selectedKeys.includes(item));
   const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
   const currentSelectionPage = Math.min(selectionPage, totalSelectionPages);
   const pagedSelectionItems = listItems.slice(
@@ -386,22 +387,6 @@ function ActivityContent() {
             isShare: playlistIsPublic,
             tags: selectedMoodTags,
         });
-
-        const nextPlaylists = [
-          {
-            id: `${Date.now()}`,
-            title,
-            description,
-            moodTags: selectedMoodTags,
-            isPublic: playlistIsPublic,
-            itemKeys: selectedKeys,
-            createdAt: new Date().toISOString(),
-          },
-          ...customPlaylists,
-        ];
-
-        setCustomPlaylists(nextPlaylists);
-        saveCustomPlaylists(nextPlaylists);
 
         // 성공 시 폼 초기화 및 닫기
         setPlaylistTitle("");
@@ -1164,6 +1149,27 @@ function ActivityContent() {
       )}
     </section>
   );
+
+  if (embedMode) {
+    return (
+      <div className="media-list-page activity-page activity-embed-page">
+        <style>{`
+          header,
+          footer,
+          .login-banner {
+            display: none !important;
+          }
+
+          main {
+            min-height: 100vh;
+          }
+        `}</style>
+        <div className="inner">
+          {renderHistory()}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="media-list-page activity-page">

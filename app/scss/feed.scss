@@ -33,20 +33,24 @@
   }
 
   .feed-write-btn {
-    height: 40px;
-    padding: 0 18px;
+    height: 46px;
+    padding: 0 22px;
     border: 0;
-    border-radius: g.$radius-md;
+    border-radius: 4px;
     background: g.$main-color;
     color: g.$w-color;
-    font-size: g.$text-13;
-    font-weight: 800;
+    font-size: g.$text-16;
+    font-weight: 700;
     cursor: pointer;
+    transition:
+      background 0.15s ease,
+      transform 0.15s ease;
 
     &:hover,
     &:focus-visible {
-      background: #B00710;
+      background: #b00710;
       outline: none;
+      transform: scale(1.02);
     }
   }
 
@@ -63,7 +67,8 @@
       border: 1px solid #3a3a3a;
       color: g.$g-color;
       border-radius: 100px;
-      font-size: g.$text-13;
+      font-size: g.$text-12;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s;
@@ -72,7 +77,6 @@
         background: g.$main-color;
         border-color: g.$main-color;
         color: g.$w-color;
-        font-weight: 600;
       }
 
       &:hover:not(.active) {
@@ -90,14 +94,20 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    isolation: isolate;
   }
 
   .feed-post {
     position: relative;
+    z-index: 0;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
     border-radius: g.$radius-lg;
     overflow: visible;
+
+    &.report-open {
+      z-index: 50;
+    }
   }
 
   .feed-card-link {
@@ -228,19 +238,30 @@
     position: absolute;
     top: 36px;
     right: 0;
-    z-index: 20;
+    z-index: 10;
     width: 260px;
     padding: 12px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     background: #191919;
     box-shadow: 0 14px 42px rgba(0, 0, 0, 0.42);
+    pointer-events: auto;
 
     p {
       margin: 0 0 10px;
       color: #d8d8d8;
       font-size: g.$text-13;
       font-weight: 800;
+    }
+  }
+
+  .feed-post.report-open {
+    .report-menu {
+      z-index: 60;
+    }
+
+    .feed-report-panel {
+      z-index: 70;
     }
   }
 
@@ -373,7 +394,12 @@
         position: absolute;
         inset: 0;
         border-radius: 6px;
-        background: radial-gradient(circle at center, rgba(20, 20, 20, 0.72) 0%, rgba(20, 20, 20, 0.58) 46%, rgba(20, 20, 20, 0.32) 100%);
+        background: radial-gradient(
+          circle at center,
+          rgba(20, 20, 20, 0.72) 0%,
+          rgba(20, 20, 20, 0.58) 46%,
+          rgba(20, 20, 20, 0.32) 100%
+        );
         backdrop-filter: blur(3px);
         z-index: 1;
       }
@@ -432,10 +458,13 @@
       border: none;
       color: g.$g-color;
       font-size: g.$text-12;
+      font-weight: 700;
       text-decoration: none;
       cursor: pointer;
       border-radius: g.$radius-md;
-      transition: all 0.2s;
+      transition:
+        background 0.15s ease,
+        color 0.15s ease;
 
       &:hover {
         background: rgba(255, 255, 255, 0.05);
@@ -444,13 +473,11 @@
 
       &.liked {
         color: g.$main-color;
-        font-weight: 600;
       }
 
       &.copied {
         background: rgba(255, 255, 255, 0.08);
         color: g.$w-color;
-        font-weight: 800;
       }
 
       &.readonly {
@@ -594,7 +621,22 @@
       background: transparent;
       color: #9a9a9a;
       font-size: g.$text-12;
+      font-weight: 700;
       cursor: pointer;
+    }
+
+    .comment-like-btn {
+      transition: color 0.18s ease;
+
+      &:hover,
+      &:focus-visible {
+        color: #ff4d55;
+        outline: none;
+      }
+
+      &.liked {
+        color: g.$main-color;
+      }
     }
 
     .comment-delete-btn {
@@ -751,7 +793,25 @@
   }
 
   .feed-write-fields {
+    flex: 1;
+    min-height: 0;
     padding: 18px 26px 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+    }
   }
 
   .feed-search-field,
@@ -762,7 +822,7 @@
     gap: 8px;
     margin-bottom: 14px;
 
-    >span {
+    > span {
       color: #dcdcdc;
       font-size: g.$text-13;
       font-weight: 800;
@@ -787,6 +847,7 @@
   .feed-search-input {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     min-height: 42px;
     padding: 5px 10px;
@@ -984,8 +1045,8 @@
       background: #101010;
       color: #d0d0d0;
       cursor: pointer;
-      font-size: 11px;
-      font-weight: 800;
+      font-size: g.$text-12;
+      font-weight: 700;
       transition:
         border-color 0.18s ease,
         background 0.18s ease,
@@ -995,6 +1056,13 @@
         border-color: rgba(229, 9, 20, 0.62);
         background: rgba(229, 9, 20, 0.12);
         color: g.$w-color;
+      }
+
+      &.selected {
+        border-color: g.$main-color;
+        background: rgba(229, 9, 20, 0.16);
+        color: g.$w-color;
+        box-shadow: 0 0 0 1px rgba(229, 9, 20, 0.35);
       }
     }
 
@@ -1048,7 +1116,11 @@
   .rating-star {
     --fill: 0%;
     display: inline-block;
-    background: linear-gradient(90deg, g.$main-color var(--fill), #555 var(--fill));
+    background: linear-gradient(
+      90deg,
+      g.$main-color var(--fill),
+      #555 var(--fill)
+    );
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
@@ -1078,16 +1150,20 @@
     line-height: 1;
     cursor: pointer;
 
-    >span {
+    > span {
       display: block;
-      background: linear-gradient(90deg, g.$main-color var(--fill), #555 var(--fill));
+      background: linear-gradient(
+        90deg,
+        g.$main-color var(--fill),
+        #555 var(--fill)
+      );
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
       pointer-events: none;
     }
 
-    &:hover>span {
+    &:hover > span {
       filter: brightness(1.15);
     }
 
@@ -1123,11 +1199,13 @@
 
   .feed-modal-actions {
     display: flex;
+    flex-shrink: 0;
     justify-content: flex-end;
     gap: 10px;
     padding: 20px 26px 24px;
     border-top: 1px solid #2a2a2a;
-    margin-top: 20px;
+    margin-top: 0;
+    background: #151515;
 
     button {
       min-width: 82px;

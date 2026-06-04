@@ -24,7 +24,7 @@ export const mainMenus: mainMenu[] = [
   {
       title: "시청이력",
       imgUrl: "/images/header/menu/playhist.svg",
-      path: "/mypage/playhist"
+      path: "/mypage/playlist?tab=history"
   },
   {
     title: "영화",
