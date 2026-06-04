@@ -362,9 +362,9 @@ function SettingsContent() {
                       </div>
                     </div>
                     <Row label="결제 수단" desc={payLabel}>
-                      <button type="button" className="acset-btn">
+                      <Link href="/payment" className="acset-btn">
                         관리
-                      </button>
+                      </Link>
                     </Row>
                   </>
                 )}

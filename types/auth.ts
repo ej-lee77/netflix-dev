@@ -113,8 +113,9 @@ export interface CommunityList {
 
 export interface FeedActivity {
   feedId: string;
-  type: "comment" | "like";
+  type: "comment" | "like" | "report";
   commentId?: string;
+  reason?: string;
   createdAt: string;
 }
 
