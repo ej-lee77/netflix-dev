@@ -122,10 +122,10 @@ export default function LoginPage() {
   const [error, setError] = useState<string>("");
 
   const defaultProfiles = [
-    { 
-      id: 1, 
+    {
+      id: 1,
       nickname: "나", // 👈 name은 빼고 nickname만 선언!
-      imgUrl: "/images/profile/image/default_icons/17.png" 
+      imgUrl: "/images/profile/image/default_icons/17.png"
     }
   ];
 
@@ -145,9 +145,9 @@ export default function LoginPage() {
         email: result.user.email ?? "",
         profiles: defaultProfiles
       } as any);
-      
+
       // 💡 메인("/")이 아닌 프로필 선택 라우트로 주소를 변경합니다!
-      router.push("/profiles"); 
+      router.push("/profiles");
     } catch (err) {
       console.error(err);
       setError("이메일 또는 비밀번호가 올바르지 않습니다.");
@@ -161,7 +161,7 @@ export default function LoginPage() {
     setError("");
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      
+
       // 💥 BUG FIX: 소셜 로그인 결과도 안전하게 일반 구조체 객체로 매핑
       onLogin({
         uid: result.user.uid,
@@ -169,8 +169,8 @@ export default function LoginPage() {
         displayName: result.user.displayName ?? "나",
         profiles: defaultProfiles
       } as any);
-      
-      router.push("/profiles"); ;
+
+      router.push("/profiles");;
     } catch (err) {
       console.error(err);
       setError("Google 로그인에 실패했습니다.");
@@ -286,7 +286,7 @@ export default function LoginPage() {
           </ul>
 
           <p className="login-signup">
-            장님이 아니신가요?
+            아직 회원이 아니신가요?
             <Link href="/signin">회원가입</Link>
           </p>
         </div>
