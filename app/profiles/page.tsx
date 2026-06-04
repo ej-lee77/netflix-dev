@@ -89,6 +89,9 @@ function ProfileSelectContent() {
     setIsAvatarPickerOpen(false);
   };
 
+  const isDefaultProfile = (profile: UserProfile | null) =>
+    Boolean(profile && profiles[0]?.id === profile.id);
+
   const handleSelect = (profile: UserProfile) => {
     if (manageMode) {
       openEditor(profile);
@@ -129,7 +132,7 @@ function ProfileSelectContent() {
   };
 
   const handleDelete = () => {
-    if (!editingProfile || editingProfile.id === 0) return;
+    if (!editingProfile || editingProfile.id === 0 || isDefaultProfile(editingProfile)) return;
     onDeleteProfile(editingProfile.id);
     closeEditor();
   };
@@ -264,7 +267,7 @@ function ProfileSelectContent() {
             )}
 
             <div className="profile-editor-actions">
-              {editingProfile.id !== 0 && profiles.length > 1 && (
+              {editingProfile.id !== 0 && profiles.length > 1 && !isDefaultProfile(editingProfile) && (
                 <button type="button" className="profile-editor-delete" onClick={handleDelete}>
                   삭제
                 </button>

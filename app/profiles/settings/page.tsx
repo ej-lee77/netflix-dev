@@ -67,7 +67,7 @@ const SETTING_ITEMS: SettingsItem[] = [
     modalKey: "playback",
     iconSrc: "/images/profile/setting/5.svg",
     title: "재생 설정",
-    desc: "자동 재생, 미리보기, 데이터 절약 설정",
+    desc: "자동 재생, 미리보기",
   },
   {
     modalKey: "notifications",
@@ -92,12 +92,7 @@ const subtitleLabels = {
   window: { none: "없음", black: "검정색", white: "흰색" },
 };
 
-const MATURITY_VALUES: MaturityRating[] = [
-  "전체관람가",
-  "12+",
-  "15+",
-  "19+",
-];
+const MATURITY_VALUES: MaturityRating[] = ["전체관람가", "12+", "15+", "19+"];
 
 const MATURITY_AGE_ICONS: Record<MaturityRating, string> = {
   전체관람가: "/images/age/ALL.svg",
@@ -107,7 +102,12 @@ const MATURITY_AGE_ICONS: Record<MaturityRating, string> = {
 };
 
 const normalizeMaturityRating = (rating?: string | null): MaturityRating => {
-  if (rating === "전체관람가" || rating === "12+" || rating === "15+" || rating === "19+") {
+  if (
+    rating === "전체관람가" ||
+    rating === "12+" ||
+    rating === "15+" ||
+    rating === "19+"
+  ) {
     return rating;
   }
   return rating === "7+" ? "12+" : "19+";
@@ -350,6 +350,7 @@ function ProfileSettingsContent() {
     profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
   );
   const [toggles, setToggles] = useState({
+    autoplayNext: profileSetting.playback.autoplayNext,
     autoplayPreview: profileSetting.playback.autoplayPreview,
     notiNew: true,
     notiRecommend: false,
@@ -432,6 +433,7 @@ function ProfileSettingsContent() {
     );
     setToggles((current) => ({
       ...current,
+      autoplayNext: nextSetting.playback.autoplayNext,
       autoplayPreview: nextSetting.playback.autoplayPreview,
     }));
   }, [profile.id, profile.settings, profile.viewAge]);
@@ -476,7 +478,10 @@ function ProfileSettingsContent() {
 
   const savePlaybackSettings = () => {
     updateProfileSettings({
-      playback: { autoplayPreview: toggles.autoplayPreview },
+      playback: {
+        autoplayNext: toggles.autoplayNext,
+        autoplayPreview: toggles.autoplayPreview,
+      },
     });
     setActiveModal(null);
   };
@@ -1229,20 +1234,21 @@ function ProfileSettingsContent() {
                         const isActive = index <= activeIndex;
 
                         return (
-                        <button
-                          type="button"
-                          key={rating}
-                          className={
-                            isActive ? "is-active" : ""
-                          }
-                          onClick={() => setMaturityRating(rating)}
-                          aria-pressed={rating === maturityRating}
-                          aria-label={`${rating} 관람등급 선택`}
-                        >
-                          <strong>
-                            <img src={MATURITY_AGE_ICONS[rating]} alt={rating} />
-                          </strong>
-                        </button>
+                          <button
+                            type="button"
+                            key={rating}
+                            className={isActive ? "is-active" : ""}
+                            onClick={() => setMaturityRating(rating)}
+                            aria-pressed={rating === maturityRating}
+                            aria-label={`${rating} 관람등급 선택`}
+                          >
+                            <strong>
+                              <img
+                                src={MATURITY_AGE_ICONS[rating]}
+                                alt={rating}
+                              />
+                            </strong>
+                          </button>
                         );
                       })}
                     </div>
@@ -1272,6 +1278,15 @@ function ProfileSettingsContent() {
 
               {activeModal === "playback" && (
                 <div className="subtitle-settings">
+                  <OptionRow
+                    label="자동재생"
+                    desc="시리즈의 다음 회차를 자동으로 재생합니다."
+                  >
+                    <Toggle
+                      on={toggles.autoplayNext}
+                      onChange={() => flip("autoplayNext")}
+                    />
+                  </OptionRow>
                   <OptionRow
                     label="미리보기 자동재생"
                     desc="탐색 중 예고편과 미리보기를 자동으로 재생합니다."

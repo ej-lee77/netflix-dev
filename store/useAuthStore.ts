@@ -24,6 +24,7 @@ export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
     window: "white",
   },
   playback: {
+    autoplayNext: true,
     autoplayPreview: true,
   },
   hiddenWatchingVideos: [],
@@ -270,8 +271,15 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        const nextProfiles = currentProfiles.filter((profile) => profile.id !== profileId);
-        const isDeletingCurrent = get().currentProfile?.id === profileId;
+        const targetProfileId = String(profileId);
+
+        if (String(currentProfiles[0]?.id) === targetProfileId) {
+          alert("기본 프로필은 삭제할 수 없습니다.");
+          return;
+        }
+
+        const nextProfiles = currentProfiles.filter((profile) => String(profile.id) !== targetProfileId);
+        const isDeletingCurrent = String(get().currentProfile?.id) === targetProfileId;
         const nextCurrentProfile = isDeletingCurrent ? null : get().currentProfile;
 
         try {
