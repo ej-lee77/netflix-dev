@@ -57,6 +57,7 @@ export interface SubtitleSettings {
 }
 
 export interface PlaybackSettings {
+  autoplayNext: boolean;
   autoplayPreview: boolean;
 }
 
