@@ -23,6 +23,7 @@ export default function PlanPage() {
   });
   const [planType, setPlanType] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentBilling, setCurrentBilling] = useState<string>("");
 
   useEffect(() => {
     const uid = user?.uid ?? auth.currentUser?.uid;
@@ -30,6 +31,7 @@ export default function PlanPage() {
 
     getDoc(doc(db, "users", uid)).then((snap) => {
       setPlanType(snap.exists() ? (snap.data().planType ?? "") : "");
+      setCurrentBilling(snap.exists() ? (snap.data().payment?.billing ?? "monthly") : "monthly");
     }).finally(() => setLoading(false));
   }, [user?.uid]);
 
@@ -78,6 +80,8 @@ export default function PlanPage() {
       {currentStep === 1 && (
         <StepPlan
           currentPlanType={planType ?? ""}
+          currentBilling={currentBilling}
+          submitLabel="변경하기"
           onNext={(plan) => {
             setSelectedPlan(plan);
             setCurrentStep(2);

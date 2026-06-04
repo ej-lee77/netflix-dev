@@ -24,6 +24,9 @@ interface StepPaymentProps {
   plan: SelectedPlan;
   onBack: () => void;       // 이전으로 → 플랜 선택
   onComplete: () => void;   // 결제하기 → 시청 시작
+  hidePlanSummary?: boolean;
+  currentPayInfo?: PayInfo | null;
+  submitLabel?: string;
 }
 
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
@@ -40,7 +43,7 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPayment({ plan, onBack, onComplete }: StepPaymentProps) {
+export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, submitLabel = "결제하기" }: StepPaymentProps) {
   const router = useRouter();
   const { onLogin } = useAuthStore();
 
@@ -87,11 +90,12 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   };
 
   // ── 결제하기 ────────────────────────────────────────────────────────────────
-  const uid = useSignUpStore((s) => s.uid);
+  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;
   // 결제수단
   const setPayInfo = useSignUpStore((s) => s.setPayInfo);
 
   const handlePay = async () => {
+    // 카드
     if (activeTab === "card") {
       if (!cardNumber || !expiry || !cvc || !birthDate || !cardPw) {
         setError("카드 정보를 모두 입력해주세요.");
@@ -103,8 +107,53 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
       }
     }
 
+    // 간편결제 
+    if (activeTab === "quick") {
+      if (!selectedQuickPay) {
+        setError("간편결제 수단을 선택해주세요.");
+        return;
+      }
+    }
+
+    // 계좌이체 
+    if (activeTab === "transfer") {
+      if (!selectedBank) {
+        setError("은행을 선택해주세요.");
+        return;
+      }
+    }
+
+    // 휴대폰 결제 
+    if (activeTab === "phone") {
+      if (!phoneNumber) {
+        setError("휴대폰 번호를 입력해주세요.");
+        return;
+      }
+      if (!carrier) {
+        setError("통신사를 선택해주세요.");
+        return;
+      }
+    }
+    // 같은 결제수단 체크 
+    if (currentPayInfo) {
+      const isSameCard = activeTab === "card" &&
+        currentPayInfo.pay === "card" &&
+        cardNumber.replace(/\s/g, "").slice(-4) === currentPayInfo.num &&
+        expiry === currentPayInfo.payDate.split("-")[0];
+
+      const isSameQuick = activeTab === "quick" && currentPayInfo.pay === selectedQuickPay;
+      const isSameTransfer = activeTab === "transfer" && currentPayInfo.pay === "transfer" && currentPayInfo.bank === selectedBank;
+      const isSamePhone = activeTab === "phone" && currentPayInfo.pay === "phone" && currentPayInfo.num === phoneNumber.replace(/-/g, "");
+
+      if (isSameCard || isSameQuick || isSameTransfer || isSamePhone) {
+        setError("현재 사용 중인 결제 수단과 동일해요. 다른 결제 수단을 선택해주세요.");
+        return;
+      }
+    }
     setError("");
     setIsLoading(true);
+
+
 
     try {
       await new Promise((res) => setTimeout(res, 1500));
@@ -189,19 +238,20 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
     <div className="payment-page">
       <h1 className="payment-title">결제 수단</h1>
 
-      {/* ── 플랜 요약 ─────────────────────────────────────────────────────── */}
-      <div className="payment-plan-summary">
-        <div className="pps-left">
-          <span className="pps-badge">{plan.name}</span>
-          <span className="pps-name">{plan.name} 플랜</span>
-          <span className="pps-billing">{isAnnual ? "연간 결제" : "월간 결제"}</span>
+      {/* 플랜 요약 — hidePlanSummary일 때 숨김 */}
+      {!hidePlanSummary && (
+        <div className="payment-plan-summary">
+          <div className="pps-left">
+            <span className="pps-badge">{plan.name}</span>
+            <span className="pps-name">{plan.name} 플랜</span>
+            <span className="pps-billing">{isAnnual ? "연간 결제" : "월간 결제"}</span>
+          </div>
+          <div className="pps-right">
+            <span className="pps-price">{displayPrice}</span>
+            <button type="button" className="pps-change" onClick={onBack}>변경하기</button>
+          </div>
         </div>
-        <div className="pps-right">
-          <span className="pps-price">{displayPrice}</span>
-          <button type="button" className="pps-change" onClick={onBack}>변경하기</button>
-        </div>
-      </div>
-
+      )}
       {/* ── 결제수단 탭 ───────────────────────────────────────────────────── */}
       <div className="payment-tabs">
         {(["card", "quick", "transfer", "phone"] as PayTab[]).map((tab) => {
@@ -442,7 +492,7 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
         onClick={handlePay}
         disabled={isLoading}
       >
-        {isLoading ? "" : "결제하기"}
+        {isLoading ? "" : submitLabel}
       </button>
       <button
         type="button"
