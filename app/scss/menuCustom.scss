@@ -39,7 +39,7 @@
       rgba(255, 255, 255, 0.035);
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
   }
-  .reset-panel{
+  .reset-panel {
     background: rgba(255, 255, 255, 0.035);
   }
 
@@ -73,6 +73,112 @@
     }
   }
 
+  .custom-panel--section {
+    &.is-closed {
+      padding-bottom: 0;
+    }
+
+    .custom-panel__toggle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .panel-toggle {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: rgba(255, 255, 255, 0.75);
+      padding: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &[aria-expanded="true"] {
+        transform: rotate(180deg);
+      }
+    }
+
+    .panel-toggle-icon {
+      font-size: 1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .category-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .category-box {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 22px;
+  }
+
+  .category-box__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .category-box__header h3 {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 900;
+  }
+
+  .category-toggle {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.75);
+    padding: 10px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .category-summary,
+  .category-hidden {
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.56);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .category-hidden {
+    padding: 18px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
   // 5. 🗺️ [신설] 메뉴 나열 순서 프리뷰 바
   .menu-flow-panel {
     margin-top: 18px;
@@ -84,17 +190,17 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 16px;
-      
-      h3 { 
-        font-size: 1.05rem; 
-        font-weight: 800; 
-        color: #fff; 
+
+      h3 {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #fff;
       }
-      span { 
-        font-size: 0.85rem; 
-        color: rgba(255, 255, 255, 0.38); 
+      span {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.38);
       }
-      
+
       @media (max-width: 600px) {
         flex-direction: column;
         align-items: flex-start;
@@ -104,87 +210,99 @@
   }
 
   .menu-flow-container {
-    display: flex;
+    display: block;
+    padding: 14px 0;
+  }
+
+  .flow-summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .flow-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 12px;
     align-items: center;
+  }
+
+  .flow-row-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.82);
+    white-space: nowrap;
+  }
+
+  .flow-row-items {
+    display: flex;
     flex-wrap: wrap;
     gap: 10px;
     min-height: 44px;
-    padding: 4px 0;
-  }
-
-  .flow-item-wrapper {
-    display: flex;
     align-items: center;
-    gap: 10px;
-  }
-
-  .flow-arrow {
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 1.1rem;
-    font-weight: bold;
   }
 
   .flow-chip {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    background: rgba(229, 9, 20, 0.14);
+    border: 1px solid rgba(229, 9, 20, 0.25);
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .flow-chip .order-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 0.75rem;
     font-weight: 700;
-    
-    &.home-fixed {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px dashed rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.6);
-    }
+  }
 
-    &.dynamic {
-      background: rgba(229, 9, 20, 0.15);
-      border: 1px solid rgba(229, 9, 20, 0.5);
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.15s ease;
+  .flow-empty {
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
 
-      .order-number {
-        background: #e50914;
-        color: #fff;
-        font-size: 10px;
-        width: 16px;
-        height: 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-      }
+  .flow-action:hover:not(:disabled),
+  .flow-remove:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
 
-      .remove-x {
-        margin-left: 4px;
-        color: rgba(255, 255, 255, 0.4);
-        font-size: 14px;
-        transition: color 0.1s;
-      }
-
-      &:hover {
-        background: rgba(229, 9, 20, 0.25);
-        border-color: #e50914;
-        
-        .remove-x { color: #fff; }
-      }
-    }
-
-    &.empty {
-      color: rgba(255, 255, 255, 0.25);
-      font-size: 0.88rem;
-      font-style: italic;
-    }
+  .flow-empty {
+    color: rgba(255, 255, 255, 0.42);
+    padding: 12px 18px;
+    border-radius: 999px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
   }
 
   // 6. 메뉴 선택 그리드 & 버튼 레이아웃
   .genre-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(160px, 1fr));
     gap: 12px;
+  }
+  .co {
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+  }
+
+  .ct {
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
   }
 
   .genre-button {
@@ -203,6 +321,7 @@
     font: inherit;
     font-weight: 900;
     padding: 0 45px 0 18px; // 우측 순서 원형 배지를 위한 패딩 확보
+    white-space: nowrap;
     transition:
       border-color 0.18s ease,
       background 0.18s ease,
@@ -238,7 +357,9 @@
       background: rgba(229, 9, 20, 0.11);
       color: #fff;
 
-      img { opacity: 0.9; }
+      img {
+        opacity: 0.9;
+      }
     }
 
     &.active {
@@ -306,7 +427,7 @@
       min-height: 64px;
       flex-direction: row; // 모바일 텍스트 일렬 유지를 위해 가로 배열 강제 유지
       padding: 0 38px 0 12px;
-      
+
       strong {
         right: 10px;
       }

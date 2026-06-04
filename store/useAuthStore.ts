@@ -288,6 +288,12 @@ export const useAuthStore = create<AuthState>()(
           const userDocRef = doc(db, "users", uid);
           await updateDoc(userDocRef, { profile: nextProfiles });
 
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(
+              `netflix-profile-pin-${targetProfileId}`,
+            );
+          }
+
           set({
             user: { ...currentUser, profile: nextProfiles },
             currentProfile: nextCurrentProfile,
