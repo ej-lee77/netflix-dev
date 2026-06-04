@@ -99,9 +99,11 @@ export const updatePayment = async (
 export const updatePlan = async (
   uid: string,
   planType: string,
+  billing: string
 ): Promise<void> => {
   await updateDoc(doc(db, "users", uid), {
     planType,
+    billing,
     updatedAt: serverTimestamp(),
   });
 };
