@@ -8,7 +8,7 @@ import HeaderMenu from "./HeaderMenu";
 import ProfilePinGate, { getProfilePin } from "./ProfilePinGate";
 import ProfileSwitchOverlay from "./ProfileSwitchOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
-import type { UserProfile } from "@/types/auth"; 
+import type { UserProfile } from "@/types/auth";
 import "./scss/header.scss";
 import HeaderSearchOverlay from "./HeaderSearchOverlay";
 
@@ -19,9 +19,15 @@ export default function Header() {
   const router = useRouter();
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(null);
-  const [switchingProfile, setSwitchingProfile] = useState<UserProfile | null>(null);
-  const [switchOverlayPhase, setSwitchOverlayPhase] = useState<"enter" | "exit">("enter");
+  const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(
+    null,
+  );
+  const [switchingProfile, setSwitchingProfile] = useState<UserProfile | null>(
+    null,
+  );
+  const [switchOverlayPhase, setSwitchOverlayPhase] = useState<
+    "enter" | "exit"
+  >("enter");
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -36,7 +42,10 @@ export default function Header() {
   const activeProfile = currentProfile;
   const isProfileRoute = Boolean(pathname?.startsWith("/profiles"));
   const shouldSelectProfile = Boolean(
-    user && !currentProfile && !AUTH_PATHS.includes(pathname ?? "") && !isProfileRoute
+    user &&
+    !currentProfile &&
+    !AUTH_PATHS.includes(pathname ?? "") &&
+    !isProfileRoute,
   );
 
   const runProfileSwitch = async (selectedProfile: UserProfile) => {
@@ -104,7 +113,12 @@ export default function Header() {
           <div className="flex-item gap-6">
             <h1>
               <Link href="/">
-                <Image src="/images/logo-icon.svg" alt="Netflix" width={40} height={40} />
+                <Image
+                  src="/images/logo-icon.svg"
+                  alt="Netflix"
+                  width={40}
+                  height={40}
+                />
               </Link>
             </h1>
 
@@ -120,18 +134,33 @@ export default function Header() {
 
           <ul className="gnb-menu flex-item gap-4">
             <li onClick={() => setIsSearchOpen(true)}>
-              <Image src="/images/header/search.svg" alt="검색" width={24} height={24} />
+              <Image
+                src="/images/header/search.svg"
+                alt="검색"
+                width={24}
+                height={24}
+              />
             </li>
             <li>
               <Link href="/alarm">
-                <Image src="/images/header/alarm.svg" alt="알림" width={24} height={24} />
+                <Image
+                  src="/images/header/alarm.svg"
+                  alt="알림"
+                  width={24}
+                  height={24}
+                />
               </Link>
             </li>
 
             {!user ? (
               <li>
                 <Link href="/login" className="login-link" aria-label="로그인">
-                  <Image src="/images/header/menu/mypage.svg" alt="" width={24} height={24} />
+                  <Image
+                    src="/images/header/menu/mypage.svg"
+                    alt=""
+                    width={24}
+                    height={24}
+                  />
                 </Link>
               </li>
             ) : (
@@ -143,8 +172,15 @@ export default function Header() {
                   onClick={() => setIsProfileMenuOpen((isOpen) => !isOpen)}
                 >
                   <Image
-                    src={activeProfile?.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                    alt={activeProfile?.nickname ?? activeProfile?.nickname ?? "프로필"}
+                    src={
+                      activeProfile?.imgUrl ??
+                      "/images/profile/image/default_icons/17.png"
+                    }
+                    alt={
+                      activeProfile?.nickname ??
+                      activeProfile?.nickname ??
+                      "프로필"
+                    }
                     width={40}
                     height={40}
                   />
@@ -153,16 +189,22 @@ export default function Header() {
 
                 {isProfileMenuOpen && (
                   <div className="profile-dropdown">
-                    <span className="profile-dropdown-caret" aria-hidden="true" />
-
                     <ul className="profile-switch-list">
                       {/* 🌟 이제 profiles가 빈 배열 또는 온전한 프로필 리스트이므로 에러가 나지 않습니다. */}
                       {profiles.map((profile) => (
                         <li key={profile.id}>
-                          <button type="button" onClick={() => handleProfileChange(profile)}>
+                          <button
+                            type="button"
+                            onClick={() => handleProfileChange(profile)}
+                          >
                             <Image
-                              src={profile.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                              alt={profile.nickname ?? profile.nickname ?? "프로필"}
+                              src={
+                                profile.imgUrl ??
+                                "/images/profile/image/default_icons/17.png"
+                              }
+                              alt={
+                                profile.nickname ?? profile.nickname ?? "프로필"
+                              }
                               width={42}
                               height={42}
                             />
@@ -175,19 +217,29 @@ export default function Header() {
 
                     <ul className="profile-link-list">
                       <li>
-                        <Link href="/mypage" onClick={() => setIsProfileMenuOpen(false)}>
+                        <Link
+                          href="/mypage"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
                           마이페이지
                         </Link>
                       </li>
                       <li>
-                        <Link href="/settings?tab=profile" onClick={() => setIsProfileMenuOpen(false)}>
+                        <Link
+                          href="/settings?tab=profile"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
                           프로필 관리
                         </Link>
                       </li>
                     </ul>
 
-                    <button className="profile-logout" type="button" onClick={handleLogout}>
-                      넷플릭스에서 로그아웃
+                    <button
+                      className="profile-logout"
+                      type="button"
+                      onClick={handleLogout}
+                    >
+                      로그아웃
                     </button>
                   </div>
                 )}
@@ -213,7 +265,10 @@ export default function Header() {
           onSuccess={confirmPendingProfile}
         />
       )}
-      <ProfileSwitchOverlay phase={switchOverlayPhase} profile={switchingProfile} />
+      <ProfileSwitchOverlay
+        phase={switchOverlayPhase}
+        profile={switchingProfile}
+      />
     </>
   );
 }
