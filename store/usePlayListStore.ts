@@ -26,7 +26,7 @@ export const getMediaType = (item: Movie | TV): MediaType => (
     "title" in item ? "movie" : "tv"
 );
 
-const makePlayListItem = (item: Movie | TV, mediaType = getMediaType(item)): PlayListItem => ({
+const makePlayListItem = (item: Movie | TV): PlayListItem => ({
     id: item.id,
     title: ("title" in item ? item.title : item.name) as string,
     poster_path: item.poster_path ?? "",
@@ -260,97 +260,93 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
         }
     },
     fetchMyCustomPlaylists: async () => {
-        const { user } = useAuthStore.getState();
-        if (!user?.userId) return;
+        const { user, currentProfile } = useAuthStore.getState();
+        if (!user?.userId || !currentProfile) return;
 
         try {
-            const userDocRef = doc(db, "usersPlaylists", user.userId);
-            const docSnap = await getDoc(userDocRef);
+            const docRef = doc(db, "playlists", user.userId);
+            const docSnap = await getDoc(docRef);
             
             if (docSnap.exists()) {
-                const playlists = docSnap.data().playlists || [];
-                set({ customPlaylists: playlists });
+                const allPlaylists = docSnap.data().playlists || [];
+                // 현재 프로필의 데이터만 필터링하여 상태에 저장
+                const myPlaylists = allPlaylists.filter((p: any) => p.profileId === currentProfile.id);
+                set({ customPlaylists: myPlaylists });
             }
         } catch (error) {
             console.error("로딩 실패:", error);
         }
     },
     createMyCustomPlaylist: async (data) => {
-        const { user } = useAuthStore.getState();
-        const userId = user?.userId || auth.currentUser?.uid;
-        if (!userId) return;
+        const { user, currentProfile } = useAuthStore.getState();
+        if (!user?.userId || !currentProfile) return;
 
         try {
-            const userDocRef = doc(db, "playlists", user.userId);
-            
+            const playlistDocRef = doc(db, "playlists", user.userId);
             const newPlaylist = {
                 ...data,
-                listId: crypto.randomUUID(), // 배열 내에서 구분할 고유 ID
+                listId: crypto.randomUUID(),
+                profileId: currentProfile.id, // 데이터 안에 프로필 ID를 박아둡니다.
                 createdAt: new Date().toISOString(),
             };
 
-            // setDoc({ merge: true })를 사용하면 문서가 없으면 생성하고, 있으면 업데이트합니다.
-            await setDoc(userDocRef, {
+            // 배열에 직접 추가
+            await setDoc(playlistDocRef, {
                 playlists: arrayUnion(newPlaylist)
             }, { merge: true });
 
-            // 상태 업데이트
             set((state) => ({ 
                 customPlaylists: [newPlaylist, ...state.customPlaylists] 
             }));
         } catch (error) {
-            console.error("플레이리스트 저장 실패:", error);
-            throw error;
+            console.error("생성 실패:", error);
         }
     },
     updateCustomPlaylist: async (listId, updatedData) => {
-        const { user } = useAuthStore.getState();
-        if (!user?.userId) return;
+        const { user, currentProfile } = useAuthStore.getState();
+        if (!user?.userId || !currentProfile) return;
 
         try {
-            // 1. Firestore 업데이트 (전체 배열을 읽어서 수정 후 저장하거나, 특정 위치 수정)
-            const userDocRef = doc(db, "playlists", user.userId);
-            const docSnap = await getDoc(userDocRef);
-            
-            if (docSnap.exists()) {
-                const currentPlaylists = docSnap.data().playlists as PlaylistDocument[];
-                const nextPlaylists = currentPlaylists.map((p) => 
-                    p.listId === listId ? { ...p, ...updatedData } : p
-                );
+            const docRef = doc(db, "playlists", user.userId);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) return;
 
-                await updateDoc(userDocRef, { playlists: nextPlaylists });
-                
-                // 2. 로컬 상태 업데이트
-                set({ customPlaylists: nextPlaylists });
-            }
+            const allPlaylists = docSnap.data().playlists || [];
+            const nextPlaylists = allPlaylists.map((p: any) => 
+                p.listId === listId ? { ...p, ...updatedData } : p
+            );
+
+            await updateDoc(docRef, { playlists: nextPlaylists });
+            
+            // 상태 업데이트 (현재 프로필 것만 필터링)
+            set({ customPlaylists: nextPlaylists.filter((p: any) => p.profileId === currentProfile.id) });
         } catch (error) {
             console.error("업데이트 실패:", error);
         }
     },
     deleteCustomPlaylist: async (listId: string) => {
-        const { user } = useAuthStore.getState();
-        if (!user?.userId) return;
+        const { user, currentProfile } = useAuthStore.getState();
+        if (!user?.userId || !currentProfile) return;
 
         try {
-            const userDocRef = doc(db, "playlists", user.userId);
-            const docSnap = await getDoc(userDocRef);
-            
-            if (docSnap.exists()) {
-                const currentPlaylists = docSnap.data().playlists as PlaylistDocument[];
-                // 해당 ID를 제외한 나머지 리스트만 필터링
-                const nextPlaylists = currentPlaylists.filter((p) => p.listId !== listId);
+            const docRef = doc(db, "playlists", user.userId);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) return;
 
-                await updateDoc(userDocRef, { playlists: nextPlaylists });
-                set({ customPlaylists: nextPlaylists });
-            }
+            const allPlaylists = docSnap.data().playlists || [];
+            const nextPlaylists = allPlaylists.filter((p: any) => p.listId !== listId);
+
+            await updateDoc(docRef, { playlists: nextPlaylists });
+            
+            set({ customPlaylists: nextPlaylists.filter((p: any) => p.profileId === currentProfile.id) });
         } catch (error) {
-            console.error("플레이리스트 삭제 실패:", error);
+            console.error("삭제 실패:", error);
         }
     },
-    onAddMyList: async (item, mediaType) => {
+    onAddMyList: async (item) => {
         try {
             const authState = useAuthStore.getState();
-            const userId = authState.user?.userId || auth.currentUser?.uid;
+            const userId = authState.user?.userId;
             const currentProfile = authState.currentProfile;
 
             if (!userId || !currentProfile) return false;
@@ -369,7 +365,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             if (profileIndex === -1) return false;
 
             // 3. 기존 프로필 데이터는 그대로 유지하고, movies.playlist.playlistVideos만 업데이트합니다.
-            const itemKey = getItemKey(makePlayListItem(item, mediaType));
+            const itemKey = getItemKey(makePlayListItem(item));
             
             // 기존 배열에 안전하게 값을 추가
             const updatedProfiles = [...profiles];
@@ -406,7 +402,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     onRemoveMyList: async (id, mediaType) => {
         try {
             const authState = useAuthStore.getState();
-            const userId = authState.user?.userId || auth.currentUser?.uid;
+            const userId = authState.user?.userId;
             const currentProfile = authState.currentProfile;
 
             if (!userId || !currentProfile) return false;
@@ -461,13 +457,12 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     onLoadMyList: async () => {
         try {
             const { user, currentProfile } = useAuthStore.getState();
-            const userId = user?.userId || auth.currentUser?.uid;
-            if (!userId || !currentProfile) {
+            if (!user?.userId || !currentProfile) {
                 set({ myList: [] }); // 비로그인 시 빈 배열
                 return;
             }
 
-            const userDocRef = doc(db, "users", userId);
+            const userDocRef = doc(db, "users", user.userId);
             const snap = await getDoc(userDocRef);
             
             if (snap.exists()) {

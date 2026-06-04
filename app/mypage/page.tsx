@@ -9,6 +9,8 @@ import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
 import { BADGE_LIST } from "@/data/badge";
 import { useCommunityStore } from "@/store/useCommunityStore";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/firebase/firebase";
 
 const GENRE_COLORS: { [key: string]: string } = {
   "SF": "#6366f1",       // 인디고
@@ -95,7 +97,7 @@ export default function MyPage() {
 
   const filteredActivities = useMemo(() => {
     const alarms = activeProfile?.alarm || [];
-    
+
     return alarms
       .filter((alarm) => alarm.category === 'review' || alarm.category === 'feed')
       .slice(0, 5); // 최근 활동 5개만 표시
@@ -131,7 +133,7 @@ export default function MyPage() {
 
     const { earnedBadges, equippedBadges } = activeProfile.bages;
     const completedUserBadges = earnedBadges?.filter((b: any) => b.isComplete) || [];
-    
+
     const mapped = completedUserBadges.map((userBadge: any) => {
       const master = BADGE_LIST.find((m) => m.id === userBadge.id);
       return {
@@ -147,11 +149,11 @@ export default function MyPage() {
       .sort((a, b) => (b.isEquipped ? 1 : 0) - (a.isEquipped ? 1 : 0))
       .slice(0, 5);
   }, [activeProfile]);
-  
+
   const genreMoodStats = useMemo(() => {
     const gStats = activeProfile?.movies?.genreStats || {};
     const mStats = activeProfile?.movies?.moodStats || {};
-    
+
     const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
 
     if (totalCount === 0) {
@@ -219,14 +221,38 @@ export default function MyPage() {
     time: ["2일 전", "1주 전"][i],
   }));
 
+  // Firestore에서 플랜/결제 정보 불러오기
+  const [planType, setPlanType] = useState<string>("");
+  const [nextDate, setNextDate] = useState<string>("");
+
+  useEffect(() => {
+    const uid = user?.uid ?? auth.currentUser?.uid;
+    if (!uid) return; // 로그인 안 된 경우 early return
+
+    getDoc(doc(db, "users", uid)).then((snap) => {
+      if (!snap.exists()) return; // 문서 없으면 early return
+      const data = snap.data();
+      setPlanType(data.planType ?? "");           // 플랜 종류 (basic/standard/premium)
+      setNextDate(data.payment?.nextDate ?? "");  // 다음 결제일
+    });
+  }, [user?.uid]); // user가 바뀔 때마다 재실행
+
+  // planType 영문 → 한글 변환
+  const planLabel = (() => {
+    if (planType === "basic") return "베이직";
+    if (planType === "standard") return "스탠다드";
+    if (planType === "premium") return "프리미엄";
+    return null; // planType 없으면 뱃지 자체를 숨김
+  })();
+
   return (
     <div className="mypage">
       <div className="inner">
-        
+
         {/* 상단 모드 컨트롤러 바 */}
         <div className="mypage-mode-controller">
           <p>🎬 피드/리뷰 기능을 숨길 수 있습니다.</p>
-          <button 
+          <button
             className={`toggle-mode-btn ${hideCommunity ? "active" : ""}`}
             onClick={toggleCommunity} // 스토어 액션 직접 연결
           >
@@ -245,7 +271,7 @@ export default function MyPage() {
               alt={activeProfile?.nickname || "프로필"}
             />
           </div>
-          
+
           <div className="profile-info">
             <div className="name-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2>{activeProfile?.nickname || "사용자"}</h2>
@@ -256,9 +282,15 @@ export default function MyPage() {
               )}
             </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
-            <span className="plan-badge">★ 스탠다드 · 다음 결제 2026.06.22</span>
+            {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
+            {planLabel && (
+              <span className="plan-badge">
+                ★ {planLabel}{nextDate ? ` · 다음 결제 ${nextDate}` : ""}
+                {/* nextDate 없으면 플랜 이름만 표시 */}
+              </span>
+            )}
           </div>
-          
+
           <div className="profile-stats">
             {!hideCommunity && (
               <>
@@ -339,7 +371,7 @@ export default function MyPage() {
             <h2>시청 취향 분석</h2>
             <span className="pref-subtitle">{activeProfile?.nickname || "사용자"}님의 시청 기록 분석 결과입니다.</span>
           </div>
-          
+
           <div className="analysis-grid">
             {genreMoodStats.isEmpty ? (
               <div className="empty-analysis-card">
@@ -350,62 +382,62 @@ export default function MyPage() {
               </div>
             ) : (
               <>
-              <div className="analysis-card genre-card-box">
-                <h3>선호 장르 TOP 3</h3>
-                <div className="genre-chart-container">
-                  <table className="genre-stat-table">
-                    <thead>
-                      <tr>
-                        <th>순위</th>
-                        <th>장르명</th>
-                        <th>비율 및 그래프</th>
-                        <th>시청 편수</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {genreMoodStats.genres.slice(0, 3).map((g, index) => (
-                        <tr key={index}>
-                          <td className="rank-num">{index + 1}</td>
-                          <td className="genre-name">{g.name}</td>
-                          <td className="graph-td">
-                            <div className="progress-bar-wrapper">
-                              <div 
-                                className="progress-bar-fill" 
-                                style={{ width: `${g.percentage}%`, backgroundColor: g.color }}
-                              ></div>
-                              <span className="percent-text">{g.percentage}%</span>
-                            </div>
-                          </td>
-                          <td className="count-text">{g.count}편</td>
+                <div className="analysis-card genre-card-box">
+                  <h3>선호 장르 TOP 3</h3>
+                  <div className="genre-chart-container">
+                    <table className="genre-stat-table">
+                      <thead>
+                        <tr>
+                          <th>순위</th>
+                          <th>장르명</th>
+                          <th>비율 및 그래프</th>
+                          <th>시청 편수</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {genreMoodStats.genres.slice(0, 3).map((g, index) => (
+                          <tr key={index}>
+                            <td className="rank-num">{index + 1}</td>
+                            <td className="genre-name">{g.name}</td>
+                            <td className="graph-td">
+                              <div className="progress-bar-wrapper">
+                                <div
+                                  className="progress-bar-fill"
+                                  style={{ width: `${g.percentage}%`, backgroundColor: g.color }}
+                                ></div>
+                                <span className="percent-text">{g.percentage}%</span>
+                              </div>
+                            </td>
+                            <td className="count-text">{g.count}편</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>                
-              <div className="analysis-card mood-card-box">
-                <h3>선호하는 무드</h3>
-                <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
-                <div className="mood-tag-cloud">
-                  {genreMoodStats.moods.map((m, index) => (
-                    <span key={index} className={`mood-tag-item ${m.type}`}>
-                      <img src={m.img} alt={m.tag} />
-                      {m.tag}
-                    </span>
-                  ))}
-                </div>
+                <div className="analysis-card mood-card-box">
+                  <h3>선호하는 무드</h3>
+                  <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
+                  <div className="mood-tag-cloud">
+                    {genreMoodStats.moods.map((m, index) => (
+                      <span key={index} className={`mood-tag-item ${m.type}`}>
+                        <img src={m.img} alt={m.tag} />
+                        {m.tag}
+                      </span>
+                    ))}
+                  </div>
 
-                <div className="mood-summary-box">
-                  💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와 
-                  <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                  <div className="mood-summary-box">
+                    💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와
+                    <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                  </div>
                 </div>
-              </div>
               </>
             )}
           </div>
         </section>
 
-        
+
         {/* 2단 섹션: 커뮤니티 활성화 상태일 때만 출력 */}
         {!hideCommunity && (
           <div className="two-col-section">
@@ -453,9 +485,9 @@ export default function MyPage() {
                     return (
                       <div key={review.reviewId} className="review-item">
                         <div className="review-thumb">
-                          <img 
-                            src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : '/placeholder.png'} 
-                            alt={movie?.title || movie?.name || '영화 포스터'} 
+                          <img
+                            src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : '/placeholder.png'}
+                            alt={movie?.title || movie?.name || '영화 포스터'}
                           />
                         </div>
                         <div className="review-body">
@@ -491,12 +523,12 @@ export default function MyPage() {
               <Link href="/goods">전체 {profileData.stats.badge}개 →</Link>
             </span>
           </div>
-          
+
           <div className="badge-grid summary-mode">
             {displayBadgesSummary.length > 0 ? (
               displayBadgesSummary.map((b) => (
-                <div 
-                  key={b.id} 
+                <div
+                  key={b.id}
                   className={`badge-card ${b.isEquipped ? "equipped-highlight" : ""}`}
                   title={b.title}
                 >

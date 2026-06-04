@@ -344,7 +344,7 @@ function ActivityContent() {
     await onRemoveWish(mediaItem);
   };
 
-  const selectedItems = listItems.filter((item) => selectedKeys.includes(getItemKey(item)));
+  const selectedItems = listItems.filter((item) => selectedKeys.includes(item));
   const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
   const currentSelectionPage = Math.min(selectionPage, totalSelectionPages);
   const pagedSelectionItems = listItems.slice(
@@ -387,22 +387,6 @@ function ActivityContent() {
             isShare: playlistIsPublic,
             tags: selectedMoodTags,
         });
-
-        const nextPlaylists = [
-          {
-            id: `${Date.now()}`,
-            title,
-            description,
-            moodTags: selectedMoodTags,
-            isPublic: playlistIsPublic,
-            itemKeys: selectedKeys,
-            createdAt: new Date().toISOString(),
-          },
-          ...customPlaylists,
-        ];
-
-        setCustomPlaylists(nextPlaylists);
-        saveCustomPlaylists(nextPlaylists);
 
         // 성공 시 폼 초기화 및 닫기
         setPlaylistTitle("");
