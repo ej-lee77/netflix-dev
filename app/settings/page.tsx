@@ -161,7 +161,7 @@ function SettingsContent() {
   const [draftProfileName, setDraftProfileName] = useState("새 프로필");
   const [draftProfileAvatar, setDraftProfileAvatar] = useState(AVATAR_OPTIONS[0]);
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
-  
+
   const activeTab = TABS.find((tab) => tab.key === active);
 
   const openProfileAdd = () => {
@@ -334,7 +334,7 @@ function SettingsContent() {
                       </div>
                     </div>
                     <Row label="결제 수단" desc={payLabel}>
-                      <button type="button" className="acset-btn">관리</button>
+                      <Link href="/payment" className="acset-btn">관리</Link>
                     </Row>
                   </>
                 )}
