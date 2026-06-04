@@ -92,6 +92,7 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
   const setPayInfo = useSignUpStore((s) => s.setPayInfo);
 
   const handlePay = async () => {
+    // 카드
     if (activeTab === "card") {
       if (!cardNumber || !expiry || !cvc || !birthDate || !cardPw) {
         setError("카드 정보를 모두 입력해주세요.");
@@ -99,6 +100,34 @@ export default function StepPayment({ plan, onBack, onComplete }: StepPaymentPro
       }
       if (!agreeAuto) {
         setError("자동 결제 동의는 필수입니다.");
+        return;
+      }
+    }
+
+    // 간편결제 ← 추가
+    if (activeTab === "quick") {
+      if (!selectedQuickPay) {
+        setError("간편결제 수단을 선택해주세요.");
+        return;
+      }
+    }
+
+    // 계좌이체 ← 추가
+    if (activeTab === "transfer") {
+      if (!selectedBank) {
+        setError("은행을 선택해주세요.");
+        return;
+      }
+    }
+
+    // 휴대폰 결제 ← 추가
+    if (activeTab === "phone") {
+      if (!phoneNumber) {
+        setError("휴대폰 번호를 입력해주세요.");
+        return;
+      }
+      if (!carrier) {
+        setError("통신사를 선택해주세요.");
         return;
       }
     }
