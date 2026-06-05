@@ -285,6 +285,9 @@ export default function CategoryPage() {
       page: String(page),
       sort_by: sort,
       include_adult: "false",
+      // 넷플릭스 제공 콘텐츠만 노출
+      with_watch_providers: "8",
+      watch_region: "KR",
     });
 
     if (mainTab === "animation") {

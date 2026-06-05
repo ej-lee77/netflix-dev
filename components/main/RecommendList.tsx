@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { useT } from "@/lib/i18n";
 import Link from 'next/link';
 import { useMovieStore } from '@/store/useMovieStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -8,6 +9,7 @@ import type { Swiper as SwiperClass } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import './scss/recommendList.scss';
+import WishlistButton from "@/components/common/WishlistButton";
 import SectionTitle from '../common/SectionTitle';
 
 const GENRE_MAP: Record<number, string> = {
@@ -30,6 +32,7 @@ function StarRating({ score }: { score: number }) {
 }
 
 export default function RecommendList() {
+  const t = useT();
   const { recommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
   const [activeBackdrop, setActiveBackdrop] = useState<{ id: number; backdropPath: string } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -159,7 +162,7 @@ export default function RecommendList() {
                     <svg viewBox="0 0 24 24" aria-hidden="true" width="15" height="15" fill="#fff">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
-                    재생하기
+                    {t("common.play")}
                   </Link>
                   <Link
                     href={`/detail/${item.media_type}/${item.id}`}
@@ -170,8 +173,9 @@ export default function RecommendList() {
                       <line x1="12" y1="16" x2="12" y2="12" />
                       <line x1="12" y1="8" x2="12.01" y2="8" />
                     </svg>
-                    상세정보
+                    {t("common.detail")}
                   </Link>
+                  <WishlistButton item={item} mediaType={item.media_type} className="card-wish" />
                 </div>
               </div>
             </div>
