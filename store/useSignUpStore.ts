@@ -122,16 +122,20 @@ export const updatePlan = async (
  */
 interface SignUpState {
   uid: string | null;
-  payInfo: PayInfo | null; // ← 추가
+  payInfo: PayInfo | null;
+  pendingPlan: { planType: string; billing: string } | null;
   setUid: (uid: string) => void;
-  setPayInfo: (payInfo: PayInfo) => void; // ← 추가
+  setPayInfo: (payInfo: PayInfo) => void;
+  setPendingPlan: (plan: { planType: string; billing: string }) => void;
   clear: () => void;
 }
 
 export const useSignUpStore = create<SignUpState>((set) => ({
   uid: null,
-  payInfo: null, // ← 추가
+  payInfo: null,
+  pendingPlan: null,
   setUid: (uid) => set({ uid }),
-  setPayInfo: (payInfo) => set({ payInfo }), // ← 추가
-  clear: () => set({ uid: null, payInfo: null }), // ← payInfo도 초기화
+  setPayInfo: (payInfo) => set({ payInfo }),
+  setPendingPlan: (plan) => set({ pendingPlan: plan }),
+  clear: () => set({ uid: null, payInfo: null, pendingPlan: null }),
 }));
