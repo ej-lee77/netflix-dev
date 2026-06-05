@@ -39,6 +39,29 @@ export default function TrendingVideoSection({
     [],
   );
 
+  useEffect(() => {
+    items.forEach((item) => {
+      const itemKey = getItemKey(item);
+      if (itemKey in trailerKeys || trailerControllers.current[itemKey]) return;
+
+      const controller = new AbortController();
+      trailerControllers.current[itemKey] = controller;
+
+      fetchTrendingTrailerKey(item, controller.signal)
+        .then((trailerKey) => {
+          setTrailerKeys((prev) => ({ ...prev, [itemKey]: trailerKey }));
+        })
+        .catch((error: Error) => {
+          if (error.name !== "AbortError") {
+            setTrailerKeys((prev) => ({ ...prev, [itemKey]: null }));
+          }
+        })
+        .finally(() => {
+          delete trailerControllers.current[itemKey];
+        });
+    });
+  }, [items, trailerKeys]);
+
   const loadTrailer = (item: TrendingMediaItem) => {
     const itemKey = getItemKey(item);
     setActiveItemKey(itemKey);
@@ -71,7 +94,9 @@ export default function TrendingVideoSection({
         {items.map((item) => {
           const itemKey = getItemKey(item);
           const trailerKey = trailerKeys[itemKey];
+          const hasLoadedTrailer = itemKey in trailerKeys;
           const isTrailerActive = activeItemKey === itemKey && Boolean(trailerKey);
+          const isPreviewActive = activeItemKey === itemKey;
           const year = getTrendingYear(item);
 
           return (
@@ -81,8 +106,11 @@ export default function TrendingVideoSection({
               key={itemKey}
               onClick={onSelect}
               onFocus={() => loadTrailer(item)}
+              onMouseMove={() => loadTrailer(item)}
               onMouseEnter={() => loadTrailer(item)}
+              onMouseOver={() => loadTrailer(item)}
               onMouseLeave={() => setActiveItemKey("")}
+              onPointerEnter={() => loadTrailer(item)}
             >
               <span className="trending-video-card__media">
                 {isTrailerActive ? (
@@ -104,6 +132,11 @@ export default function TrendingVideoSection({
                 <span className="trending-video-card__play" aria-hidden="true">
                   ▶
                 </span>
+                {isPreviewActive && !isTrailerActive && (
+                  <span className="trending-video-card__status">
+                    {hasLoadedTrailer ? "트레일러 준비중" : "트레일러 불러오는 중"}
+                  </span>
+                )}
               </span>
               <span className="trending-video-card__body">
                 <strong>{item.title}</strong>

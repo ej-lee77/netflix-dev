@@ -486,7 +486,9 @@
   }
 
   .poster-card {
-    display: block;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
     cursor: pointer;
     transition: transform 0.2s;
 
@@ -501,6 +503,8 @@
     .poster {
       position: relative;
       aspect-ratio: 2 / 3;
+      width: 100%;
+      flex: 0 0 auto;
       background: #1a1a1a;
       border-radius: g.$radius-md;
       overflow: hidden;
@@ -538,16 +542,20 @@
 
     h3 {
       overflow: hidden;
+      height: 18px;
       color: g.$w-color;
       font-size: g.$text-14;
       font-weight: 600;
+      line-height: 18px;
       margin-bottom: 4px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .year {
+      min-height: 16px;
       font-size: g.$text-12;
+      line-height: 16px;
       color: g.$g-color;
     }
   }
@@ -582,7 +590,8 @@
   .inner {
     position: relative;
     z-index: 1;
-    padding-left: 64px;
+    box-sizing: border-box;
+    padding: 0 40px;
   }
 
   p {
@@ -756,7 +765,7 @@
     padding: 28px 0 20px;
 
     .inner {
-      padding-left: 0;
+      padding: 0 20px;
     }
   }
 

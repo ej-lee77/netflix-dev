@@ -11,11 +11,13 @@
 
 .trending-video-grid {
   display: grid;
+  align-items: stretch;
   gap: 14px;
 }
 
 .trending-video-card {
   display: flex;
+  height: 100%;
   min-width: 0;
   flex-direction: column;
   gap: 9px;
@@ -46,6 +48,8 @@
   position: relative;
   display: block;
   aspect-ratio: 16 / 9;
+  width: 100%;
+  flex: 0 0 auto;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -102,6 +106,23 @@
     color 0.18s ease;
 }
 
+.trending-video-card__status {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.76);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: g.$text-12;
+  font-weight: 700;
+  pointer-events: none;
+}
+
 .trending-video-card__body {
   display: flex;
   min-width: 0;
@@ -110,18 +131,21 @@
 
   strong {
     overflow: hidden;
+    height: 18px;
     color: rgba(255, 255, 255, 0.86);
     font-size: g.$text-14;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 18px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   span {
+    min-height: 16px;
     color: rgba(255, 255, 255, 0.5);
     font-size: g.$text-12;
     font-weight: 600;
+    line-height: 16px;
   }
 }
 

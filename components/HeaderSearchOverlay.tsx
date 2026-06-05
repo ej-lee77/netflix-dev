@@ -341,7 +341,7 @@ export default function HeaderSearchOverlay({
 
           <TrendingVideoSection
             items={trendingItems}
-            title="추천 영상(가제)"
+            title="지금 많이 찾는 추천 영상"
             variant="overlay"
             onSelect={onClose}
           />
