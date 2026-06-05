@@ -41,5 +41,5 @@ export interface CommunityStore {
   fetchVideoReviews: (videoId: string) => Promise<void>;
   addReview: (data: { content: string; videoId: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
   reportReview: (reviewId: string, videoId: string) => Promise<void>;
-  toggleReviewLike: (reviewId: string, videoId: string) => Promise<void>;
+  updateReviewLikeCount: (videoId: string, reviewId: string, isLiked: boolean) => Promise<void>;
 }

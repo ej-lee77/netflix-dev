@@ -23,6 +23,7 @@ export interface AuthState {
   onUpdateProfile: (profile: UserProfile) => Promise<void>;
   onDeleteProfile: (profileId: string | number) => Promise<void>;
   toggleCommunity: () => Promise<void>;
+  updateUserLike: (reviewId: string, videoId: string) => Promise<void>;
 }
 
 export interface UserProfile {

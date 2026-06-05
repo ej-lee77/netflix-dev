@@ -41,7 +41,7 @@ export default function MyPage() {
 
   // 1. 리뷰 로드 호출
   useEffect(() => {
-    if (userId) fetchUserReviews(userId);
+    if (userId) fetchUserReviews();
   }, [userId, fetchUserReviews]);
 
   // 2. 영화 상세 정보 보완

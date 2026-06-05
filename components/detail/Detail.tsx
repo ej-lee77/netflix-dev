@@ -175,8 +175,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const { playList, myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList, onUpdateProgress, onUpdateEpisodeProgress } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
-  const { reviews, addReview, fetchVideoReviews, reportReview, toggleReviewLike } = useCommunityStore();
-  const { currentProfile } = useAuthStore();
+  const { reviews, addReview, fetchVideoReviews, reportReview, updateReviewLikeCount } = useCommunityStore();
+  const { user, currentProfile, updateUserLike } = useAuthStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -198,7 +198,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [reviewPage, setReviewPage] = useState(1);
   const [reportedReviewIds, setReportedReviewIds] = useState<string[]>([]);
   const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<string[]>([]);
-  const [likedReviewIds, setLikedReviewIds] = useState<string[]>([]);
+  // const [likedReviewIds, setLikedReviewIds] = useState<string[]>([]);
   const [reportTargetReviewId, setReportTargetReviewId] = useState<string | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState("");
   // const [submittedReviews, setSubmittedReviews] = useState<RegisteredReview[]>([]);
@@ -485,15 +485,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const updatetoggleReviewLike = async (reviewId: string) => {
-    if (!currentProfile) return;
+    const { user, currentProfile } = useAuthStore.getState();
+    if (!user?.userId || !currentProfile) return;
 
     const targetReview = reviews.find(r => r.reviewId === reviewId);
     if (!targetReview) return;
 
-    // 1. DB 업데이트 수행 (스토어 함수 호출)
-    await toggleReviewLike(reviewId, targetReview.videoId);
-    
-    setLikedReviewIds(currentProfile.community.reviews);
+    const reviewKey = `${targetReview.videoId}#${reviewId}`;
+    const isLiked = currentProfile.community.reviews.includes(reviewKey);
+
+    // 1. 커뮤니티 스토어에서 리뷰 테이블 카운트 변경
+    await updateReviewLikeCount(targetReview.videoId, reviewId, isLiked);
+
+    // 2. Auth 스토어에서 유저 정보(키 목록) 변경
+    await updateUserLike(reviewId, targetReview.videoId);
   };
 
   useEffect(() => {
@@ -848,8 +853,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {pagedReviews.map((review) => {
+            const reviewKey = `${itemKey}#${review.reviewId}`;
             const isReported = reportedReviewIds.includes(review.reviewId);
-            const isLiked = likedReviewIds.includes(review.reviewId);
+            const isLiked = currentProfile?.community.reviews.includes(reviewKey);
             const shouldBlurSpoiler = review.isSpoiler && !visibleSpoilerReviewIds.includes(review.reviewId);
 
             return (
@@ -1029,7 +1035,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 >
                   <img
                     src={isLiked ? "/images/detail/review/heart-filled.svg" : "/images/detail/review/heart-lined.svg"}
-                    alt=""
+                    alt="좋아요"
                     style={{ width: 14, height: 14, opacity: isLiked ? 1 : 0.86, filter: isLiked ? "none" : "invert(1)" }}
                   />
                   좋아요 {review.likesCount}

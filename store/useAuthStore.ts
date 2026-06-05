@@ -343,6 +343,40 @@ export const useAuthStore = create<AuthState>()(
           // 에러 발생 시 원상복구 로직 필요하면 추가
         }
       },
+      updateUserLike: async (reviewId: string, videoId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const reviewKey = `${videoId}#${reviewId}`;
+        const userDocRef = doc(db, "users", user.userId);
+
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          // 인터페이스 구조에 맞춰 필드명 확인 (reviews 또는 likedReviewKeys)
+          const targetCommunity = updatedProfiles[profileIndex].community;
+          const isLiked = targetCommunity.reviews.includes(reviewKey); // likedReviewKeys 사용 권장
+
+          if (isLiked) {
+            targetCommunity.reviews = targetCommunity.reviews.filter((k) => k !== reviewKey);
+          } else {
+            targetCommunity.reviews.push(reviewKey);
+          }
+
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+
+          // 데이터가 업데이트된 후 AuthStore 상태 최신화
+          get().onInitAuth(); 
+        } catch (error) {
+          console.error("좋아요 토글 실패:", error);
+        }
+      }
     }),
     {
       name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.

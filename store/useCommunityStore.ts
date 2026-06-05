@@ -140,46 +140,38 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       throw error; // 컴포넌트에서 catch하여 알림창 띄우기용
     }
   },
-  toggleReviewLike: async (reviewId: string, videoId: string) => {
-    // 1. Auth 스토어에서 현재 정보를 가져옴
-    const { user, currentProfile } = useAuthStore.getState();
-    if (!user?.userId || !currentProfile) return;
-
-    const reviewKey = `${videoId}-${reviewId}`;
-    const userDocRef = doc(db, "users", user.userId);
-
+  updateReviewLikeCount: async (videoId: string, reviewId: string, isLiked: boolean) => {
+    const reviewDocRef = doc(db, "videoReviews", videoId);
+    
     try {
-      const userDocSnap = await getDoc(userDocRef);
-      if (!userDocSnap.exists()) return;
-
-      const userData = userDocSnap.data() as UserDocument;
-      const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
-      if (profileIndex === -1) return;
-
-      // 2. 데이터 수정 (불변성 유지)
-      const updatedProfiles = [...userData.profile];
-      const targetCommunity = updatedProfiles[profileIndex].community;
+      // 1. 문서 가져오기
+      const docSnap = await getDoc(reviewDocRef);
+      if (!docSnap.exists()) return;
       
-      // 주의: 인터페이스 구조에 맞춰 reviews 또는 likedReviewKeys 사용
-      const isLiked = targetCommunity.reviews.includes(reviewKey);
-
-      if (isLiked) {
-        targetCommunity.reviews = targetCommunity.reviews.filter((k) => k !== reviewKey);
-      } else {
-        targetCommunity.reviews.push(reviewKey);
-      }
-
-      // 3. Firestore 업데이트
-      await updateDoc(userDocRef, {
-        profile: updatedProfiles
-      });
-
-      // 4. Auth 스토어 업데이트 (여기가 핵심!)
-      // useAuthStore의 액션을 사용하여 상태를 동기화합니다.
-      useAuthStore.getState().onInitAuth();
-
+      const data = docSnap.data();
+      const currentReviews = [...(data.reviews || [])]; // 불변성 유지를 위해 복사
+      
+      // 2. 해당 리뷰 인덱스 찾기
+      const rIndex = currentReviews.findIndex((r: any) => r.reviewId === reviewId);
+      if (rIndex === -1) return;
+      
+      // 3. 좋아요 수 업데이트 (좋아요 취소 시 -1, 좋아요 시 +1)
+      const newLikesCount = (currentReviews[rIndex].likesCount || 0) + (isLiked ? -1 : 1);
+    
+      // Math.max(0, newLikesCount)를 사용하여 결과값이 최소 0이 되도록 보장합니다.
+      currentReviews[rIndex] = {
+        ...currentReviews[rIndex],
+        likesCount: Math.max(0, newLikesCount) 
+      };
+      
+      // 4. Firestore 업데이트
+      await updateDoc(reviewDocRef, { reviews: currentReviews });
+      
+      // 5. [중요] Zustand 스토어 상태(reviews) 업데이트 -> UI 즉시 반영
+      set({ reviews: currentReviews });
+      
     } catch (error) {
-      console.error("좋아요 토글 실패:", error);
+      console.error("리뷰 카운트 업데이트 실패:", error);
     }
   }
 }));
