@@ -111,17 +111,18 @@ export const useAuthStore = create<AuthState>()(
               // 💡 수정: 확실하게 기존에 쓰던 프로필(로컬 영속화 데이터)이 매칭될 때만 유지하고,
               // 아예 첫 로그인이거나 정보가 없으면 null로 비워두어 프로필 선택 화면을 띄우게 만듭니다.
               const existingProfile = get().currentProfile;
-              const savedProfile = userData.profile?.find((p) => p.id === existingProfile?.id) || null; // 👈 || null 로 변경!
+              const savedProfile = userData.profile?.find((p) => p.id === existingProfile?.id) || null;
+              const activeProfile = savedProfile || userData.profile?.[0] || null;
 
               set({
-                user: userData, 
-                currentProfile: savedProfile, // 기존 시청 프로필이 없으면 null이 됨
+                user: userData,
+                currentProfile: activeProfile,
               });
             } else {
               console.warn("Firestore 유저 문서가 없어 기본 문서를 자동으로 생성합니다.");
               
               const defaultProfile = normalizeProfile({
-                id: 1,
+                id: Date.now(),
                 nickname: "나",
                 imgUrl: FALLBACK_PROFILE_IMAGE,
                 movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
@@ -287,6 +288,12 @@ export const useAuthStore = create<AuthState>()(
         try {
           const userDocRef = doc(db, "users", uid);
           await updateDoc(userDocRef, { profile: nextProfiles });
+
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(
+              `netflix-profile-pin-${targetProfileId}`,
+            );
+          }
 
           set({
             user: { ...currentUser, profile: nextProfiles },
