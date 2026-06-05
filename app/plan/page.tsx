@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSignUpStore } from "@/store/useSignUpStore";
 import StepPlan, { SelectedPlan } from "@/app/signin/components/StepPlan";
 import StepPlanComplete from "./components/StepPlanComplete";
 import "@/app/signin/signin.scss";
@@ -13,6 +13,7 @@ import "@/app/signin/signin.scss";
 export default function PlanPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const setPendingPlan = useSignUpStore((s) => s.setPendingPlan);  // ← 추가
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>({
     name: "스탠다드",
@@ -31,7 +32,7 @@ export default function PlanPage() {
 
     getDoc(doc(db, "users", uid)).then((snap) => {
       setPlanType(snap.exists() ? (snap.data().planType ?? "") : "");
-      setCurrentBilling(snap.exists() ? (snap.data().payment?.billing ?? "monthly") : "monthly");
+      setCurrentBilling(snap.exists() ? (snap.data().billing ?? "monthly") : "monthly");
     }).finally(() => setLoading(false));
   }, [user?.uid]);
 
@@ -39,11 +40,11 @@ export default function PlanPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [currentStep]);
 
-  // 로딩 중
   if (loading) return null;
 
-  // 비로그인 or 비구독자
   const isLoggedIn = !!(user?.uid ?? auth.currentUser?.uid);
+
+  // 비로그인 or 비구독자
   if (!isLoggedIn || planType === "") {
     return (
       <div className="signin-page">
@@ -56,36 +57,26 @@ export default function PlanPage() {
             skipFirestore
             submitLabel="선택하기"
             onNext={(plan) => {
+              // 선택한 플랜 임시 저장
+              setPendingPlan({
+                planType: plan.name === "베이직" ? "basic" : plan.name === "스탠다드" ? "standard" : "premium",
+                billing: plan.billing,
+              });
               const uid = user?.uid ?? auth.currentUser?.uid;
               if (uid) {
-                // 로그인 상태 → 결제 페이지로
                 router.push("/payment");
               } else {
-                // 비로그인 상태 → 로그인 페이지로
                 router.push("/login");
               }
             }}
-            submitLabel="구독 시작하기"
           />
         </div>
       </div>
     );
   }
+
   return (
     <div className="signin-page">
-      {/* 스텝 인디케이터 대신 타이틀 */}
-      {/* <div className="signin-form-wrap" style={{ textAlign: "center", marginBottom: "32px" }}>
-        <h1 className="signin-title">플랜 변경하기</h1>
-        <p className="signin-subtitle">현재 플랜: {
-          planType === "basic" ? "베이직" :
-            planType === "standard" ? "스탠다드" :
-              planType === "premium" ? "프리미엄" : planType
-        }</p>
-      </div> */}
-      {/* <div className="signin-form-wrap" style={{ textAlign: "center", marginBottom: "32px" }}>
-        <h1 className="signin-title">플랜 변경하기</h1>
-      </div> */}
-
       {currentStep === 1 && (
         <StepPlan
           currentPlanType={planType ?? ""}

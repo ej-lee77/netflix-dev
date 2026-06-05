@@ -102,13 +102,13 @@ export default function StepComplete({ plan }: StepCompleteProps) {
         </div>
       </div>
 
-      {/* 메인으로 버튼 */}
+      {/* 로그인으로 버튼 */}
       <button
         type="button"
         className="complete-home-btn"
-        onClick={() => router.push("/")}
+        onClick={() => router.push("/login")}
       >
-        메인으로 가기
+        로그인하러 가기
       </button>
 
     </div>
