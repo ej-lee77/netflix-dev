@@ -59,6 +59,32 @@
   }
 }
 
+.search-page__clear {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.24);
+    color: #fff;
+    outline: none;
+  }
+}
+
 .search-page__selected-row {
   display: flex;
   align-items: flex-start;
@@ -639,11 +665,95 @@
   padding-top: 26px;
 }
 
-.search-results-count {
-  color: rgba(255, 255, 255, 0.62);
-  font-size: g.$text-14;
-  font-weight: 700;
+.search-results-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 18px;
+
+  .search-results-count {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: g.$text-14;
+    font-weight: 700;
+    line-height: 24px;
+  }
+}
+
+.search-results-sort {
+  position: relative;
+  flex: 0 0 auto;
+  padding-bottom: 14px;
+
+  .sort-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    background: none;
+    color: g.$main-menu-color;
+    cursor: pointer;
+    font-size: g.$text-13;
+    transition: color 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      color: g.$w-color;
+      outline: none;
+    }
+  }
+
+  .sort-arrow {
+    transition: transform 0.2s ease;
+
+    &.is-open {
+      transform: rotate(180deg);
+    }
+  }
+
+  .sort-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 10;
+    min-width: 130px;
+    margin-top: 4px;
+    border: 1px solid #2e2e2e;
+    border-radius: g.$radius-md;
+    background-color: #1e1e1e;
+    box-shadow: 0 8px 24px rgba(g.$d-color, 0.5);
+    list-style: none;
+    overflow: hidden;
+    padding: 4px;
+  }
+
+  .sort-option {
+    display: block;
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: rgba(g.$w-color, 0.8);
+    cursor: pointer;
+    font-size: g.$text-13;
+    padding: 10px 14px;
+    text-align: left;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      background-color: rgba(g.$w-color, 0.08);
+      color: g.$w-color;
+      outline: none;
+    }
+
+    &.is-selected {
+      color: g.$main-color;
+      font-weight: 600;
+    }
+  }
 }
 
 @media (max-width: 1440px) {
@@ -783,33 +893,92 @@
       }
     }
   }
+
+  .search-results-summary {
+    align-items: flex-start;
+  }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .search-page__field {
-    align-items: stretch;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
     gap: 10px;
+    min-height: 0;
     padding: 14px;
 
     img {
-      margin-top: 10px;
+      margin-top: 0;
     }
 
     input {
       min-width: 0;
-      width: calc(100% - 38px);
+      width: 100%;
+      font-size: 1rem;
+      line-height: 40px;
     }
   }
 
   .search-page__submit {
+    grid-column: 1 / -1;
     width: 100%;
     min-height: 42px;
+  }
+
+  .search-page__clear {
+    margin-top: 0;
+  }
+
+  .search-page__selected-tags {
+    width: 100%;
+  }
+
+  .keyword-cloud {
+    gap: 10px;
+
+    button {
+      min-height: 38px;
+      font-size: g.$text-14;
+      padding: 0 14px;
+    }
   }
 
   .search-results-page {
     .poster-grid {
       grid-template-columns: repeat(2, 1fr);
     }
+  }
+}
+
+@media (max-width: 420px) {
+  .search-page {
+    padding: 22px 14px 48px;
+  }
+
+  .search-block__header,
+  .finder-section__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option-grid--mood,
+  .option-grid--genre {
+    grid-template-columns: 1fr;
+  }
+
+  .creator-list {
+    grid-template-columns: repeat(2, minmax(78px, 1fr));
+  }
+
+  .search-results-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-results-sort {
+    align-self: flex-end;
   }
 }

@@ -98,6 +98,8 @@ export default function TrendingVideoSection({
           const isTrailerActive = activeItemKey === itemKey && Boolean(trailerKey);
           const isPreviewActive = activeItemKey === itemKey;
           const year = getTrendingYear(item);
+          const stillPath = item.backdrop_path || item.poster_path;
+          const stillSize = item.backdrop_path ? "w780" : "w342";
 
           return (
             <Link
@@ -119,12 +121,12 @@ export default function TrendingVideoSection({
                     title={`${item.title} 트레일러`}
                     allow="autoplay; encrypted-media; picture-in-picture"
                   />
-                ) : item.poster_path ? (
+                ) : stillPath ? (
                   <Image
-                    src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                    src={`https://image.tmdb.org/t/p/${stillSize}${stillPath}`}
                     alt=""
-                    width={342}
-                    height={513}
+                    width={780}
+                    height={439}
                   />
                 ) : (
                   <em>이미지 없음</em>
