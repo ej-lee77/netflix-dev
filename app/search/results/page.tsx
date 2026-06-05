@@ -21,6 +21,7 @@ const TMDB_BASE = "https://api.themoviedb.org/3";
 
 type MediaType = "movie" | "tv";
 type MediaTypeFilter = "all" | MediaType;
+type SearchSortType = "popularity" | "title" | "rating";
 
 type MediaItem = {
   id: number;
@@ -63,6 +64,12 @@ type TmdbPersonCreditsResponse = {
   cast?: TmdbMediaCandidate[];
   crew?: TmdbPersonCredit[];
 };
+
+const SEARCH_SORT_OPTIONS: { key: SearchSortType; label: string }[] = [
+  { key: "popularity", label: "인기순" },
+  { key: "title", label: "제목순" },
+  { key: "rating", label: "평점순" },
+];
 
 const parseParamList = (value: string | null) =>
   value
@@ -303,6 +310,8 @@ function SearchResultsContent() {
   const [popularItems, setPopularItems] = useState<TrendingMediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [sort, setSort] = useState<SearchSortType>("popularity");
+  const [sortOpen, setSortOpen] = useState(false);
 
   const selectedLabels = [
     ...getSearchOptionLabels("genre", selectedGenres),
@@ -310,6 +319,16 @@ function SearchResultsContent() {
   ];
   const hasQuery =
     keyword.length > 0 || selectedGenres.length > 0 || selectedMoods.length > 0;
+  const currentSortLabel =
+    SEARCH_SORT_OPTIONS.find((option) => option.key === sort)?.label ??
+    SEARCH_SORT_OPTIONS[0].label;
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      if (sort === "title") return a.title.localeCompare(b.title, "ko-KR");
+      if (sort === "rating") return b.vote_average - a.vote_average;
+      return b.popularity - a.popularity;
+    });
+  }, [items, sort]);
 
   useEffect(() => {
     if (!hasQuery) {
@@ -423,13 +442,54 @@ function SearchResultsContent() {
           <div className="loading">검색 중...</div>
         ) : errorMessage ? (
           <div className="empty">{errorMessage}</div>
-        ) : items.length > 0 ? (
+        ) : sortedItems.length > 0 ? (
           <>
-            <div className="search-results-count">
-              {items.length.toLocaleString()}개 작품
+            <div className="search-results-summary">
+              <div className="search-results-count">
+                {sortedItems.length.toLocaleString()}개 작품
+              </div>
+              <div className="search-results-sort">
+                <button
+                  type="button"
+                  className="sort-btn"
+                  onClick={() => setSortOpen((isOpen) => !isOpen)}
+                >
+                  {currentSortLabel}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className={`sort-arrow${sortOpen ? " is-open" : ""}`}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {sortOpen && (
+                  <ul className="sort-menu">
+                    {SEARCH_SORT_OPTIONS.map((option) => (
+                      <li key={option.key}>
+                        <button
+                          type="button"
+                          className={`sort-option${sort === option.key ? " is-selected" : ""}`}
+                          onClick={() => {
+                            setSort(option.key);
+                            setSortOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             <div className="poster-grid">
-              {items.map((item) => (
+              {sortedItems.map((item) => (
                 <Link
                   key={`${item.media_type}-${item.id}`}
                   href={`/detail/${item.media_type}/${item.id}`}
