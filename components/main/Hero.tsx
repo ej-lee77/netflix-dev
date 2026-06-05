@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import WishlistButton from "@/components/common/WishlistButton";
+import { useT, getTmdbLang } from "@/lib/i18n";
+import { useLangStore } from "@/store/useLangStore";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -99,6 +101,28 @@ const genreMap: Record<number, string> = {
   10768: "전쟁&정치",
 };
 
+const genreMapEn: Record<number, string> = {
+  12: "Adventure",
+  14: "Fantasy",
+  16: "Animation",
+  18: "Drama",
+  27: "Horror",
+  28: "Action",
+  35: "Comedy",
+  36: "History",
+  53: "Thriller",
+  80: "Crime",
+  878: "Science Fiction",
+  9648: "Mystery",
+  10402: "Music",
+  10749: "Romance",
+  10751: "Family",
+  10752: "War",
+  10759: "Action & Adventure",
+  10765: "Sci-Fi & Fantasy",
+  10768: "War & Politics",
+};
+
 function posterUrl(path: string | null, size = "w342") {
   return path ? `${IMG_BASE}${size}${path}` : "";
 }
@@ -115,10 +139,11 @@ function getYear(item: HeroItem) {
   return (item.release_date || item.first_air_date || "").slice(0, 4);
 }
 
-function getGenres(item: HeroItem) {
+function getGenres(item: HeroItem, lang: "ko" | "en" = "ko") {
+  const map = lang === "en" ? genreMapEn : genreMap;
   return item.genre_ids
     ?.slice(0, 2)
-    .map((id) => genreMap[id])
+    .map((id) => map[id])
     .filter(Boolean)
     .join(" • ");
 }
@@ -135,7 +160,7 @@ async function fetchHeroItems() {
 
   const commonParams = {
     api_key: TMDB_KEY,
-    language: "ko-KR",
+    language: getTmdbLang(),
     with_original_language: "ko",
     sort_by: "popularity.desc",
     page: "1",
@@ -269,9 +294,11 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
   const data = (await res.json()) as ImagesResponse;
   const logos = data.logos ?? [];
 
+  const preferred = useLangStore.getState().lang === "en" ? "en" : "ko";
+  const secondary = preferred === "en" ? "ko" : "en";
   const logo =
-    logos.find((l) => l.iso_639_1 === "ko") ??
-    logos.find((l) => l.iso_639_1 === "en") ??
+    logos.find((l) => l.iso_639_1 === preferred) ??
+    logos.find((l) => l.iso_639_1 === secondary) ??
     logos.find((l) => l.iso_639_1 === null) ??
     logos[0];
 
@@ -279,6 +306,8 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
 }
 
 export default function Hero() {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
   const router = useRouter();
   const { currentProfile } = useAuthStore();
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
@@ -321,7 +350,7 @@ export default function Hero() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -466,7 +495,7 @@ export default function Hero() {
     if (!activeItem) return null;
 
     return {
-      genres: getGenres(activeItem),
+      genres: getGenres(activeItem, lang),
       rating: activeItem.vote_average
         ? activeItem.vote_average.toFixed(1)
         : "0.0",
@@ -624,7 +653,7 @@ export default function Hero() {
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            재생하기
+            {t("common.play")}
           </button>
           <button
             className="btn-info"
@@ -636,7 +665,7 @@ export default function Hero() {
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
-            상세정보
+            {t("common.detail")}
           </button>
           <WishlistButton item={activeItem} mediaType={activeItem.media_type} className="hero-wish" />
         </div>

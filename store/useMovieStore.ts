@@ -1,3 +1,4 @@
+import { getTmdbLang } from "@/lib/i18n";
 import { create } from "zustand";
 import type { MovieState } from "@/types/movie";
 
@@ -9,7 +10,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     popMovies: [],
     //영화를 불러올 메서드
     onFetchPopular: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         console.log("인기영화?", data.results);
         set({ popMovies: data.results });
@@ -20,7 +21,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     newMovies: [],
     //최신 영화 불러오기
     onFetchNewest: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         console.log("최신영화?", data.results);
         set({ newMovies: data.results });
@@ -31,7 +32,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     trendingMovies: [],
     //최신 영화 불러오기 (day기준)
     onFetchTrending: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         console.log("급상승 영화?", data.results);
         set({ trendingMovies: data.results });
@@ -40,7 +41,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     //==============한국 영화 (2026년 이후)==============
     koreanMovies: [],
     onFetchKoreanMovies: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=ko-KR&with_original_language=ko&primary_release_date.gte=2026-01-01&sort_by=popularity.desc&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_original_language=ko&primary_release_date.gte=2026-01-01&sort_by=popularity.desc&page=1`);
         const data = await res.json();
         console.log("한국 영화?", data.results);
         set({ koreanMovies: data.results || [] });
@@ -59,7 +60,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         console.log(movieId)
         if (popVideos[movieId]) return;
 
-        const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_KEY}&language=ko-KR`);
+        const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
         console.log("비디오?", id, data.results);
         set((state) => ({
@@ -72,7 +73,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     tvs: [],
     tvVideos: {},
     onFetchTvs: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         console.log("인기영화?", data.results);
         set({ tvs: data.results });
@@ -96,14 +97,14 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     },
     seasons: [],
     onFetchSeasons: async (id) => {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=ko-KR`);
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
         console.log("시즌?", data.results);
         set({ seasons: data.seasons });
     },
     episodes: [],
     onFetchEpisodes: async (id, season) => {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${TMDB_KEY}&language=ko-KR`);
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/season/${season}?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
         console.log("에피소드", data.results);
         set({ episodes: data.episodes });
@@ -112,10 +113,10 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     onFetchUpcoming: async () => {
         const today = new Date().toISOString().split('T')[0];
         const [krMovieRes, krTvRes, globalMovieRes, globalTvRes] = await Promise.all([
-            fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR&region=KR&page=1`),
-            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_original_language=ko&first_air_date.gte=${today}&sort_by=popularity.desc&page=1`),
-            fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=ko-KR&page=1`),
-            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&first_air_date.gte=${today}&sort_by=popularity.desc&page=1`),
+            fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=${getTmdbLang()}&region=KR&page=1`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_original_language=ko&first_air_date.gte=${today}&sort_by=popularity.desc&page=1`),
+            fetch(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=${getTmdbLang()}&first_air_date.gte=${today}&sort_by=popularity.desc&page=1`),
         ]);
         const [krMovieData, krTvData, globalMovieData, globalTvData] = await Promise.all([
             krMovieRes.json(), krTvRes.json(), globalMovieRes.json(), globalTvRes.json(),
@@ -145,7 +146,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     onFetchNetflixOriginals: async () => {
         //페이지를 1~3 사이에서 랜덤으로 뽑아서 매번 다른 결과가 나오도록
         const randomPage = Math.floor(Math.random() * 3) + 1;
-        const res = await fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_networks=213&sort_by=popularity.desc&page=${randomPage}`);
+        const res = await fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_networks=213&sort_by=popularity.desc&page=${randomPage}`);
         const data = await res.json();
         //가져온 결과를 한 번 더 셔플 해서 랜덤성 강화
         const shuffled = [...(data.results || [])].sort(() => Math.random() - 0.5);
@@ -193,7 +194,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const { mediaDetails } = get();
         if (mediaDetails[key]) return;
 
-        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=ko-KR`);
+        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
 
         set((state) => ({
@@ -209,9 +210,9 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const tvPage2 = (tvPage1 % 3) + 1;
 
         const [tvRes1, tvRes2, movieRes] = await Promise.all([
-            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_networks=213&with_original_language=ko&sort_by=popularity.desc&page=${tvPage1}`),
-            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=ko-KR&with_networks=213&with_original_language=ko&sort_by=popularity.desc&page=${tvPage2}`),
-            fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=ko-KR&with_original_language=ko&sort_by=popularity.desc&page=1`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_networks=213&with_original_language=ko&sort_by=popularity.desc&page=${tvPage1}`),
+            fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_networks=213&with_original_language=ko&sort_by=popularity.desc&page=${tvPage2}`),
+            fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_original_language=ko&sort_by=popularity.desc&page=1`),
         ]);
         const [tvData1, tvData2, movieData] = await Promise.all([
             tvRes1.json(), tvRes2.json(), movieRes.json()
@@ -247,7 +248,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const { mediaRecommended } = get();
         if (mediaRecommended[key]) return;
 
-        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/recommendations?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/recommendations?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         const items = (data.results || []).map((item: any) => ({
             ...item,
@@ -266,7 +267,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const key = `${mediaType}-${id}`;
         const { casts } = get();
         if (casts[key]) return;
-        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/credits?api_key=${TMDB_KEY}&language=ko-KR`);
+        const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/credits?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
         console.log("출연진", key, data.cast);
         set((state) => ({
@@ -280,7 +281,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     popularPeople: [],
     netflixHighlights: [],
     onFetchPopularPeople: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const res = await fetch(`https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         console.log("인기 인물", data.results);
         set({ popularPeople: data.results || [] });
@@ -289,14 +290,14 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const { netflixHighlights } = get();
         if (netflixHighlights.length > 0) return;
 
-        const popularRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=ko-KR&page=1`);
+        const popularRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const popularData = await popularRes.json();
         const movies = (popularData.results || []).slice(0, 12);
 
         const highlightResults = await Promise.all(
             movies.map(async (movie: { id: number; title: string; poster_path: string; backdrop_path: string }) => {
                 const [koRes, enRes] = await Promise.all([
-                    fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=ko-KR`),
+                    fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=${getTmdbLang()}`),
                     fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=en-US`)
                 ]);
                 const koData = await koRes.json();
@@ -359,7 +360,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
 
         // 2. 없으면 API 호출
         try {
-            const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=ko-KR`);
+            const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
             const data = await res.json();
             console.log("플리데이터", data);
             // 4. 데이터 반환

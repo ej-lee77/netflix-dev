@@ -1,5 +1,7 @@
 "use client";
 import NewMovieList from "@/components/main/NewMovieList";
+import { useT } from "@/lib/i18n";
+import { getTmdbLang } from "@/lib/i18n";
 import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import ThemeRow, { type ThemeItem } from "@/components/main/ThemeRow";
@@ -110,7 +112,7 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
   const startPage = Math.floor(Math.random() * 3) + 1;
   const pages = await Promise.all(
     Array.from({ length: Math.max(pageCount, 2) }, (_, i) =>
-      fetch(`${apiUrl}&page=${startPage + i}&api_key=${TMDB_KEY}`).then((r) => r.json())
+      fetch(`${apiUrl.replace("language=ko-KR", "language=" + getTmdbLang())}&page=${startPage + i}&api_key=${TMDB_KEY}`).then((r) => r.json())
     )
   );
   const allResults = pages.flatMap((data) => data.results || []);
@@ -150,6 +152,7 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
 }
 
 export default function Home() {
+  const t = useT();
   const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending, onFetchNetflixOriginals, onFetchKoreanMovies } = useMovieStore();
   const [themeRows, setThemeRows] = useState<ThemeItem[][]>([]);
   const [themeLoading, setThemeLoading] = useState(true);
@@ -166,7 +169,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetch(`https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
+    fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
       .then((r) => r.json())
       .then((data) => {
         const items: RankingItem[] = (data.results || [])
@@ -186,7 +189,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetch(`https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
+    fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
       .then((r) => r.json())
       .then((data) => {
         const items: RankingItem[] = (data.results || [])
@@ -260,7 +263,7 @@ export default function Home() {
       }
       {/* 중간 랭킹: 한국 시리즈 TOP 10 */}
       {koreanSeries.length > 0 && (
-        <RankingSection title="한국 시리즈 TOP 10" items={koreanSeries} />
+        <RankingSection title={t("home.koreanSeries")} items={koreanSeries} />
       )}
       {/* 테마별 카테고리 — 뒷부분 앞 (해외 코미디까지) */}
       {themeLoading
@@ -284,7 +287,7 @@ export default function Home() {
       }
       {/* 오늘의 대한민국 TOP 10 영화 */}
       {koreanMovieRanking.length > 0 && (
-        <RankingSection title="오늘의 대한민국 TOP 10 예능" items={koreanMovieRanking} />
+        <RankingSection title={t("home.koreanVariety")} items={koreanMovieRanking} />
       )}
     </div>
   );

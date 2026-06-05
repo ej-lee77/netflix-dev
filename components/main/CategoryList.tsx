@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef } from "react";
+import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -27,6 +28,7 @@ interface MediaListProps {
 }
 
 export default function CategoryList({ category }: MediaListProps) {
+  const t = useT();
   const router = useRouter();
   const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos, netflixOriginals, certifications, onFetchCertification } = useMovieStore();
   const { currentProfile } = useAuthStore();
@@ -195,7 +197,7 @@ export default function CategoryList({ category }: MediaListProps) {
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
-                            재생하기
+                            {t("common.play")}
                           </button>
                           <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`} className="btn-detail">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -203,7 +205,7 @@ export default function CategoryList({ category }: MediaListProps) {
                               <line x1="12" y1="16" x2="12" y2="12" />
                               <line x1="12" y1="8" x2="12.01" y2="8" />
                             </svg>
-                            상세정보
+                            {t("common.detail")}
                           </Link>
                           <WishlistButton item={item} mediaType={(category === "netflix" ? "tv" : category) as "movie" | "tv"} stopPropagation className="card-wish" />
                         </div>
