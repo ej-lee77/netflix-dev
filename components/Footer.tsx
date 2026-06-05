@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useAuthStore } from '@/store/useAuthStore'
 import "./scss/footer.scss"
 
 const LINK_COLS = [
@@ -41,6 +43,9 @@ const LANGUAGES = ["한국어", "English", "日本語", "中文"];
 export default function Footer() {
   const [langOpen, setLangOpen] = useState(false);
   const [selectedLang, setSelectedLang] = useState("한국어");
+  const { user } = useAuthStore();
+  // 로그인 전이면 로그인 페이지로, 로그인 후엔 문의 작성 탭으로 이동
+  const contactHref = user ? "/contact?tab=inquiry" : "/login";
 
   return (
     <footer>
@@ -69,7 +74,13 @@ export default function Footer() {
         {/* 링크 1열 */}
         <ul className="footer-links">
           {LINK_COLS.flatMap(({ links }) => links).map((link) => (
-            <li key={link}><a href="#" className="footer-link">{link}</a></li>
+            <li key={link}>
+              {link === "문의하기" ? (
+                <Link href={contactHref} className="footer-link">{link}</Link>
+              ) : (
+                <a href="#" className="footer-link">{link}</a>
+              )}
+            </li>
           ))}
         </ul>
 

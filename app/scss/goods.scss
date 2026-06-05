@@ -13,7 +13,7 @@
   .goods-hero {
     padding: 48px 32px;
     border-radius: g.$radius-lg;
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(229, 9, 20, 0.15), rgba(168, 85, 247, 0.15));
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.15), rgba(229, 9, 20, 0.15), rgba(229, 9, 20, 0.15));
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
@@ -22,13 +22,13 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 80% 50%, rgba(251, 191, 36, 0.2), transparent 60%);
+      background: radial-gradient(circle at 80% 50%, rgba(229, 9, 20, 0.2), transparent 60%);
     }
 
     .hero-eyebrow {
       position: relative;
       font-size: g.$text-12;
-      color: #fbbf24;
+      color: #E50914;
       font-weight: 700;
       letter-spacing: 0.15em;
       margin-bottom: 12px;
@@ -76,7 +76,7 @@
     .num {
       font-size: g.$text-32;
       font-weight: 800;
-      color: #fbbf24;
+      color: #E50914;
       letter-spacing: -0.02em;
       margin-bottom: 4px;
     }
@@ -161,8 +161,8 @@
     border-radius: g.$radius-md;
 
     &.unlocked {
-      background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, transparent 100%);
-      border-color: rgba(251, 191, 36, 0.4);
+      background: linear-gradient(135deg, rgba(229, 9, 20, 0.1) 0%, transparent 100%);
+      border-color: rgba(229, 9, 20, 0.4);
     }
 
     &.locked {
@@ -173,14 +173,14 @@
       width: 72px;
       height: 72px;
       border-radius: 50%;
-      background: rgba(251, 191, 36, 0.15);
+      background: rgba(229, 9, 20, 0.15);
       border: 2px solid #ffffff00;
       margin: 0 auto 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: g.$text-32;
-      color: #fbbf24;
+      color: #E50914;
       padding: 5px;
     }
 
@@ -223,7 +223,7 @@
 
     .status-done {
       font-size: g.$text-12;
-      color: #fbbf24;
+      color: #E50914;
       font-weight: 600;
     }
 
@@ -236,7 +236,7 @@
 
       .fill {
         height: 100%;
-        background: #fbbf24;
+        background: #E50914;
       }
     }
 
@@ -290,7 +290,7 @@
         letter-spacing: 0.05em;
 
         &.premium {
-          background: #fbbf24;
+          background: #E50914;
           color: g.$d-color;
         }
 
@@ -337,7 +337,7 @@
         .price {
           font-size: g.$text-14;
           font-weight: 800;
-          color: #fbbf24;
+          color: #E50914;
         }
 
         .cta {
