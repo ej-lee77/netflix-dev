@@ -10,7 +10,6 @@ import "../../scss/menuCustom.scss";
 // 전체 선택 풀 생성 (순서 매핑용)
 const DEFAULT_HEADER_MENU_PATHS = [
   "/category",
-  "/category?tab=all",
   "/mypage/playlist?tab=playlists",
   "/mypage/playlist?tab=history",
 ];
@@ -33,25 +32,12 @@ const isCategoryChildPath = (path: string) =>
 // Only genres and moods count toward the 10-item category limit.
 const isCountableCategoryChild = (path: string) =>
   path.startsWith("/genre/") || path.startsWith("/mood/");
-const ensureCategoryMenuPath = (paths: string[]) => {
+const normalizeHeaderMenuPaths = (paths: string[]) => {
   const normalizedPaths = uniqueMenuPaths(paths);
-  const hasCategoryMenu = normalizedPaths.includes(CATEGORY_MENU.path);
-  const hasCategoryChildren = normalizedPaths.some(
-    (path) => isCategoryChildPath(path),
-  );
-
-  if (hasCategoryMenu || !hasCategoryChildren) {
-    return normalizedPaths;
-  }
-
-  const firstCategoryIndex = normalizedPaths.findIndex(isCategoryMenuPath);
-  const insertIndex = firstCategoryIndex === -1
-    ? normalizedPaths.length
-    : firstCategoryIndex;
-  const nextPaths = [...normalizedPaths];
-  nextPaths.splice(insertIndex, 0, CATEGORY_MENU.path);
-
-  return nextPaths;
+  const hasCategoryItems = normalizedPaths.some(isCountableCategoryChild);
+  return hasCategoryItems
+    ? normalizedPaths
+    : normalizedPaths.filter((path) => path !== CATEGORY_MENU.path);
 };
 export default function MenuCustomPage() {
   const [selectedMenuPaths, setSelectedMenuPaths] = useState<string[]>([]);
@@ -70,7 +56,7 @@ export default function MenuCustomPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedMenuPaths(
         currentProfileHeaderMenus?.length
-          ? ensureCategoryMenuPath(currentProfileHeaderMenus)
+          ? normalizeHeaderMenuPaths(currentProfileHeaderMenus)
           : DEFAULT_HEADER_MENU_PATHS,
       );
       return;
@@ -79,7 +65,7 @@ export default function MenuCustomPage() {
     const saved = localStorage.getItem("custom_header_menus");
     if (saved) {
       try {
-        const normalizedPaths = ensureCategoryMenuPath(
+        const normalizedPaths = normalizeHeaderMenuPaths(
           JSON.parse(saved) as string[],
         );
         setSelectedMenuPaths(normalizedPaths);
@@ -99,24 +85,27 @@ export default function MenuCustomPage() {
 
   // 2. 토글 핸들러 (클릭한 순서대로 배열 끝에 추가됨)
   const saveHeaderMenus = async (paths: string[]) => {
-    const normalizedPaths = ensureCategoryMenuPath(paths);
+    const sanitizedPaths = normalizeHeaderMenuPaths(paths);
 
-    setSelectedMenuPaths(normalizedPaths);
-    localStorage.setItem(
-      "custom_header_menus",
-      JSON.stringify(normalizedPaths),
-    );
+    setSelectedMenuPaths(sanitizedPaths);
+    localStorage.setItem("custom_header_menus", JSON.stringify(sanitizedPaths));
     window.dispatchEvent(new Event("customMenuStorageUpdate"));
 
     if (!currentProfile) return;
 
     await onUpdateProfile({
       ...currentProfile,
-      headerMenus: normalizedPaths,
+      headerMenus: sanitizedPaths,
     });
   };
 
   const handleToggleMenu = async (path: string) => {
+    const hasCategoryItems = selectedMenuPaths.some(isCountableCategoryChild);
+    if (path === CATEGORY_MENU.path && !hasCategoryItems) {
+      alert("카테고리 메뉴는 장르 또는 무드를 하나 이상 선택해야 활성화됩니다.");
+      return;
+    }
+
     let updatedPaths: string[];
 
     if (selectedMenuPaths.includes(path)) {
@@ -157,13 +146,19 @@ export default function MenuCustomPage() {
         const cs = window.getComputedStyle(src);
         for (let i = 0; i < cs.length; i++) {
           const prop = cs.item(i);
-          if (prop) dest.style.setProperty(prop, cs.getPropertyValue(prop), cs.getPropertyPriority(prop));
+          if (prop)
+            dest.style.setProperty(
+              prop,
+              cs.getPropertyValue(prop),
+              cs.getPropertyPriority(prop),
+            );
         }
         // recursively copy for children nodes
         const srcChildren = Array.from(src.children) as HTMLElement[];
         const destChildren = Array.from(dest.children) as HTMLElement[];
         for (let i = 0; i < srcChildren.length; i++) {
-          if (destChildren[i]) copyComputedStyles(srcChildren[i], destChildren[i] as HTMLElement);
+          if (destChildren[i])
+            copyComputedStyles(srcChildren[i], destChildren[i] as HTMLElement);
         }
       };
       // place offscreen so it won't affect layout
@@ -190,14 +185,14 @@ export default function MenuCustomPage() {
 
   const getFlowChipRects = () => {
     const rects = new Map<string, DOMRect>();
-    document.querySelectorAll<HTMLElement>(".flow-chip[data-menu-path]").forEach(
-      (element) => {
+    document
+      .querySelectorAll<HTMLElement>(".flow-chip[data-menu-path]")
+      .forEach((element) => {
         const path = element.dataset.menuPath;
         if (path) {
           rects.set(path, element.getBoundingClientRect());
         }
-      },
-    );
+      });
 
     return rects;
   };
@@ -315,9 +310,10 @@ export default function MenuCustomPage() {
     .map((path) => allSelectablePool.find((m) => m.path === path))
     .filter((menu): menu is (typeof mainMenus)[number] => !!menu);
 
-  const selectedBaseMenus = orderedSelectedMenus.filter((menu) =>
-    baseOptions.some((base) => base.path === menu.path) ||
-    menu.path === CATEGORY_MENU.path,
+  const selectedBaseMenus = orderedSelectedMenus.filter(
+    (menu) =>
+      baseOptions.some((base) => base.path === menu.path) ||
+      menu.path === CATEGORY_MENU.path,
   );
   const selectedCategoryMenus = orderedSelectedMenus.filter(
     (menu) =>
@@ -325,15 +321,22 @@ export default function MenuCustomPage() {
       menu.path !== CATEGORY_MENU.path,
   );
 
-  const renderMenuButton = (menu: (typeof mainMenus)[number]) => {
+  const renderMenuButton = (
+    menu: (typeof mainMenus)[number],
+    disabled = false,
+  ) => {
     const isSelected = selectedMenuPaths.includes(menu.path);
 
     return (
       <button
         key={menu.path}
-        className={`genre-button ${isSelected ? "active" : ""}`}
+        className={`genre-button ${isSelected ? "active" : ""} ${
+          disabled ? "is-disabled" : ""
+        }`}
         type="button"
         onClick={() => handleToggleMenu(menu.path)}
+        disabled={disabled}
+        aria-disabled={disabled}
       >
         <Image src={menu.imgUrl} alt="" width={22} height={22} />
         <span>{menu.title}</span>
@@ -379,7 +382,8 @@ export default function MenuCustomPage() {
           <div className="menu-flow-panel__header">
             <h3>👀 사이드바 메뉴 나열 순서 프리뷰</h3>
             <span>
-              홈과 설정은 고정, 추가된 메뉴는 홀드해서 순서를 변경할 수 있습니다.
+              홈과 설정은 고정, 추가된 메뉴는 홀드해서 순서를 변경할 수
+              있습니다.
             </span>
           </div>
 
@@ -426,12 +430,18 @@ export default function MenuCustomPage() {
                 플랫폼의 핵심 대메뉴를 사이드바로 바로가기 링크로 배치하거나
                 숨길 수 있습니다.
               </p>
+              <p className="category-note">
+                카테고리 메뉴는 장르 또는 무드를 하나 이상 선택해야 활성화됩니다.
+              </p>
             </div>
           </div>
           {baseOpen && (
             <div className="genre-grid co">
-              {baseOptions.map(renderMenuButton)}
-              {renderMenuButton(CATEGORY_MENU)}
+              {baseOptions.map((menu) => renderMenuButton(menu))}
+              {renderMenuButton(
+                CATEGORY_MENU,
+                !selectedMenuPaths.some(isCountableCategoryChild),
+              )}
             </div>
           )}
         </section>
@@ -458,7 +468,7 @@ export default function MenuCustomPage() {
                   : "없음"}
               </p>
               <div className="genre-grid ct">
-                {genreOptions.map(renderMenuButton)}
+                {genreOptions.map((menu) => renderMenuButton(menu))}
               </div>
             </div>
 
@@ -473,7 +483,7 @@ export default function MenuCustomPage() {
                   : "없음"}
               </p>
               <div className="genre-grid ct">
-                {moodOptions.map(renderMenuButton)}
+                {moodOptions.map((menu) => renderMenuButton(menu))}
               </div>
             </div>
           </div>

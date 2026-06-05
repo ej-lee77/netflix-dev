@@ -71,6 +71,12 @@
       font-size: 0.95rem;
       line-height: 1.6;
     }
+
+    .category-note {
+      margin-top: 8px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 0.92rem;
+    }
   }
 
   .custom-panel--section {
@@ -367,7 +373,7 @@
       justify-content: center;
     }
 
-    &:hover {
+    &:hover:not(:disabled) {
       border-color: rgba(255, 255, 255, 0.22);
       background: rgba(255, 255, 255, 0.095);
       color: #fff;
@@ -390,6 +396,19 @@
       }
     }
 
+    &.is-disabled,
+    &:disabled {
+      opacity: 0.45;
+      border-color: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.25);
+      cursor: not-allowed;
+    }
+
+    &.is-disabled img,
+    &:disabled img {
+      opacity: 0.24;
+    }
   }
 
   // 7. 초기화 하단 바
