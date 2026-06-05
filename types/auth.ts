@@ -66,6 +66,10 @@ export interface ProfileSettings {
   subtitles: SubtitleSettings;
   playback: PlaybackSettings;
   hiddenWatchingVideos: string[];
+  favoriteGenres: string[]; // 선호 장르 slug 목록
+  excludedGenres: string[]; // 제외 장르 slug 목록
+  favoriteMoods: string[]; // 선호 무드 slug 목록
+  excludedMoods: string[]; // 제외 무드 slug 목록
 }
 
 export interface AlarmInfo {
