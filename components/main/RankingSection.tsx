@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { KeyboardEvent, PointerEvent } from "react";
 import Link from "next/link";
+import WishlistButton from "@/components/common/WishlistButton";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
@@ -279,6 +280,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
                         </svg>
                         상세보기
                       </Link>
+                      <WishlistButton item={movie} mediaType={movie.media_type ?? "movie"} stopPropagation className="card-wish" />
                     </span>
                   </span>
 

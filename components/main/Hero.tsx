@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import WishlistButton from "@/components/common/WishlistButton";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -637,6 +638,7 @@ export default function Hero() {
             </svg>
             상세정보
           </button>
+          <WishlistButton item={activeItem} mediaType={activeItem.media_type} className="hero-wish" />
         </div>
       </div>
 
