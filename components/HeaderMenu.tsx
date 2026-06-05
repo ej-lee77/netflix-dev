@@ -8,15 +8,42 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 
 // 전체 메뉴 풀 생성 (매핑 처리용)
-const allSelectablePool = [...mainMenus, ...customMenus];
+const CATEGORY_MENU = {
+    title: "카테고리",
+    imgUrl: "/images/header/menu/category.png",
+    path: "/category?tab=all",
+};
+const allSelectablePool = [...mainMenus, CATEGORY_MENU, ...customMenus];
 const DEFAULT_HEADER_MENU_PATHS = [
     "/category",
+    "/category?tab=all",
     "/mypage/playlist?tab=playlists",
     "/mypage/playlist?tab=history",
 ];
 const normalizeMenuPath = (path: string) =>
     path === "/mypage/playhist" ? "/mypage/playlist?tab=history" : path;
 const uniqueMenuPaths = (paths: string[]) => Array.from(new Set(paths.map(normalizeMenuPath)));
+const isCategoryMenuPath = (path: string) => (
+    path.startsWith("/category?") || path.startsWith("/genre/") || path.startsWith("/mood/")
+);
+const ensureCategoryMenuPath = (paths: string[]) => {
+    const normalizedPaths = uniqueMenuPaths(paths);
+    const hasCategoryMenu = normalizedPaths.includes(CATEGORY_MENU.path);
+    const hasCategoryChildren = normalizedPaths.some(
+        (path) => path !== CATEGORY_MENU.path && isCategoryMenuPath(path)
+    );
+
+    if (hasCategoryMenu || !hasCategoryChildren) {
+        return normalizedPaths;
+    }
+
+    const firstCategoryIndex = normalizedPaths.findIndex(isCategoryMenuPath);
+    const insertIndex = firstCategoryIndex === -1 ? normalizedPaths.length : firstCategoryIndex;
+    const nextPaths = [...normalizedPaths];
+    nextPaths.splice(insertIndex, 0, CATEGORY_MENU.path);
+
+    return nextPaths;
+};
 
 export default function HeaderMenu() {
     const pathname = usePathname();
@@ -34,7 +61,7 @@ export default function HeaderMenu() {
     const dynamicMenus = (() => {
         if (currentProfile) {
             const profileMenuPaths = currentProfile.headerMenus?.length
-                ? uniqueMenuPaths(currentProfile.headerMenus)
+                ? ensureCategoryMenuPath(currentProfile.headerMenus)
                 : DEFAULT_HEADER_MENU_PATHS;
             return profileMenuPaths
                 .map((path) => allSelectablePool.find((m) => m.path === path))
@@ -51,7 +78,7 @@ export default function HeaderMenu() {
         if (saved) {
             try {
                 const savedPaths: string[] = JSON.parse(saved);
-                const normalizedPaths = uniqueMenuPaths(savedPaths);
+                const normalizedPaths = ensureCategoryMenuPath(savedPaths);
                 
                 // 사용자가 로컬스토리지에 저장한 '순서'대로 헤더에 노출되도록 패스 배열 기준으로 매핑합니다.
                 return normalizedPaths
@@ -81,6 +108,19 @@ export default function HeaderMenu() {
 
     // 홈 메뉴 오브젝트만 별도로 상단 고정을 위해 추출
     const homeMenu = mainMenus.find((m) => m.path === "/");
+    const categoryChildren = dynamicMenus.filter((menu) =>
+        menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path)
+    );
+    const defaultCategoryChildren = mainMenus.filter((menu) =>
+        menu.path.startsWith("/category?")
+    );
+    const categoryPanelMenus = categoryChildren.length > 0
+        ? categoryChildren
+        : defaultCategoryChildren;
+    const categoryParent = dynamicMenus.find((menu) => menu.path === CATEGORY_MENU.path);
+    const isCategoryActive = categoryParent
+        ? isMenuActive(categoryParent.path) || categoryPanelMenus.some((menu) => isMenuActive(menu.path))
+        : false;
 
     return (
         <nav>
@@ -97,8 +137,40 @@ export default function HeaderMenu() {
                 
                 <div className="sb-divider"></div>
                 
-                {/* 2. [가변 커스텀] 사용자가 활성화한 메뉴 리스트 (큐레이션, 플리, 시청이력, 장르, 무드가 한곳에 바인딩) */}
+                {/* 2. [가변 커스텀] 사용자가 활성화한 메뉴 리스트 (큐레이션, 플리, 시청이력, 카테고리 대표가 한곳에 바인딩) */}
                 {dynamicMenus.map((menu) => {
+                    if (menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path)) {
+                        return null;
+                    }
+
+                    if (menu.path === CATEGORY_MENU.path) {
+                        return (
+                            <div key={menu.path} className={`sb-icon sb-category-group ${isCategoryActive ? 'active' : ''}`}>
+                                <Link href={menu.path}>
+                                    <Image src={menu.imgUrl} alt={menu.title} width="24" height="24" />
+                                    <span className='sb-label'>{menu.title}</span>
+                                </Link>
+
+                                {categoryPanelMenus.length > 0 && (
+                                    <div className="category-hover-panel">
+                                        {categoryPanelMenus.map((childMenu) => {
+                                            const isActive = isMenuActive(childMenu.path);
+
+                                            return (
+                                                <div key={childMenu.path} className={`category-hover-icon ${isActive ? 'active' : ''}`}>
+                                                    <Link href={childMenu.path}>
+                                                        <Image src={childMenu.imgUrl} alt={childMenu.title} width="24" height="24" />
+                                                        <span className="sb-label">{childMenu.title}</span>
+                                                    </Link>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+
                     const isActive = isMenuActive(menu.path);
                     return (
                         <div key={menu.path} className={`sb-icon ${isActive ? 'active' : ''}`}>
