@@ -23,6 +23,8 @@ interface StepPlanProps {
   currentPlanType?: string;
   currentBilling?: string;
   submitLabel?: string;
+  hideTitle?: boolean;
+  skipFirestore?: boolean;
 }
 
 interface PlanData {
@@ -132,11 +134,12 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPlan({ onNext, currentPlanType, currentBilling, submitLabel = "다음" }: StepPlanProps) {
+export default function StepPlan({ onNext, currentPlanType, currentBilling, submitLabel = "다음", hideTitle, skipFirestore }: StepPlanProps) {
   const [billing, setBilling] = useState<BillingCycle>("monthly"); // 기본: 월간
   const [selected, setSelected] = useState<string>("standard");
 
   const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
+
 
   // 기존과 같은 플랜일경우 경고표시
   const [error, setError] = useState<string>("");
@@ -152,7 +155,11 @@ export default function StepPlan({ onNext, currentPlanType, currentBilling, subm
     }
 
     setError("");
-    if (uid) await updatePlan(uid, selected, billing);
+
+    // skipFirestore가 아닐 때만 Firestore 저장
+    if (!skipFirestore && uid) {
+      await updatePlan(uid, selected, billing);
+    }
 
     onNext({
       name: planData.name,
@@ -165,8 +172,13 @@ export default function StepPlan({ onNext, currentPlanType, currentBilling, subm
 
   return (
     <div className="plan-page">
-      <h1 className="plan-title">나에게 맞는 플랜을 선택하세요</h1>
-      <p className="plan-subtitle">언제든 변경하거나 해지할 수 있어요</p>
+      {/* 타이틀 — hideTitle일 때 숨김 */}
+      {!hideTitle && (
+        <>
+          <h1 className="plan-title">나에게 맞는 플랜을 선택하세요</h1>
+          <p className="plan-subtitle">언제든 변경하거나 해지할 수 있어요</p>
+        </>
+      )}
 
       {/* ── 결제 주기 탭 ──────────────────────────────────────────────────── */}
       <div className="billing-tab-wrap">
