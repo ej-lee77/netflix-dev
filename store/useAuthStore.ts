@@ -29,6 +29,10 @@ export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
     autoplayPreview: true,
   },
   hiddenWatchingVideos: [],
+  favoriteGenres: [],
+  excludedGenres: [],
+  favoriteMoods: [],
+  excludedMoods: [],
 };
 
 const normalizeMaturityRating = (rating?: string | null): ProfileSettings["maturityRating"] => {
@@ -51,6 +55,10 @@ export const normalizeProfileSettings = (
     ...(settings?.playback ?? {}),
   },
   hiddenWatchingVideos: settings?.hiddenWatchingVideos ?? [],
+  favoriteGenres: settings?.favoriteGenres ?? [],
+  excludedGenres: settings?.excludedGenres ?? [],
+  favoriteMoods: settings?.favoriteMoods ?? [],
+  excludedMoods: settings?.excludedMoods ?? [],
 });
 
 // 이미지 경로 정규화 함수

@@ -123,7 +123,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
     }
   };
 
-  const handlePointerEnd = () => {};
+  const handlePointerEnd = () => { };
 
   if (!rankingItems.length) {
     return (

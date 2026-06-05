@@ -160,12 +160,15 @@ export default function ThemeRow({ title, items, href }: ThemeRowProps) {
                           <p className="hover-overview">{item.overview}</p>
                         )}
                         <div className="hover-actions">
-                          <button type="button" className="btn-play" onClick={(e) => e.stopPropagation()}>
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <Link
+                            href={`/detail/${item.mediaType}/${item.id}?play=1`}
+                            className="btn-play" onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
                             {t("common.play")}
-                          </button>
+                          </Link>
                           <Link href={`/detail/${item.mediaType}/${item.id}`} className="btn-detail">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="10" />
