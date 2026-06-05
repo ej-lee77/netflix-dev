@@ -1,3 +1,17 @@
+@use "../../../app/globals.scss" as g;
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-pulse {
+  background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s infinite linear;
+  border-radius: 4px;
+}
+
 .connect-section {
   position: relative;
   color: #fff;
@@ -5,18 +19,9 @@
 
 .connect-section__inner {
   position: relative;
-  width: min(1320px, calc(100vw - 120px));
-  margin: 0 auto;
-}
-
-@media (max-width: 1280px) {
-  .connect-section__inner {
-    width: min(1080px, calc(100vw - 80px));
-  }
-}
-
-@media (max-width: 860px) {
-  .connect-section__inner {
-    width: min(520px, calc(100vw - 32px));
-  }
+  width: min(1920px, calc(100vw - #{g.$main-menu-width}));
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
+  padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
 }
