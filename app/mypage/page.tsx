@@ -284,11 +284,16 @@ export default function MyPage() {
             </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
             {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
-            {planLabel && (
+            {planLabel ? (
+              // 구독 중일 때
               <span className="plan-badge">
                 ★ {planLabel}{nextDate ? ` · 다음 결제 ${nextDate}` : ""}
-                {/* nextDate 없으면 플랜 이름만 표시 */}
               </span>
+            ) : (
+              // 구독 중이 아닐 때
+              <Link href="/plan" className="plan-badge plan-badge-empty">
+                구독하고 무제한으로 즐기세요 →
+              </Link>
             )}
           </div>
 
