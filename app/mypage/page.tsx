@@ -227,7 +227,7 @@ export default function MyPage() {
   const [nextDate, setNextDate] = useState<string>("");
 
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
     if (!uid) return; // 로그인 안 된 경우 early return
 
     getDoc(doc(db, "users", uid)).then((snap) => {
@@ -236,7 +236,7 @@ export default function MyPage() {
       setPlanType(data.planType ?? "");           // 플랜 종류 (basic/standard/premium)
       setNextDate(data.payment?.nextDate ?? "");  // 다음 결제일
     });
-  }, [user?.uid]); // user가 바뀔 때마다 재실행
+  }, [user?.userId]); // user가 바뀔 때마다 재실행
 
   // planType 영문 → 한글 변환
   const planLabel = (() => {
