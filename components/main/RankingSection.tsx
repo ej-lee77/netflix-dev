@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import type { KeyboardEvent, PointerEvent } from "react";
 import Link from "next/link";
 import WishlistButton from "@/components/common/WishlistButton";
+import { useT } from "@/lib/i18n";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
 import type { Swiper as SwiperClass } from "swiper";
@@ -43,6 +44,7 @@ interface RankingSectionProps {
 }
 
 export default function RankingSection({ title, items: externalItems }: RankingSectionProps = {}) {
+  const t = useT();
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
 
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -140,7 +142,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
   return (
     <section className="ranking-section">
       <div className="section-title-outer">
-        <SectionTitle title={title ?? '오늘의 넷플릭스 TOP 10'} href="/category" />
+        <SectionTitle title={title ?? t("home.top10")} href="/category" />
       </div>
 
       <div className="ranking-swiper-wrap">
@@ -270,7 +272,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
                         <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
-                        재생
+                        {t("common.play")}
                       </Link>
                       <Link href={`/detail/${movie.media_type ?? "movie"}/${movie.id}`} className="ranking-btn-info">
                         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" style={{ fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>
@@ -278,7 +280,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
                           <line x1="12" y1="16" x2="12" y2="12" />
                           <line x1="12" y1="8" x2="12.01" y2="8" />
                         </svg>
-                        상세보기
+                        {t("common.detailMore")}
                       </Link>
                       <WishlistButton item={movie} mediaType={movie.media_type ?? "movie"} stopPropagation className="card-wish" />
                     </span>
