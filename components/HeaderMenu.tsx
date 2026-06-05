@@ -108,11 +108,18 @@ export default function HeaderMenu() {
 
     // 홈 메뉴 오브젝트만 별도로 상단 고정을 위해 추출
     const homeMenu = mainMenus.find((m) => m.path === "/");
+    // 영화/시리즈/애니는 기본 메뉴로 상단에 노출되어야 하므로 hover 패널에서는 제외
+    const CATEGORY_TOP_LEVEL = new Set([
+        "/category?tab=movie",
+        "/category?tab=tv",
+        "/category?tab=animation",
+    ]);
+
     const categoryChildren = dynamicMenus.filter((menu) =>
-        menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path)
+        menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path) && !CATEGORY_TOP_LEVEL.has(menu.path)
     );
     const defaultCategoryChildren = mainMenus.filter((menu) =>
-        menu.path.startsWith("/category?")
+        menu.path.startsWith("/category?") && !CATEGORY_TOP_LEVEL.has(menu.path)
     );
     const categoryPanelMenus = categoryChildren.length > 0
         ? categoryChildren
@@ -139,7 +146,15 @@ export default function HeaderMenu() {
                 
                 {/* 2. [가변 커스텀] 사용자가 활성화한 메뉴 리스트 (큐레이션, 플리, 시청이력, 카테고리 대표가 한곳에 바인딩) */}
                 {dynamicMenus.map((menu) => {
-                    if (menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path)) {
+                    // 카테고리 계열 중에서도 영화/시리즈/애니메이션은 상단에 직접 노출해야 함
+                    const isCategoryChild = menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path);
+                    const isCategoryTopLevel = [
+                        "/category?tab=movie",
+                        "/category?tab=tv",
+                        "/category?tab=animation",
+                    ].includes(menu.path);
+
+                    if (isCategoryChild && !isCategoryTopLevel) {
                         return null;
                     }
 

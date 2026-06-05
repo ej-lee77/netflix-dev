@@ -30,6 +30,9 @@ const isCategoryMenuPath = (path: string) =>
   path.startsWith("/mood/");
 const isCategoryChildPath = (path: string) =>
   path !== CATEGORY_MENU.path && isCategoryMenuPath(path);
+// Only genres and moods count toward the 10-item category limit.
+const isCountableCategoryChild = (path: string) =>
+  path.startsWith("/genre/") || path.startsWith("/mood/");
 const ensureCategoryMenuPath = (paths: string[]) => {
   const normalizedPaths = uniqueMenuPaths(paths);
   const hasCategoryMenu = normalizedPaths.includes(CATEGORY_MENU.path);
@@ -53,7 +56,9 @@ const ensureCategoryMenuPath = (paths: string[]) => {
 export default function MenuCustomPage() {
   const [selectedMenuPaths, setSelectedMenuPaths] = useState<string[]>([]);
   const [draggedMenuPath, setDraggedMenuPath] = useState<string | null>(null);
+  const dragGhostRef = useRef<HTMLElement | null>(null);
   const pendingFlowRectsRef = useRef<Map<string, DOMRect> | null>(null);
+  const pendingSaveRef = useRef<string[] | null>(null);
   const baseOpen = true;
   const { currentProfile, onUpdateProfile } = useAuthStore();
   const currentProfileId = currentProfile?.id;
@@ -118,10 +123,10 @@ export default function MenuCustomPage() {
       updatedPaths = selectedMenuPaths.filter((p) => p !== path);
     } else {
       const selectedCategoryCount = selectedMenuPaths.filter(
-        isCategoryChildPath,
+        isCountableCategoryChild,
       ).length;
 
-      if (isCategoryChildPath(path) && selectedCategoryCount >= 10) {
+      if (isCountableCategoryChild(path) && selectedCategoryCount >= 10) {
         alert("카테고리 메뉴는 최대 10개까지만 선택할 수 있습니다.");
         return;
       }
@@ -143,6 +148,44 @@ export default function MenuCustomPage() {
     setDraggedMenuPath(path);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", path);
+
+    try {
+      const target = event.currentTarget as HTMLElement;
+      const clone = target.cloneNode(true) as HTMLElement;
+      // copy computed styles to cloned node to avoid CSS loss in drag image
+      const copyComputedStyles = (src: HTMLElement, dest: HTMLElement) => {
+        const cs = window.getComputedStyle(src);
+        for (let i = 0; i < cs.length; i++) {
+          const prop = cs.item(i);
+          if (prop) dest.style.setProperty(prop, cs.getPropertyValue(prop), cs.getPropertyPriority(prop));
+        }
+        // recursively copy for children nodes
+        const srcChildren = Array.from(src.children) as HTMLElement[];
+        const destChildren = Array.from(dest.children) as HTMLElement[];
+        for (let i = 0; i < srcChildren.length; i++) {
+          if (destChildren[i]) copyComputedStyles(srcChildren[i], destChildren[i] as HTMLElement);
+        }
+      };
+      // place offscreen so it won't affect layout
+      clone.style.position = "absolute";
+      clone.style.top = "-9999px";
+      clone.style.left = "-9999px";
+      clone.style.zIndex = "9999";
+      // ensure visible look for drag image
+      clone.style.opacity = "1";
+      // copy computed styles so the ghost looks identical
+      copyComputedStyles(target, clone);
+      // prevent ghost from catching pointer events
+      clone.style.pointerEvents = "none";
+      document.body.appendChild(clone);
+      // center the pointer on the ghost
+      const rect = clone.getBoundingClientRect();
+      event.dataTransfer.setDragImage(clone, rect.width / 2, rect.height / 2);
+      dragGhostRef.current = clone;
+    } catch (e) {
+      // fail silently if setDragImage not supported
+      // console.debug('setDragImage failed', e);
+    }
   };
 
   const getFlowChipRects = () => {
@@ -176,14 +219,21 @@ export default function MenuCustomPage() {
 
           if (!deltaX && !deltaY) return;
 
+          // cancel any running animations on the element to avoid stacking
+          element.getAnimations().forEach((a) => a.cancel());
+          // hint for better performance
+          element.style.willChange = "transform";
+
+          // use translate3d for GPU acceleration and smoother motion
           element.animate(
             [
-              { transform: `translate(${deltaX}px, ${deltaY}px)` },
-              { transform: "translate(0, 0)" },
+              { transform: `translate3d(${deltaX}px, ${deltaY}px, 0)` },
+              { transform: "translate3d(0, 0, 0)" },
             ],
             {
-              duration: 480,
+              duration: 360,
               easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              fill: "both",
             },
           );
         });
@@ -223,14 +273,29 @@ export default function MenuCustomPage() {
     const nextPaths = [...selectedMenuPaths];
     const [movedPath] = nextPaths.splice(sourceIndex, 1);
     nextPaths.splice(targetIndex, 0, movedPath);
-
     pendingFlowRectsRef.current = getFlowChipRects();
     setDraggedMenuPath(sourcePath);
-    void saveHeaderMenus(nextPaths);
+    setSelectedMenuPaths(nextPaths);
+    // defer persisting until drag end to avoid layout churn
+    pendingSaveRef.current = nextPaths;
   };
 
   const handlePreviewDragEnd = () => {
     setDraggedMenuPath(null);
+    // remove custom drag ghost if present
+    if (dragGhostRef.current) {
+      try {
+        document.body.removeChild(dragGhostRef.current);
+      } catch (e) {
+        /* ignore */
+      }
+      dragGhostRef.current = null;
+    }
+    // persist final order if changed during dragging
+    if (pendingSaveRef.current) {
+      void saveHeaderMenus(pendingSaveRef.current);
+      pendingSaveRef.current = null;
+    }
   };
 
   // 데이터 그룹 분리

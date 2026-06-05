@@ -213,19 +213,32 @@
 
   .flow-row-items {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    min-height: 44px;
+    flex-wrap: nowrap; /* 한 줄로 고정 */
+    gap: 8px;
+    min-height: 40px;
     align-items: center;
+    overflow-x: auto; /* 넘칠 경우 가로 스크롤 */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  /* 카테고리(두번째 행)는 항목이 많아지면 2줄까지 허용 */
+  .flow-summary {
+    .flow-row:nth-child(2) .flow-row-items {
+      flex-wrap: wrap;
+      /* 최대 2줄 높이로 제한 (칩 높이 40px + gap 8px) */
+      max-height: calc(40px * 2 + 8px);
+      overflow: hidden;
+    }
   }
 
   .flow-chip {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 14px;
+    padding: 8px 12px; /* 칸 너비 절약 */
     border-radius: 999px;
-    font-size: 0.85rem;
+    font-size: 0.8rem; /* 약간 작게 */
     font-weight: 800;
     background: rgba(229, 9, 20, 0.14);
     border: 1px solid rgba(229, 9, 20, 0.25);
@@ -249,6 +262,9 @@
       border-color: rgba(255, 255, 255, 0.34);
       background: rgba(229, 9, 20, 0.22);
       box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+      /* 시각적으로 숨기되 pointer-events는 유지하여 드래그/드롭 이벤트가 동작하도록 함 */
+      opacity: 0;
+      pointer-events: auto;
     }
   }
 
