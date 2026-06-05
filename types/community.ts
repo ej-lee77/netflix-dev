@@ -31,7 +31,6 @@ export interface FeedDocument {
   reportsCount: number;     // 신고
   comments: FeedComment;    // 댓글
   createdAt: string;
-  isDelete: boolean;
 }
 
 export interface CommunityStore {

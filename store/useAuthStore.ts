@@ -384,7 +384,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error("좋아요 토글 실패:", error);
         }
-      }
+      },
     }),
     {
       name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.

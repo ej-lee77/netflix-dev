@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { collection, query, where, orderBy, getDocs, setDoc,  arrayUnion, doc, getDoc, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, setDoc,  arrayUnion, doc, getDoc, writeBatch, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/firebase';
 import { ReviewDocument, CommunityStore } from '@/types/community';
 import { useAuthStore } from './useAuthStore';
@@ -141,37 +141,47 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
     }
   },
   updateReviewLikeCount: async (videoId: string, reviewId: string, isLiked: boolean) => {
-    const reviewDocRef = doc(db, "videoReviews", videoId);
-    
+    const { user, currentProfile } = useAuthStore.getState();
+    if (!user?.userId || !currentProfile) return;
+
+    const videoDocRef = doc(db, "videoReviews", videoId);
+    const userDocRef = doc(db, "userReviews", user?.userId);
+
     try {
-      // 1. 문서 가져오기
-      const docSnap = await getDoc(reviewDocRef);
-      if (!docSnap.exists()) return;
-      
-      const data = docSnap.data();
-      const currentReviews = [...(data.reviews || [])]; // 불변성 유지를 위해 복사
-      
-      // 2. 해당 리뷰 인덱스 찾기
-      const rIndex = currentReviews.findIndex((r: any) => r.reviewId === reviewId);
-      if (rIndex === -1) return;
-      
-      // 3. 좋아요 수 업데이트 (좋아요 취소 시 -1, 좋아요 시 +1)
-      const newLikesCount = (currentReviews[rIndex].likesCount || 0) + (isLiked ? -1 : 1);
-    
-      // Math.max(0, newLikesCount)를 사용하여 결과값이 최소 0이 되도록 보장합니다.
-      currentReviews[rIndex] = {
-        ...currentReviews[rIndex],
-        likesCount: Math.max(0, newLikesCount) 
-      };
-      
-      // 4. Firestore 업데이트
-      await updateDoc(reviewDocRef, { reviews: currentReviews });
-      
-      // 5. [중요] Zustand 스토어 상태(reviews) 업데이트 -> UI 즉시 반영
-      set({ reviews: currentReviews });
-      
+      await runTransaction(db, async (transaction : any) => {
+        // 1. 문서 가져오기
+        const videoDoc = await transaction.get(videoDocRef);
+        const userDoc = await transaction.get(userDocRef);
+
+        if (!videoDoc.exists()) throw "Video review document does not exist!";
+        
+        const currentReviews = [...(videoDoc.data().reviews || [])];
+        const rIndex = currentReviews.findIndex((r: any) => r.reviewId === reviewId);
+        if (rIndex === -1) throw "Review not found!";
+
+        // 2. 좋아요 수 계산 (최솟값 0 보장)
+        const newLikesCount = Math.max(0, (currentReviews[rIndex].likesCount || 0) + (isLiked ? -1 : 1));
+
+        // 3. videoReviews 데이터 업데이트
+        currentReviews[rIndex] = { ...currentReviews[rIndex], likesCount: newLikesCount };
+        transaction.update(videoDocRef, { reviews: currentReviews });
+
+        // 4. userReviews 데이터 업데이트 (작성자의 문서도 동일하게 반영)
+        if (userDoc.exists()) {
+          const userReviews = [...(userDoc.data().reviews || [])];
+          const urIndex = userReviews.findIndex((r: any) => r.reviewId === reviewId);
+          
+          if (urIndex !== -1) {
+            userReviews[urIndex] = { ...userReviews[urIndex], likesCount: newLikesCount };
+            transaction.update(userDocRef, { reviews: userReviews });
+          }
+        }
+
+        // 5. [중요] 상태 업데이트는 트랜잭션 외부에서 수행
+        set({ reviews: currentReviews });
+      });
     } catch (error) {
-      console.error("리뷰 카운트 업데이트 실패:", error);
+      console.error("좋아요 카운트 업데이트 트랜잭션 실패:", error);
     }
   }
 }));

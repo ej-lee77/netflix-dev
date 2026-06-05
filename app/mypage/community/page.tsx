@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/communityPage.scss";
 import Review from "@/components/mypage/Review";
+import { useCommunityStore } from "@/store/useCommunityStore";
 
 type CommunityTab = "reviews" | "my-feeds" | "create-feed" | "create-review";
 type ScopeFilterType = "mine" | "liked" | "following";
@@ -82,11 +83,15 @@ function CommunityContent() {
   const [feedMediaType, setFeedMediaType] = useState<"movie" | "tv" | "general">("general");
 
   const [feeds] = useState<UserFeed[]>([]);
-  const [reviews] = useState<UserReview[]>([]);
+  const { reviews, fetchUserReviews } = useCommunityStore();
 
   useEffect(() => {
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchUserReviews(); 
+  }, [fetchUserReviews]);
 
   const currentTabLabel = tabs.find((t) => t.id === activeTab)?.label || "커뮤니티";
   const currentSortLabel = sortOptions.find((o) => o.key === sortType)?.label;
@@ -165,17 +170,23 @@ function CommunityContent() {
                   </button>
                   {sortOpen && (
                     <ul className="sort-menu">
-                      {sortOptions.map((opt) => (
-                        <li key={opt.key}>
-                          <button
-                            type="button"
-                            className={`sort-option ${sortType === opt.key ? "is-selected" : ""}`}
-                            onClick={() => { setSortType(opt.key); setSortOpen(false); }}
-                          >
-                            {opt.label}
-                          </button>
-                        </li>
-                      ))}
+                      {sortOptions
+                        // 1. 리뷰 탭일 때 "comments" 옵션 필터링
+                        .filter((opt) => !(activeTab === "reviews" && opt.key === "comments"))
+                        .map((opt) => (
+                          <li key={opt.key}>
+                            <button
+                              type="button"
+                              className={`sort-option ${sortType === opt.key ? "is-selected" : ""}`}
+                              onClick={() => {
+                                setSortType(opt.key);
+                                setSortOpen(false);
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          </li>
+                        ))}
                     </ul>
                   )}
                 </div>
@@ -186,10 +197,7 @@ function CommunityContent() {
             <div className="main-content-area">
               {activeTab === "reviews" && (
                 <>
-                  <div className="community-empty">
-                    <p className="empty-text">작성된 리뷰가 없습니다.</p>
-                  </div>
-                  <Review />
+                  <Review sortType={sortType} scopeFilter={scopeFilter} />
                 </>
               )}
 

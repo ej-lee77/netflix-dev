@@ -10,7 +10,6 @@ export interface FeedComment extends CommunityFeedComment {
   profileId?: number;
   createdAt: string;
   updatedAt?: string;
-  isDelete: boolean;
   likedUserIds?: string[];
 }
 

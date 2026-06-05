@@ -20,6 +20,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  writeBatch
 } from "firebase/firestore";
 import { create } from "zustand";
 
@@ -27,7 +28,7 @@ interface FeedState {
   reviews: FeedView[];
   isLoading: boolean;
   onHydrateReviews: () => Promise<void>;
-  onAddReview: (review: FeedReview) => Promise<void>;
+  onAddFeed: (review: FeedReview) => Promise<void>;
   onUpdateReview: (review: FeedReview) => Promise<void>;
   onDeleteReview: (feedId: string) => Promise<void>;
   onAddComment: (feedId: string, comment: FeedComment) => Promise<void>;
@@ -298,7 +299,6 @@ const normalizeComment = (commentId: string, data: FirestoreRecord): FeedComment
   likesCount: readNumber(data, "likesCount"),
   createdAt: readString(data, "createdAt"),
   updatedAt: readString(data, "updatedAt"),
-  isDelete: readBoolean(data, "isDelete"),
   likedUserIds: readStringArray(data, "likedUserIds"),
 });
 
@@ -311,7 +311,6 @@ const normalizeFeed = (feedId: string, data: FirestoreRecord): FeedReview => ({
   reportsCount: readNumber(data, "reportsCount"),
   createdAt: readString(data, "createdAt"),
   updatedAt: readString(data, "updatedAt"),
-  isDelete: readBoolean(data, "isDelete"),
   profileId: readNumber(data, "profileId") || undefined,
   rating: readNumber(data, "rating"),
   isSpoiler: readBoolean(data, "isSpoiler"),
@@ -405,7 +404,6 @@ const fetchComments = async (feedId: string) => {
 
   return snapshot.docs
     .map((commentDoc) => normalizeComment(commentDoc.id, commentDoc.data()))
-    .filter((comment) => !comment.isDelete)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
@@ -432,7 +430,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const reviews = await Promise.all(
         snapshot.docs
           .map((feedDoc) => normalizeFeed(feedDoc.id, feedDoc.data()))
-          .filter((review) => !review.isDelete)
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .map(async (review) => {
             const feedId = review.feedId || "";
@@ -453,12 +450,15 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
   },
 
-  onAddReview: async (review) => {
+  onAddFeed: async (review) => {
     const { userId, currentProfile } = getAuthContext();
     if (!userId || !currentProfile) return;
 
     const now = new Date().toISOString();
-    const newDoc: Omit<FeedReview, "feedId"> = {
+    const feedId = doc(collection(db, FEEDS_COLLECTION)).id; // 미리 ID 생성
+
+    const newDoc = {
+      feedId, // 생성한 ID 포함
       userId,
       profileId: currentProfile.id,
       videoId: review.videoId,
@@ -467,17 +467,39 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       reportsCount: 0,
       createdAt: now,
       updatedAt: now,
-      isDelete: false,
       rating: review.rating,
       isSpoiler: review.isSpoiler,
       isPublic: review.isPublic,
       likedUserIds: [],
     };
 
-    const docRef = await addDoc(collection(db, FEEDS_COLLECTION), newDoc);
+    const batch = writeBatch(db);
 
-    const nextReview = await buildFeedView({ ...newDoc, feedId: docRef.id }, [], userId, currentProfile.community?.following || []);
-    set((state) => ({ reviews: [nextReview, ...state.reviews] }));
+    // 1. 전체 피드 컬렉션에 저장
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    batch.set(feedDocRef, newDoc);
+
+    // 2. 유저별 피드 컬렉션에 배열로 저장 (userFeeds/userId)
+    const userFeedsRef = doc(db, "userFeeds", userId);
+    batch.set(userFeedsRef, { 
+      feeds: arrayUnion(newDoc) 
+    }, { merge: true });
+
+    try {
+      await batch.commit();
+
+      // 3. 상태 갱신
+      const nextReview = await buildFeedView(
+        newDoc, 
+        [], 
+        userId, 
+        currentProfile.community?.following || []
+      );
+      
+      set((state) => ({ reviews: [nextReview, ...state.reviews] }));
+    } catch (error) {
+      console.error("피드 저장 및 배치 업데이트 실패:", error);
+    }
   },
 
   onUpdateReview: async (review) => {
