@@ -48,6 +48,9 @@
   .search-overlay__content {
     position: relative;
     width: 100%;
+    max-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: rgba(20, 20, 20, 0.95); 
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 24px 6vw 40px;
@@ -55,6 +58,34 @@
     pointer-events: auto; 
     animation: slideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  }
+
+  .search-overlay__close {
+    position: absolute;
+    top: 18px;
+    right: 28px;
+    z-index: 3;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.68);
+    cursor: pointer;
+    font-size: 1.65rem;
+    line-height: 1;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
+
+    &:hover,
+    &:focus-visible {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      outline: none;
+    }
   }
 
   .search-overlay__inner {
@@ -69,17 +100,18 @@
   .search-overlay__field {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     width: 100%;
     min-height: 56px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-    padding: 0 4px;
+    padding: 0 0 0 4px;
 
     &:focus-within {
       border-color: g.$main-color;
     }
 
     input {
+      min-width: 0;
       flex: 1;
       border: 0;
       outline: 0;
@@ -98,88 +130,64 @@
       }
     }
 
-    .close-btn {
+    .search-overlay__clear {
+      display: grid;
+      width: 26px;
+      height: 26px;
+      flex: 0 0 auto;
+      place-items: center;
       border: 0;
-      background: transparent;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 2rem;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.7);
       cursor: pointer;
-      transition: color 0.15s;
-      &:hover { color: #fff; }
-    }
-  }
-
-  .search-overlay__selected-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: -16px;
-  }
-
-  .search-overlay__selected-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    min-width: 0;
-    flex: 1;
-
-    button {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 32px;
-      border: 1px solid rgba(229, 9, 20, 0.5);
-      border-radius: 100px;
-      background: rgba(229, 9, 20, 0.12);
-      color: #e50914;
-      cursor: pointer;
-      font: inherit;
-      font-size: g.$text-12;
-      font-weight: 700;
-      padding: 0 12px;
+      font-size: 1rem;
+      line-height: 1;
       transition:
         background 0.18s ease,
-        border-color 0.18s ease,
         color 0.18s ease;
 
-      &:hover {
-        border-color: #e50914;
-        background: rgba(229, 9, 20, 0.18);
+      &:hover,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.24);
         color: #fff;
+        outline: none;
       }
     }
 
-    em {
-      color: rgba(255, 255, 255, 0.5);
-      font-style: normal;
-    }
-  }
-
-  .search-overlay__tag-submit {
-    flex: 0 0 auto;
-    min-height: 32px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
-    cursor: pointer;
-    font: inherit;
-    font-size: g.$text-12;
-    font-weight: 800;
-    padding: 0 14px;
-    transition:
-      border-color 0.18s ease,
-      background 0.18s ease;
-
-    &:hover {
-      border-color: g.$main-color;
+    .search-overlay__submit {
+      margin-left: auto;
+      flex: 0 0 auto;
+      min-height: 38px;
+      border: 0;
+      border-radius: 6px;
       background: g.$main-color;
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-size: g.$text-13;
+      font-weight: 800;
+      padding: 0 16px;
+      white-space: nowrap;
+      transition:
+        background 0.18s ease,
+        opacity 0.18s ease;
+
+      &:hover:not(:disabled),
+      &:focus-visible:not(:disabled) {
+        background: #f40612;
+        outline: none;
+      }
+
+      &:disabled {
+        cursor: default;
+        opacity: 0.42;
+      }
     }
   }
 
   // 공통 타이틀 속성
-  .overlay-block h3, 
+  .overlay-block h3,
   .overlay-finder h3 {
     font-size: 0.95rem;
     font-weight: 700;
@@ -313,6 +321,8 @@
   .scroll-row {
     display: flex;
     gap: 12px;
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     padding-bottom: 8px;
     
@@ -379,10 +389,95 @@
   }
 
   // 반응형 대응
+  @media (max-width: 1024px) {
+    .search-overlay__content {
+      padding: 56px 24px 32px;
+    }
+
+    .search-overlay__close {
+      top: 14px;
+      right: 18px;
+    }
+
+    .search-overlay__inner {
+      gap: 24px;
+    }
+
+    .search-overlay__top-row {
+      gap: 28px;
+    }
+  }
+
   @media (max-width: 768px) {
-    .search-overlay__content { padding: 16px 16px 32px; }
+    .search-overlay__content { padding: 56px 16px 32px; }
+    .search-overlay__close {
+      top: 12px;
+      right: 12px;
+    }
+    .search-overlay__field {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 0;
+      border-bottom-width: 1px;
+      padding: 0 0 12px 0;
+
+      img {
+        margin-top: 0;
+      }
+
+      input {
+        width: 100%;
+        font-size: 1rem;
+        line-height: 40px;
+      }
+
+      .search-overlay__clear {
+        margin-top: 0;
+      }
+
+      .search-overlay__submit {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-height: 42px;
+        margin-left: 0;
+      }
+    }
     .search-overlay__top-row { grid-template-columns: 1fr; gap: 20px; }
-    .search-overlay__selected-row { flex-direction: column; }
-    .search-overlay__tag-submit { width: 100%; }
+  }
+
+  @media (max-width: 480px) {
+    .search-overlay__content {
+      padding: 52px 14px 28px;
+    }
+
+    .search-overlay__inner {
+      gap: 22px;
+    }
+
+    .overlay-block__header {
+      margin-bottom: 10px;
+    }
+
+    .horizontal-tags {
+      gap: 8px;
+
+      .tag-item {
+        max-width: 100%;
+        height: 32px;
+        font-size: g.$text-13;
+      }
+    }
+
+    .scroll-row {
+      gap: 8px;
+
+      .slim-card {
+        height: 42px;
+        padding: 0 12px;
+        font-size: g.$text-13;
+      }
+    }
   }
 }

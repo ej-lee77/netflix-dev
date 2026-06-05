@@ -11,10 +11,12 @@ import { useAuthStore } from "@/store/useAuthStore";
 import type { UserProfile } from "@/types/auth";
 import "./scss/header.scss";
 import HeaderSearchOverlay from "./HeaderSearchOverlay";
+import { useT } from "@/lib/i18n";
 
 const AUTH_PATHS = ["/login", "/signin", "/forgot-password", "/payment"];
 
 export default function Header() {
+  const t = useT();
   const pathname = usePathname();
   const router = useRouter();
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
@@ -124,10 +126,10 @@ export default function Header() {
 
             <ul className="mode-menu flex-item gap-4">
               <li className={pathname === "/" ? "active" : ""}>
-                <Link href="/">시네마 모드</Link>
+                <Link href="/">{t("header.cinema")}</Link>
               </li>
               <li className={pathname?.startsWith("/connect") ? "active" : ""}>
-                <Link href="/connect">커넥트 모드</Link>
+                <Link href="/connect">{t("header.connect")}</Link>
               </li>
             </ul>
           </div>
@@ -217,11 +219,8 @@ export default function Header() {
 
                     <ul className="profile-link-list">
                       <li>
-                        <Link
-                          href="/mypage"
-                          onClick={() => setIsProfileMenuOpen(false)}
-                        >
-                          마이페이지
+                        <Link href="/mypage" onClick={() => setIsProfileMenuOpen(false)}>
+                          {t("header.mypage")}
                         </Link>
                       </li>
                       <li>

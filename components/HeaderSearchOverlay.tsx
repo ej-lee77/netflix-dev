@@ -12,7 +12,7 @@ import {
   removeRecentSearch,
 } from "@/lib/searchOptions";
 import {
-  fetchTrendingMedia,
+  fetchKeywordPreviewMedia,
   type TrendingMediaItem,
 } from "@/lib/trendingContent";
 import TrendingVideoSection from "./search/TrendingVideoSection";
@@ -42,18 +42,17 @@ export default function HeaderSearchOverlay({
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [activeMoods, setActiveMoods] = useState<string[]>([]);
   const [activeGenres, setActiveGenres] = useState<string[]>([]);
-  const [trendingItems, setTrendingItems] = useState<TrendingMediaItem[]>([]);
-  const activeTags = [
-    ...genreOptions.filter((option) => activeGenres.includes(option.value)),
-    ...moodOptions.filter((option) => activeMoods.includes(option.value)),
-  ];
+  const [previewItems, setPreviewItems] = useState<TrendingMediaItem[]>([]);
 
   const [isAnimate, setIsAnimate] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const canSearch =
+    keyword.trim().length > 0 ||
+    activeGenres.length > 0 ||
+    activeMoods.length > 0;
 
   useEffect(() => {
     if (isOpen) {
-      const controller = new AbortController();
       inputRef.current?.focus();
       document.body.style.overflow = "hidden";
 
@@ -62,15 +61,8 @@ export default function HeaderSearchOverlay({
         setIsAnimate(true);
       }, 10);
 
-      fetchTrendingMedia("all", controller.signal, 5)
-        .then(setTrendingItems)
-        .catch((error: Error) => {
-          if (error.name !== "AbortError") setTrendingItems([]);
-        });
-
       return () => {
         clearTimeout(timer);
-        controller.abort();
       };
     } else {
       document.body.style.overflow = "";
@@ -81,6 +73,33 @@ export default function HeaderSearchOverlay({
       return () => window.clearTimeout(timer);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const trimmedKeyword = keyword.trim();
+    if (!trimmedKeyword) {
+      const timer = window.setTimeout(() => {
+        setPreviewItems([]);
+      }, 0);
+
+      return () => window.clearTimeout(timer);
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, 5)
+        .then(setPreviewItems)
+        .catch((error: Error) => {
+          if (error.name !== "AbortError") setPreviewItems([]);
+        });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [isOpen, keyword]);
 
   if (!isOpen) return null;
 
@@ -130,12 +149,26 @@ export default function HeaderSearchOverlay({
       <div className="search-overlay__backdrop" onClick={onClose} />
 
       <div className="search-overlay__content">
+        <button
+          type="button"
+          className="search-overlay__close"
+          onClick={onClose}
+          aria-label="검색창 닫기"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+
         <div className="search-overlay__inner">
-          {/* 1. 검색 인풋 바 */}
-          <div className="search-overlay__field">
+          <form
+            className="search-overlay__field"
+            onSubmit={(event) => {
+              event.preventDefault();
+              goToResults();
+            }}
+          >
             <Image
               src="/images/header/search.svg"
-              alt="search"
+              alt=""
               width={20}
               height={20}
             />
@@ -146,61 +179,28 @@ export default function HeaderSearchOverlay({
               aria-label="검색어 입력"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  goToResults();
-                }
-              }}
             />
-            <button
-              type="button"
-              className="close-btn"
-              onClick={onClose}
-              aria-label="닫기"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-
-          {activeTags.length > 0 && (
-            <div className="search-overlay__selected-row">
-              <div
-                className="search-overlay__selected-tags"
-                aria-label="선택한 검색 태그"
-              >
-                {activeTags.map((option) => (
-                  <button
-                    type="button"
-                    key={`${option.group}-${option.value}`}
-                    onClick={() => {
-                      if (option.group === "genre") {
-                        setActiveGenres(
-                          activeGenres.filter(
-                            (value) => value !== option.value,
-                          ),
-                        );
-                      } else {
-                        setActiveMoods(
-                          activeMoods.filter((value) => value !== option.value),
-                        );
-                      }
-                    }}
-                  >
-                    <span>{option.label}</span>
-                    <em aria-hidden="true">×</em>
-                  </button>
-                ))}
-              </div>
+            {keyword.trim().length > 0 && (
               <button
                 type="button"
-                className="search-overlay__tag-submit"
-                onClick={() => goToResults()}
+                className="search-overlay__clear"
+                onClick={() => {
+                  setKeyword("");
+                  inputRef.current?.focus();
+                }}
+                aria-label="검색어 지우기"
               >
-                선택한 태그로 검색
+                <span aria-hidden="true">×</span>
               </button>
-            </div>
-          )}
+            )}
+            <button
+              type="submit"
+              className="search-overlay__submit"
+              disabled={!canSearch}
+            >
+              검색
+            </button>
+          </form>
 
           {/* 2. 최근 / 추천 검색어 */}
           <div className="search-overlay__top-row">
@@ -247,9 +247,9 @@ export default function HeaderSearchOverlay({
             <section className="overlay-block overlay-block--recommend">
               <h3>추천 검색어</h3>
               <div className="horizontal-tags">
-                {recommendedSearches.map((keyword, index) => (
+                {recommendedSearches.map((keyword) => (
                   <button
-                    className={`tag-item ${index === 0 ? "active" : ""}`}
+                    className="tag-item"
                     type="button"
                     key={keyword}
                     onClick={() => goToResults(keyword)}
@@ -263,7 +263,14 @@ export default function HeaderSearchOverlay({
 
           {/* 3. 무드로 찾기 (mainMenu 데이터 반영) */}
           <section className="overlay-finder">
-            <h3>무드로 찾기</h3>
+            <div className="overlay-block__header">
+              <h3>무드로 찾기</h3>
+              {activeMoods.length > 0 && (
+                <button type="button" onClick={() => setActiveMoods([])}>
+                  모두 삭제
+                </button>
+              )}
+            </div>
             <div className="scroll-row">
               {moodOptions.map((option) => {
                 const isActive = activeMoods.includes(option.value);
@@ -292,7 +299,14 @@ export default function HeaderSearchOverlay({
 
           {/* 4. 장르로 찾기 (mainMenu 데이터 반영) */}
           <section className="overlay-finder">
-            <h3>장르로 찾기</h3>
+            <div className="overlay-block__header">
+              <h3>장르로 찾기</h3>
+              {activeGenres.length > 0 && (
+                <button type="button" onClick={() => setActiveGenres([])}>
+                  모두 삭제
+                </button>
+              )}
+            </div>
             <div className="scroll-row">
               {genreOptions.map((option) => {
                 const isActive = activeGenres.includes(option.value);
@@ -340,8 +354,8 @@ export default function HeaderSearchOverlay({
           </section>
 
           <TrendingVideoSection
-            items={trendingItems}
-            title="지금 많이 찾는 추천 영상"
+            items={previewItems}
+            title="검색 결과 미리보기"
             variant="overlay"
             onSelect={onClose}
           />

@@ -13,15 +13,16 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 
 const GENRE_COLORS: { [key: string]: string } = {
-  "SF": "#6366f1",       // 인디고
-  "액션": "#3b82f6",     // 블루
-  "스릴러": "#ef4444",   // 레드
-  "판타지": "#a855f7",   // 퍼플
-  "드라마": "#10b981",   // 그린
-  "코미디": "#f59e0b",   // 앰버
-  "로맨스": "#ec4899",   // 핑크
-  "다큐멘터리": "#64748b", // 슬레이트
-  "기타": "#94a3b8"      // 기본 회색
+  // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
+  "SF": "#E50914",
+  "액션": "#E50914",
+  "스릴러": "#E50914",
+  "판타지": "#E50914",
+  "드라마": "#E50914",
+  "코미디": "#E50914",
+  "로맨스": "#E50914",
+  "다큐멘터리": "#E50914",
+  "기타": "#B00710"
 };
 
 // 사용 시 함수 형태로 호출
@@ -226,7 +227,7 @@ export default function MyPage() {
   const [nextDate, setNextDate] = useState<string>("");
 
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
     if (!uid) return; // 로그인 안 된 경우 early return
 
     getDoc(doc(db, "users", uid)).then((snap) => {
@@ -235,7 +236,7 @@ export default function MyPage() {
       setPlanType(data.planType ?? "");           // 플랜 종류 (basic/standard/premium)
       setNextDate(data.payment?.nextDate ?? "");  // 다음 결제일
     });
-  }, [user?.uid]); // user가 바뀔 때마다 재실행
+  }, [user?.userId]); // user가 바뀔 때마다 재실행
 
   // planType 영문 → 한글 변환
   const planLabel = (() => {
@@ -283,11 +284,16 @@ export default function MyPage() {
             </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
             {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
-            {planLabel && (
+            {planLabel ? (
+              // 구독 중일 때
               <span className="plan-badge">
                 ★ {planLabel}{nextDate ? ` · 다음 결제 ${nextDate}` : ""}
-                {/* nextDate 없으면 플랜 이름만 표시 */}
               </span>
+            ) : (
+              // 구독 중이 아닐 때
+              <Link href="/plan" className="plan-badge plan-badge-empty">
+                구독하고 무제한으로 즐기세요 →
+              </Link>
             )}
           </div>
 

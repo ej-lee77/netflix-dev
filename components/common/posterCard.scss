@@ -1,0 +1,82 @@
+@use "@/app/globals" as g;
+
+/* 카테고리/무드 공통 포스터 카드 스타일 (PosterCard 컴포넌트 전용) */
+/* 포스터 그리드 */
+.poster-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 24px 16px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.poster-card {
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-6px);
+
+    .poster img {
+      transform: scale(1.05);
+    }
+  }
+
+  .poster {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    background: #1a1a1a;
+    border-radius: g.$radius-md;
+    overflow: hidden;
+    margin-bottom: 10px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s;
+    }
+
+    .no-image {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: g.$g-color;
+      font-size: g.$text-13;
+    }
+
+    .rating {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 3px 8px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #F5C518;
+      border-radius: 4px;
+      font-size: g.$text-12;
+      font-weight: 600;
+    }
+  }
+
+  h3 {
+    font-size: g.$text-14;
+    font-weight: 600;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .year {
+    font-size: g.$text-12;
+    color: g.$g-color;
+  }
+}

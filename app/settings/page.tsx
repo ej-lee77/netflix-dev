@@ -353,12 +353,8 @@ function SettingsContent() {
                         </div>
                       </div>
                       <div className="acset-plan-actions">
-                        <Link href="/plan" className="acset-btn">
-                          플랜 변경
-                        </Link>
-                        <button type="button" className="acset-btn danger">
-                          해지
-                        </button>
+                        <Link href="/plan" className="acset-btn">플랜 변경</Link>
+                        <Link href="/cancel" className="acset-btn danger">해지</Link>
                       </div>
                     </div>
                     <Row label="결제 수단" desc={payLabel}>

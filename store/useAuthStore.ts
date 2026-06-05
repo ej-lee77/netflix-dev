@@ -125,9 +125,9 @@ export const useAuthStore = create<AuthState>()(
                 id: Date.now(),
                 nickname: "나",
                 imgUrl: FALLBACK_PROFILE_IMAGE,
-                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {} },
+                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
                 community: { followers: [], following: [], reviews: [], feeds: [] },
-                bages: { equippedBadges: null, earnedBadges: [] }
+                bages: { equippedBadges: "", earnedBadges: [] }
               });
 
               const newUserData = {
@@ -215,9 +215,9 @@ export const useAuthStore = create<AuthState>()(
         const formattedProfile = normalizeProfile({ 
           ...newProfile, 
           id: nextId,
-          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {} },
+          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
           community: { followers: [], following: [], reviews: [], feeds: [] },
-          bages: { equippedBadges: null, earnedBadges: [] }
+          bages: { equippedBadges: "", earnedBadges: [] }
         });
         
         const nextProfiles = [...currentProfiles, formattedProfile];

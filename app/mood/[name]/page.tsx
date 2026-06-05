@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, notFound } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/category.scss";
+import PosterCard from "@/components/common/PosterCard";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -90,7 +91,8 @@ export default function MoodPage() {
   const params = useParams();
   const moodName = params.name as string;
 
-  const [type, setType] = useState<"movie" | "tv">("movie");
+  const [type, setType] = useState<"movie" | "tv" | "animation">("movie");
+  const [sort, setSort] = useState<string>("popularity.desc");
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -106,9 +108,16 @@ export default function MoodPage() {
     setLoading(true);
 
     const fetchMood = async () => {
-      const genres = type === "movie" ? info.movieGenres : info.tvGenres;
+      const endpoint = type === "tv" ? "tv" : "movie";
+      const rawGenres =
+        type === "animation" ? "16" : type === "tv" ? info.tvGenres : info.movieGenres;
+      // 무드 장르는 "이 중 하나라도" 해당하면 노출(OR). 콤마(AND)는 결과가 거의 없어 탭이 비는 문제 방지
+      const genres = rawGenres.replace(/,/g, "|");
+      // TV에는 release_date 정렬이 없어 first_air_date로 보정
+      const sortBy =
+        endpoint === "tv" && sort === "release_date.desc" ? "first_air_date.desc" : sort;
       const res = await fetch(
-        `https://api.themoviedb.org/3/discover/${type}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genres}&sort_by=${info.sortBy}&page=1&vote_count.gte=100`
+        `https://api.themoviedb.org/3/discover/${endpoint}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genres}&sort_by=${sortBy}&page=1&vote_count.gte=20&with_watch_providers=8&watch_region=KR`
       );
       const data = await res.json();
       const list = (data.results || []).map((item: any) => ({
@@ -120,14 +129,14 @@ export default function MoodPage() {
         vote_average: item.vote_average,
         release_date: item.release_date,
         first_air_date: item.first_air_date,
-        media_type: type,
+        media_type: endpoint,
       }));
       setItems(list);
       setLoading(false);
     };
 
     fetchMood();
-  }, [type, moodName, info]);
+  }, [type, moodName, info, sort]);
 
   if (!info) return null;
 
@@ -169,6 +178,21 @@ export default function MoodPage() {
           <button className={type === "tv" ? "active" : ""} onClick={() => setType("tv")}>
             시리즈
           </button>
+          <button className={type === "animation" ? "active" : ""} onClick={() => setType("animation")}>
+            애니메이션
+          </button>
+        </div>
+
+        <div className="mood-result-head" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+          <select
+            className="sort-select"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          >
+            <option value="popularity.desc">인기순</option>
+            <option value="vote_average.desc">평점순</option>
+            <option value="release_date.desc">최신순</option>
+          </select>
         </div>
 
         {loading ? (
@@ -176,22 +200,15 @@ export default function MoodPage() {
         ) : otherItems.length > 0 ? (
           <div className="poster-grid">
             {otherItems.map((item) => (
-              <Link
+              <PosterCard
                 key={item.id}
-                href={`/detail/${item.media_type}/${item.id}`}
-                className="poster-card"
-              >
-                <div className="poster">
-                  {item.poster_path ? (
-                    <img src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} alt={item.title} />
-                  ) : (
-                    <div className="no-image">No Image</div>
-                  )}
-                  <span className="rating">★ {item.vote_average.toFixed(1)}</span>
-                </div>
-                <h3>{item.title}</h3>
-                <p className="year">{(item.release_date || item.first_air_date)?.slice(0, 4)}</p>
-              </Link>
+                id={item.id}
+                mediaType={item.media_type}
+                title={item.title}
+                posterPath={item.poster_path}
+                voteAverage={item.vote_average}
+                year={(item.release_date || item.first_air_date || "").slice(0, 4)}
+              />
             ))}
           </div>
         ) : (

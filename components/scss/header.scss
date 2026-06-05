@@ -68,7 +68,6 @@ header {
       color: g.$main-menu-color;
       font-weight: 500;
       transition: color 0.2s ease;
-      // border-bottom: 1px solid #11110F;
 
       &:hover,
       &.active {
@@ -316,30 +315,6 @@ nav {
     font-size: 0.7em;
   }
 
-  /* Sidebar */
-  .sidebar {
-    width: var(--sidebar);
-    min-height: 100vh;
-    background: #0d0d0d;
-    border-right: 1px solid #1e1e1e;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 14px 0;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 200;
-  }
-
-  .sidebar-logo {
-    width: 32px;
-    height: 52px;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-
   .sidebar-icons {
     display: flex;
     flex-direction: column;
@@ -364,6 +339,36 @@ nav {
     > a {
       width: 100%;
       padding: 8px 0;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &.active {
+      background: rgba(255, 255, 255, 0.06);
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 22px;
+        background: g.$main-color;
+        border-radius: 0 2px 2px 0;
+      }
+    }
+
+    &.active svg,
+    &:hover svg {
+      stroke: g.$w-color;
+    }
+
+    &.active .sb-label,
+    &:hover .sb-label {
+      color: g.$w-color;
     }
   }
 
@@ -445,42 +450,6 @@ nav {
     }
   }
 
-  .sb-icon:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
-  .sb-icon.active {
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .sb-icon.active::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 22px;
-    background: g.$main-color;
-    border-radius: 0 2px 2px 0;
-  }
-
-  // .sb-icon svg {
-  //     width: 20px;
-  //     height: 20px;
-  //     fill: none;
-  //     stroke: g.$main-menu-color;
-  //     stroke-width: 1.8;
-  //     stroke-linecap: round;
-  //     stroke-linejoin: round;
-  //     transition: stroke .15s;
-  // }
-
-  .sb-icon.active svg,
-  .sb-icon:hover svg {
-    stroke: g.$w-color;
-  }
-
   .sb-label {
     font-size: 9px;
     color: g.$main-menu-color;
@@ -488,11 +457,6 @@ nav {
     text-align: center;
     line-height: 1;
     transition: color 0.15s;
-  }
-
-  .sb-icon.active .sb-label,
-  .sb-icon:hover .sb-label {
-    color: g.$w-color;
   }
 
   .sb-divider {
@@ -526,7 +490,6 @@ nav {
   }
 }
 
-/* 프로필 드롭다운 - 프로필 전환 링크 (로그아웃 버튼과 동일한 스타일) */
 .profile-switch-item {
   a {
     display: block;
