@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useMenuLabel } from '@/lib/i18n';
 
 // 전체 메뉴 풀 생성 (매핑 처리용)
 const allSelectablePool = [...mainMenus, ...customMenus];
@@ -20,6 +21,7 @@ const uniqueMenuPaths = (paths: string[]) => Array.from(new Set(paths.map(normal
 
 export default function HeaderMenu() {
     const pathname = usePathname();
+    const tm = useMenuLabel();
     const searchParams = useSearchParams();
     const currentProfile = useAuthStore((state) => state.currentProfile);
     const [, setStorageRevision] = useState(0);
@@ -90,7 +92,7 @@ export default function HeaderMenu() {
                     <div className={`sb-icon ${isMenuActive(homeMenu.path) ? 'active' : ''}`}>
                         <Link href={homeMenu.path}>
                             <Image src={homeMenu.imgUrl} alt={homeMenu.title} width="24" height="24" />
-                            <span className='sb-label'>{homeMenu.title}</span>
+                            <span className='sb-label'>{tm(homeMenu.title)}</span>
                         </Link>
                     </div>
                 )}
@@ -104,7 +106,7 @@ export default function HeaderMenu() {
                         <div key={menu.path} className={`sb-icon ${isActive ? 'active' : ''}`}>
                             <Link href={menu.path}>
                                 <Image src={menu.imgUrl} alt={menu.title} width="24" height="24" />
-                                <span className='sb-label'>{menu.title}</span>
+                                <span className='sb-label'>{tm(menu.title)}</span>
                             </Link>
                         </div>
                     );
@@ -116,7 +118,7 @@ export default function HeaderMenu() {
                 <div className={`sb-icon ${pathname === '/menu/custom' ? 'active' : ''}`}>
                     <Link href="/menu/custom">
                         <Image src="/images/header/menu/custom.svg" alt="설정" width="24" height="24" />
-                        <span className='sb-label'>커스텀</span>
+                        <span className='sb-label'>{tm("커스텀")}</span>
                     </Link>
                 </div>
             </div>
@@ -125,7 +127,7 @@ export default function HeaderMenu() {
             <div className={`sb-icon sb-bottom ${pathname === '/settings' ? 'active' : ''}`}>
                 <Link href="/settings">
                     <Image src="/images/header/menu/setting.svg" alt="설정" width="24" height="24" />
-                    <span className='sb-label'>설정</span>
+                    <span className='sb-label'>{tm("설정")}</span>
                 </Link>
             </div>
         </nav>

@@ -2,25 +2,18 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useLangStore, LANG_LABELS, labelToLang } from '@/store/useLangStore'
+import { useT, type TKey } from '@/lib/i18n'
 import "./scss/footer.scss"
 
-const LINK_COLS = [
-  {
-    title: "회사 정보",
-    links: ["화면 해설", "투자 정보(IR)", "법적 고지"],
-  },
-  {
-    title: "고객 센터",
-    links: ["고객 센터", "입사 정보", "쿠키 설정"],
-  },
-  {
-    title: "서비스",
-    links: ["기프트카드", "이용 약관", "회사 정보"],
-  },
-  {
-    title: "미디어",
-    links: ["미디어 센터", "개인정보", "문의하기"],
-  },
+// 링크는 번역 키로 관리
+const LINK_COLS: { titleKey: TKey; links: TKey[] }[] = [
+  { titleKey: "footer.companyInfo", links: ["footer.audioGuide", "footer.ir", "footer.legal"] },
+  { titleKey: "footer.customerCenter", links: ["footer.center", "footer.jobs", "footer.cookies"] },
+  { titleKey: "footer.service", links: ["footer.giftcard", "footer.terms", "footer.company"] },
+  { titleKey: "footer.media", links: ["footer.mediaCenter", "footer.privacy", "footer.contact"] },
 ];
 
 const BUSINESS_INFO = [
@@ -36,11 +29,15 @@ const SOCIAL = [
   { src: "/images/footer/sns-facebook.svg", alt: "Facebook", href: "https://www.facebook.com/NetflixKR" },
 ];
 
-const LANGUAGES = ["한국어", "English", "日本語", "中文"];
+const LANGUAGES = ["한국어", "English"];
 
 export default function Footer() {
   const [langOpen, setLangOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState("한국어");
+  const { user } = useAuthStore();
+  const { lang, setLang } = useLangStore();
+  const t = useT();
+  // 로그인 전이면 로그인 페이지로, 로그인 후엔 문의 작성 탭으로 이동
+  const contactHref = user ? "/contact?tab=inquiry" : "/login";
 
   return (
     <footer>
@@ -68,8 +65,14 @@ export default function Footer() {
 
         {/* 링크 1열 */}
         <ul className="footer-links">
-          {LINK_COLS.flatMap(({ links }) => links).map((link) => (
-            <li key={link}><a href="#" className="footer-link">{link}</a></li>
+          {LINK_COLS.flatMap(({ links }) => links).map((key) => (
+            <li key={key}>
+              {key === "footer.contact" ? (
+                <Link href={contactHref} className="footer-link">{t(key)}</Link>
+              ) : (
+                <a href="#" className="footer-link">{t(key)}</a>
+              )}
+            </li>
           ))}
         </ul>
 
@@ -86,19 +89,19 @@ export default function Footer() {
         <div className="footer-bottom-bar">
           <div className="footer-copyright">
             <p>© 2026 NETFLIX, Inc. All rights reserved.</p>
-            <p>NETFLIX는 가상의 스트리밍 서비스로, 실제 Netflix와 무관합니다.</p>
+            <p>{t("footer.disclaimer")}</p>
           </div>
 
           <div className="lang-wrap">
             {langOpen && (
               <ul className="lang-dropdown">
-                {LANGUAGES.map((lang) => (
-                  <li key={lang}>
+                {LANGUAGES.map((label) => (
+                  <li key={label}>
                     <button
-                      className={lang === selectedLang ? "active" : ""}
-                      onClick={() => { setSelectedLang(lang); setLangOpen(false); }}
+                      className={LANG_LABELS[lang] === label ? "active" : ""}
+                      onClick={() => { setLang(labelToLang(label)); setLangOpen(false); }}
                     >
-                      {lang}
+                      {label}
                     </button>
                   </li>
                 ))}
@@ -110,7 +113,7 @@ export default function Footer() {
               aria-expanded={langOpen}
             >
               <span className="lang-globe">🌐</span>
-              <span>{selectedLang}</span>
+              <span>{LANG_LABELS[lang]}</span>
               <span className="lang-arrow">{langOpen ? "▲" : "▼"}</span>
             </button>
           </div>
