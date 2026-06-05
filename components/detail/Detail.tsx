@@ -8,6 +8,8 @@ import { useWishlistStore } from "@/store/useWishlistStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
 import VideoPlayer from "@/components/common/VideoPlayer";
 import "./detail.module.scss";
+import { useCommunityStore } from "@/store/useCommunityStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -48,21 +50,21 @@ interface RegisteredReview {
 
 const USER_REVIEWS_KEY = "netflix-user-reviews";
 
-const loadUserReviews = () => {
-  if (typeof window === "undefined") return [];
+// const loadUserReviews = () => {
+//   if (typeof window === "undefined") return [];
 
-  try {
-    const stored = window.localStorage.getItem(USER_REVIEWS_KEY);
-    return stored ? JSON.parse(stored) as RegisteredReview[] : [];
-  } catch {
-    return [];
-  }
-};
+//   try {
+//     const stored = window.localStorage.getItem(USER_REVIEWS_KEY);
+//     return stored ? JSON.parse(stored) as RegisteredReview[] : [];
+//   } catch {
+//     return [];
+//   }
+// };
 
-const saveUserReviews = (reviews: RegisteredReview[]) => {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(USER_REVIEWS_KEY, JSON.stringify(reviews));
-};
+// const saveUserReviews = (reviews: RegisteredReview[]) => {
+//   if (typeof window === "undefined") return;
+//   window.localStorage.setItem(USER_REVIEWS_KEY, JSON.stringify(reviews));
+// };
 
 function getTitle(item?: DetailMedia) {
   if (!item) return "";
@@ -145,6 +147,15 @@ const GENRE_MAP: Record<number, string> = {
   10759: "액션", 10762: "어린이", 10765: "SF", 10768: "전쟁",
 };
 
+// 별점을 계산해서 렌더링하는 컴포넌트 내부 함수
+const renderStars = (rating: number) => {
+  const roundedRating = Math.round(rating); // 반올림하여 정수 별 개수 계산
+  const fullStars = '★'.repeat(roundedRating);
+  const emptyStars = '☆'.repeat(5 - roundedRating);
+  
+  return fullStars + emptyStars;
+};
+
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
   const searchParams = useSearchParams();
@@ -164,6 +175,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const { playList, myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList, onUpdateProgress, onUpdateEpisodeProgress } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
+  const { reviews, addReview, fetchVideoReviews, reportReview, toggleReviewLike } = useCommunityStore();
+  const { currentProfile } = useAuthStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -183,12 +196,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [reviewText, setReviewText] = useState("");
   const [reviewHasSpoiler, setReviewHasSpoiler] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
-  const [reportedReviewIds, setReportedReviewIds] = useState<number[]>([]);
-  const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<number[]>([]);
-  const [likedReviewIds, setLikedReviewIds] = useState<number[]>([]);
-  const [reportTargetReviewId, setReportTargetReviewId] = useState<number | null>(null);
+  const [reportedReviewIds, setReportedReviewIds] = useState<string[]>([]);
+  const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<string[]>([]);
+  const [likedReviewIds, setLikedReviewIds] = useState<string[]>([]);
+  const [reportTargetReviewId, setReportTargetReviewId] = useState<string | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState("");
-  const [submittedReviews, setSubmittedReviews] = useState<RegisteredReview[]>([]);
+  // const [submittedReviews, setSubmittedReviews] = useState<RegisteredReview[]>([]);
   const [canExpandSynopsis, setCanExpandSynopsis] = useState(false);
 
   const stillsRef = useRef<HTMLDivElement>(null);
@@ -206,7 +219,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   useEffect(() => {
     onLoadWishlist();
     onLoadMyList();
-  }, [onLoadMyList, onLoadWishlist]);
+    fetchVideoReviews(itemKey);
+  }, [onLoadMyList, onLoadWishlist, fetchVideoReviews]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -252,16 +266,16 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (!isTv && mediaId) onFetchMovieImages(mediaId);
   }, [isTv, mediaId, onFetchMovieImages]);
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const reviews = loadUserReviews().filter((review) => (
-        review.mediaId === mediaId && review.mediaType === type
-      ));
-      setSubmittedReviews(reviews);
-    }, 0);
+  // useEffect(() => {
+  //   const timeoutId = window.setTimeout(() => {
+  //     const reviews = loadUserReviews().filter((review) => (
+  //       review.mediaId === mediaId && review.mediaType === type
+  //     ));
+  //     setSubmittedReviews(reviews);
+  //   }, 0);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [mediaId, type]);
+  //   return () => window.clearTimeout(timeoutId);
+  // }, [mediaId, type]);
 
   const mediaItem = (mediaDetails[`${type}-${mediaId}`] ?? (
     isTv
@@ -335,19 +349,24 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     .slice(0, 6);
   const itemKey = `${type}-${mediaId}`; // 예: "movie-123"
   const isMyListAdded = myList.includes(itemKey);
-  const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
-    id: index + 1,
-    author: ["민지", "준호", "서연", "도윤", "하린", "지우"][index % 6],
-    rating: 5 - (index % 3) * 0.5,
-    content: index % 2 === 0
-      ? `${title || "이 작품"}은 장면의 밀도와 분위기가 좋아서 끝까지 몰입하게 만드는 힘이 있었어요.`
-      : "캐릭터의 선택이 인상적이었고 후반부 전개가 꽤 강하게 남았습니다.",
-    createdAt: `2026.05.${String(28 - index).padStart(2, "0")}`,
-    spoiler: index % 4 === 0,
-  }));
-  const registeredReviews = [...submittedReviews, ...sampleReviews];
-  const totalReviewPages = Math.ceil(registeredReviews.length / REVIEW_PAGE_SIZE);
-  const pagedReviews = registeredReviews.slice(
+  // const sampleReviews: RegisteredReview[] = Array.from({ length: 12 }, (_, index) => ({
+  //   id: index + 1,
+  //   author: ["민지", "준호", "서연", "도윤", "하린", "지우"][index % 6],
+  //   rating: 5 - (index % 3) * 0.5,
+  //   content: index % 2 === 0
+  //     ? `${title || "이 작품"}은 장면의 밀도와 분위기가 좋아서 끝까지 몰입하게 만드는 힘이 있었어요.`
+  //     : "캐릭터의 선택이 인상적이었고 후반부 전개가 꽤 강하게 남았습니다.",
+  //   createdAt: `2026.05.${String(28 - index).padStart(2, "0")}`,
+  //   spoiler: index % 4 === 0,
+  // }));
+  // 1. 먼저 전체 리뷰에서 신고 수(reportsCount)가 5 이하인 리뷰만 필터링합니다.
+  const filteredReviews = reviews.filter((review) => (review.reportsCount ?? 0) <= 5);
+
+  // 2. 필터링된 데이터를 기준으로 페이지 관련 계산을 수행합니다.
+  const totalReviewPages = Math.ceil(filteredReviews.length / REVIEW_PAGE_SIZE);
+
+  // 3. 현재 페이지에 해당하는 리뷰만 추출합니다.
+  const pagedReviews = filteredReviews.slice(
     (reviewPage - 1) * REVIEW_PAGE_SIZE,
     reviewPage * REVIEW_PAGE_SIZE
   );
@@ -418,25 +437,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     }
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     const content = reviewText.trim();
     if (!content) return;
 
-    const newReview: RegisteredReview = {
-      id: Date.now(),
-      author: "나",
-      rating: ratedStar || 5,
-      content,
-      createdAt: new Date().toLocaleDateString("ko-KR"),
-      spoiler: reviewHasSpoiler,
-      mediaId,
-      mediaType: type,
-      mediaTitle: title,
-      posterPath: mediaItem?.poster_path,
-    };
+    // 1. 파이어베이스에 리뷰 저장 (스토어 액션 호출)
+    // 스토어 내부에서 profileId, createdAt, likesCount 등이 자동 처리됩니다.
+    await addReview({
+      content: content,
+      videoId: itemKey, // mediaId를 videoId 자리에 전달
+      isSpoiler: reviewHasSpoiler,
+      rating: ratedStar || 5, // 별점 추가
+    });
 
-    setSubmittedReviews((prev) => [newReview, ...prev]);
-    saveUserReviews([newReview, ...loadUserReviews()]);
+    // 2. UI 상태 초기화
     setReviewText("");
     setReviewHasSpoiler(false);
     setRatedStar(0);
@@ -444,28 +458,42 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     setReviewPage(1);
   };
 
-  const handleOpenReportReview = (reviewId: number) => {
+  const handleOpenReportReview = (reviewId: string) => {
     setReportTargetReviewId((currentId) => currentId === reviewId ? null : reviewId);
     setSelectedReportReason("");
   };
 
-  const handleSubmitReportReview = () => {
+  const handleSubmitReportReview = async () => {
     if (!reportTargetReviewId || !selectedReportReason) return;
 
-    setReportedReviewIds((prev) => (
-      prev.includes(reportTargetReviewId) ? prev : [...prev, reportTargetReviewId]
-    ));
-    setReportTargetReviewId(null);
-    setSelectedReportReason("");
-    window.alert("신고되었습니다.");
+    try {
+      // 1. 스토어의 신고 액션 호출
+      // 현재 보고 있는 리뷰 객체에서 videoId를 함께 전달해야 합니다.
+      const targetReview = reviews.find(r => r.reviewId === reportTargetReviewId);
+      if (!targetReview) return;
+
+      await reportReview(reportTargetReviewId, targetReview.videoId);
+
+      // 2. 성공 시 UI 업데이트
+      setReportedReviewIds((prev) => [...prev, reportTargetReviewId]);
+      setReportTargetReviewId(null);
+      setSelectedReportReason("");
+      window.alert("신고되었습니다.");
+    } catch (error) {
+      window.alert("신고 처리에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
-  const toggleReviewLike = (reviewId: number) => {
-    setLikedReviewIds((prev) => (
-      prev.includes(reviewId)
-        ? prev.filter((id) => id !== reviewId)
-        : [...prev, reviewId]
-    ));
+  const updatetoggleReviewLike = async (reviewId: string) => {
+    if (!currentProfile) return;
+
+    const targetReview = reviews.find(r => r.reviewId === reviewId);
+    if (!targetReview) return;
+
+    // 1. DB 업데이트 수행 (스토어 함수 호출)
+    await toggleReviewLike(reviewId, targetReview.videoId);
+    
+    setLikedReviewIds(currentProfile.community.reviews);
   };
 
   useEffect(() => {
@@ -816,17 +844,17 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       <section style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0 }}>등록된 리뷰</h2>
-          <span style={{ color: "#888", fontSize: 13 }}>{registeredReviews.length}개</span>
+          <span style={{ color: "#888", fontSize: 13 }}>{filteredReviews.length}개</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {pagedReviews.map((review) => {
-            const isReported = reportedReviewIds.includes(review.id);
-            const isLiked = likedReviewIds.includes(review.id);
-            const shouldBlurSpoiler = review.spoiler && !visibleSpoilerReviewIds.includes(review.id);
+            const isReported = reportedReviewIds.includes(review.reviewId);
+            const isLiked = likedReviewIds.includes(review.reviewId);
+            const shouldBlurSpoiler = review.isSpoiler && !visibleSpoilerReviewIds.includes(review.reviewId);
 
             return (
               <article
-                key={review.id}
+                key={review.reviewId}
                 style={{
                   border: "1px solid #2a2a35",
                   borderRadius: 8,
@@ -836,19 +864,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               >
                 <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
                   <div>
-                    <strong style={{ color: "#fff", fontSize: 15 }}>{review.author}</strong>
-                    <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>★★★★★</span>
+                    <strong style={{ color: "#fff", fontSize: 15 }}>{review.nickname}</strong>
+                    <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>{renderStars(review.rating)}</span>
                     <span style={{ color: "#aaa", marginLeft: 8, fontSize: 12 }}>{review.rating.toFixed(1)} / 5.0</span>
-                    {review.spoiler && (
+                    {review.isSpoiler && (
                       <span style={{ marginLeft: 8, padding: "2px 7px", borderRadius: 4, border: "1px solid rgba(229,9,20,0.45)", color: "#e50914", fontSize: 11 }}>
                         스포일러
                       </span>
                     )}
                   </div>
+                  
                   <button
                     type="button"
                     className={`detail-outline-hover${isReported ? " detail-report-active" : ""}`}
-                    onClick={() => handleOpenReportReview(review.id)}
+                    onClick={() => handleOpenReportReview(review.reviewId)}
                     aria-pressed={isReported}
                     style={{
                       border: `1px solid ${isReported ? "rgba(229,9,20,0.7)" : "#3a3a48"}`,
@@ -862,10 +891,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       fontWeight: isReported ? 700 : 400,
                     }}
                   >
-                    {/* {isReported ? "신고됨" : "신고"} */}
                     신고
                   </button>
-                  {reportTargetReviewId === review.id && (
+                  
+                  {/* 신고 타겟 ID가 이 리뷰인 경우 신고 UI 표시 */}
+                  {reportTargetReviewId === review.reviewId && (
                     <div style={{
                       position: "absolute",
                       top: 36,
@@ -922,6 +952,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     </div>
                   )}
                 </div>
+
                 <div style={{
                   position: "relative",
                   overflow: "hidden",
@@ -935,12 +966,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     userSelect: shouldBlurSpoiler ? "none" : "auto",
                     transition: "filter 0.18s ease, opacity 0.18s ease",
                   }}>
-                    <p style={{
-                      margin: 0,
-                      color: "#cfcfcf",
-                      lineHeight: 1.7,
-                      fontSize: 14,
-                    }}>
+                    <p style={{ margin: 0, color: "#cfcfcf", lineHeight: 1.7, fontSize: 14 }}>
                       {review.content}
                     </p>
                   </div>
@@ -957,7 +983,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       <button
                         type="button"
                         className="detail-secondary-hover"
-                        onClick={() => setVisibleSpoilerReviewIds((prev) => [...prev, review.id])}
+                        onClick={() => setVisibleSpoilerReviewIds((prev) => [...prev, review.reviewId])}
                         style={{
                           height: 34,
                           padding: "0 16px",
@@ -968,7 +994,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                           cursor: "pointer",
                           fontSize: 13,
                           fontWeight: 800,
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.26)",
                         }}
                       >
                         스포일러 보기
@@ -976,11 +1001,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     </div>
                   )}
                 </div>
-                <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>{review.createdAt}</time>
+
+                <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>
+                  {new Date(review.createdAt).toLocaleDateString("ko-KR")}
+                </time>
+                
                 <button
                   type="button"
                   className="detail-secondary-hover"
-                  onClick={() => toggleReviewLike(review.id)}
+                  onClick={() => updatetoggleReviewLike(review.reviewId)}
                   aria-pressed={isLiked}
                   style={{
                     display: "inline-flex",
@@ -999,18 +1028,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   }}
                 >
                   <img
-                    // src={isLiked ? "/images/detail/review/review-thumbup-black.svg" : "/images/detail/review/review-thumbup.svg"}
                     src={isLiked ? "/images/detail/review/heart-filled.svg" : "/images/detail/review/heart-lined.svg"}
                     alt=""
-                    style={{
-                      width: 14,
-                      height: 14,
-                      objectFit: "contain",
-                      opacity: isLiked ? 1 : 0.86,
-                      filter: isLiked ? "none" : "invert(1)",
-                    }}
+                    style={{ width: 14, height: 14, opacity: isLiked ? 1 : 0.86, filter: isLiked ? "none" : "invert(1)" }}
                   />
-                  좋아요
+                  좋아요 {review.likesCount}
                 </button>
               </article>
             );
@@ -1411,7 +1433,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 disabled={isAddingPlayList}
                 style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: isAddingPlayList ? "default" : "pointer", opacity: isAddingPlayList ? 0.7 : 1 }}
               >
-                {isAddingPlayList ? "추가 중..." : `▶ ${isTv ? "이어보기" : "재생하기"}`}
+                {isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
               </button>
               <button
                 className={`detail-secondary-hover${isMyListAdded ? " detail-my-list-added" : ""}`}

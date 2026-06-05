@@ -21,7 +21,7 @@ export interface AuthState {
   onSetProfile: (profile: UserProfile | null) => void;
   onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
   onUpdateProfile: (profile: UserProfile) => Promise<void>;
-  onDeleteProfile: (profileId: string | number) => Promise<void>; 
+  onDeleteProfile: (profileId: string | number) => Promise<void>;
   toggleCommunity: () => Promise<void>;
 }
 
@@ -129,9 +129,9 @@ export interface PayInfo {
 
 export interface UserDocument {
   userId: string; // 문서 ID로 사용됨
-
   // 기본정보
   email: string;
+  provider?: 'email' | 'kakao' | 'naver';
   planType: string;
   payment: PayInfo;
   profile: UserProfile[];

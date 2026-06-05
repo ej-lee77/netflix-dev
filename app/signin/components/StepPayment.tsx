@@ -27,6 +27,7 @@ interface StepPaymentProps {
   hidePlanSummary?: boolean;
   currentPayInfo?: PayInfo | null;
   submitLabel?: string;
+  amountLabel?: string;
 }
 
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
@@ -43,7 +44,7 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, submitLabel = "결제하기" }: StepPaymentProps) {
+export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, submitLabel = "결제하기", amountLabel = "결제 금액" }: StepPaymentProps) {
   const router = useRouter();
   const { onLogin } = useAuthStore();
 
@@ -448,7 +449,7 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
         )}
         <hr className="payment-amount-divider" />
         <div className="payment-amount-row">
-          <span className="payment-amount-total-label">결제 금액</span>
+          <span className="payment-amount-total-label">{amountLabel}</span>
           <span className="payment-amount-total-value">
             {isAnnual ? fmt(plan.annualTotal) : fmt(plan.monthlyPrice)}원
           </span>
