@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { updateEmail, updateProfile } from "firebase/auth";
 import { auth } from "@/firebase/firebase";
 import ProfilePinGate from "@/components/ProfilePinGate";
@@ -290,9 +290,10 @@ function SettingsRow({
 }
 
 function ProfileSettingsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const profileId = Number(searchParams.get("profileId"));
-  const { user, onUpdateProfile } = useAuthStore();
+  const { user, onUpdateProfile, onDeleteProfile } = useAuthStore();
 
   // 💡 기존 코드의 user.profiles 및 user.profile 불일치 오타 통합 싱크 수정
   const profiles = user?.profile || [];
@@ -309,6 +310,15 @@ function ProfileSettingsContent() {
   const isDefaultProfile = profile.id === profiles[0]?.id;
   const profileSetting = normalizeProfileSetting(profile.settings);
   const [activeModal, setActiveModal] = useState<ModalKey>(null);
+
+  const handleDeleteProfile = () => {
+    if (isDefaultProfile) return;
+    if (!confirm("정말 이 프로필을 삭제하시겠습니까? 삭제된 프로필은 복구할 수 없습니다.")) {
+      return;
+    }
+    onDeleteProfile(profile.id);
+    router.replace("/profiles");
+  };
   const [savedSubtitle, setSavedSubtitle] = useState<SubtitleSettings>(
     profileSetting.subtitles,
   );
@@ -691,6 +701,7 @@ function ProfileSettingsContent() {
           type="button"
           className="profile-settings-delete"
           disabled={isDefaultProfile}
+          onClick={handleDeleteProfile}
         >
           <img src="/images/profile/setting/9.svg" alt="" aria-hidden="true" />
           프로필 삭제
