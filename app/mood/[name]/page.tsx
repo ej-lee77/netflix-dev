@@ -7,8 +7,14 @@ import { customMenus } from "@/data/mainMenu";
 import "../../scss/category.scss";
 import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
+import { filterHidden } from "@/data/hiddenContent";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
+// 무드별 히어로 고정 작품 (해당 무드일 때 결과 첫 번째 대신 이 작품을 히어로로)
+const PINNED_HERO_IDS: Record<string, number> = {
+  chill: 77338,
+};
 
 // 무드 → TMDB 장르 조합 (무드는 TMDB에 직접 없으므로 장르 조합 활용)
 const moodMap: Record<string, {
@@ -97,6 +103,7 @@ export default function MoodPage() {
   const [sort, setSort] = useState<string>("popularity.desc");
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pinnedHero, setPinnedHero] = useState<MediaItem | null>(null);
 
   const info = moodMap[moodName];
   const menuItem = customMenus.find((m) => m.path === `/mood/${moodName}`);
@@ -134,17 +141,55 @@ export default function MoodPage() {
         genre_ids: item.genre_ids ?? [],
         media_type: endpoint,
       }));
-      setItems(list);
+      setItems(filterHidden(list));
       setLoading(false);
     };
 
     fetchMood();
   }, [type, moodName, info, sort]);
 
+  // 무드별 히어로 고정 작품 로드 (영화 → 실패 시 시리즈 순으로 시도)
+  useEffect(() => {
+    const heroId = PINNED_HERO_IDS[moodName];
+    if (!heroId) {
+      setPinnedHero(null);
+      return;
+    }
+    let active = true;
+    const mapDetail = (d: any, mt: "movie" | "tv"): MediaItem => ({
+      id: d.id,
+      title: d.title || d.name,
+      poster_path: d.poster_path,
+      backdrop_path: d.backdrop_path,
+      overview: d.overview,
+      vote_average: d.vote_average,
+      release_date: d.release_date,
+      first_air_date: d.first_air_date,
+      genre_ids: (d.genres || []).map((g: any) => g.id),
+      media_type: mt,
+    });
+    const tryFetch = async (mt: "movie" | "tv") => {
+      const res = await fetch(
+        `https://api.themoviedb.org/3/${mt}/${heroId}?api_key=${TMDB_KEY}&language=ko-KR`,
+      );
+      const d = await res.json();
+      return d && d.success !== false && d.id ? mapDetail(d, mt) : null;
+    };
+    (async () => {
+      const hero = (await tryFetch("movie")) || (await tryFetch("tv"));
+      if (active && hero) setPinnedHero(hero);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [moodName]);
+
   if (!info) return null;
 
-  const featured = items[0];
-  const otherItems = items.slice(1);
+  const featured = pinnedHero ?? items[0];
+  const otherItems = pinnedHero
+    ? items.filter((item) => item.id !== pinnedHero.id)
+    : items.slice(1);
 
   return (
     <div className="category-page mood-variant">
