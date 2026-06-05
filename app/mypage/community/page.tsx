@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/communityPage.scss";
+import Review from "@/components/mypage/Review";
 
-type CommunityTab = "reviews" | "my-feeds" | "create-feed" | "saved";
+type CommunityTab = "reviews" | "my-feeds" | "create-feed" | "create-review";
 type ScopeFilterType = "mine" | "liked" | "following";
 type FeedFilterType = "all" | "movie" | "tv" | "general";
 type SortType = "recent" | "likes" | "comments";
@@ -184,7 +185,12 @@ function CommunityContent() {
             {/* ── 탭별 본문 콘텐츠 렌더링 영역 ── */}
             <div className="main-content-area">
               {activeTab === "reviews" && (
-                <div className="community-empty"><p className="empty-text">작성된 리뷰가 없습니다.</p></div>
+                <>
+                  <div className="community-empty">
+                    <p className="empty-text">작성된 리뷰가 없습니다.</p>
+                  </div>
+                  <Review />
+                </>
               )}
 
               {activeTab === "my-feeds" && (
@@ -207,7 +213,7 @@ function CommunityContent() {
                 </form>
               )}
 
-              {activeTab === "saved" && (
+              {activeTab === "create-review" && (
                 <div className="community-empty"><p className="empty-text">아카이브가 비어있습니다.</p></div>
               )}
             </div>

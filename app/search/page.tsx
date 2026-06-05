@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   addRecentSearch,
@@ -22,6 +22,7 @@ export default function SearchPage() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [activeMoods, setActiveMoods] = useState<string[]>([]);
   const [activeGenres, setActiveGenres] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
   const activeTags = [
     ...genreOptions.filter((option) => activeGenres.includes(option.value)),
     ...moodOptions.filter((option) => activeMoods.includes(option.value)),
@@ -78,6 +79,7 @@ export default function SearchPage() {
         <div className="search-page__field">
           <Image src="/images/header/search.svg" alt="" width={22} height={22} />
           <input
+            ref={inputRef}
             type="search"
             placeholder="제목, 배우, 감독 검색..."
             aria-label="검색어 입력"
@@ -90,6 +92,19 @@ export default function SearchPage() {
               }
             }}
           />
+          {keyword.trim().length > 0 && (
+            <button
+              type="button"
+              className="search-page__clear"
+              onClick={() => {
+                setKeyword("");
+                inputRef.current?.focus();
+              }}
+              aria-label="검색어 지우기"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          )}
           <button
             type="button"
             className="search-page__submit"
@@ -175,9 +190,8 @@ export default function SearchPage() {
             </div>
 
             <div className="keyword-cloud">
-              {recommendedSearches.map((keyword, index) => (
+              {recommendedSearches.map((keyword) => (
                 <button
-                  className={index === 0 ? "active" : ""}
                   type="button"
                   key={keyword}
                   onClick={() => goToResults(keyword)}

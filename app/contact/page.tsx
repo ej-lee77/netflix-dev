@@ -10,6 +10,7 @@ import { useContactStore } from "@/store/useContactStore";
 import { FAQ_CATEGORIES, FAQ_CATEGORY_LABELS } from "@/data/faq";
 import { ContactStatus } from "@/types/contact";
 import FaqAccordion from "@/components/common/FaqAccordion";
+import CustomSelect from "@/components/common/CustomSelect";
 
 type TabType = "faq" | "inquiry" | "history";
 type FilterStatusType = "all" | "pending" | "processing" | "answered";
@@ -206,12 +207,12 @@ export default function ContactPage() {
               <div className="inquiry-form">
                 <div className="form-field">
                   <label>문의 유형 *</label>
-                  <select value={inquiryType} onChange={(e) => setInquiryType(e.target.value)}>
-                    <option value="">유형을 선택해주세요</option>
-                    {INQUIRY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    options={INQUIRY_TYPES}
+                    value={inquiryType}
+                    onChange={setInquiryType}
+                    placeholder="유형을 선택해주세요"
+                  />
                 </div>
 
                 <div className="form-field">

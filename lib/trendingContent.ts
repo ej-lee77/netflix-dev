@@ -5,6 +5,7 @@ export type TrendingMediaItem = {
   id: number;
   title: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
@@ -18,6 +19,7 @@ type TmdbTrendingCandidate = {
   title?: string;
   name?: string;
   poster_path?: string | null;
+  backdrop_path?: string | null;
   vote_average?: number;
   release_date?: string;
   first_air_date?: string;
@@ -27,6 +29,20 @@ type TmdbTrendingCandidate = {
 
 type TmdbListResponse<T> = {
   results?: T[];
+};
+
+type TmdbPersonResult = {
+  id?: number;
+  known_for?: TmdbTrendingCandidate[];
+};
+
+type TmdbPersonCredit = TmdbTrendingCandidate & {
+  job?: string;
+};
+
+type TmdbPersonCreditsResponse = {
+  cast?: TmdbTrendingCandidate[];
+  crew?: TmdbPersonCredit[];
 };
 
 type TmdbVideoCandidate = {
@@ -61,6 +77,7 @@ export const normalizeTrendingMediaItem = (
     id: item.id,
     title,
     poster_path: item.poster_path ?? null,
+    backdrop_path: item.backdrop_path ?? null,
     vote_average: item.vote_average ?? 0,
     release_date: item.release_date,
     first_air_date: item.first_air_date,
@@ -91,25 +108,121 @@ export const fetchTrendingMedia = async (
 ) => {
   if (!TMDB_KEY) return [];
 
-  const endpoint =
-    typeFilter === "all"
-      ? `${TMDB_BASE}/trending/all/week`
-      : `${TMDB_BASE}/${typeFilter}/popular`;
+  const mediaTypes: TrendingMediaType[] =
+    typeFilter === "all" ? ["tv", "movie"] : [typeFilter];
+
+  const requests = mediaTypes.map(async (mediaType) => {
+    const params = new URLSearchParams({
+      api_key: TMDB_KEY,
+      language: "ko-KR",
+      include_adult: "false",
+      page: "1",
+      sort_by: "popularity.desc",
+      "vote_count.gte": "40",
+    });
+
+    if (mediaType === "tv") {
+      params.set("with_networks", "213");
+    } else {
+      params.set("watch_region", "KR");
+      params.set("with_watch_providers", "8");
+    }
+
+    const response = await fetch(
+      `${TMDB_BASE}/discover/${mediaType}?${params.toString()}`,
+      { signal },
+    );
+    if (!response.ok) throw new Error("인기 작품을 불러오지 못했습니다.");
+
+    const data = (await response.json()) as TmdbListResponse<TmdbTrendingCandidate>;
+    return (data.results ?? [])
+      .map((item) => normalizeTrendingMediaItem(item, mediaType))
+      .filter((item): item is TrendingMediaItem => Boolean(item));
+  });
+
+  const items = (await Promise.all(requests)).flat();
+
+  return uniqueAndSortTrendingItems(items).slice(0, limit);
+};
+
+export const fetchKeywordPreviewMedia = async (
+  keyword: string,
+  signal: AbortSignal,
+  limit = 5,
+) => {
+  const trimmedKeyword = keyword.trim();
+  if (!TMDB_KEY || !trimmedKeyword) return [];
+
   const params = new URLSearchParams({
     api_key: TMDB_KEY,
     language: "ko-KR",
+    include_adult: "false",
     page: "1",
+    query: trimmedKeyword,
   });
 
-  const response = await fetch(`${endpoint}?${params.toString()}`, { signal });
-  if (!response.ok) throw new Error("인기 작품을 불러오지 못했습니다.");
+  const [mediaResponse, personResponse] = await Promise.all([
+    fetch(`${TMDB_BASE}/search/multi?${params.toString()}`, { signal }),
+    fetch(`${TMDB_BASE}/search/person?${params.toString()}`, { signal }),
+  ]);
 
-  const data = (await response.json()) as TmdbListResponse<TmdbTrendingCandidate>;
-  const items = (data.results ?? [])
-    .map((item) => normalizeTrendingMediaItem(item, typeFilter === "all" ? undefined : typeFilter))
+  if (!mediaResponse.ok || !personResponse.ok) {
+    throw new Error("검색 결과를 불러오지 못했습니다.");
+  }
+
+  const mediaData =
+    (await mediaResponse.json()) as TmdbListResponse<TmdbTrendingCandidate>;
+  const personData =
+    (await personResponse.json()) as TmdbListResponse<TmdbPersonResult>;
+
+  const directItems = (mediaData.results ?? [])
+    .map((item) => normalizeTrendingMediaItem(item))
     .filter((item): item is TrendingMediaItem => Boolean(item));
 
-  return uniqueAndSortTrendingItems(items).slice(0, limit);
+  const knownForItems = (personData.results ?? [])
+    .flatMap((person) => person.known_for ?? [])
+    .map((item) => normalizeTrendingMediaItem(item))
+    .filter((item): item is TrendingMediaItem => Boolean(item));
+
+  const creditRequests = (personData.results ?? []).slice(0, 3).flatMap((person) => {
+    if (!person.id) return [];
+
+    const creditParams = new URLSearchParams({
+      api_key: TMDB_KEY,
+      language: "ko-KR",
+    });
+
+    return fetch(
+      `${TMDB_BASE}/person/${person.id}/combined_credits?${creditParams.toString()}`,
+      { signal },
+    )
+      .then((response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<TmdbPersonCreditsResponse>;
+      })
+      .catch((error: Error) => {
+        if (error.name === "AbortError") throw error;
+        return null;
+      });
+  });
+
+  const creditsData = await Promise.all(creditRequests);
+  const creditItems = creditsData
+    .filter((credits): credits is TmdbPersonCreditsResponse => Boolean(credits))
+    .flatMap((credits) => [
+      ...(credits.cast ?? []),
+      ...(credits.crew ?? []).filter((item) =>
+        ["Director", "Creator", "Writer"].includes(item.job ?? ""),
+      ),
+    ])
+    .map((item) => normalizeTrendingMediaItem(item))
+    .filter((item): item is TrendingMediaItem => Boolean(item));
+
+  return uniqueAndSortTrendingItems([
+    ...directItems,
+    ...knownForItems,
+    ...creditItems,
+  ]).slice(0, limit);
 };
 
 const pickTrailerKey = (videos: TmdbVideoCandidate[]) => {
