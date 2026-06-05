@@ -3,7 +3,7 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
 } from "firebase/auth";
-import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"; // updateDoc 추가
 import { auth, db } from "@/firebase/firebase";
 import type { UserDocument, PayInfo } from "@/types/auth";
 
@@ -70,14 +70,6 @@ export const signUp = async (
       ],
     };
 
-<<<<<<< HEAD
-    await setDoc(doc(db, "users", user.uid), {
-      ...userDoc,
-      createdAt: serverTimestamp(),
-    });
-
-    await sendEmailVerification(user);
-=======
     // Firestore users 컬렉션에 문서 저장 (문서 ID = uid)
     await setDoc(doc(db, "users", user.uid), {
       ...userDoc,
@@ -86,7 +78,6 @@ export const signUp = async (
 
     // 이메일 인증 메일 발송
     await sendEmailVerification(user);
->>>>>>> 009c65d185d67360803b4cfbc8d10d84fc6b6664
 
     return user.uid;
   } catch (error) {
@@ -110,10 +101,6 @@ export const updatePayment = async (
   });
 };
 
-/**
- * 플랜 업데이트 함수
- * StepPlan, 플랜 변경 페이지에서 호출
- */
 export const updatePlan = async (
   uid: string,
   planType: string,
@@ -129,26 +116,22 @@ export const updatePlan = async (
 // ─── uid 임시 저장 스토어 ──────────────────────────────────────────────────────
 
 /**
- * 회원가입/플랜선택 단계 사이에서 데이터를 임시로 공유하기 위한 스토어
- * StepRegister에서 uid 저장 → StepPlan, StepPayment 등에서 꺼내 씀
+ * 회원가입 단계 사이에서 uid를 임시로 공유하기 위한 스토어
+ * StepRegister에서 저장 → StepPlan, StepPayment 등에서 꺼내 씀
  * 구독 완료(StepComplete) 시점에 clear()로 초기화
  */
 interface SignUpState {
   uid: string | null;
-  payInfo: PayInfo | null;
-  pendingPlan: { planType: string; billing: string } | null;  // 비구독자 플랜 임시 저장
+  payInfo: PayInfo | null; // ← 추가
   setUid: (uid: string) => void;
-  setPayInfo: (payInfo: PayInfo) => void;
-  setPendingPlan: (plan: { planType: string; billing: string }) => void;  // 비구독자 플랜 선택 후 저장
+  setPayInfo: (payInfo: PayInfo) => void; // ← 추가
   clear: () => void;
 }
 
 export const useSignUpStore = create<SignUpState>((set) => ({
   uid: null,
-  payInfo: null,
-  pendingPlan: null,
+  payInfo: null, // ← 추가
   setUid: (uid) => set({ uid }),
-  setPayInfo: (payInfo) => set({ payInfo }),
-  setPendingPlan: (plan) => set({ pendingPlan: plan }),
-  clear: () => set({ uid: null, payInfo: null, pendingPlan: null }),
+  setPayInfo: (payInfo) => set({ payInfo }), // ← 추가
+  clear: () => set({ uid: null, payInfo: null }), // ← payInfo도 초기화
 }));
