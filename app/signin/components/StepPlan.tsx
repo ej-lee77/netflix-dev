@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { auth } from "@/firebase/firebase";
 import { updatePlan, useSignUpStore } from "@/store/useSignUpStore";
+import { getFaqItems } from "@/data/faq";
+import FaqAccordion from "@/components/common/FaqAccordion";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -121,12 +123,8 @@ const COMPARE_ROWS = [
   },
 ];
 
-const FAQS = [
-  "언제든 플랜을 변경할 수 있나요?",
-  "연간 결제 후 중도 해지하면 환불이 되나요?",
-  "해지하면 즉시 이용이 중단되나요?",
-  "무료 체험은 어떻게 신청하나요?",
-];
+// 플랜 관련 FAQ 는 data/faq.ts 의 "plan" 카테고리에서 가져옵니다.
+const PLAN_FAQS = getFaqItems("plan");
 
 // ─── 숫자 포맷 ────────────────────────────────────────────────────────────────
 
@@ -137,7 +135,6 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 export default function StepPlan({ onNext, currentPlanType, currentBilling, submitLabel = "다음" }: StepPlanProps) {
   const [billing, setBilling] = useState<BillingCycle>("monthly"); // 기본: 월간
   const [selected, setSelected] = useState<string>("standard");
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
 
@@ -302,14 +299,7 @@ export default function StepPlan({ onNext, currentPlanType, currentBilling, subm
 
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
       <p className="section-title">자주 묻는 질문</p>
-      <ul className="faq-list">
-        {FAQS.map((q, i) => (
-          <li key={i} className="faq-item" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-            <span className="faq-q">{q}</span>
-            <span className={`faq-icon${openFaq === i ? " open" : ""}`}>+</span>
-          </li>
-        ))}
-      </ul>
+      <FaqAccordion items={PLAN_FAQS} />
 
       {/* 에러 */}
       {error && (
