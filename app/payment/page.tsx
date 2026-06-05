@@ -5,18 +5,29 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
+import { updatePlan, useSignUpStore } from "@/store/useSignUpStore";
 import StepPayment from "@/app/signin/components/StepPayment";
 import type { PayInfo } from "@/types/auth";
 import "@/app/signin/signin.scss";
-import "./payment.scss";  // ← 추가
+import "./payment.scss";
+
+// 플랜별 가격 매핑
+const PLAN_PRICES: Record<string, { monthlyPrice: number; annualTotal: number; annualDiscount: number }> = {
+  basic: { monthlyPrice: 7000, annualTotal: 69720, annualDiscount: 14280 },
+  standard: { monthlyPrice: 13500, annualTotal: 135000, annualDiscount: 27000 },
+  premium: { monthlyPrice: 17000, annualTotal: 170000, annualDiscount: 34000 },
+};
 
 export default function PaymentPage() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const pendingPlan = useSignUpStore((s) => s.pendingPlan);  // ← 비구독자 임시 플랜
   const [done, setDone] = useState(false);
   const [planType, setPlanType] = useState("");
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [payInfo, setPayInfo] = useState<PayInfo | null>(null);
 
+  // useEffect 하나로 합침
   useEffect(() => {
     const uid = user?.uid ?? auth.currentUser?.uid;
     if (!uid) return;
@@ -25,13 +36,22 @@ export default function PaymentPage() {
       const data = snap.data();
       setPlanType(data.planType ?? "");
       setPayInfo(data.payment ?? null);
+      setBilling(data.billing ?? "monthly");
     });
   }, [user?.uid]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [done]);
+
+  // 현재 플랜 or 비구독자가 선택한 임시 플랜
+  const activePlanType = planType || pendingPlan?.planType || "";
+  const activeBilling = (billing || pendingPlan?.billing || "monthly") as "monthly" | "annual";
+
   const planLabel = (() => {
-    if (planType === "basic") return "베이직";
-    if (planType === "standard") return "스탠다드";
-    if (planType === "premium") return "프리미엄";
+    if (activePlanType === "basic") return "베이직";
+    if (activePlanType === "standard") return "스탠다드";
+    if (activePlanType === "premium") return "프리미엄";
     return "-";
   })();
 
@@ -45,33 +65,7 @@ export default function PaymentPage() {
     return "-";
   })();
 
-  // 플랜별 가격 매핑
-  const PLAN_PRICES: Record<string, { monthlyPrice: number; annualTotal: number; annualDiscount: number }> = {
-    basic: { monthlyPrice: 7000, annualTotal: 69720, annualDiscount: 14280 },
-    standard: { monthlyPrice: 13500, annualTotal: 135000, annualDiscount: 27000 },
-    premium: { monthlyPrice: 17000, annualTotal: 170000, annualDiscount: 34000 },
-  };
-
-  // billing도 같이 읽어오기
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
-
-  useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
-    if (!uid) return;
-    getDoc(doc(db, "users", uid)).then((snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data();
-      setPlanType(data.planType ?? "");
-      setPayInfo(data.payment ?? null);
-      setBilling(data.billing ?? "monthly");  // ← 추가
-    });
-  }, [user?.uid]);
-
-  const prices = PLAN_PRICES[planType] ?? { monthlyPrice: 0, annualTotal: 0, annualDiscount: 0 };
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [done]);
+  const prices = PLAN_PRICES[activePlanType] ?? { monthlyPrice: 0, annualTotal: 0, annualDiscount: 0 };
 
   if (done) {
     return (
@@ -82,14 +76,18 @@ export default function PaymentPage() {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h1 className="complete-title">결제 수단이 변경되었어요!</h1>
-          <p className="complete-sub">새로운 결제 수단으로 변경되었습니다</p>
+          <h1 className="complete-title">
+            {pendingPlan ? "구독이 시작되었어요!" : "결제 수단이 변경되었어요!"}
+          </h1>
+          <p className="complete-sub">
+            {pendingPlan ? `${planLabel} 플랜으로 무제한 시청을 즐겨보세요` : "새로운 결제 수단으로 변경되었습니다"}
+          </p>
           <button
             type="button"
             className="complete-home-btn"
-            onClick={() => router.push("/settings?tab=membership")}
+            onClick={() => router.push(pendingPlan ? "/" : "/settings?tab=membership")}
           >
-            설정으로 돌아가기
+            {pendingPlan ? "메인으로 가기" : "설정으로 돌아가기"}
           </button>
         </div>
       </div>
@@ -99,9 +97,11 @@ export default function PaymentPage() {
   return (
     <div className="signin-page">
       <div className="pay-change-page">
-        <h1 className="pay-change-title">결제 수단 변경</h1>
+        <h1 className="pay-change-title">
+          {pendingPlan ? "결제 수단 선택" : "결제 수단 변경"}
+        </h1>
 
-        {/* 현재 구독 정보 요약, planType 있을 때만 현재 구독 정보 요약 표시 */}
+        {/* 구독 중일 때만 현재 구독 정보 요약 표시 */}
         {planType && (
           <div className="pay-change-summary">
             <div className="pay-change-summary-row">
@@ -120,20 +120,28 @@ export default function PaymentPage() {
             )}
           </div>
         )}
+
         <StepPayment
           plan={{
             name: planLabel,
-            billing: billing,
+            billing: activeBilling,
             monthlyPrice: prices.monthlyPrice,
             annualTotal: prices.annualTotal,
             annualDiscount: prices.annualDiscount,
           }}
           hidePlanSummary
-          currentPayInfo={payInfo}
-          submitLabel="변경하기"
+          currentPayInfo={planType ? payInfo : null}  // 구독 중일 때만 현재 결제수단 비교
+          submitLabel={pendingPlan ? "결제하기" : "변경하기"}
           amountLabel="결제 예정 금액"
-          onBack={() => router.push("/settings?tab=membership")}
-          onComplete={() => setDone(true)}
+          onBack={() => router.push(pendingPlan ? "/plan" : "/settings?tab=membership")}
+          onComplete={async () => {
+            // 비구독자가 새로 구독하는 경우 planType 저장
+            if (pendingPlan) {
+              const uid = user?.uid ?? auth.currentUser?.uid;
+              if (uid) await updatePlan(uid, pendingPlan.planType, pendingPlan.billing);
+            }
+            setDone(true);
+          }}
         />
       </div>
     </div>
