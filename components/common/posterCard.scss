@@ -1,32 +1,17 @@
 @use "@/app/globals" as g;
 
 /* 카테고리/무드 공통 포스터 카드 스타일 (PosterCard 컴포넌트 전용) */
-/* 포스터 그리드 */
 .poster-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 24px 16px;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  @media (max-width: 700px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  /* 홈 "오늘 가장 많이보는 시리즈"(ThemeRow) 카드 폭에 맞춤 */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px 12px;
 }
 
 .poster-card {
+  position: relative;
   display: block;
   cursor: pointer;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-6px);
-
-    .poster img {
-      transform: scale(1.05);
-    }
-  }
 
   .poster {
     position: relative;
@@ -40,7 +25,6 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.4s;
     }
 
     .no-image {
@@ -59,10 +43,11 @@
       right: 8px;
       padding: 3px 8px;
       background: rgba(0, 0, 0, 0.75);
-      color: #F5C518;
+      color: #f5c518;
       border-radius: 4px;
       font-size: g.$text-12;
       font-weight: 600;
+      z-index: 2;
     }
   }
 
@@ -75,8 +60,185 @@
     white-space: nowrap;
   }
 
-  .year {
-    font-size: g.$text-12;
-    color: g.$g-color;
+  /* 홈 카드와 동일한 호버 팝업 (백드롭 + 정보 + 메타 + 줄거리 + 버튼) */
+  .hover-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200%;
+    z-index: 20;
+    background: #181818;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.9),
+      0 4px 16px rgba(0, 0, 0, 0.5);
+    animation: poster-hover-fade 0.18s ease;
+
+    .hover-video {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #141414;
+      overflow: hidden;
+
+      .fallback-img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .no-image {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: g.$g-color;
+        font-size: g.$text-13;
+      }
+    }
+
+    .hover-info {
+      padding: 16px;
+
+      .hover-title-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        overflow: hidden;
+        margin-bottom: 6px;
+      }
+
+      .hover-title {
+        color: g.$w-color;
+        font-size: g.$text-16;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+
+      .hover-meta {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 8px;
+
+        .meta-star {
+          font-size: g.$text-12;
+          color: #e50914;
+        }
+        .meta-score {
+          font-size: g.$text-12;
+          color: g.$w-color;
+          font-weight: 700;
+        }
+        .meta-sep {
+          font-size: g.$text-12;
+          color: #555;
+        }
+        .meta-year,
+        .meta-genre {
+          font-size: g.$text-12;
+          color: #bbb;
+        }
+      }
+
+      .hover-overview {
+        font-size: g.$text-12;
+        color: #aaa;
+        line-height: 1.55;
+        margin: 0;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+      }
+
+      .hover-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+
+        .btn-play,
+        .btn-detail {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          height: 34px;
+          padding: 0 12px;
+          border-radius: 4px;
+          font-size: g.$text-13;
+          font-weight: 700;
+          color: g.$w-color;
+          cursor: pointer;
+          white-space: nowrap;
+          transition:
+            background 0.15s ease,
+            transform 0.1s ease;
+
+          svg {
+            flex-shrink: 0;
+          }
+        }
+
+        .btn-play {
+          background: g.$main-color;
+          border: none;
+
+          svg {
+            width: 13px;
+            height: 13px;
+            fill: g.$w-color;
+          }
+
+          &:hover {
+            background: #b80710;
+            transform: scale(1.02);
+          }
+        }
+
+        .btn-detail {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+
+          svg {
+            width: 15px;
+            height: 15px;
+            fill: none;
+            stroke: g.$w-color;
+            stroke-width: 2;
+            stroke-linecap: round;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.2);
+          }
+        }
+
+        .wishlist-heart-btn.card-wish {
+          width: 34px;
+          height: 34px;
+          font-size: 16px;
+        }
+      }
+    }
+  }
+}
+
+@keyframes poster-hover-fade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
