@@ -15,7 +15,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 1,
         nickname: "햅번공주",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=audrey",
+        profileImage: "/images/profile/image/arcane/11.png",
         matchRate: 92,
         tags: ["따뜻한", "관계", "잔잔한", "현실적인"],
         favoriteMovie: {
@@ -27,7 +27,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 2,
         nickname: "필름고양이",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=catfilm",
+        profileImage: "/images/profile/image/my_melody_kuromi/16.png",
         matchRate: 89,
         tags: ["감성적인", "힐링", "일상", "고요한"],
         favoriteMovie: {
@@ -39,7 +39,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 3,
         nickname: "시네마중독",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=cinema",
+        profileImage: "/images/profile/image/lost_in_space/6.png",
         matchRate: 84,
         tags: ["미스터리", "몰입감", "반전", "서늘한"],
         favoriteMovie: {
@@ -51,7 +51,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 4,
         nickname: "새벽두시",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=dawn",
+        profileImage: "/images/profile/image/my_melody_kuromi/1.png",
         matchRate: 81,
         tags: ["우울한", "여운", "독립영화", "감각적인"],
         favoriteMovie: {
@@ -63,7 +63,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 5,
         nickname: "무비테라스",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=terrace",
+        profileImage: "/images/profile/image/arcane/12.png",
         matchRate: 79,
         tags: ["청춘", "로맨스", "따뜻한", "대화"],
         favoriteMovie: {
@@ -75,7 +75,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 6,
         nickname: "엔딩크레딧",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=ending",
+        profileImage: "/images/profile/image/my_melody_kuromi/7.png",
         matchRate: 77,
         tags: ["현실적인", "사회문제", "묵직한", "드라마"],
         favoriteMovie: {
@@ -87,7 +87,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 7,
         nickname: "포스터수집가",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=poster",
+        profileImage: "/images/profile/image/elite/13.png",
         matchRate: 74,
         tags: ["비주얼", "예술영화", "몽환적인", "컬러감"],
         favoriteMovie: {
@@ -99,7 +99,7 @@ export const connectUsers: ConnectUser[] = [
     {
         id: 8,
         nickname: "심야상영",
-        profileImage: "https://api.dicebear.com/7.x/notionists/png?seed=midnight",
+        profileImage: "/images/profile/image/love_death_robots/1.png",
         matchRate: 71,
         tags: ["스릴러", "긴장감", "다크", "몰입"],
         favoriteMovie: {
