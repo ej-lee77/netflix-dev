@@ -23,7 +23,7 @@ interface SelectedPlan {
 interface StepPaymentProps {
   plan: SelectedPlan;
   onBack: () => void;       // 이전으로 → 플랜 선택
-  onComplete: () => void;   // 결제하기 → 시청 시작
+  onComplete: () => void | Promise<void>; // 결제하기 → 시청 시작
   hidePlanSummary?: boolean;
   currentPayInfo?: PayInfo | null;
   submitLabel?: string;
