@@ -227,7 +227,7 @@ export default function MyPage() {
   const [nextDate, setNextDate] = useState<string>("");
 
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
     if (!uid) return; // 로그인 안 된 경우 early return
 
     getDoc(doc(db, "users", uid)).then((snap) => {
@@ -236,7 +236,7 @@ export default function MyPage() {
       setPlanType(data.planType ?? "");           // 플랜 종류 (basic/standard/premium)
       setNextDate(data.payment?.nextDate ?? "");  // 다음 결제일
     });
-  }, [user?.uid]); // user가 바뀔 때마다 재실행
+  }, [user?.userId]); // user가 바뀔 때마다 재실행
 
   // planType 영문 → 한글 변환
   const planLabel = (() => {
@@ -284,11 +284,16 @@ export default function MyPage() {
             </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
             {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
-            {planLabel && (
+            {planLabel ? (
+              // 구독 중일 때
               <span className="plan-badge">
                 ★ {planLabel}{nextDate ? ` · 다음 결제 ${nextDate}` : ""}
-                {/* nextDate 없으면 플랜 이름만 표시 */}
               </span>
+            ) : (
+              // 구독 중이 아닐 때
+              <Link href="/plan" className="plan-badge plan-badge-empty">
+                구독하고 무제한으로 즐기세요 →
+              </Link>
             )}
           </div>
 
