@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import PosterCard from "@/components/common/PosterCard";
 import "../scss/category.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -256,12 +257,28 @@ export default function CategoryPage() {
 
   const toggleOption = (tabId: FilterTab, optionId: string) => {
     setSelected((prev) => {
+      // 국가는 단일 선택(중복 불가) — 라디오처럼 동작
+      if (tabId === "country") {
+        const isOn = prev.country.includes(optionId);
+        return { ...prev, country: isOn ? [] : [optionId] };
+      }
       const next = new Set(prev[tabId]);
       if (next.has(optionId)) next.delete(optionId);
       else next.add(optionId);
       return { ...prev, [tabId]: Array.from(next) };
     });
     setSelectedOrder((prev) => {
+      if (tabId === "country") {
+        const isOn = prev.some(
+          (option) => option.group === "country" && option.id === optionId,
+        );
+        const withoutCountry = prev.filter(
+          (option) => option.group !== "country",
+        );
+        return isOn
+          ? withoutCountry
+          : [...withoutCountry, { group: tabId, id: optionId }];
+      }
       const exists = prev.some(
         (option) => option.group === tabId && option.id === optionId,
       );
@@ -308,7 +325,7 @@ export default function CategoryPage() {
 
     if (genreIds.length > 0) {
       const uniqueGenreIds = Array.from(new Set(genreIds));
-      const genreQuery = uniqueGenreIds.join("|");
+      const genreQuery = uniqueGenreIds.join(",");
       params.set(
         "with_genres",
         params.has("with_genres")
@@ -402,6 +419,33 @@ export default function CategoryPage() {
     };
   };
 
+  // 큐레이션 다중선택을 AND로: 같은 키는 가장 엄격한 임계값으로 병합(.gte=최댓값, .lte=최솟값)
+  const buildMergedCuration = (
+    options: SelectedFilterOption[],
+  ): SelectedFilterOption => {
+    const merged: Record<string, string> = {};
+    options.forEach((opt) => {
+      Object.entries(getOptionQuery(opt, mediaType)).forEach(
+        ([key, value]) => {
+          if (key.endsWith(".gte")) {
+            merged[key] =
+              merged[key] !== undefined
+                ? String(Math.max(Number(merged[key]), Number(value)))
+                : value;
+          } else if (key.endsWith(".lte")) {
+            merged[key] =
+              merged[key] !== undefined
+                ? String(Math.min(Number(merged[key]), Number(value)))
+                : value;
+          } else {
+            merged[key] = value;
+          }
+        },
+      );
+    });
+    return { id: "__merged_curation__", label: "", query: merged, group: "curation" };
+  };
+
   const fetchCategoryBatch = async (
     startPage: number,
     signal: AbortSignal,
@@ -411,33 +455,27 @@ export default function CategoryPage() {
     else setLoadingMore(true);
 
     try {
-      const targets =
-        curationOptions.length > 0 ? curationOptions : [undefined];
-      const responses = await Promise.all(
-        targets.map((option) => fetchDiscoverBatch(startPage, signal, option)),
+      // 큐레이션을 AND로 병합해 단일 요청 (예전: 옵션별 따로 요청 후 합집합)
+      const mergedCuration =
+        curationOptions.length > 0
+          ? buildMergedCuration(curationOptions)
+          : undefined;
+      const response = await fetchDiscoverBatch(
+        startPage,
+        signal,
+        mergedCuration,
       );
 
       const merged = new Map<number, MediaItem>();
       if (!reset) items.forEach((item) => merged.set(item.id, item));
-      responses
-        .flatMap((response) => response.items)
-        .forEach((item) => {
-          if (!merged.has(item.id)) merged.set(item.id, item);
-        });
+      response.items.forEach((item) => {
+        if (!merged.has(item.id)) merged.set(item.id, item);
+      });
 
       setItems(Array.from(merged.values()));
-      setTotalPages(
-        Math.max(...responses.map((response) => response.totalPages), 1),
-      );
-      setTotalResults(
-        responses.reduce((sum, response) => sum + response.totalResults, 0),
-      );
-      setNextPage(
-        Math.max(
-          ...responses.map((response) => response.nextPage),
-          startPage + 1,
-        ),
-      );
+      setTotalPages(response.totalPages);
+      setTotalResults(response.totalResults);
+      setNextPage(response.nextPage);
     } catch (error) {
       if (!signal.aborted && reset) setItems([]);
     } finally {
@@ -597,25 +635,15 @@ export default function CategoryPage() {
               <>
                 <div className="poster-grid">
                   {items.map((item) => (
-                    <Link
+                    <PosterCard
                       key={item.id}
-                      href={`/detail/${item.media_type}/${item.id}`}
-                      className="poster-card"
-                    >
-                      <div className="poster">
-                        {item.poster_path ? (
-                          <Image
-                            src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                            alt={item.title}
-                            width={228}
-                            height={342}
-                          />
-                        ) : (
-                          <span>이미지 없음</span>
-                        )}
-                      </div>
-                      <strong>{item.title}</strong>
-                    </Link>
+                      id={item.id}
+                      mediaType={item.media_type}
+                      title={item.title}
+                      posterPath={item.poster_path}
+                      voteAverage={item.vote_average}
+                      year={(item.release_date || item.first_air_date || "").slice(0, 4)}
+                    />
                   ))}
                 </div>
                 {nextPage <= totalPages && (
