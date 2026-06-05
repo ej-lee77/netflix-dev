@@ -101,23 +101,32 @@ export default function SearchPage() {
         </div>
 
         {activeTags.length > 0 && (
-          <div className="search-page__selected-tags" aria-label="선택한 검색 태그">
-            {activeTags.map((option) => (
-              <button
-                type="button"
-                key={`${option.group}-${option.value}`}
-                onClick={() => {
-                  if (option.group === "genre") {
-                    setActiveGenres(activeGenres.filter((value) => value !== option.value));
-                  } else {
-                    setActiveMoods(activeMoods.filter((value) => value !== option.value));
-                  }
-                }}
-              >
-                <span>{option.label}</span>
-                <em aria-hidden="true">×</em>
-              </button>
-            ))}
+          <div className="search-page__selected-row">
+            <div className="search-page__selected-tags" aria-label="선택한 검색 태그">
+              {activeTags.map((option) => (
+                <button
+                  type="button"
+                  key={`${option.group}-${option.value}`}
+                  onClick={() => {
+                    if (option.group === "genre") {
+                      setActiveGenres(activeGenres.filter((value) => value !== option.value));
+                    } else {
+                      setActiveMoods(activeMoods.filter((value) => value !== option.value));
+                    }
+                  }}
+                >
+                  <span>{option.label}</span>
+                  <em aria-hidden="true">×</em>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="search-page__tag-submit"
+              onClick={() => goToResults()}
+            >
+              선택한 태그로 검색
+            </button>
           </div>
         )}
 
