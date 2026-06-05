@@ -101,24 +101,25 @@ export default function PaymentPage() {
       <div className="pay-change-page">
         <h1 className="pay-change-title">결제 수단 변경</h1>
 
-        {/* 현재 구독 정보 요약 */}
-        <div className="pay-change-summary">
-          <div className="pay-change-summary-row">
-            <span className="pay-change-summary-label">현재 플랜</span>
-            <span className="pay-change-summary-value">{planLabel}</span>
-          </div>
-          <div className="pay-change-summary-row">
-            <span className="pay-change-summary-label">현재 결제 수단</span>
-            <span className="pay-change-summary-value">{payLabel}</span>
-          </div>
-          {payInfo?.nextDate && (
+        {/* 현재 구독 정보 요약, planType 있을 때만 현재 구독 정보 요약 표시 */}
+        {planType && (
+          <div className="pay-change-summary">
             <div className="pay-change-summary-row">
-              <span className="pay-change-summary-label">다음 결제일</span>
-              <span className="pay-change-summary-value">{payInfo.nextDate}</span>
+              <span className="pay-change-summary-label">현재 플랜</span>
+              <span className="pay-change-summary-value">{planLabel}</span>
             </div>
-          )}
-        </div>
-
+            <div className="pay-change-summary-row">
+              <span className="pay-change-summary-label">현재 결제 수단</span>
+              <span className="pay-change-summary-value">{payLabel}</span>
+            </div>
+            {payInfo?.nextDate && (
+              <div className="pay-change-summary-row">
+                <span className="pay-change-summary-label">다음 결제일</span>
+                <span className="pay-change-summary-value">{payInfo.nextDate}</span>
+              </div>
+            )}
+          </div>
+        )}
         <StepPayment
           plan={{
             name: planLabel,
