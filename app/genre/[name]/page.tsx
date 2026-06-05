@@ -5,6 +5,9 @@ import Image from "next/image";
 import { useParams, notFound } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/category.scss";
+import PosterCard from "@/components/common/PosterCard";
+import CustomSelect from "@/components/common/CustomSelect";
+import { filterHidden } from "@/data/hiddenContent";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -33,6 +36,7 @@ interface MediaItem {
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
+  genre_ids?: number[];
   media_type: "movie" | "tv";
 }
 
@@ -40,13 +44,12 @@ export default function GenrePage() {
   const params = useParams();
   const genreName = params.name as string;
 
-  const [type, setType] = useState<"movie" | "tv">("movie");
+  const [type, setType] = useState<"movie" | "tv" | "animation">("movie");
+  const [sort, setSort] = useState<string>("popularity.desc");
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const info = genreMap[genreName];
-
-  // 장르 메뉴에서 아이콘 경로 가져오기
   const menuItem = customMenus.find((m) => m.path === `/genre/${genreName}`);
 
   if (!info) {
@@ -58,9 +61,14 @@ export default function GenrePage() {
     setLoading(true);
 
     const fetchGenre = async () => {
-      const genreId = type === "movie" ? info.movieId : info.tvId;
+      const endpoint = type === "tv" ? "tv" : "movie";
+      const genreId =
+        type === "animation" ? 16 : type === "tv" ? info.tvId : info.movieId;
+      // TV에는 release_date 정렬이 없어 first_air_date로 보정
+      const sortBy =
+        endpoint === "tv" && sort === "release_date.desc" ? "first_air_date.desc" : sort;
       const res = await fetch(
-        `https://api.themoviedb.org/3/discover/${type}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genreId}&sort_by=popularity.desc&page=1`
+        `https://api.themoviedb.org/3/discover/${endpoint}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genreId}&sort_by=${sortBy}&page=1&vote_count.gte=20&with_watch_providers=8&watch_region=KR`
       );
       const data = await res.json();
       const list = (data.results || []).map((item: any) => ({
@@ -72,14 +80,15 @@ export default function GenrePage() {
         vote_average: item.vote_average,
         release_date: item.release_date,
         first_air_date: item.first_air_date,
-        media_type: type,
+        genre_ids: item.genre_ids ?? [],
+        media_type: endpoint,
       }));
-      setItems(list);
+      setItems(filterHidden(list));
       setLoading(false);
     };
 
     fetchGenre();
-  }, [type, genreName, info]);
+  }, [type, genreName, info, sort]);
 
   if (!info) return null;
 
@@ -87,7 +96,7 @@ export default function GenrePage() {
   const otherItems = items.slice(1);
 
   return (
-    <div className="category-page">
+    <div className="category-page mood-variant">
       {/* 히어로 영역 */}
       {featured && featured.backdrop_path && (
         <div className="category-hero">
@@ -114,44 +123,49 @@ export default function GenrePage() {
       )}
 
       <div className="inner">
-        {/* 필터 */}
         <div className="type-filter">
-          <button
-            className={type === "movie" ? "active" : ""}
-            onClick={() => setType("movie")}
-          >
+          <button className={type === "movie" ? "active" : ""} onClick={() => setType("movie")}>
             영화
           </button>
-          <button
-            className={type === "tv" ? "active" : ""}
-            onClick={() => setType("tv")}
-          >
+          <button className={type === "tv" ? "active" : ""} onClick={() => setType("tv")}>
             시리즈
+          </button>
+          <button className={type === "animation" ? "active" : ""} onClick={() => setType("animation")}>
+            애니메이션
           </button>
         </div>
 
-        {/* 그리드 */}
+        <div className="mood-result-head" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+          <div style={{ width: 150 }}>
+            <CustomSelect
+              options={[
+                { value: "popularity.desc", label: "인기순" },
+                { value: "vote_average.desc", label: "평점순" },
+                { value: "release_date.desc", label: "최신순" },
+              ]}
+              value={sort}
+              onChange={setSort}
+            />
+          </div>
+        </div>
+
         {loading ? (
           <div className="loading">불러오는 중...</div>
         ) : otherItems.length > 0 ? (
           <div className="poster-grid">
             {otherItems.map((item) => (
-              <Link
+              <PosterCard
                 key={item.id}
-                href={`/detail/${item.media_type}/${item.id}`}
-                className="poster-card"
-              >
-                <div className="poster">
-                  {item.poster_path ? (
-                    <img src={`https://image.tmdb.org/t/p/w300${item.poster_path}`} alt={item.title} />
-                  ) : (
-                    <div className="no-image">No Image</div>
-                  )}
-                  <span className="rating">★ {item.vote_average.toFixed(1)}</span>
-                </div>
-                <h3>{item.title}</h3>
-                <p className="year">{(item.release_date || item.first_air_date)?.slice(0, 4)}</p>
-              </Link>
+                id={item.id}
+                mediaType={item.media_type}
+                title={item.title}
+                posterPath={item.poster_path}
+                voteAverage={item.vote_average}
+                year={(item.release_date || item.first_air_date || "").slice(0, 4)}
+                backdropPath={item.backdrop_path}
+                overview={item.overview}
+                genreIds={item.genre_ids}
+              />
             ))}
           </div>
         ) : (
