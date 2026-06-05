@@ -45,6 +45,34 @@ export default function PaymentPage() {
     return "-";
   })();
 
+  // 플랜별 가격 매핑
+  const PLAN_PRICES: Record<string, { monthlyPrice: number; annualTotal: number; annualDiscount: number }> = {
+    basic: { monthlyPrice: 7000, annualTotal: 69720, annualDiscount: 14280 },
+    standard: { monthlyPrice: 13500, annualTotal: 135000, annualDiscount: 27000 },
+    premium: { monthlyPrice: 17000, annualTotal: 170000, annualDiscount: 34000 },
+  };
+
+  // billing도 같이 읽어오기
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+
+  useEffect(() => {
+    const uid = user?.uid ?? auth.currentUser?.uid;
+    if (!uid) return;
+    getDoc(doc(db, "users", uid)).then((snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      setPlanType(data.planType ?? "");
+      setPayInfo(data.payment ?? null);
+      setBilling(data.billing ?? "monthly");  // ← 추가
+    });
+  }, [user?.uid]);
+
+  const prices = PLAN_PRICES[planType] ?? { monthlyPrice: 0, annualTotal: 0, annualDiscount: 0 };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [done]);
+
   if (done) {
     return (
       <div className="signin-page">
@@ -73,35 +101,37 @@ export default function PaymentPage() {
       <div className="pay-change-page">
         <h1 className="pay-change-title">결제 수단 변경</h1>
 
-        {/* 현재 구독 정보 요약 */}
-        <div className="pay-change-summary">
-          <div className="pay-change-summary-row">
-            <span className="pay-change-summary-label">현재 플랜</span>
-            <span className="pay-change-summary-value">{planLabel}</span>
-          </div>
-          <div className="pay-change-summary-row">
-            <span className="pay-change-summary-label">현재 결제 수단</span>
-            <span className="pay-change-summary-value">{payLabel}</span>
-          </div>
-          {payInfo?.nextDate && (
+        {/* 현재 구독 정보 요약, planType 있을 때만 현재 구독 정보 요약 표시 */}
+        {planType && (
+          <div className="pay-change-summary">
             <div className="pay-change-summary-row">
-              <span className="pay-change-summary-label">다음 결제일</span>
-              <span className="pay-change-summary-value">{payInfo.nextDate}</span>
+              <span className="pay-change-summary-label">현재 플랜</span>
+              <span className="pay-change-summary-value">{planLabel}</span>
             </div>
-          )}
-        </div>
-
+            <div className="pay-change-summary-row">
+              <span className="pay-change-summary-label">현재 결제 수단</span>
+              <span className="pay-change-summary-value">{payLabel}</span>
+            </div>
+            {payInfo?.nextDate && (
+              <div className="pay-change-summary-row">
+                <span className="pay-change-summary-label">다음 결제일</span>
+                <span className="pay-change-summary-value">{payInfo.nextDate}</span>
+              </div>
+            )}
+          </div>
+        )}
         <StepPayment
           plan={{
             name: planLabel,
-            billing: "monthly",
-            monthlyPrice: 0,
-            annualTotal: 0,
-            annualDiscount: 0,
+            billing: billing,
+            monthlyPrice: prices.monthlyPrice,
+            annualTotal: prices.annualTotal,
+            annualDiscount: prices.annualDiscount,
           }}
           hidePlanSummary
           currentPayInfo={payInfo}
           submitLabel="변경하기"
+          amountLabel="결제 예정 금액"
           onBack={() => router.push("/settings?tab=membership")}
           onComplete={() => setDone(true)}
         />

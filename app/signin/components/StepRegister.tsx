@@ -1,6 +1,7 @@
 "use client";
 
 import { signUp, useSignUpStore } from "@/store/useSignUpStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import React, { useState } from "react";
 
 // ─── 아이콘 ────────────────────────────────────────────────────────────────────
@@ -79,6 +80,13 @@ export default function StepRegister({ onVerificationSent }: StepRegisterProps) 
     try {
       const uid = await signUp(email, password);
       setUid(uid);           // 다음 단계에서 쓸 uid 저장
+      // 로그인 스토어에 바로 사용자 정보를 불러오도록 호출해서
+      // 이메일 인증 전에도 기본 프로필을 볼 수 있게 만듭니다.
+      const onLogin = useAuthStore.getState().onLogin;
+      if (onLogin) {
+        // 호출 파라미터는 최소 userId 필드를 포함하면 됩니다.
+        onLogin({ userId: uid } as any);
+      }
       onVerificationSent(email);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
