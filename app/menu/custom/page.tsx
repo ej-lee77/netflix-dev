@@ -1,24 +1,51 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import type { DragEvent } from "react";
 import { mainMenus, customMenus } from "@/data/mainMenu";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/menuCustom.scss";
 
 // 전체 선택 풀 생성 (순서 매핑용)
-const allSelectablePool = [...mainMenus, ...customMenus];
 const DEFAULT_HEADER_MENU_PATHS = [
   "/category",
   "/mypage/playlist?tab=playlists",
   "/mypage/playlist?tab=history",
 ];
+const CATEGORY_MENU = {
+  title: "카테고리",
+  imgUrl: "/images/header/menu/category.png",
+  path: "/category?tab=all",
+};
+const allSelectablePool = [...mainMenus, CATEGORY_MENU, ...customMenus];
 const normalizeMenuPath = (path: string) =>
   path === "/mypage/playhist" ? "/mypage/playlist?tab=history" : path;
-const uniqueMenuPaths = (paths: string[]) => Array.from(new Set(paths.map(normalizeMenuPath)));
-
+const uniqueMenuPaths = (paths: string[]) =>
+  Array.from(new Set(paths.map(normalizeMenuPath)));
+const isCategoryMenuPath = (path: string) =>
+  path.startsWith("/category?") ||
+  path.startsWith("/genre/") ||
+  path.startsWith("/mood/");
+const isCategoryChildPath = (path: string) =>
+  path !== CATEGORY_MENU.path && isCategoryMenuPath(path);
+// Only genres and moods count toward the 10-item category limit.
+const isCountableCategoryChild = (path: string) =>
+  path.startsWith("/genre/") || path.startsWith("/mood/");
+const normalizeHeaderMenuPaths = (paths: string[]) => {
+  const normalizedPaths = uniqueMenuPaths(paths);
+  const hasCategoryItems = normalizedPaths.some(isCountableCategoryChild);
+  return hasCategoryItems
+    ? normalizedPaths
+    : normalizedPaths.filter((path) => path !== CATEGORY_MENU.path);
+};
 export default function MenuCustomPage() {
   const [selectedMenuPaths, setSelectedMenuPaths] = useState<string[]>([]);
+  const [draggedMenuPath, setDraggedMenuPath] = useState<string | null>(null);
+  const dragGhostRef = useRef<HTMLElement | null>(null);
+  const pendingFlowRectsRef = useRef<Map<string, DOMRect> | null>(null);
+  const pendingSaveRef = useRef<string[] | null>(null);
+  const baseOpen = true;
   const { currentProfile, onUpdateProfile } = useAuthStore();
   const currentProfileId = currentProfile?.id;
   const currentProfileHeaderMenus = currentProfile?.headerMenus;
@@ -29,7 +56,7 @@ export default function MenuCustomPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedMenuPaths(
         currentProfileHeaderMenus?.length
-          ? uniqueMenuPaths(currentProfileHeaderMenus)
+          ? normalizeHeaderMenuPaths(currentProfileHeaderMenus)
           : DEFAULT_HEADER_MENU_PATHS,
       );
       return;
@@ -38,9 +65,14 @@ export default function MenuCustomPage() {
     const saved = localStorage.getItem("custom_header_menus");
     if (saved) {
       try {
-        const normalizedPaths = uniqueMenuPaths(JSON.parse(saved) as string[]);
+        const normalizedPaths = normalizeHeaderMenuPaths(
+          JSON.parse(saved) as string[],
+        );
         setSelectedMenuPaths(normalizedPaths);
-        localStorage.setItem("custom_header_menus", JSON.stringify(normalizedPaths));
+        localStorage.setItem(
+          "custom_header_menus",
+          JSON.stringify(normalizedPaths),
+        );
       } catch (e) {
         console.error(e);
       }
@@ -53,30 +85,41 @@ export default function MenuCustomPage() {
 
   // 2. 토글 핸들러 (클릭한 순서대로 배열 끝에 추가됨)
   const saveHeaderMenus = async (paths: string[]) => {
-    const normalizedPaths = uniqueMenuPaths(paths);
+    const sanitizedPaths = normalizeHeaderMenuPaths(paths);
 
-    setSelectedMenuPaths(normalizedPaths);
-    localStorage.setItem("custom_header_menus", JSON.stringify(normalizedPaths));
+    setSelectedMenuPaths(sanitizedPaths);
+    localStorage.setItem("custom_header_menus", JSON.stringify(sanitizedPaths));
     window.dispatchEvent(new Event("customMenuStorageUpdate"));
 
     if (!currentProfile) return;
 
     await onUpdateProfile({
       ...currentProfile,
-      headerMenus: normalizedPaths,
+      headerMenus: sanitizedPaths,
     });
   };
 
   const handleToggleMenu = async (path: string) => {
+    const hasCategoryItems = selectedMenuPaths.some(isCountableCategoryChild);
+    if (path === CATEGORY_MENU.path && !hasCategoryItems) {
+      alert("카테고리 메뉴는 장르 또는 무드를 하나 이상 선택해야 활성화됩니다.");
+      return;
+    }
+
     let updatedPaths: string[];
 
     if (selectedMenuPaths.includes(path)) {
       updatedPaths = selectedMenuPaths.filter((p) => p !== path);
     } else {
-      if (selectedMenuPaths.length >= 8) {
-        alert("사이드 메뉴는 최대 8개까지만 등록하는 것을 권장합니다.");
+      const selectedCategoryCount = selectedMenuPaths.filter(
+        isCountableCategoryChild,
+      ).length;
+
+      if (isCountableCategoryChild(path) && selectedCategoryCount >= 10) {
+        alert("카테고리 메뉴는 최대 10개까지만 선택할 수 있습니다.");
         return;
       }
+
       updatedPaths = [...selectedMenuPaths, path];
     }
 
@@ -87,121 +130,372 @@ export default function MenuCustomPage() {
     await saveHeaderMenus(DEFAULT_HEADER_MENU_PATHS);
   };
 
+  const handlePreviewDragStart = (
+    event: DragEvent<HTMLDivElement>,
+    path: string,
+  ) => {
+    setDraggedMenuPath(path);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", path);
+
+    try {
+      const target = event.currentTarget as HTMLElement;
+      const clone = target.cloneNode(true) as HTMLElement;
+      // copy computed styles to cloned node to avoid CSS loss in drag image
+      const copyComputedStyles = (src: HTMLElement, dest: HTMLElement) => {
+        const cs = window.getComputedStyle(src);
+        for (let i = 0; i < cs.length; i++) {
+          const prop = cs.item(i);
+          if (prop)
+            dest.style.setProperty(
+              prop,
+              cs.getPropertyValue(prop),
+              cs.getPropertyPriority(prop),
+            );
+        }
+        // recursively copy for children nodes
+        const srcChildren = Array.from(src.children) as HTMLElement[];
+        const destChildren = Array.from(dest.children) as HTMLElement[];
+        for (let i = 0; i < srcChildren.length; i++) {
+          if (destChildren[i])
+            copyComputedStyles(srcChildren[i], destChildren[i] as HTMLElement);
+        }
+      };
+      // place offscreen so it won't affect layout
+      clone.style.position = "absolute";
+      clone.style.top = "-9999px";
+      clone.style.left = "-9999px";
+      clone.style.zIndex = "9999";
+      // ensure visible look for drag image
+      clone.style.opacity = "1";
+      // copy computed styles so the ghost looks identical
+      copyComputedStyles(target, clone);
+      // prevent ghost from catching pointer events
+      clone.style.pointerEvents = "none";
+      document.body.appendChild(clone);
+      // center the pointer on the ghost
+      const rect = clone.getBoundingClientRect();
+      event.dataTransfer.setDragImage(clone, rect.width / 2, rect.height / 2);
+      dragGhostRef.current = clone;
+    } catch (e) {
+      // fail silently if setDragImage not supported
+      // console.debug('setDragImage failed', e);
+    }
+  };
+
+  const getFlowChipRects = () => {
+    const rects = new Map<string, DOMRect>();
+    document
+      .querySelectorAll<HTMLElement>(".flow-chip[data-menu-path]")
+      .forEach((element) => {
+        const path = element.dataset.menuPath;
+        if (path) {
+          rects.set(path, element.getBoundingClientRect());
+        }
+      });
+
+    return rects;
+  };
+
+  const animateFlowChipMove = (previousRects: Map<string, DOMRect>) => {
+    requestAnimationFrame(() => {
+      document
+        .querySelectorAll<HTMLElement>(".flow-chip[data-menu-path]")
+        .forEach((element) => {
+          const path = element.dataset.menuPath;
+          if (!path) return;
+
+          const previousRect = previousRects.get(path);
+          if (!previousRect) return;
+
+          const nextRect = element.getBoundingClientRect();
+          const deltaX = previousRect.left - nextRect.left;
+          const deltaY = previousRect.top - nextRect.top;
+
+          if (!deltaX && !deltaY) return;
+
+          // cancel any running animations on the element to avoid stacking
+          element.getAnimations().forEach((a) => a.cancel());
+          // hint for better performance
+          element.style.willChange = "transform";
+
+          // use translate3d for GPU acceleration and smoother motion
+          element.animate(
+            [
+              { transform: `translate3d(${deltaX}px, ${deltaY}px, 0)` },
+              { transform: "translate3d(0, 0, 0)" },
+            ],
+            {
+              duration: 360,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              fill: "both",
+            },
+          );
+        });
+    });
+  };
+
+  useLayoutEffect(() => {
+    const previousRects = pendingFlowRectsRef.current;
+    if (!previousRects) return;
+
+    pendingFlowRectsRef.current = null;
+    animateFlowChipMove(previousRects);
+  }, [selectedMenuPaths]);
+
+  const handlePreviewDragOver = (
+    event: DragEvent<HTMLDivElement>,
+    targetPath: string,
+  ) => {
+    event.preventDefault();
+
+    const sourcePath =
+      draggedMenuPath || event.dataTransfer.getData("text/plain");
+    if (!sourcePath || sourcePath === targetPath) return;
+
+    const sourceIndex = selectedMenuPaths.indexOf(sourcePath);
+    const targetIndex = selectedMenuPaths.indexOf(targetPath);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const targetRect = event.currentTarget.getBoundingClientRect();
+    const targetMiddleX = targetRect.left + targetRect.width / 2;
+    const movingRight = sourceIndex < targetIndex;
+    const movingLeft = sourceIndex > targetIndex;
+
+    if (movingRight && event.clientX < targetMiddleX) return;
+    if (movingLeft && event.clientX > targetMiddleX) return;
+
+    const nextPaths = [...selectedMenuPaths];
+    const [movedPath] = nextPaths.splice(sourceIndex, 1);
+    nextPaths.splice(targetIndex, 0, movedPath);
+    pendingFlowRectsRef.current = getFlowChipRects();
+    setDraggedMenuPath(sourcePath);
+    setSelectedMenuPaths(nextPaths);
+    // defer persisting until drag end to avoid layout churn
+    pendingSaveRef.current = nextPaths;
+  };
+
+  const handlePreviewDragEnd = () => {
+    setDraggedMenuPath(null);
+    // remove custom drag ghost if present
+    if (dragGhostRef.current) {
+      try {
+        document.body.removeChild(dragGhostRef.current);
+      } catch (e) {
+        /* ignore */
+      }
+      dragGhostRef.current = null;
+    }
+    // persist final order if changed during dragging
+    if (pendingSaveRef.current) {
+      void saveHeaderMenus(pendingSaveRef.current);
+      pendingSaveRef.current = null;
+    }
+  };
+
   // 데이터 그룹 분리
-  const baseOptions = mainMenus.filter((m) => m.path !== "/");
+  const baseOptions = mainMenus.filter((menu) => menu.path !== "/");
   const genreOptions = customMenus.filter((m) => m.path.startsWith("/genre/"));
   const moodOptions = customMenus.filter((m) => m.path.startsWith("/mood/"));
+
+  const selectedGenres = genreOptions.filter((menu) =>
+    selectedMenuPaths.includes(menu.path),
+  );
+  const selectedMoods = moodOptions.filter((menu) =>
+    selectedMenuPaths.includes(menu.path),
+  );
 
   // 🌟 선택된 순서대로 정렬된 실제 메뉴 오브젝트 배열 추출
   const orderedSelectedMenus = selectedMenuPaths
     .map((path) => allSelectablePool.find((m) => m.path === path))
-    .filter((menu): menu is typeof mainMenus[number] => !!menu);
+    .filter((menu): menu is (typeof mainMenus)[number] => !!menu);
 
-  const renderMenuButton = (menu: typeof mainMenus[number]) => {
-    const orderIndex = selectedMenuPaths.indexOf(menu.path);
-    const isSelected = orderIndex !== -1;
+  const selectedBaseMenus = orderedSelectedMenus.filter(
+    (menu) =>
+      baseOptions.some((base) => base.path === menu.path) ||
+      menu.path === CATEGORY_MENU.path,
+  );
+  const selectedCategoryMenus = orderedSelectedMenus.filter(
+    (menu) =>
+      !baseOptions.some((base) => base.path === menu.path) &&
+      menu.path !== CATEGORY_MENU.path,
+  );
+
+  const renderMenuButton = (
+    menu: (typeof mainMenus)[number],
+    disabled = false,
+  ) => {
+    const isSelected = selectedMenuPaths.includes(menu.path);
 
     return (
       <button
         key={menu.path}
-        className={`genre-button ${isSelected ? "active" : ""}`}
+        className={`genre-button ${isSelected ? "active" : ""} ${
+          disabled ? "is-disabled" : ""
+        }`}
         type="button"
         onClick={() => handleToggleMenu(menu.path)}
+        disabled={disabled}
+        aria-disabled={disabled}
       >
         <Image src={menu.imgUrl} alt="" width={22} height={22} />
         <span>{menu.title}</span>
-        
-        {/* 🌟 기존 '✓' 대신 선택된 순서(숫자 번호)를 명시하여 순서 인지 제공 */}
-        {isSelected && <strong aria-hidden="true">{orderIndex + 1}</strong>}
       </button>
     );
   };
 
+  const renderFlowChip = (
+    menu: (typeof mainMenus)[number],
+    orderNumber: number,
+  ) => (
+    <div
+      key={menu.path}
+      className={`flow-chip dynamic ${
+        draggedMenuPath === menu.path ? "is-dragging" : ""
+      }`}
+      data-menu-path={menu.path}
+      draggable
+      onDragStart={(event) => handlePreviewDragStart(event, menu.path)}
+      onDragOver={(event) => handlePreviewDragOver(event, menu.path)}
+      onDragEnd={handlePreviewDragEnd}
+      title="홀드해서 좌우로 움직여 순서를 변경"
+    >
+      <span className="order-number">{orderNumber}</span>
+      <Image src={menu.imgUrl} alt="" width={16} height={16} />
+      <span>{menu.title}</span>
+    </div>
+  );
+
   return (
     <section className="menu-custom-page">
       <div className="menu-custom-page__inner">
-        
         {/* 헤더 타이틀 */}
         <div className="menu-custom-page__hero">
           <h1>메뉴 커스텀 설정</h1>
-          <p>왼쪽 사이드바 메뉴 구성을 내 취향대로 변경합니다. 선택하신 순서대로 배치됩니다.</p>
+          <p>
+            왼쪽 사이드바 메뉴 구성을 내 취향대로 변경합니다. 선택하신 순서대로
+            배치됩니다.
+          </p>
         </div>
 
-        {/* 🌟 🗺️ [신설] 현재 메뉴 나열 순서 실시간 미리보기 흐름 바 */}
         <section className="menu-flow-panel">
           <div className="menu-flow-panel__header">
             <h3>👀 사이드바 메뉴 나열 순서 프리뷰</h3>
-            <span>(홈 메뉴 바로 아래에 순서대로 장착됩니다)</span>
+            <span>
+              홈과 설정은 고정, 추가된 메뉴는 홀드해서 순서를 변경할 수
+              있습니다.
+            </span>
           </div>
-          
-          <div className="menu-flow-container">
-            {/* 고정 홈 표시 */}
-            <div className="flow-chip home-fixed">
-              <Image src="/images/header/menu/home.svg" alt="" width={16} height={16} />
-              <span>홈 (고정)</span>
-            </div>
 
-            {/* 유저가 추가한 메뉴들의 순서도 화살표 나열 */}
-            {orderedSelectedMenus.map((menu, index) => (
-              <div key={menu.path} className="flow-item-wrapper">
-                <div className="flow-arrow">→</div>
-                <div className="flow-chip dynamic" onClick={() => handleToggleMenu(menu.path)} title="클릭 시 해제">
-                  <span className="order-number">{index + 1}</span>
-                  <Image src={menu.imgUrl} alt="" width={16} height={16} />
-                  <span>{menu.title}</span>
-                  <span className="remove-x">×</span>
+          <div className="menu-flow-container">
+            <div className="flow-summary">
+              <div className="flow-row">
+                <div className="flow-row-label">기본</div>
+                <div className="flow-row-items">
+                  {selectedBaseMenus.length > 0 ? (
+                    selectedBaseMenus.map((menu, index) =>
+                      renderFlowChip(menu, index + 1),
+                    )
+                  ) : (
+                    <div className="flow-empty">기본 메뉴를 선택해 주세요</div>
+                  )}
                 </div>
               </div>
-            ))}
 
-            {selectedMenuPaths.length === 0 && (
-              <div className="flow-item-wrapper">
-                <div className="flow-arrow">→</div>
-                <div className="flow-chip empty">아래에서 메뉴를 선택해 주세요</div>
+              <div className="flow-row">
+                <div className="flow-row-label">카테고리</div>
+                <div className="flow-row-items">
+                  {selectedCategoryMenus.length > 0 ? (
+                    selectedCategoryMenus.map((menu, index) =>
+                      renderFlowChip(menu, index + 1),
+                    )
+                  ) : (
+                    <div className="flow-empty">카테고리를 선택해 주세요</div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </section>
 
-        {/* 📦 박스 1. 기본 서비스 메뉴 설정 */}
-        <section className="custom-panel">
-          <div className="custom-panel__header">
-            <h2>기본 메뉴 설정 <span>Core Menus</span></h2>
-            <p>플랫폼의 핵심 대메뉴를 사이드바로 바로가기 링크로 배치하거나 숨길 수 있습니다.</p>
+        <section
+          className={`custom-panel custom-panel--section ${baseOpen ? "is-open" : "is-closed"}`}
+        >
+          <div className="custom-panel__header custom-panel__toggle-header">
+            <div>
+              <h2>
+                기본 메뉴 설정 <span>Core Menus</span>
+              </h2>
+              <p>
+                플랫폼의 핵심 대메뉴를 사이드바로 바로가기 링크로 배치하거나
+                숨길 수 있습니다.
+              </p>
+              <p className="category-note">
+                카테고리 메뉴는 장르 또는 무드를 하나 이상 선택해야 활성화됩니다.
+              </p>
+            </div>
           </div>
-          <div className="genre-grid">
-            {baseOptions.map(renderMenuButton)}
-          </div>
+          {baseOpen && (
+            <div className="genre-grid co">
+              {baseOptions.map((menu) => renderMenuButton(menu))}
+              {renderMenuButton(
+                CATEGORY_MENU,
+                !selectedMenuPaths.some(isCountableCategoryChild),
+              )}
+            </div>
+          )}
         </section>
 
-        {/* 📦 박스 2. 장르 메뉴 설정 */}
-        <section className="custom-panel">
-          <div className="custom-panel__header">
-            <h2>🎭 장르별 추천 <span>Genres</span></h2>
-            <p>자주 탐색하는 카테고리 장르를 즐겨찾기 형태로 추가해보세요.</p>
+        <section className="custom-panel custom-panel--section is-open">
+          <div className="custom-panel__header custom-panel__toggle-header">
+            <div>
+              <h2>
+                카테고리 메뉴 설정 <span>Genres / Moods</span>
+              </h2>
+              <p>장르와 무드를 각각 보이기 또는 숨기기로 설정할 수 있습니다.</p>
+            </div>
           </div>
-          <div className="genre-grid">
-            {genreOptions.map(renderMenuButton)}
-          </div>
-        </section>
 
-        {/* 📦 박스 3. 무드 메뉴 설정 */}
-        <section className="custom-panel">
-          <div className="custom-panel__header">
-            <h2>🍿 무드 태그 설정 <span>Moods</span></h2>
-            <p>오늘 기분과 분위기에 맞춰 골라볼 수 있는 무드 전용 링크를 바로가기로 세팅합니다.</p>
-          </div>
-          <div className="genre-grid">
-            {moodOptions.map(renderMenuButton)}
+          <div className="category-columns">
+            <div className="category-box">
+              <div className="category-box__header">
+                <h3>🎭 장르</h3>
+              </div>
+              <p className="category-summary">
+                선택된 장르:{" "}
+                {selectedGenres.length > 0
+                  ? selectedGenres.map((item) => item.title).join(", ")
+                  : "없음"}
+              </p>
+              <div className="genre-grid ct">
+                {genreOptions.map((menu) => renderMenuButton(menu))}
+              </div>
+            </div>
+
+            <div className="category-box">
+              <div className="category-box__header">
+                <h3>🍿 무드</h3>
+              </div>
+              <p className="category-summary">
+                선택된 무드:{" "}
+                {selectedMoods.length > 0
+                  ? selectedMoods.map((item) => item.title).join(", ")
+                  : "없음"}
+              </p>
+              <div className="genre-grid ct">
+                {moodOptions.map((menu) => renderMenuButton(menu))}
+              </div>
+            </div>
           </div>
         </section>
 
         {/* 초기화 바 */}
         <section className="reset-panel">
           <p>모든 설정을 초기 레이아웃 상태(기본 메뉴 3개)로 되돌릴까요?</p>
-          <button type="button" onClick={handleReset}>기본값 복원</button>
+          <button type="button" onClick={handleReset}>
+            기본값 복원
+          </button>
         </section>
-
       </div>
     </section>
   );

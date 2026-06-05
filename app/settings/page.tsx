@@ -6,14 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { deleteUser } from "firebase/auth";
 import { auth, db } from "@/firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import type { PayInfo } from "@/types/auth";
+import type { PayInfo, UserProfile } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/settings.scss";
 
-
-// ==========================================
-// Constants & Helpers (컴포넌트 외부에 배치)
-// ==========================================
 const MAX_PROFILES = 6;
 const AVATAR_OPTIONS = [
   "/images/profile/image/default_icons/17.png",
@@ -27,7 +23,7 @@ const AVATAR_OPTIONS = [
 const iconPaths = (folder: string, count: number, extension = "png") =>
   Array.from(
     { length: count },
-    (_, index) => `/images/profile/image/${folder}/${index + 1}.${extension}`
+    (_, index) => `/images/profile/image/${folder}/${index + 1}.${extension}`,
   );
 
 const PROFILE_ICON_SECTIONS = [
@@ -50,7 +46,10 @@ const PROFILE_ICON_SECTIONS = [
   { title: "종이의 집", icons: iconPaths("money_heist", 10) },
   { title: "마이 멜로디 & 쿠로미", icons: iconPaths("my_melody_kuromi", 16) },
   { title: "원피스", icons: iconPaths("one_piece", 17) },
-  { title: "오렌지 이즈 더 뉴 블랙", icons: iconPaths("orange_is_the_new_black", 11) },
+  {
+    title: "오렌지 이즈 더 뉴 블랙",
+    icons: iconPaths("orange_is_the_new_black", 11),
+  },
   { title: "피키 블라인더스", icons: iconPaths("peaky_blinders", 6) },
   { title: "레트로 애니메이션", icons: iconPaths("retro_animation", 8) },
   { title: "소닉 프라임", icons: iconPaths("sonic_prime", 21) },
@@ -105,7 +104,7 @@ function SettingsContent() {
   const [active, setActive] = useState<TabKey>(
     TABS.some((tab) => tab.key === initialTab)
       ? (initialTab as TabKey)
-      : "account"
+      : "account",
   );
 
   const { user, onAddProfile } = useAuthStore();
@@ -118,19 +117,33 @@ function SettingsContent() {
   useEffect(() => {
     if (active !== "membership") return; // membership 탭일 때만 실행
 
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
     if (!uid) return;
 
-    setMembershipLoading(true);
-    getDoc(doc(db, "users", uid))
-      .then((snap) => {
-        if (!snap.exists()) return;
+    let isMounted = true;
+
+    const loadMembership = async () => {
+      setMembershipLoading(true);
+      try {
+        const snap = await getDoc(doc(db, "users", uid));
+        if (!isMounted || !snap.exists()) return;
+
         const data = snap.data();
         setPlanType(data.planType ?? "");
         setPayInfo(data.payment ?? null);
-      })
-      .finally(() => setMembershipLoading(false));
-  }, [user?.uid, active]); // active 추가
+      } finally {
+        if (isMounted) {
+          setMembershipLoading(false);
+        }
+      }
+    };
+
+    void loadMembership();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.userId, active]); // active 추가
 
   // 플랜 이름 변환
   const planLabel = (() => {
@@ -159,7 +172,9 @@ function SettingsContent() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isProfileAddOpen, setIsProfileAddOpen] = useState(false);
   const [draftProfileName, setDraftProfileName] = useState("새 프로필");
-  const [draftProfileAvatar, setDraftProfileAvatar] = useState(AVATAR_OPTIONS[0]);
+  const [draftProfileAvatar, setDraftProfileAvatar] = useState(
+    AVATAR_OPTIONS[0],
+  );
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
 
   const activeTab = TABS.find((tab) => tab.key === active);
@@ -200,27 +215,27 @@ function SettingsContent() {
       viewAge: "",
       movies: {
         watchingVideos: [], // 시청 중인 영상 ID 목록
-        wishlist: [],       // 찜한 영상 ID 목록
+        wishlist: [], // 찜한 영상 ID 목록
         playlist: {
-          playlistVideos: [],   // 플레이리스트 영상 ID 목록
-          customPlaylists: [],  // 커스텀 플레이리스트 ID 목록
+          playlistVideos: [], // 플레이리스트 영상 ID 목록
+          customPlaylists: [], // 커스텀 플레이리스트 ID 목록
         },
-        genreStats: {},     // 장르별 시청 횟수 통계
+        genreStats: {}, // 장르별 시청 횟수 통계
         moodStats: {},
       },
       community: {
-        followers: [],  // 나를 팔로우하는 유저 ID 목록
-        following: [],  // 내가 팔로우하는 유저 ID 목록
-        reviews: [],    // 좋아요/싫어요/신고한 리뷰 ID 목록
-        feeds: [],      // 다른 피드에 남긴 댓글/좋아요 활동 기록
+        followers: [], // 나를 팔로우하는 유저 ID 목록
+        following: [], // 내가 팔로우하는 유저 ID 목록
+        reviews: [], // 좋아요/싫어요/신고한 리뷰 ID 목록
+        feeds: [], // 다른 피드에 남긴 댓글/좋아요 활동 기록
       },
-      headerMenus: [],  // 헤더에 표시할 메뉴 ID 목록
+      headerMenus: [], // 헤더에 표시할 메뉴 ID 목록
       bages: {
-        earnedBadges: [],   // 획득한 뱃지 목록
+        earnedBadges: [], // 획득한 뱃지 목록
         equippedBadges: "", // 현재 장착 중인 뱃지 ID
       },
-      alarm: [],  // 알림 설정한 영상 ID 목록
-      isCommunity: true
+      alarm: [], // 알림 설정한 영상 ID 목록
+      isCommunity: true,
     });
     closeProfileAdd();
   };
@@ -233,7 +248,7 @@ function SettingsContent() {
     }
 
     const confirmed = window.confirm(
-      "회원 탈퇴 시 계정과 저장된 프로필 정보가 삭제됩니다. 계속할까요?"
+      "회원 탈퇴 시 계정과 저장된 프로필 정보가 삭제됩니다. 계속할까요?",
     );
     if (!confirmed) return;
 
@@ -247,12 +262,17 @@ function SettingsContent() {
       router.replace("/login");
     } catch (err: unknown) {
       const errorCode =
-        typeof err === "object" && err !== null && "code" in err && typeof err.code === "string"
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        typeof err.code === "string"
           ? err.code
           : "";
 
       if (errorCode === "auth/requires-recent-login") {
-        setDeleteError("보안을 위해 다시 로그인한 뒤 회원 탈퇴를 진행해 주세요.");
+        setDeleteError(
+          "보안을 위해 다시 로그인한 뒤 회원 탈퇴를 진행해 주세요.",
+        );
       } else {
         setDeleteError("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       }
@@ -260,7 +280,6 @@ function SettingsContent() {
       setIsDeletingAccount(false);
     }
   };
-
 
   return (
     <div className="acset-page">
@@ -296,7 +315,10 @@ function SettingsContent() {
                     {user?.email ?? "user@example.com"}
                   </span>
                 </Row>
-                <Row label="비밀번호" desc="계정 보안을 위해 주기적으로 변경하세요.">
+                <Row
+                  label="비밀번호"
+                  desc="계정 보안을 위해 주기적으로 변경하세요."
+                >
                   <button type="button" className="acset-btn">
                     비밀번호 변경
                   </button>
@@ -318,7 +340,9 @@ function SettingsContent() {
             {active === "membership" && (
               <>
                 {membershipLoading ? (
-                  <p className="acset-row-desc" style={{ padding: "20px 0" }}>불러오는 중...</p>
+                  <p className="acset-row-desc" style={{ padding: "20px 0" }}>
+                    불러오는 중...
+                  </p>
                 ) : (
                   <>
                     <div className="acset-plan-box">
@@ -334,7 +358,9 @@ function SettingsContent() {
                       </div>
                     </div>
                     <Row label="결제 수단" desc={payLabel}>
-                      <Link href="/payment" className="acset-btn">관리</Link>
+                      <Link href="/payment" className="acset-btn">
+                        관리
+                      </Link>
                     </Row>
                   </>
                 )}
@@ -343,8 +369,7 @@ function SettingsContent() {
 
             {active === "profile" && (
               <div className="acset-profile-grid">
-                {/* 💥 BUG FIX: profiles 대신 배열인 profileList를 순회 */}
-                {profileList.map((profile: any) => (
+                {profileList.map((profile: UserProfile) => (
                   <Link
                     key={profile.id}
                     href={`/profiles/settings?profileId=${profile.id}`}
@@ -352,12 +377,15 @@ function SettingsContent() {
                   >
                     <div className="acset-profile-avatar">
                       <img
-                        src={profile.imgUrl ?? "/images/profile/image/default_icons/17.png"}
-                        alt={profile.nickname ?? profile.name ?? "프로필"}
+                        src={
+                          profile.imgUrl ??
+                          "/images/profile/image/default_icons/17.png"
+                        }
+                        alt={profile.nickname ?? "프로필"}
                       />
                     </div>
                     <span className="acset-profile-name">
-                      {profile.nickname ?? profile.name ?? "프로필"}
+                      {profile.nickname ?? "프로필"}
                     </span>
                   </Link>
                 ))}
@@ -367,7 +395,10 @@ function SettingsContent() {
                     className="acset-profile-card"
                     onClick={openProfileAdd}
                   >
-                    <div className="acset-profile-avatar acset-profile-add" aria-hidden="true">
+                    <div
+                      className="acset-profile-avatar acset-profile-add"
+                      aria-hidden="true"
+                    >
                       +
                     </div>
                     <span className="acset-profile-name">프로필 추가</span>
@@ -415,14 +446,19 @@ function SettingsContent() {
                 </div>
 
                 {PROFILE_ICON_SECTIONS.map((section) => (
-                  <section key={section.title} className="acset-profile-picker-section">
+                  <section
+                    key={section.title}
+                    className="acset-profile-picker-section"
+                  >
                     <h4>{section.title}</h4>
                     <div className="acset-profile-picker-grid">
                       {section.icons.map((iconSrc) => (
                         <button
                           key={iconSrc}
                           type="button"
-                          className={draftProfileAvatar === iconSrc ? "is-selected" : ""}
+                          className={
+                            draftProfileAvatar === iconSrc ? "is-selected" : ""
+                          }
                           onClick={() => {
                             setDraftProfileAvatar(iconSrc);
                             setIsAvatarPickerOpen(false);
@@ -448,23 +484,33 @@ function SettingsContent() {
                   <input
                     value={draftProfileName}
                     maxLength={12}
-                    onChange={(event) => setDraftProfileName(event.target.value)}
+                    onChange={(event) =>
+                      setDraftProfileName(event.target.value)
+                    }
                   />
                 </label>
 
                 <div className="acset-profile-avatar-options-head">
                   <span>프로필 사진</span>
-                  <button type="button" onClick={() => setIsAvatarPickerOpen(true)}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAvatarPickerOpen(true)}
+                  >
                     더 많은 프로필 보러가기
                   </button>
                 </div>
 
-                <div className="acset-profile-avatar-options" aria-label="프로필 이미지 선택">
+                <div
+                  className="acset-profile-avatar-options"
+                  aria-label="프로필 이미지 선택"
+                >
                   {AVATAR_OPTIONS.map((avatar, idx) => (
                     <button
                       key={avatar}
                       type="button"
-                      className={draftProfileAvatar === avatar ? "is-selected" : ""}
+                      className={
+                        draftProfileAvatar === avatar ? "is-selected" : ""
+                      }
                       onClick={() => setDraftProfileAvatar(avatar)}
                       aria-label={`기본 아바타 옵션 ${idx + 1}`}
                     >
@@ -479,7 +525,11 @@ function SettingsContent() {
               <button type="button" onClick={closeProfileAdd}>
                 취소
               </button>
-              <button type="button" className="is-primary" onClick={handleAddProfile}>
+              <button
+                type="button"
+                className="is-primary"
+                onClick={handleAddProfile}
+              >
                 저장
               </button>
             </div>
