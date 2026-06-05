@@ -632,7 +632,9 @@ export default function FeedPage() {
 
     if (reportedReviewIds.includes(review.feedId)) {
       await onReportReview(review.feedId, false);
-      setReportedReviewIds((prev) => prev.filter((reviewId) => reviewId !== review.feedId));
+      setReportedReviewIds((prev) =>
+        prev.filter((reviewId) => reviewId !== review.feedId),
+      );
       if (reportTargetReviewId === review.feedId) {
         setReportTargetReviewId(null);
       }
@@ -742,7 +744,9 @@ export default function FeedPage() {
     void onToggleCommentLike(reviewId, commentId);
   };
 
-  const handleSubmitReview = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitReview = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     if (!selectedMedia || newRating === 0 || !newReviewText.trim()) return;
     if (!requireFeedAuth()) return;
@@ -857,6 +861,16 @@ export default function FeedPage() {
                         : "작품 제목을 입력해 주세요"
                     }
                   />
+                  {reviewSearch.trim().length > 0 && (
+                    <button
+                      type="button"
+                      className="feed-search-clear"
+                      onClick={() => handleChangeReviewSearch("")}
+                      aria-label="검색어 지우기"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  )}
                 </div>
               </label>
 
@@ -1084,7 +1098,7 @@ export default function FeedPage() {
           <div className="feed-modal-head">
             <div>
               <h3 id="feed-comment-title">댓글</h3>
-              <p>{selectedCommentReview.mediaTitle} 리뷰에 남긴 의견</p>
+              <p>" {selectedCommentReview.mediaTitle} " 리뷰에 남긴 의견</p>
             </div>
             <button
               type="button"
@@ -1120,7 +1134,11 @@ export default function FeedPage() {
                     <div className="comment-actions">
                       <button
                         type="button"
-                        className={comment.liked ? "comment-like-btn liked" : "comment-like-btn"}
+                        className={
+                          comment.liked
+                            ? "comment-like-btn liked"
+                            : "comment-like-btn"
+                        }
                         onClick={() =>
                           handleToggleCommentLike(
                             selectedCommentReview.feedId,
@@ -1298,7 +1316,9 @@ export default function FeedPage() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => void handleSubmitReportReview()}
+                                  onClick={() =>
+                                    void handleSubmitReportReview()
+                                  }
                                   disabled={!selectedReportReason}
                                 >
                                   신고
