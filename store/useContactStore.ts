@@ -1,17 +1,20 @@
 import { create } from "zustand";
-import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
-import { ContactDocument, ContactInput, ContactStore } from "@/types/contact";
+import { ContactDocument, ContactStore } from "@/types/contact";
 
 // users 컬렉션과 분리된 별도 문의 컬렉션
+// 구조: contacts/{userId}/items/{문의ID}
+//  - userId 가 문서 "키(경로)" 가 되어 유저별로 문의가 쌓임
 const CONTACTS_COLLECTION = "contacts";
+const ITEMS_SUBCOLLECTION = "items";
 
 export const useContactStore = create<ContactStore>((set, get) => ({
   myContacts: [],
   loading: false,
   submitting: false,
 
-  // 1. 문의 등록 — contacts 컬렉션에 새 문서 추가
+  // 1. 문의 등록 — contacts/{userId}/items 아래에 새 문서 추가
   submitContact: async (input) => {
     set({ submitting: true });
     try {
@@ -21,7 +24,22 @@ export const useContactStore = create<ContactStore>((set, get) => ({
         createdAt: new Date().toISOString(),
       };
 
-      const ref = await addDoc(collection(db, CONTACTS_COLLECTION), newDoc);
+      // 유저 아이디를 키로: contacts/{userId}/items/{자동ID}
+      const itemsRef = collection(
+        db,
+        CONTACTS_COLLECTION,
+        input.userId,
+        ITEMS_SUBCOLLECTION,
+      );
+      const ref = await addDoc(itemsRef, newDoc);
+
+      // 부모 문서(키 = userId)를 메타데이터와 함께 생성/갱신
+      // → 콘솔에서 유저 아이디 단위로 문의가 묶여 보이고, 경로 키가 실존하게 됨
+      await setDoc(
+        doc(db, CONTACTS_COLLECTION, input.userId),
+        { userId: input.userId, updatedAt: newDoc.createdAt },
+        { merge: true },
+      );
 
       // 낙관적 갱신: 방금 등록한 문의를 목록 맨 앞에 끼워넣어 즉시 보이게 함
       set((state) => ({
@@ -36,17 +54,20 @@ export const useContactStore = create<ContactStore>((set, get) => ({
     }
   },
 
-  // 2. 내 문의 내역 조회 — userId 로만 쿼리(복합 인덱스 불필요), 정렬은 클라이언트에서
+  // 2. 내 문의 내역 조회 — 내 경로(contacts/{userId}/items)만 읽음
+  //    where 필터·복합 인덱스 불필요
   fetchMyContacts: async (userId, profileId) => {
     if (!userId) return;
     set({ loading: true });
     try {
-      const q = query(
-        collection(db, CONTACTS_COLLECTION),
-        where("userId", "==", userId),
+      const itemsRef = collection(
+        db,
+        CONTACTS_COLLECTION,
+        userId,
+        ITEMS_SUBCOLLECTION,
       );
 
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(itemsRef);
       let data = snapshot.docs.map(
         (d) => ({ id: d.id, ...d.data() } as ContactDocument),
       );

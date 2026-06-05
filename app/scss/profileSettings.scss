@@ -553,7 +553,7 @@
     width: 36px;
     height: 36px;
     place-items: center;
-    border: 2px solid #fff;
+    border: 2px solid rgba(255, 255, 255, 0.9);
     border-radius: 50%;
     padding: 0;
     background: rgba(0, 0, 0, 0.42);
@@ -1287,23 +1287,23 @@
     min-height: 42px;
     border: 0;
     border-radius: g.$radius-md;
-    background: #d9d9d9;
-    color: #000;
+    background: rgba(255, 255, 255, 0.10);
+    color: g.$w-color;
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
 
     &:hover {
-      background: #f0f0f0;
+      background: rgba(255, 255, 255, 0.20);
     }
 
     &.is-primary {
-      background: #000;
+      background: g.$main-color;
       color: g.$w-color;
-      border: 1px solid #3a3a3a;
+      border: 0;
 
       &:hover {
-        background: #151515;
+        background: #B00710;
       }
     }
 

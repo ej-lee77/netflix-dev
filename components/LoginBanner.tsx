@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -11,7 +10,6 @@ import "./scss/loginBanner.scss";
  * 비로그인 사용자에게 화면 하단에 고정으로 노출되는 배너
  * - 로그인 상태면 표시 안 함
  * - 로그인/회원가입/결제 등 인증 관련 페이지에서는 표시 안 함
- * - 닫기 버튼으로 한 번 닫으면 세션 동안 다시 안 뜸
  * - "구독 시작하기" → /signin
  * - "플랜 소개" → /plan
  */
@@ -22,11 +20,9 @@ const HIDDEN_PATHS = ["/login", "/signin", "/payment", "/forgot-password"];
 export default function LoginBanner() {
   const { user } = useAuthStore();
   const pathname = usePathname();
-  const [isClosed, setIsClosed] = useState(false);
 
   // 표시 안 함 조건들
   if (user) return null;
-  if (isClosed) return null;
   if (HIDDEN_PATHS.some((path) => pathname?.startsWith(path))) return null;
 
   return (
@@ -59,17 +55,6 @@ export default function LoginBanner() {
           </Link>
         </div>
 
-        {/* 닫기 버튼 */}
-        <button
-          type="button"
-          className="banner-close"
-          onClick={() => setIsClosed(true)}
-          aria-label="닫기"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
-        </button>
       </div>
     </div>
   );
