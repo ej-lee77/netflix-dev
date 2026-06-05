@@ -141,7 +141,7 @@ export default function HeaderMenu() {
 
   const isCategoryActive = categoryParent
     ? isMenuActive(categoryParent.path) ||
-      categoryPanelMenus.some((menu) => isMenuActive(menu.path))
+    categoryPanelMenus.some((menu) => isMenuActive(menu.path))
     : false;
 
   return (
@@ -183,9 +183,8 @@ export default function HeaderMenu() {
             return (
               <div
                 key={menu.path}
-                className={`sb-icon sb-category-group ${
-                  isCategoryActive ? "active" : ""
-                }`}
+                className={`sb-icon sb-category-group ${isCategoryActive ? "active" : ""
+                  }`}
               >
                 <Link href={menu.path}>
                   <Image
@@ -205,9 +204,8 @@ export default function HeaderMenu() {
                       return (
                         <div
                           key={childMenu.path}
-                          className={`category-hover-icon ${
-                            isActive ? "active" : ""
-                          }`}
+                          className={`category-hover-icon ${isActive ? "active" : ""
+                            }`}
                         >
                           <Link href={childMenu.path}>
                             <Image
@@ -267,9 +265,8 @@ export default function HeaderMenu() {
       </div>
 
       <div
-        className={`sb-icon sb-bottom ${
-          pathname === "/settings" ? "active" : ""
-        }`}
+        className={`sb-icon sb-bottom ${pathname === "/settings" ? "active" : ""
+          }`}
       >
         <Link href="/settings">
           <Image

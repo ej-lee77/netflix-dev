@@ -1,30 +1,61 @@
-﻿"use client";
+"use client";
 
 import SectionTitle from "@/components/common/SectionTitle";
+import { useEffect, useRef, useState } from "react";
 import { FreeMode } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useFollowStore } from "@/store/useFollowStore";
 
 import "swiper/css";
 import "swiper/css/free-mode";
 import "./scss/connectSection.scss";
 import "./scss/connectFollowingUsers.scss";
 
-const followingUsers = [
-  { name: "이진민", theme: "orange", mark: "DE" },
-  { name: "김시선", theme: "mono", mark: "KS" },
-  { name: "쥬시가십", theme: "poster", mark: "J" },
-  { name: "차지훈", theme: "portrait", mark: "C" },
-  { name: "무비로그", theme: "orange", mark: "ML" },
-  { name: "씨네마켓", theme: "mono", mark: "CM" },
-  { name: "필름토크", theme: "poster", mark: "F" },
-  { name: "리뷰온", theme: "portrait", mark: "R" },
-  { name: "이동진", theme: "orange", mark: "DJ" },
-  { name: "왓챠피디아", theme: "poster", mark: "W" },
-  { name: "시네필", theme: "mono", mark: "CF" },
-  { name: "무비팬", theme: "portrait", mark: "MF" },
-];
-
 export default function ConnectFollowingUsers() {
+  const { currentProfile } = useAuthStore();
+  const { followingUsers, isLoadingFollowing, fetchFollowingUsers } = useFollowStore();
+  const swiperRef = useRef<SwiperType | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
+  const [swiperKey, setSwiperKey] = useState(0);
+
+  const followingIds = currentProfile?.community?.following ?? [];
+
+  useEffect(() => {
+    fetchFollowingUsers();
+  }, [currentProfile?.id, followingIds.length]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setSwiperKey((k) => k + 1));
+    return () => {
+      cancelAnimationFrame(id);
+      roRef.current?.disconnect();
+    };
+  }, []);
+
+  if (!currentProfile) return null;
+
+  if (isLoadingFollowing) {
+    return (
+      <section className="connect-section connect-following-users" aria-label="팔로우하는 유저">
+        <div className="connect-section__inner connect-following-users__inner">
+          <SectionTitle title="팔로우하는 유저" showMore={false} />
+          <div className="connect-following-users__skeleton">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="connect-following-users__skeleton-item">
+                <div className="connect-following-users__skeleton-avatar skeleton-pulse" />
+                <div className="connect-following-users__skeleton-name skeleton-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (followingUsers.length === 0) return null;
+
   return (
     <section
       className="connect-section connect-following-users"
@@ -34,35 +65,44 @@ export default function ConnectFollowingUsers() {
         <SectionTitle title="팔로우하는 유저" showMore={false} />
 
         <Swiper
+          key={swiperKey}
           className="connect-following-users__list"
           freeMode
           modules={[FreeMode]}
           slidesPerView="auto"
           spaceBetween={30}
+          observer
+          observeParents
+          onSwiper={(s) => { swiperRef.current = s; }}
           breakpoints={{
-            0: {
-              spaceBetween: 15,
-            },
-            861: {
-              spaceBetween: 30,
-            },
+            0: { spaceBetween: 15 },
+            861: { spaceBetween: 30 },
           }}
         >
-          {followingUsers.map((user, index) => (
-            <SwiperSlide
-              className="connect-following-users__slide"
-              key={`${user.name}-${index}`}
-            >
-              <button className="connect-following-users__item" type="button">
-                <span
-                  className={`connect-following-users__avatar connect-following-users__avatar--${user.theme}`}
-                >
-                  <span>{user.mark}</span>
-                </span>
-                <strong>{user.name}</strong>
-              </button>
-            </SwiperSlide>
-          ))}
+          {followingUsers.map((user) => {
+            const initials = user.nickname.slice(0, 2).toUpperCase();
+            return (
+              <SwiperSlide
+                className="connect-following-users__slide"
+                key={user.userId}
+              >
+                <button className="connect-following-users__item" type="button">
+                  <span className="connect-following-users__avatar">
+                    {user.imgUrl ? (
+                      <img
+                        src={user.imgUrl}
+                        alt={user.nickname}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <span>{initials}</span>
+                    )}
+                  </span>
+                  <strong>{user.nickname}</strong>
+                </button>
+              </SwiperSlide>
+            );
+          })}
         </Swiper>
       </div>
     </section>
