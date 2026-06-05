@@ -407,3 +407,69 @@
     }
   }
 }
+
+/* ── 리팩토링 보강: 공통 타이틀/내역 영역 ───────────────────────── */
+.contact-page {
+  .tab-content-panel {
+    animation: contactFade 0.2s ease;
+  }
+
+  .section-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    h2 {
+      font-size: g.$text-18;
+      font-weight: 700;
+    }
+
+    &.sub-title h2 {
+      font-size: g.$text-16;
+    }
+
+    .total-count {
+      font-size: g.$text-12;
+      color: g.$g-color;
+      flex-shrink: 0;
+    }
+
+    .view-all-link {
+      font-size: g.$text-13;
+      color: g.$g-color;
+      flex-shrink: 0;
+      transition: color 0.2s;
+
+      &:hover {
+        color: g.$main-color;
+      }
+    }
+  }
+
+  .faq-results-wrapper {
+    margin-top: 28px;
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .history-empty {
+    padding: 48px 0;
+    text-align: center;
+
+    p {
+      font-size: g.$text-14;
+      color: g.$g-color;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+@keyframes contactFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
