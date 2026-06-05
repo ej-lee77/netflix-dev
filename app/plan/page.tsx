@@ -47,21 +47,30 @@ export default function PlanPage() {
   if (!isLoggedIn || planType === "") {
     return (
       <div className="signin-page">
-        <section className="plan-cta-section">
-          <div className="plan-cta-inner">
-            <h2 className="cta-title">지금 바로 시작하세요</h2>
-            <p className="cta-desc">
-              지금 가입하고 다양한 콘텐츠를 무제한으로 즐겨보세요
-            </p>
-            <Link href="/signin" className="cta-btn">
-              구독 시작하기
-            </Link>
-          </div>
-        </section>
+        <div className="plan-page">
+          <p className="plan-eyebrow">멤버십 플랜</p>
+          <h1 className="plan-title">지금 바로 시작하세요</h1>
+          <p className="plan-subtitle">지금 가입하고 다양한 콘텐츠를 무제한으로 즐겨보세요</p>
+          <StepPlan
+            hideTitle
+            skipFirestore
+            submitLabel="선택하기"
+            onNext={(plan) => {
+              const uid = user?.uid ?? auth.currentUser?.uid;
+              if (uid) {
+                // 로그인 상태 → 결제 페이지로
+                router.push("/payment");
+              } else {
+                // 비로그인 상태 → 로그인 페이지로
+                router.push("/login");
+              }
+            }}
+            submitLabel="구독 시작하기"
+          />
+        </div>
       </div>
     );
   }
-
   return (
     <div className="signin-page">
       {/* 스텝 인디케이터 대신 타이틀 */}
