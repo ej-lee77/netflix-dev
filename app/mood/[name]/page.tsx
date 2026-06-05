@@ -108,7 +108,7 @@ export default function MoodPage() {
     const fetchMood = async () => {
       const genres = type === "movie" ? info.movieGenres : info.tvGenres;
       const res = await fetch(
-        `https://api.themoviedb.org/3/discover/${type}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genres}&sort_by=${info.sortBy}&page=1&vote_count.gte=100`
+        `https://api.themoviedb.org/3/discover/${type}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genres}&sort_by=${info.sortBy}&page=1&vote_count.gte=100&with_watch_providers=8&watch_region=KR`
       );
       const data = await res.json();
       const list = (data.results || []).map((item: any) => ({
