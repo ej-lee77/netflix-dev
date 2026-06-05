@@ -6,6 +6,7 @@ import { useParams, notFound } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/category.scss";
 import PosterCard from "@/components/common/PosterCard";
+import CustomSelect from "@/components/common/CustomSelect";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -84,6 +85,7 @@ interface MediaItem {
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
+  genre_ids?: number[];
   media_type: "movie" | "tv";
 }
 
@@ -129,6 +131,7 @@ export default function MoodPage() {
         vote_average: item.vote_average,
         release_date: item.release_date,
         first_air_date: item.first_air_date,
+        genre_ids: item.genre_ids ?? [],
         media_type: endpoint,
       }));
       setItems(list);
@@ -184,15 +187,17 @@ export default function MoodPage() {
         </div>
 
         <div className="mood-result-head" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-          <select
-            className="sort-select"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-          >
-            <option value="popularity.desc">인기순</option>
-            <option value="vote_average.desc">평점순</option>
-            <option value="release_date.desc">최신순</option>
-          </select>
+          <div style={{ width: 150 }}>
+            <CustomSelect
+              options={[
+                { value: "popularity.desc", label: "인기순" },
+                { value: "vote_average.desc", label: "평점순" },
+                { value: "release_date.desc", label: "최신순" },
+              ]}
+              value={sort}
+              onChange={setSort}
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -208,6 +213,9 @@ export default function MoodPage() {
                 posterPath={item.poster_path}
                 voteAverage={item.vote_average}
                 year={(item.release_date || item.first_air_date || "").slice(0, 4)}
+                backdropPath={item.backdrop_path}
+                overview={item.overview}
+                genreIds={item.genre_ids}
               />
             ))}
           </div>

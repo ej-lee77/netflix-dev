@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import PosterCard from "@/components/common/PosterCard";
+import CustomSelect from "@/components/common/CustomSelect";
 import "../scss/category.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -30,6 +31,9 @@ type MediaItem = {
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
+  backdrop_path?: string | null;
+  overview?: string;
+  genre_ids?: number[];
   media_type: "movie" | "tv";
 };
 
@@ -361,6 +365,9 @@ export default function CategoryPage() {
       vote_average: item.vote_average,
       release_date: item.release_date,
       first_air_date: item.first_air_date,
+      backdrop_path: item.backdrop_path,
+      overview: item.overview,
+      genre_ids: item.genre_ids ?? [],
       media_type: mediaType,
     }));
 
@@ -617,15 +624,17 @@ export default function CategoryPage() {
               <h2>전체 작품</h2>
               <div className="result-tools">
                 <span>{totalResults.toLocaleString()}편</span>
-                <select
-                  className="sort-select"
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as SortType)}
-                >
-                  <option value="popularity.desc">인기순</option>
-                  <option value="vote_average.desc">평점순</option>
-                  <option value="release_date.desc">최신순</option>
-                </select>
+                <div style={{ width: 140 }}>
+                  <CustomSelect
+                    options={[
+                      { value: "popularity.desc", label: "인기순" },
+                      { value: "vote_average.desc", label: "평점순" },
+                      { value: "release_date.desc", label: "최신순" },
+                    ]}
+                    value={sort}
+                    onChange={(v) => setSort(v as SortType)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -643,6 +652,9 @@ export default function CategoryPage() {
                       posterPath={item.poster_path}
                       voteAverage={item.vote_average}
                       year={(item.release_date || item.first_air_date || "").slice(0, 4)}
+                      backdropPath={item.backdrop_path}
+                      overview={item.overview}
+                      genreIds={item.genre_ids}
                     />
                   ))}
                 </div>
