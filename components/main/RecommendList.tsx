@@ -8,6 +8,7 @@ import type { Swiper as SwiperClass } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import './scss/recommendList.scss';
+import WishlistButton from "@/components/common/WishlistButton";
 import SectionTitle from '../common/SectionTitle';
 
 const GENRE_MAP: Record<number, string> = {
@@ -172,6 +173,7 @@ export default function RecommendList() {
                     </svg>
                     상세정보
                   </Link>
+                  <WishlistButton item={item} mediaType={item.media_type} className="card-wish" />
                 </div>
               </div>
             </div>

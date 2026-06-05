@@ -10,6 +10,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/categoryList.scss";
+import WishlistButton from "@/components/common/WishlistButton";
 import SectionTitle from "../common/SectionTitle";
 
 const GENRE_MAP: Record<number, string> = {
@@ -171,6 +172,7 @@ export default function ThemeRow({ title, items, href }: ThemeRowProps) {
                             </svg>
                             상세정보
                           </Link>
+                          <WishlistButton item={item} mediaType={item.mediaType} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>

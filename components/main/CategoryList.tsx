@@ -10,6 +10,7 @@ import { Navigation } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/navigation";
+import WishlistButton from "@/components/common/WishlistButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
 
@@ -204,6 +205,7 @@ export default function CategoryList({ category }: MediaListProps) {
                             </svg>
                             상세정보
                           </Link>
+                          <WishlistButton item={item} mediaType={(category === "netflix" ? "tv" : category) as "movie" | "tv"} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>
