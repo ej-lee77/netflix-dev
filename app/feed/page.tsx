@@ -290,19 +290,19 @@ const getNextStarRating = (currentRating: number, star: number) => {
 
 export default function FeedPage() {
   const router = useRouter();
-  const { user, currentProfile } = useAuthStore();
+  const { user, currentProfile, updateUserLikeFeeds, updateUserCommentFeed } = useAuthStore();
   const {
-    reviews,
+    feeds,
     onAddComment,
     onAddFeed,
     onDeleteComment,
-    onDeleteReview,
-    onHydrateReviews,
-    onReportReview,
+    onDeleteFeed,
+    onHydrateFeeds,
+    onReportFeed,
     onToggleCommentLike,
     onToggleLike,
     onUpdateComment,
-    onUpdateReview,
+    onUpdateFeed,
   } = useFeedStore();
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
   const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<
@@ -365,19 +365,19 @@ export default function FeedPage() {
   }, []);
 
   useEffect(() => {
-    void onHydrateReviews();
-  }, [currentProfile?.id, currentUserId, onHydrateReviews]);
+    void onHydrateFeeds();
+  }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
 
-  useEffect(() => {
-    const reportedFeedIds = (currentProfile?.community?.feeds || [])
-      .filter((activity) => activity.type === "report")
-      .map((activity) => activity.feedId);
-    const timeoutId = window.setTimeout(() => {
-      setReportedReviewIds([...new Set(reportedFeedIds)]);
-    }, 0);
+  // useEffect(() => {
+  //   const reportedFeedIds = (currentProfile?.community?.reportfeeds || [])
+  //     .filter((activity) => activity.type === "report")
+  //     .map((activity) => activity.feedId);
+  //   const timeoutId = window.setTimeout(() => {
+  //     setReportedReviewIds([...new Set(reportedFeedIds)]);
+  //   }, 0);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [currentProfile?.community?.feeds]);
+  //   return () => window.clearTimeout(timeoutId);
+  // }, [currentProfile?.community?.feeds]);
 
   useEffect(() => {
     if (!writeModalOpen && !commentTargetReviewId) return;
@@ -594,11 +594,11 @@ export default function FeedPage() {
 
   const filteredReviews =
     activeTab === "all"
-      ? reviews
-      : reviews.filter((review) => review.isFollowing);
+      ? feeds
+      : feeds.filter((review) => review.isFollowing);
 
   const selectedCommentReview =
-    reviews.find((review) => review.feedId === commentTargetReviewId) ?? null;
+    feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
@@ -618,6 +618,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
 
     void onToggleLike(feedId);
+    updateUserLikeFeeds(feedId);
   };
 
   const handleOpenCommentModal = (reviewId: string) => {
@@ -631,7 +632,7 @@ export default function FeedPage() {
     if (review.isMine) return;
 
     if (reportedReviewIds.includes(review.feedId)) {
-      await onReportReview(review.feedId, false);
+      await onReportFeed(review.feedId, false);
       setReportedReviewIds((prev) =>
         prev.filter((reviewId) => reviewId !== review.feedId),
       );
@@ -653,7 +654,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
     if (!reportTargetReviewId || !selectedReportReason) return;
 
-    await onReportReview(reportTargetReviewId, true, selectedReportReason);
+    await onReportFeed(reportTargetReviewId, true, selectedReportReason);
     setReportedReviewIds((prev) =>
       prev.includes(reportTargetReviewId)
         ? prev
@@ -742,6 +743,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
 
     void onToggleCommentLike(reviewId, commentId);
+    updateUserCommentFeed(reviewId, commentId)
   };
 
   const handleSubmitReview = async (
@@ -753,11 +755,11 @@ export default function FeedPage() {
     if (!currentUserId || !currentProfile) return;
 
     const editingReview = editingReviewId
-      ? reviews.find((review) => review.feedId === editingReviewId)
+      ? feeds.find((review) => review.feedId === editingReviewId)
       : null;
 
     if (editingReview) {
-      await onUpdateReview({
+      await onUpdateFeed({
         ...editingReview,
         videoId: `${selectedMedia.mediaType}-${selectedMedia.id}`,
         rating: newRating,
@@ -1415,7 +1417,7 @@ export default function FeedPage() {
                         <button
                           type="button"
                           className="action delete-review-btn"
-                          onClick={() => void onDeleteReview(review.feedId)}
+                          onClick={() => void onDeleteFeed(review.feedId)}
                         >
                           삭제
                         </button>

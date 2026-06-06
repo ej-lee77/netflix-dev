@@ -19,6 +19,10 @@ export interface FeedComment {
   content: string;          // 댓글 내용
   reportsCount: number;     // 신고
   likesCount: number;       // 좋아요
+  profileId?: number;
+  createdAt: string;
+  updatedAt?: string;
+  likedUserIds?: string[];
 }
 
 // 2. 피드 메인 문서 인터페이스 (Main-collection용)

@@ -8,7 +8,7 @@ import {
   type UserInfo,
 } from "@/types/auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore"; 
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
@@ -134,7 +134,7 @@ export const useAuthStore = create<AuthState>()(
                 nickname: "나",
                 imgUrl: FALLBACK_PROFILE_IMAGE,
                 movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
-                community: { followers: [], following: [], reviews: [], feeds: [] },
+                community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
                 bages: { equippedBadges: "", earnedBadges: [] }
               });
 
@@ -224,7 +224,7 @@ export const useAuthStore = create<AuthState>()(
           ...newProfile, 
           id: nextId,
           movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
-          community: { followers: [], following: [], reviews: [], feeds: [] },
+          community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
           bages: { equippedBadges: "", earnedBadges: [] }
         });
         
@@ -385,6 +385,103 @@ export const useAuthStore = create<AuthState>()(
           console.error("좋아요 토글 실패:", error);
         }
       },
+      // 1. 좋아요 피드 토글
+      updateUserLikeFeeds: async (feedId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          const targetCommunity = updatedProfiles[profileIndex].community;
+
+          // 로컬에서 배열 조작
+          const currentFeeds = targetCommunity.likedfeeds || [];
+          if (currentFeeds.includes(feedId)) {
+            targetCommunity.likedfeeds = currentFeeds.filter((id) => id !== feedId);
+          } else {
+            targetCommunity.likedfeeds = [...currentFeeds, feedId];
+          }
+
+          // 전체 배열을 덮어쓰기 (안전한 방식)
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+          get().onInitAuth();
+        } catch (error) {
+          console.error("좋아요 피드 업데이트 실패:", error);
+        }
+      },
+
+      // 2. 댓글 활동 피드 토글
+      updateUserCommentFeed: async (feedId: string, commentId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+        const compositeId = `${feedId}#${commentId}`;
+
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          const targetCommunity = updatedProfiles[profileIndex].community;
+
+          const currentFeeds = targetCommunity.commentfeeds || [];
+          if (currentFeeds.includes(compositeId)) {
+            targetCommunity.commentfeeds = currentFeeds.filter((id) => id !== compositeId);
+          } else {
+            targetCommunity.commentfeeds = [...currentFeeds, compositeId];
+          }
+
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+          get().onInitAuth();
+        } catch (error) {
+          console.error("댓글 활동 업데이트 실패:", error);
+        }
+      },
+
+      // 3. 신고 피드 토글
+      updateUserReportFeed: async (feedId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          const targetCommunity = updatedProfiles[profileIndex].community;
+
+          const currentFeeds = targetCommunity.reportfeeds || [];
+          if (currentFeeds.includes(feedId)) {
+            targetCommunity.reportfeeds = currentFeeds.filter((id) => id !== feedId);
+          } else {
+            targetCommunity.reportfeeds = [...currentFeeds, feedId];
+          }
+
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+          get().onInitAuth();
+        } catch (error) {
+          console.error("신고 피드 업데이트 실패:", error);
+        }
+      }
     }),
     {
       name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.

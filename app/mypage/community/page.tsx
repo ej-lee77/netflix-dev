@@ -7,6 +7,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/communityPage.scss";
 import Review from "@/components/mypage/Review";
 import { useCommunityStore } from "@/store/useCommunityStore";
+import Feed from "@/components/mypage/Feed";
+import { useFeedStore } from "@/store/useFeedStore";
+import MyPageFeed from "@/components/mypage/Feed";
 
 type CommunityTab = "reviews" | "my-feeds" | "create-feed" | "create-review";
 type ScopeFilterType = "mine" | "liked" | "following";
@@ -82,8 +85,9 @@ function CommunityContent() {
   const [feedContent, setFeedContent] = useState("");
   const [feedMediaType, setFeedMediaType] = useState<"movie" | "tv" | "general">("general");
 
-  const [feeds] = useState<UserFeed[]>([]);
+  const { currentProfile } = useAuthStore();
   const { reviews, fetchUserReviews } = useCommunityStore();
+  const { feeds, onDeleteFeed, onHydrateFeeds } = useFeedStore();
 
   useEffect(() => {
     setIsLoading(false);
@@ -91,10 +95,29 @@ function CommunityContent() {
 
   useEffect(() => {
     fetchUserReviews(); 
-  }, [fetchUserReviews]);
+    onHydrateFeeds();
+  }, [fetchUserReviews, onHydrateFeeds]);
 
   const currentTabLabel = tabs.find((t) => t.id === activeTab)?.label || "커뮤니티";
   const currentSortLabel = sortOptions.find((o) => o.key === sortType)?.label;
+
+  // 1. 현재 프로필 ID와 일치하는 피드만 필터링
+  const myFeeds = feeds.filter(
+    (feed) => feed.profileId === currentProfile?.id
+  );
+
+  // 2. 수정 핸들러 (수정 모달을 띄우는 로직 연결)
+  const handleEdit = (review: any) => {
+    // page.tsx에 있던 handleOpenEditReview와 같은 역할을 수행
+    console.log("수정할 피드:", review);
+  };
+
+  // 3. 삭제 핸들러
+  const handleDelete = (feedId: string) => {
+    if (window.confirm("정말 삭제하시겠습니까?")) {
+      onDeleteFeed(feedId);
+    }
+  };
 
   return (
     <div className="media-list-page community-page">
@@ -202,7 +225,13 @@ function CommunityContent() {
               )}
 
               {activeTab === "my-feeds" && (
-                <div className="community-empty"><p className="empty-text">작성된 피드가 없습니다.</p></div>
+                <>
+                <Feed 
+                  feeds={myFeeds} 
+                  onDeleteFeed={handleDelete} 
+                  onEditFeed={handleEdit} 
+                />
+                </>
               )}
 
               {activeTab === "create-feed" && (
