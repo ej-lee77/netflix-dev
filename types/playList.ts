@@ -12,12 +12,28 @@ export interface PlayListItem{
     episodeProgress: Record<number, number>; // episodeId → 0~100
 }
 
+type DetailMedia = (Movie | TV) & {
+  adult?: boolean;
+  created_by?: { id: number; name: string }[];
+  first_air_date?: string;
+  genres?: { id: number; name: string }[];
+  number_of_episodes?: number;
+  number_of_seasons?: number;
+  production_countries?: { iso_3166_1: string; name: string }[];
+  runtime?: number;
+  status?: string;
+  tagline?: string;
+  vote_count?: number;
+  origin_country?: string[];
+};
+
 export interface PlayListState{
     playList: PlayListItem[],
     playHist: string[],
     myList: string[],
     customPlaylists: PlaylistDocument[],
-    onAddPlayList: (item: Movie | TV)=>Promise<boolean>,
+    currentPlaylist: PlaylistDocument | null,
+    onAddPlayList: (item: DetailMedia)=>Promise<boolean>,
     onRemovePlayList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
     onAddMyList: (item: Movie | TV, mediaType?: "movie" | "tv")=>Promise<boolean>,
@@ -29,6 +45,7 @@ export interface PlayListState{
     fetchMyCustomPlaylists: ()=>Promise<void>,
     updateCustomPlaylist: (listId: string, updatedData: Partial<PlaylistDocument>) => Promise<void>;
     deleteCustomPlaylist: (listId: string) => Promise<void>;
+    fetchPlaylist: (userId: string, listId: string) => Promise<void>;
 }
 
 // 플리 타입
@@ -41,8 +58,9 @@ export interface PlaylistDocument {
   tags: string[];          // 태그 (장르, 무드)
   likesCount: number;      // 좋아요
   createdAt: string;
-  isDelete: boolean;
+  items?:  string[];
+  //isDelete: boolean;
 
   // 파이어베이스 연동 및 관리를 위한 필수 확장 필드
-  userId: string;         // 플레이리스트 생성자 (유저 ID)
+  //userId: string;         // 플레이리스트 생성자 (유저 ID)
 }

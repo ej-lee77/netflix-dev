@@ -11,15 +11,15 @@ export const mainMenus: mainMenu[] = [
     imgUrl: "/images/header/menu/genre-filter.svg",
     path: "/category",
   },
-  {
-    title: "플레이리스트",
-    imgUrl: "/images/header/menu/playlist.svg",
-    path: "/mypage/playlist?tab=playlists",
-  },
+  // {
+  //   title: "플레이리스트",
+  //   imgUrl: "/images/header/menu/playlist.svg",
+  //   path: "/mypage/playlist?tab=playlists",
+  // },
   {
     title: "위시리스트",
     imgUrl: "/images/header/menu/wishlist.svg",
-    path: "/mypage/playlist?tab=wishlist",
+    path: "/mypage/playlist?tab=playlists",
   },
   {
       title: "시청이력",

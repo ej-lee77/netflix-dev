@@ -28,6 +28,7 @@ type DetailMedia = (Movie | TV) & {
   status?: string;
   tagline?: string;
   vote_count?: number;
+  origin_country?: string[];
 };
 
 type DetailTab = "episodes" | "info" | "cast" | "director" | "review" | "related";
@@ -175,8 +176,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const { playList, myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList, onUpdateProgress, onUpdateEpisodeProgress } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
-  const { reviews, addReview, fetchVideoReviews, reportReview, toggleReviewLike } = useCommunityStore();
-  const { currentProfile } = useAuthStore();
+  const { reviews, addReview, fetchVideoReviews, reportReview, updateReviewLikeCount } = useCommunityStore();
+  const { user, currentProfile, updateUserLike, onInitAuth } = useAuthStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -198,7 +199,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [reviewPage, setReviewPage] = useState(1);
   const [reportedReviewIds, setReportedReviewIds] = useState<string[]>([]);
   const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<string[]>([]);
-  const [likedReviewIds, setLikedReviewIds] = useState<string[]>([]);
+  // const [likedReviewIds, setLikedReviewIds] = useState<string[]>([]);
   const [reportTargetReviewId, setReportTargetReviewId] = useState<string | null>(null);
   const [selectedReportReason, setSelectedReportReason] = useState("");
   // const [submittedReviews, setSubmittedReviews] = useState<RegisteredReview[]>([]);
@@ -400,6 +401,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     setIsAddingPlayList(true);
     try {
       await onAddPlayList(mediaItem);
+      await onInitAuth();
       await openVideo();
     } finally {
       setIsAddingPlayList(false);
@@ -485,15 +487,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const updatetoggleReviewLike = async (reviewId: string) => {
-    if (!currentProfile) return;
+    const { user, currentProfile } = useAuthStore.getState();
+    if (!user?.userId || !currentProfile) return;
 
     const targetReview = reviews.find(r => r.reviewId === reviewId);
     if (!targetReview) return;
 
-    // 1. DB 업데이트 수행 (스토어 함수 호출)
-    await toggleReviewLike(reviewId, targetReview.videoId);
-    
-    setLikedReviewIds(currentProfile.community.reviews);
+    const reviewKey = `${targetReview.videoId}#${reviewId}`;
+    const isLiked = currentProfile.community.reviews.includes(reviewKey);
+
+    // 1. 커뮤니티 스토어에서 리뷰 테이블 카운트 변경
+    await updateReviewLikeCount(targetReview.videoId, reviewId, isLiked);
+
+    // 2. Auth 스토어에서 유저 정보(키 목록) 변경
+    await updateUserLike(reviewId, targetReview.videoId);
   };
 
   useEffect(() => {
@@ -848,8 +855,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {pagedReviews.map((review) => {
+            const reviewKey = `${itemKey}#${review.reviewId}`;
             const isReported = reportedReviewIds.includes(review.reviewId);
-            const isLiked = likedReviewIds.includes(review.reviewId);
+            const isLiked = currentProfile?.community.reviews.includes(reviewKey);
             const shouldBlurSpoiler = review.isSpoiler && !visibleSpoilerReviewIds.includes(review.reviewId);
 
             return (
@@ -1029,7 +1037,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 >
                   <img
                     src={isLiked ? "/images/detail/review/heart-filled.svg" : "/images/detail/review/heart-lined.svg"}
-                    alt=""
+                    alt="좋아요"
                     style={{ width: 14, height: 14, opacity: isLiked ? 1 : 0.86, filter: isLiked ? "none" : "invert(1)" }}
                   />
                   좋아요 {review.likesCount}
@@ -1436,26 +1444,28 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 {isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
               </button>
               <button
-                className={`detail-secondary-hover${isMyListAdded ? " detail-my-list-added" : ""}`}
+                className={`detail-circle-hover`}
                 onClick={handleMyList}
                 disabled={isAddingMyList}
                 aria-pressed={isMyListAdded}
                 style={{
-                  background: isMyListAdded ? "rgba(229,9,20,0.24)" : "rgba(255,255,255,0.1)",
-                  color: "#fff",
-                  height: 46,
-                  padding: "0 18px",
-                  fontSize: 16,
-                  fontWeight: 700,
-                  border: `1px solid ${isMyListAdded ? "rgba(229,9,20,0.72)" : "rgba(255,255,255,0.25)"}`,
-                  borderRadius: 4,
-                  cursor: isAddingMyList ? "default" : "pointer",
-                  opacity: isAddingMyList ? 0.7 : 1,
+                  background: mediaItem && wishlistIds.includes(String(itemKey)) ? "#e50914" : "rgba(229,9,20,0.1)",
+                  border: "1px solid #e50914",
+                  color: mediaItem && wishlistIds.includes(String(itemKey)) ? "#fff" : "#e50914",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  cursor: isAddingWish ? "default" : "pointer",
+                  opacity: isAddingWish ? 0.6 : 1,
+                  fontSize: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {isMyListAdded ? "✓ 내 리스트" : "＋ 내 리스트"}
+                {isMyListAdded ? "♥" : "♡"}
               </button>
-              <button
+              {/* <button
                 className="detail-circle-hover"
                 onClick={handleWish}
                 disabled={isAddingWish}
@@ -1477,7 +1487,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 }}
               >
                 {mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "♥" : "♡"}
-              </button>
+              </button> */}
               {/* <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 🔔
               </button>   */}

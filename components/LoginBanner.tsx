@@ -54,7 +54,6 @@ export default function LoginBanner() {
             구독 시작하기
           </Link>
         </div>
-
       </div>
     </div>
   );

@@ -6,9 +6,10 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, qu
 import { useAuthStore } from "./useAuthStore";
 import { PlaylistDocument } from "@/types/playList";
 import { useMovieStore } from "./useMovieStore";
+import { BADGE_LIST } from "@/data/badge";
+import { BadgeList } from "@/types/auth";
+import { filters } from "@/app/category/page";
 
-const LOCAL_PLAYLIST_KEY = "netflix-play-list";
-const LOCAL_MY_LIST_KEY = "netflix-my-list";
 const MAX_LIST_COUNT = 20;
 
 type MediaType = "movie" | "tv";
@@ -55,18 +56,6 @@ const putLatestFirst = (items: PlayListItem[], newItem: PlayListItem) => {
     return [merged, ...filtered].slice(0, MAX_LIST_COUNT);
 };
 
-const removeItem = (items: PlayListItem[], id: number, mediaType: MediaType) => {
-    const targetKey = getKeyFromParts(id, mediaType);
-
-    return items.filter((item) => getItemKey(item) !== targetKey);
-};
-
-const removeKey = (keys: string[], id: number, mediaType: MediaType) => {
-    const targetKey = getKeyFromParts(id, mediaType);
-
-    return keys.filter((key) => key !== targetKey);
-};
-
 const loadLocalList = (key: string) => {
     if (typeof window === "undefined") return [];
 
@@ -76,16 +65,6 @@ const loadLocalList = (key: string) => {
     } catch (err) {
         console.log("Failed to load local list", err);
         return [];
-    }
-};
-
-const saveLocalList = (key: string, items: PlayListItem[]) => {
-    if (typeof window === "undefined") return;
-
-    try {
-        window.localStorage.setItem(key, JSON.stringify(items));
-    } catch (err) {
-        console.log("Failed to save local list", err);
     }
 };
 
@@ -103,45 +82,76 @@ const getUserMoviePath = (fieldName: UserListField) => (
         : "movies.playlist.playlistVideos"
 );
 
-const syncAddUserMovieId = async (fieldName: UserListField, newKey: string) => {
-    const user = auth.currentUser;
-
-    if (!user) return true;
-
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) return false;
-
-    const prevKeys = getUserMovieIds(userDoc.data(), fieldName);
-    const nextKeys = [newKey, ...prevKeys.filter((key) => key !== newKey)].slice(0, MAX_LIST_COUNT);
-
-    await updateDoc(userDocRef, {
-        [getUserMoviePath(fieldName)]: nextKeys
-    });
-
-    return true;
+// 1. 장르 통계 계산을 위한 유틸리티 함수
+const countStats = (currentStats: Record<string, number>, ids: string[]) => {
+  const newStats = { ...currentStats };
+  ids.forEach(id => {
+    // 국가 코드 등은 대문자 통일 권장
+    const key = id.toUpperCase();
+    newStats[key] = (newStats[key] || 0) + 1;
+  });
+  return newStats;
 };
 
-const loadHydratedList = async (fieldName: UserListField, localKey: string) => {
-    const localItems = loadLocalList(localKey);
-    const user = auth.currentUser;
+// 장르 ID(숫자) -> badgeId 매핑 생성
+export const GENRE_ID_TO_BADGE_ID: Record<string, string> = {};
 
-    if (!user) return localItems;
+filters.genre.forEach((g) => {
+  // query와 tvQuery에 있는 숫자들을 모두 수집
+  const ids = [
+    ...(g.query?.with_genres?.split(",") || []),
+    ...(g.tvQuery?.with_genres?.split(",") || []),
+  ];
+  
+  ids.forEach((id) => {
+    GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
+  });
+});
+console.log(GENRE_ID_TO_BADGE_ID)
 
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
+export const getNewlyEarnedBadges = (
+  currentBadges: BadgeList,
+  genreStats: Record<string, number>
+): BadgeList => {
+  const updatedEarnedBadges = [...currentBadges.earnedBadges];
+  let newEquipped = currentBadges.equippedBadges;
 
-    if (!userDoc.exists()) return localItems;
+  // 1. 모든 장르 뱃지에 대해 업데이트 수행
+  BADGE_LIST.forEach((badge) => {
+    if (!badge.id.startsWith("genre_")) return;
 
-    const storedKeys = getUserMovieIds(userDoc.data(), fieldName);
-    if (!storedKeys.length) return localItems;
+    const genreId = Object.keys(GENRE_ID_TO_BADGE_ID).find(
+      (key) => GENRE_ID_TO_BADGE_ID[key] === badge.id
+    );
+    const count = genreId ? (genreStats[genreId] || 0) : 0;
 
-    const hydratedItems = storedKeys
-        .map((key) => localItems.find((item) => getItemKey(item) === key))
-        .filter((item): item is PlayListItem => Boolean(item));
+    // 2. 이미 존재하는 뱃지인지 확인
+    const existingBadgeIndex = updatedEarnedBadges.findIndex((b) => b.id === badge.id);
 
-    return hydratedItems.length ? hydratedItems : localItems;
+    if (existingBadgeIndex !== -1) {
+      // 이미 획득했으면 진행도 업데이트
+      updatedEarnedBadges[existingBadgeIndex].progress = count;
+      updatedEarnedBadges[existingBadgeIndex].isComplete = count >= badge.total;
+    } else if (count > 0) {
+      // 새로 진행 중인 뱃지 추가
+      const isComplete = count >= badge.total;
+      updatedEarnedBadges.push({
+        id: badge.id,
+        progress: count,
+        isComplete: isComplete,
+      });
+
+      // 3. 첫 획득(완료) 시 자동 장착
+      if (isComplete && !newEquipped) {
+        newEquipped = badge.id;
+      }
+    }
+  });
+
+  return {
+    earnedBadges: updatedEarnedBadges,
+    equippedBadges: newEquipped,
+  };
 };
 
 export const usePlayListStore = create<PlayListState>((set, get) => ({
@@ -149,6 +159,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     playHist: [],
     myList: [],
     customPlaylists: [],
+    currentPlaylist: null,
     onAddPlayList: async (item) => {
         try {
             const authState = useAuthStore.getState();
@@ -169,32 +180,52 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             const playItem = makePlayListItem(item);
             const itemKey = `${playItem.mediaType}-${playItem.id}`;
 
-            // 2. 프로필 복사본 및 데이터 업데이트
+            // 2. 프로필 복사본 및 통계 업데이트
             const updatedProfiles = [...profiles];
             const targetProfile = { ...updatedProfiles[profileIndex] };
             
-            // --- watchingVideos 처리 (객체 전체 저장) ---
-            const prevList = targetProfile.movies?.watchingVideos || [];
-            const newWatchingVideos = putLatestFirst(prevList, playItem);
+            // 기존 통계 데이터 가져오기
+            const movies = targetProfile.movies || { 
+                genreStats: {}, 
+                countryStats: {}, 
+                watchingVideos: [], 
+                histMovies: [] 
+            };
 
-            const prevHist = targetProfile.movies?.histMovies || [];
-            const newHistMovies = [itemKey, ...prevHist.filter((k: string) => k !== itemKey)].slice(0, 50);
+            // 통계 업데이트 (장르 및 국가)
+            const newGenreStats = countStats(movies.genreStats || {}, item.genres?.map((g: any) => g.id.toString()) || []);
+            const newCountryStats = countStats(movies.countryStats || {}, item.origin_country || []);
+
+            const updatedBadgeList = getNewlyEarnedBadges(
+                targetProfile.badges || { earnedBadges: [], equippedBadges: "" }, 
+                newGenreStats
+            );
+
+            // 업데이트된 뱃지 리스트 반영
+            targetProfile.badges = updatedBadgeList;
+
+            // --- watchingVideos & histMovies 처리 ---
+            const newWatchingVideos = putLatestFirst(movies.watchingVideos || [], playItem);
+            const newHistMovies = [itemKey, ...movies.histMovies.filter((k: string) => k !== itemKey)].slice(0, 50);
 
             // 3. 데이터 구조 반영
             targetProfile.movies = {
-                ...targetProfile.movies,
+                ...movies,
                 watchingVideos: newWatchingVideos,
-                histMovies: newHistMovies
+                histMovies: newHistMovies,
+                genreStats: newGenreStats,
+                countryStats: newCountryStats
             };
 
             updatedProfiles[profileIndex] = targetProfile;
             await updateDoc(userDocRef, { profile: updatedProfiles });
 
-            // 4. [핵심] playList와 playHist 상태 동시 업데이트
+            // 4. 상태 동시 업데이트
             set({ 
                 playList: newWatchingVideos,
                 playHist: newHistMovies 
             });
+            
             return true;
         } catch (err) {
             console.error("데이터 저장 실패:", err);
@@ -545,4 +576,35 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             console.error("Episode Progress Firestore 동기화 실패:", err);
         }
     },
+    fetchPlaylist: async (userId, listId) => {
+        try {
+            const docRef = doc(db, "playlists", userId);
+            const docSnap = await getDoc(docRef);
+            const fetchMedia = useMovieStore.getState().fetchMediaDetail;
+            
+            if (docSnap.exists()) {
+            const data = docSnap.data();
+            const foundList = data.playlists?.find((p: any) => p.listId === listId);
+            
+                if (foundList && foundList.videoIds) {
+                    // 모든 상세 정보를 한 번에 병렬로 가져옴
+                    const detailedItems = await Promise.all(
+                    foundList.videoIds.map(async (item: string) => {
+                        const [mediaType, id] = item.split("-");
+                        const data = await fetchMedia(id, mediaType as "movie" | "tv");
+                        return {
+                            id: Number(id),
+                            mediaType: mediaType as "movie" | "tv",
+                            title: data?.title || data?.name || "제목 없음",
+                            poster_path: data?.poster_path ?? "",
+                        };
+                    })
+                    );
+                    set({ currentPlaylist: { ...foundList, items: detailedItems } });
+                }
+            }
+        } catch (err) {
+            console.error("데이터 로드 실패:", err);
+        }
+    }
 }));
