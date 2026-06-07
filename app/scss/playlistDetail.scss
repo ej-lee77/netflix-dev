@@ -1,0 +1,33 @@
+@use "@/app/globals" as g;
+
+.playlist-detail-page {
+  padding: 40px 5%;
+  background-color: g.$bg-color;
+  color: g.$w-color;
+
+  header {
+    margin-bottom: 3rem;
+    h1 { font-size: g.$text-32; margin-bottom: 10px; }
+    p { font-size: g.$text-16; color: g.$g-color; }
+  }
+
+  .video-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+
+    .video-item {
+      img {
+        width: 100%;
+        border-radius: g.$radius-md;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+      }
+      h3 {
+        margin-top: 10px;
+        font-size: g.$text-14;
+        color: g.$w-color;
+      }
+    }
+  }
+}

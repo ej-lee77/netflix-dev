@@ -3,7 +3,6 @@ import React, { useMemo, useState } from "react";
 import "../scss/goods.scss";
 import { BADGE_LIST } from "@/data/badge";
 import { useAuthStore } from "@/store/useAuthStore";
-import { mockUserData } from "@/data/mockUserData";
 
 const limitedGoods = [
   { id: 1, name: "오리지널 시리즈 포스터 (A2 사이즈)", desc: "시즌2 메인 비주얼 · 액자 별매", price: 3500, stock: 234, type: "LIMITED" as const },
@@ -20,17 +19,17 @@ const events = [
 ];
 
 export default function GoodsPage() {
-  const { user, currentProfile } = useAuthStore();
+  const { user, currentProfile, equipBadge } = useAuthStore();
 
   const displayBadges = useMemo(() => {    
     // 1. 데이터가 없을 경우 처리
     if (!user || !user.profile || !currentProfile) return [];
 
     // 2. 현재 프로필 찾기
-    const activeProfile = user.profile.find((p: any) => p.id === currentProfile.id);
+    // const activeProfile = user.profile.find((p: any) => p.id === currentProfile.id);
     
     // 뱃지 데이터가 아예 없을 경우를 대비해 빈 객체 제공
-    const bagesData = activeProfile?.bages || { earnedBadges: [], equippedBadges: null };
+    const bagesData = currentProfile?.badges || { earnedBadges: [], equippedBadges: null };
     const { earnedBadges, equippedBadges } = bagesData;
 
     return BADGE_LIST.map((masterBadge) => {
@@ -51,6 +50,9 @@ export default function GoodsPage() {
     });
   }, [currentProfile]);
 
+  // 장착된 대표 칭호/뱃지 찾기
+  const matchedBadge = BADGE_LIST.find((b) => b.id === currentProfile?.badges?.equippedBadges);
+
   return (
     <div className="goods-page">
       <div className="inner">
@@ -67,14 +69,14 @@ export default function GoodsPage() {
         {/* 컬렉션 통계 */}
         <div className="collection-stats">
           <div className="stat-card">
-            <div className="num">12</div>
+            <div className="num">{currentProfile?.badges?.earnedBadges.length}</div>
             <div className="label">획득 뱃지</div>
-            <div className="hint">전체 36개</div>
+            <div className="hint">전체 {BADGE_LIST.length}개</div>
           </div>
           <div className="stat-card">
-            <div className="num">3</div>
-            <div className="label">획득 칭호</div>
-            <div className="hint">대표: 한국영화 마니아</div>
+            <div className="label">대표 칭호</div>
+            <div className="">{matchedBadge ? matchedBadge.name : "없음"}</div>
+            {/* <div className="hint">대표: 한국영화 마니아</div> */}
           </div>
         </div>
 
@@ -110,10 +112,21 @@ export default function GoodsPage() {
               {/* 1. 획득 완료 상태 렌더링 */}
               {b.unlocked && (
                 <div className="status-done">
-                  ✓ 획득 완료{b.mainTitle && " · 대표 칭호"}
+                  ✓ 획득 완료
+                  {b.mainTitle ? (
+                    <span className="current-badge"> · 현재 대표 칭호</span>
+                  ) : (
+                    <button 
+                      type="button"
+                      className="equip-btn"
+                      onClick={() => equipBadge(b.id)}
+                    >
+                      대표로 설정
+                    </button>
+                  )}
                 </div>
               )}
-              
+            
               {/* 2. 미획득 상태일 때만 게이지바 및 진행도 렌더링 (목표치 total이 설정되어 있을 때만) */}
               {!b.unlocked && b.total !== undefined && (
                 <>

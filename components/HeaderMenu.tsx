@@ -1,7 +1,7 @@
 "use client";
 
 import { mainMenus, customMenus } from "@/data/mainMenu";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -50,6 +50,7 @@ export default function HeaderMenu() {
   const tm = useMenuLabel();
   const currentProfile = useAuthStore((state) => state.currentProfile);
   const [, setStorageRevision] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
 
   const queryString = searchParams.toString();
   const currentUrl = queryString ? `${pathname}?${queryString}` : pathname;
@@ -57,30 +58,33 @@ export default function HeaderMenu() {
   const isMenuActive = (menuPath: string) =>
     menuPath.includes("?") ? currentUrl === menuPath : pathname === menuPath;
 
-  const dynamicMenus = (() => {
+  useEffect(() => {
+    setIsMounted(true); // 클라이언트에서만 실행
+  }, []);
+
+  const dynamicMenus = useMemo(() => {
+    // 1. 마운트 전(서버)에는 무조건 기본 메뉴 반환 (Hydration 불일치 방지)
+    if (!isMounted) {
+      return DEFAULT_HEADER_MENU_PATHS.map((path) =>
+        allSelectablePool.find((m) => m.path === path)
+      ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
+    }
+
+    // 2. 마운트 후(클라이언트)에는 로직대로 메뉴 계산
     if (currentProfile) {
       const profileMenuPaths = currentProfile.headerMenus?.length
         ? ensureCategoryMenuPath(currentProfile.headerMenus)
         : DEFAULT_HEADER_MENU_PATHS;
-
       return profileMenuPaths
         .map((path) => allSelectablePool.find((m) => m.path === path))
         .filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
     }
 
-    if (typeof window === "undefined") {
-      return DEFAULT_HEADER_MENU_PATHS.map((path) =>
-        allSelectablePool.find((m) => m.path === path),
-      ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
-    }
-
     const saved = localStorage.getItem("custom_header_menus");
-
     if (saved) {
       try {
         const savedPaths: string[] = JSON.parse(saved);
         const normalizedPaths = ensureCategoryMenuPath(savedPaths);
-
         return normalizedPaths
           .map((path) => allSelectablePool.find((m) => m.path === path))
           .filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
@@ -90,9 +94,9 @@ export default function HeaderMenu() {
     }
 
     return DEFAULT_HEADER_MENU_PATHS.map((path) =>
-      allSelectablePool.find((m) => m.path === path),
+      allSelectablePool.find((m) => m.path === path)
     ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
-  })();
+  }, [isMounted, currentProfile]); // 의존성 추가
 
   useEffect(() => {
     const handleCustomMenuStorageUpdate = () => {

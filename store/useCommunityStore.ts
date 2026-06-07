@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { collection, query, where, orderBy, getDocs, setDoc,  arrayUnion, doc, getDoc, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, setDoc,  arrayUnion, doc, getDoc, writeBatch, updateDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/firebase';
 import { ReviewDocument, CommunityStore } from '@/types/community';
 import { useAuthStore } from './useAuthStore';
@@ -140,46 +140,48 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       throw error; // 컴포넌트에서 catch하여 알림창 띄우기용
     }
   },
-  toggleReviewLike: async (reviewId: string, videoId: string) => {
-    // 1. Auth 스토어에서 현재 정보를 가져옴
+  updateReviewLikeCount: async (videoId: string, reviewId: string, isLiked: boolean) => {
     const { user, currentProfile } = useAuthStore.getState();
     if (!user?.userId || !currentProfile) return;
 
-    const reviewKey = `${videoId}-${reviewId}`;
-    const userDocRef = doc(db, "users", user.userId);
+    const videoDocRef = doc(db, "videoReviews", videoId);
+    const userDocRef = doc(db, "userReviews", user?.userId);
 
     try {
-      const userDocSnap = await getDoc(userDocRef);
-      if (!userDocSnap.exists()) return;
+      await runTransaction(db, async (transaction : any) => {
+        // 1. 문서 가져오기
+        const videoDoc = await transaction.get(videoDocRef);
+        const userDoc = await transaction.get(userDocRef);
 
-      const userData = userDocSnap.data() as UserDocument;
-      const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
-      if (profileIndex === -1) return;
+        if (!videoDoc.exists()) throw "Video review document does not exist!";
+        
+        const currentReviews = [...(videoDoc.data().reviews || [])];
+        const rIndex = currentReviews.findIndex((r: any) => r.reviewId === reviewId);
+        if (rIndex === -1) throw "Review not found!";
 
-      // 2. 데이터 수정 (불변성 유지)
-      const updatedProfiles = [...userData.profile];
-      const targetCommunity = updatedProfiles[profileIndex].community;
-      
-      // 주의: 인터페이스 구조에 맞춰 reviews 또는 likedReviewKeys 사용
-      const isLiked = targetCommunity.reviews.includes(reviewKey);
+        // 2. 좋아요 수 계산 (최솟값 0 보장)
+        const newLikesCount = Math.max(0, (currentReviews[rIndex].likesCount || 0) + (isLiked ? -1 : 1));
 
-      if (isLiked) {
-        targetCommunity.reviews = targetCommunity.reviews.filter((k) => k !== reviewKey);
-      } else {
-        targetCommunity.reviews.push(reviewKey);
-      }
+        // 3. videoReviews 데이터 업데이트
+        currentReviews[rIndex] = { ...currentReviews[rIndex], likesCount: newLikesCount };
+        transaction.update(videoDocRef, { reviews: currentReviews });
 
-      // 3. Firestore 업데이트
-      await updateDoc(userDocRef, {
-        profile: updatedProfiles
+        // 4. userReviews 데이터 업데이트 (작성자의 문서도 동일하게 반영)
+        if (userDoc.exists()) {
+          const userReviews = [...(userDoc.data().reviews || [])];
+          const urIndex = userReviews.findIndex((r: any) => r.reviewId === reviewId);
+          
+          if (urIndex !== -1) {
+            userReviews[urIndex] = { ...userReviews[urIndex], likesCount: newLikesCount };
+            transaction.update(userDocRef, { reviews: userReviews });
+          }
+        }
+
+        // 5. [중요] 상태 업데이트는 트랜잭션 외부에서 수행
+        set({ reviews: currentReviews });
       });
-
-      // 4. Auth 스토어 업데이트 (여기가 핵심!)
-      // useAuthStore의 액션을 사용하여 상태를 동기화합니다.
-      useAuthStore.getState().onInitAuth();
-
     } catch (error) {
-      console.error("좋아요 토글 실패:", error);
+      console.error("좋아요 카운트 업데이트 트랜잭션 실패:", error);
     }
   }
 }));

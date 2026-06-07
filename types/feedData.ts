@@ -1,18 +1,18 @@
 import type {
-  FeedComment as CommunityFeedComment,
+  // FeedComment as CommunityFeedComment,
   FeedDocument as CommunityFeedDocument,
 } from "@/types/community";
+import { FeedComment } from "@/types/community";
 
 export type FeedTab = "all" | "following";
 export type MediaType = "movie" | "tv";
 
-export interface FeedComment extends CommunityFeedComment {
-  profileId?: number;
-  createdAt: string;
-  updatedAt?: string;
-  isDelete: boolean;
-  likedUserIds?: string[];
-}
+// export interface FeedComment extends CommunityFeedComment {
+//   profileId?: number;
+//   createdAt: string;
+//   updatedAt?: string;
+//   likedUserIds?: string[];
+// }
 
 export interface FeedReview extends Omit<
   CommunityFeedDocument,
@@ -104,7 +104,6 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     reportsCount: 0,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    isDelete: false,
     rating: 4.5,
     isSpoiler: false,
     isPublic: true,
@@ -120,7 +119,6 @@ export const INITIAL_REVIEWS: FeedReview[] = [
     reportsCount: 0,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
     updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    isDelete: false,
     rating: 4,
     isSpoiler: true,
     isPublic: true,
@@ -138,7 +136,6 @@ export const INITIAL_REVIEW_COMMENTS: Record<string, FeedComment[]> = {
       likesCount: 12,
       createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
       updatedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-      isDelete: false,
     },
     {
       commentId: "seed-102",
@@ -148,7 +145,6 @@ export const INITIAL_REVIEW_COMMENTS: Record<string, FeedComment[]> = {
       likesCount: 6,
       createdAt: new Date(Date.now() - 1000 * 60 * 48).toISOString(),
       updatedAt: new Date(Date.now() - 1000 * 60 * 48).toISOString(),
-      isDelete: false,
     },
     {
       commentId: "seed-103",
@@ -158,7 +154,6 @@ export const INITIAL_REVIEW_COMMENTS: Record<string, FeedComment[]> = {
       likesCount: 4,
       createdAt: new Date(Date.now() - 1000 * 60 * 32).toISOString(),
       updatedAt: new Date(Date.now() - 1000 * 60 * 32).toISOString(),
-      isDelete: false,
     },
   ],
   "seed-2": [
@@ -170,7 +165,6 @@ export const INITIAL_REVIEW_COMMENTS: Record<string, FeedComment[]> = {
       likesCount: 8,
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-      isDelete: false,
     },
     {
       commentId: "seed-202",
@@ -180,7 +174,6 @@ export const INITIAL_REVIEW_COMMENTS: Record<string, FeedComment[]> = {
       likesCount: 3,
       createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      isDelete: false,
     },
   ],
 };

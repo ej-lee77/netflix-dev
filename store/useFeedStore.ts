@@ -1,6 +1,5 @@
 import { auth, db } from "@/firebase/firebase";
 import {
-  FeedComment,
   FeedReview,
   INITIAL_REVIEW_COMMENTS,
   INITIAL_REVIEWS,
@@ -8,6 +7,7 @@ import {
   MediaType,
   parseVideoId,
 } from "@/types/feedData";
+import { FeedComment } from "@/types/community";
 import type { FeedActivity } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -20,30 +20,33 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  writeBatch,
+  runTransaction,
 } from "firebase/firestore";
 import { create } from "zustand";
 
 interface FeedState {
-  reviews: FeedView[];
+  feeds: FeedView[];
   isLoading: boolean;
-  onHydrateReviews: () => Promise<void>;
-  onAddReview: (review: FeedReview) => Promise<void>;
-  onUpdateReview: (review: FeedReview) => Promise<void>;
-  onDeleteReview: (feedId: string) => Promise<void>;
+  onHydrateFeeds: () => Promise<void>;
+  onHydrateMyFeeds: () => Promise<void>;
+  onAddFeed: (review: FeedReview) => Promise<void>;
+  onUpdateFeed: (review: FeedReview) => Promise<void>;
+  onDeleteFeed: (feedId: string) => Promise<void>;
   onAddComment: (feedId: string, comment: FeedComment) => Promise<void>;
   onUpdateComment: (feedId: string, commentId: string, content: string) => Promise<void>;
   onDeleteComment: (feedId: string, commentId: string) => Promise<void>;
   onToggleLike: (feedId: string) => Promise<void>;
   onToggleCommentLike: (feedId: string, commentId: string) => Promise<void>;
-  onReportReview: (feedId: string, shouldReport: boolean, reason?: string) => Promise<void>;
+  onReportFeed: (feedId: string, shouldReport: boolean, reason?: string) => Promise<void>;
 }
 
 export interface FeedCommentView extends FeedComment {
-  author: string;
+  author?: string;      // ? 추가
   authorImage?: string;
-  isMine: boolean;
-  liked: boolean;
-  likedUserIds: string[];
+  isMine?: boolean;     // ? 추가
+  liked?: boolean;      // ? 추가
+  likedUserIds?: string[];
 }
 
 export interface FeedView extends FeedReview {
@@ -270,21 +273,31 @@ const getMediaDetail = async (videoId: string): Promise<MediaDetail> => {
 
   try {
     const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${mediaId}?api_key=${TMDB_KEY}&language=ko-KR`);
+    if (!res.ok) throw new Error("API Response Failed");
+    
     const data = await res.json();
+    
     const title = mediaType === "tv" ? data.name : data.title;
     const year = mediaType === "tv" ? data.first_air_date?.slice(0, 4) : data.release_date?.slice(0, 4);
-    const average = typeof data.vote_average === "number" ? data.vote_average.toFixed(1) : "-";
+    
+    // [수정된 부분] 안전한 숫자 처리
+    const rawAverage = data?.vote_average;
+    const average = (typeof rawAverage === "number" && !isNaN(rawAverage)) 
+      ? rawAverage.toFixed(1) 
+      : "-";
+
     const detail = {
       id: mediaId,
       mediaType,
       title: title || fallback.title,
-      posterPath: data.poster_path || "",
+      posterPath: data?.poster_path || "",
       meta: `${mediaType === "tv" ? "시리즈" : "영화"} · ${year || "연도 미상"} · 평균 ${average}`,
     };
 
     mediaCache.set(videoId, detail);
     return detail;
-  } catch {
+  } catch (error) {
+    console.error("미디어 상세 정보 로드 실패:", error);
     return fallback;
   }
 };
@@ -298,7 +311,6 @@ const normalizeComment = (commentId: string, data: FirestoreRecord): FeedComment
   likesCount: readNumber(data, "likesCount"),
   createdAt: readString(data, "createdAt"),
   updatedAt: readString(data, "updatedAt"),
-  isDelete: readBoolean(data, "isDelete"),
   likedUserIds: readStringArray(data, "likedUserIds"),
 });
 
@@ -311,7 +323,6 @@ const normalizeFeed = (feedId: string, data: FirestoreRecord): FeedReview => ({
   reportsCount: readNumber(data, "reportsCount"),
   createdAt: readString(data, "createdAt"),
   updatedAt: readString(data, "updatedAt"),
-  isDelete: readBoolean(data, "isDelete"),
   profileId: readNumber(data, "profileId") || undefined,
   rating: readNumber(data, "rating"),
   isSpoiler: readBoolean(data, "isSpoiler"),
@@ -405,7 +416,6 @@ const fetchComments = async (feedId: string) => {
 
   return snapshot.docs
     .map((commentDoc) => normalizeComment(commentDoc.id, commentDoc.data()))
-    .filter((comment) => !comment.isDelete)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
@@ -416,49 +426,112 @@ const getSeedViews = async (currentUserId?: string, followingIds: string[] = [])
 );
 
 export const useFeedStore = create<FeedState>((set, get) => ({
-  reviews: [],
+  feeds: [],
   isLoading: false,
 
-  onHydrateReviews: async () => {
+  onHydrateFeeds: async () => {
     const { userId, currentProfile } = getAuthContext();
     const followingIds = currentProfile?.community?.following || [];
 
     set({ isLoading: true });
 
     try {
-      await seedInitialFeeds();
-
+      // 1. 모든 피드 문서 가져오기
       const snapshot = await getDocs(collection(db, FEEDS_COLLECTION));
+      
+      // 2. 피드 데이터 가공 (병렬 처리)
       const reviews = await Promise.all(
-        snapshot.docs
-          .map((feedDoc) => normalizeFeed(feedDoc.id, feedDoc.data()))
-          .filter((review) => !review.isDelete)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .map(async (review) => {
-            const feedId = review.feedId || "";
-            try {
-              const commentsList = await fetchComments(feedId);
-              return buildFeedView(review, commentsList, userId, followingIds);
-            } catch (error) {
-              console.error("피드 댓글 로드 실패:", feedId, error);
-              return buildFeedView(review, [], userId, followingIds);
-            }
-          }),
+        snapshot.docs.map(async (feedDoc) => {
+          const data = feedDoc.data();
+          const feedId = feedDoc.id;
+
+          // 데이터 정규화
+          const normalized = normalizeFeed(feedId, data);
+          
+          // 문서 내 commentsList를 즉시 사용 (별도 fetch 불필요)
+          const commentsList = data.commentsList || [];
+          
+          // FeedView 빌드
+          return buildFeedView(normalized, commentsList, userId, followingIds);
+        })
       );
 
-      set({ reviews, isLoading: false });
+      // 3. 생성 시간 기준 정렬 및 상태 저장
+      const sortedReviews = reviews.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      set({ feeds: sortedReviews, isLoading: false });
+      
     } catch (error) {
-      console.error("피드 로드 실패:", error);
-      set({ reviews: await getSeedViews(userId, followingIds), isLoading: false });
+      console.error("피드 전체 로드 실패:", error);
+      set({ feeds: [], isLoading: false });
     }
   },
 
-  onAddReview: async (review) => {
+  onHydrateMyFeeds: async () => {
+    const { userId, currentProfile } = getAuthContext();
+    // 로그인 및 프로필 정보 확인
+    if (!userId || !currentProfile) return;
+
+    set({ isLoading: true });
+
+    try {
+      // 1. userId를 문서 ID로 사용하여 userFeeds 문서 가져오기
+      const userFeedsRef = doc(db, "userFeeds", userId);
+      const userFeedsDoc = await getDoc(userFeedsRef);
+
+      if (!userFeedsDoc.exists()) {
+        set({ feeds: [], isLoading: false });
+        return;
+      }
+
+      const followingIds = currentProfile?.community?.following || [];
+
+      // 2. 문서 내의 feeds 배열 데이터 추출
+      const data = userFeedsDoc.data();
+      const allMyFeeds = data.feeds || [];
+
+      // 3. profileId가 현재 프로필 ID와 일치하는 피드만 필터링
+      const filteredFeeds = allMyFeeds.filter(
+        (feed: any) => feed.profileId === currentProfile.id
+      );
+
+      // 4. 필터링된 데이터를 FeedView 형식으로 변환 (정규화)
+      const myReviews = filteredFeeds.map((feedData: any) => {
+        
+        const normalized = normalizeFeed(feedData.feedId, feedData);
+        
+        return buildFeedView(
+          normalized, 
+          feedData.commentsList || [], 
+          userId, 
+          followingIds // 본인 피드이므로 팔로잉 목록은 필요 없음
+        );
+      });
+      
+      // 5. 생성 시간 기준 정렬 및 상태 저장
+      const sortedReviews = myReviews.sort((a:any, b:any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      console.log(sortedReviews)
+      set({ feeds: sortedReviews, isLoading: false });
+
+    } catch (error) {
+      console.error("내 프로필 피드 로드 실패:", error);
+      set({ feeds: [], isLoading: false });
+    }
+  },
+
+  onAddFeed: async (review) => {
     const { userId, currentProfile } = getAuthContext();
     if (!userId || !currentProfile) return;
 
     const now = new Date().toISOString();
-    const newDoc: Omit<FeedReview, "feedId"> = {
+    const feedId = doc(collection(db, FEEDS_COLLECTION)).id; // 미리 ID 생성
+
+    const newDoc = {
+      feedId, // 생성한 ID 포함
       userId,
       profileId: currentProfile.id,
       videoId: review.videoId,
@@ -467,25 +540,50 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       reportsCount: 0,
       createdAt: now,
       updatedAt: now,
-      isDelete: false,
       rating: review.rating,
       isSpoiler: review.isSpoiler,
       isPublic: review.isPublic,
       likedUserIds: [],
     };
 
-    const docRef = await addDoc(collection(db, FEEDS_COLLECTION), newDoc);
+    const batch = writeBatch(db);
 
-    const nextReview = await buildFeedView({ ...newDoc, feedId: docRef.id }, [], userId, currentProfile.community?.following || []);
-    set((state) => ({ reviews: [nextReview, ...state.reviews] }));
+    // 1. 전체 피드 컬렉션에 저장
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    batch.set(feedDocRef, newDoc);
+
+    // 2. 유저별 피드 컬렉션에 배열로 저장 (userFeeds/userId)
+    const userFeedsRef = doc(db, "userFeeds", userId);
+    batch.set(userFeedsRef, { 
+      feeds: arrayUnion(newDoc) 
+    }, { merge: true });
+
+    try {
+      await batch.commit();
+
+      // 3. 상태 갱신
+      const nextReview = await buildFeedView(
+        newDoc, 
+        [], 
+        userId, 
+        currentProfile.community?.following || []
+      );
+      
+      set((state) => ({ feeds: [nextReview, ...state.feeds] }));
+    } catch (error) {
+      console.error("피드 저장 및 배치 업데이트 실패:", error);
+    }
   },
 
-  onUpdateReview: async (review) => {
+  onUpdateFeed: async (review) => {
     if (!review.feedId) return;
-
     const { userId, currentProfile } = getAuthContext();
+    if (!userId) return;
+
     const updatedAt = new Date().toISOString();
     const feedDocRef = doc(db, FEEDS_COLLECTION, review.feedId);
+    const authorUserFeedsRef = doc(db, "userFeeds", userId);
+    
     const updatedFields = {
       videoId: review.videoId,
       content: review.content,
@@ -495,71 +593,167 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       updatedAt,
     };
 
-    await updateDoc(feedDocRef, updatedFields);
-    const currentReview = get().reviews.find((item) => item.feedId === review.feedId);
-    const followingIds = currentProfile?.community?.following || [];
-    const nextReview = await buildFeedView(
-      { ...review, ...updatedFields },
-      currentReview?.commentsList || [],
-      userId,
-      followingIds,
-    );
+    try {
+      await runTransaction(db, async (transaction) => {
+        // [핵심] 수정하려는 모든 문서를 먼저 읽어옵니다 (읽기 작업 우선)
+        const feedDoc = await transaction.get(feedDocRef);
+        const authorDoc = await transaction.get(authorUserFeedsRef);
 
-    set((state) => ({
-      reviews: state.reviews.map((item) => (
-        item.feedId === review.feedId ? nextReview : item
-      )),
-    }));
+        if (!feedDoc.exists()) throw new Error("Feed does not exist");
+
+        // 이제 모든 읽기가 끝났으므로 안심하고 쓰기 작업을 수행합니다.
+        
+        // 1. 메인 피드 업데이트
+        transaction.update(feedDocRef, updatedFields);
+
+        // 2. 작성자 피드 배열 업데이트
+        if (authorDoc.exists()) {
+          const feeds = [...(authorDoc.data().feeds || [])];
+          const fIndex = feeds.findIndex((f) => f.feedId === review.feedId);
+          if (fIndex !== -1) {
+            feeds[fIndex] = { ...feeds[fIndex], ...updatedFields };
+            transaction.update(authorUserFeedsRef, { feeds });
+          }
+        }
+      });
+
+      // 3. 로컬 상태 갱신 (트랜잭션 이후)
+      // ... 로컬 상태 업데이트 로직 ...
+    } catch (error) {
+      console.error("피드 수정 트랜잭션 실패:", error);
+    }
   },
 
-  onDeleteReview: async (feedId) => {
-    await updateDoc(doc(db, FEEDS_COLLECTION, feedId), {
-      isDelete: true,
-      updatedAt: new Date().toISOString(),
-    });
-    set((state) => ({
-      reviews: state.reviews.filter((review) => review.feedId !== feedId),
-    }));
+  onDeleteFeed: async (feedId: string) => {
+    const { userId } = getAuthContext();
+    if (!userId) return;
+
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    const authorUserFeedsRef = doc(db, "userFeeds", userId);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // 1. [읽기] 모든 필요한 데이터를 먼저 읽어옵니다.
+        const authorDoc = await transaction.get(authorUserFeedsRef);
+
+        // 2. [쓰기] 읽기가 끝났으므로, 이제 삭제/수정 작업을 수행합니다.
+        
+        // 전체 피드 문서 삭제
+        transaction.delete(feedDocRef);
+
+        // 작성자의 userFeeds 배열에서 피드 객체 제거
+        if (authorDoc.exists()) {
+          const feeds = [...(authorDoc.data().feeds || [])];
+          const updatedFeeds = feeds.filter((f) => f.feedId !== feedId);
+          
+          transaction.update(authorUserFeedsRef, { feeds: updatedFeeds });
+        }
+      });
+
+      // 3. 로컬 Zustand 상태 갱신
+      set((state) => ({
+        feeds: state.feeds.filter((review) => review.feedId !== feedId),
+      }));
+    } catch (error) {
+      console.error("피드 완전 삭제 및 동기화 트랜잭션 실패:", error);
+    }
   },
 
-  onAddComment: async (feedId, comment) => {
+  onAddComment: async (feedId: string, content: any) => {
     const { userId, currentProfile } = getAuthContext();
     if (!userId || !currentProfile) return;
 
-    const now = new Date().toISOString();
-    const newDoc: Omit<FeedComment, "commentId"> = {
-      userId,
-      profileId: currentProfile.id,
-      content: comment.content,
+    const newComment: FeedComment = {
+      commentId: Date.now().toString(),
+      userId: userId,
+      content: content,
       reportsCount: 0,
       likesCount: 0,
+      profileId: currentProfile.id,
+      createdAt: new Date().toISOString(),
       likedUserIds: [],
-      createdAt: now,
-      updatedAt: now,
-      isDelete: false,
     };
 
-    const docRef = await addDoc(collection(db, FEEDS_COLLECTION, feedId, COMMENTS_COLLECTION), newDoc);
-    const targetReview = get().reviews.find((review) => review.feedId === feedId);
-    const isOtherProfileFeed = targetReview?.userId !== userId || targetReview.profileId !== currentProfile.id;
-    if (isOtherProfileFeed) {
-      await safelySyncProfileFeedActivity(feedId, "comment", true, docRef.id);
-    }
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    const authorUserFeedsRef = doc(db, "userFeeds", userId);
 
-    const nextComment = await buildCommentView({ ...newDoc, commentId: docRef.id }, userId, currentProfile.id);
+    await runTransaction(db, async (transaction) => {
+      // [수정] 읽기 작업 우선 수행
+      const authorDoc = await transaction.get(authorUserFeedsRef);
+      const feedDoc = await transaction.get(feedDocRef);
+      if (!feedDoc.exists()) throw new Error("Feed not found");
+
+      // [수정] 읽기 완료 후 쓰기 작업 수행
+      transaction.update(feedDocRef, { commentsList: arrayUnion(newComment) });
+
+      if (authorDoc.exists()) {
+        const feeds = [...(authorDoc.data().feeds || [])];
+        const fIndex = feeds.findIndex((f) => f.feedId === feedId);
+        if (fIndex !== -1) {
+          feeds[fIndex].commentsList = [...(feeds[fIndex].commentsList || []), newComment];
+          transaction.update(authorUserFeedsRef, { feeds });
+        }
+      }
+    });
+
     set((state) => ({
-      reviews: state.reviews.map((review) => (
-        review.feedId === feedId
-          ? {
-            ...review,
-            comments: review.comments + 1,
-            commentsList: [nextComment, ...review.commentsList],
-          }
-          : review
-      )),
+      feeds: state.feeds.map((r) => 
+        r.feedId === feedId ? { ...r, commentsList: [...r.commentsList, newComment] } : r
+      )
     }));
   },
 
+  onToggleLike: async (feedId: string) => {
+    const { userId, actorId } = getAuthContext();
+    if (!userId || !actorId) return;
+
+    const targetReview = get().feeds.find((review) => review.feedId === feedId);
+    if (!targetReview) return;
+
+    const nextLiked = !targetReview.liked;
+    const nextLikesCount = Math.max(0, targetReview.likesCount + (nextLiked ? 1 : -1));
+    
+    const authorUserFeedsRef = doc(db, "userFeeds", targetReview.userId);
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // [수정] 읽기 작업 우선 수행
+        const authorDoc = await transaction.get(authorUserFeedsRef);
+        
+        // [수정] 쓰기 작업 수행
+        transaction.update(feedDocRef, {
+          likesCount: nextLikesCount,
+          likedUserIds: nextLiked ? arrayUnion(actorId) : arrayRemove(actorId),
+        });
+
+        if (authorDoc.exists()) {
+          const feeds = [...(authorDoc.data().feeds || [])];
+          const fIndex = feeds.findIndex((f) => f.feedId === feedId);
+          if (fIndex !== -1) {
+            feeds[fIndex] = {
+              ...feeds[fIndex],
+              likesCount: nextLikesCount,
+              likedUserIds: nextLiked 
+                ? [...new Set([...(feeds[fIndex].likedUserIds || []), actorId])]
+                : (feeds[fIndex].likedUserIds || []).filter((id: string) => id !== actorId)
+            };
+            transaction.update(authorUserFeedsRef, { feeds });
+          }
+        }
+      });
+
+      set((state) => ({
+        feeds: state.feeds.map((review) =>
+          review.feedId === feedId
+            ? { ...review, liked: nextLiked, likesCount: nextLikesCount, likedUserIds: nextLiked ? [...new Set([...review.likedUserIds, actorId])] : review.likedUserIds.filter((id) => id !== actorId) }
+            : review
+        ),
+      }));
+    } catch (error) {
+      console.error("좋아요 동기화 트랜잭션 실패:", error);
+    }
+  },
   onUpdateComment: async (feedId, commentId, content) => {
     const updatedAt = new Date().toISOString();
 
@@ -569,7 +763,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     });
 
     set((state) => ({
-      reviews: state.reviews.map((review) => {
+      feeds: state.feeds.map((review) => {
         if (review.feedId !== feedId) return review;
 
         return {
@@ -584,120 +778,134 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }));
   },
 
-  onDeleteComment: async (feedId, commentId) => {
+  onDeleteComment: async (feedId: string, commentId: string) => {
     const { userId } = getAuthContext();
-    await updateDoc(doc(db, FEEDS_COLLECTION, feedId, COMMENTS_COLLECTION, commentId), {
-      isDelete: true,
-      updatedAt: new Date().toISOString(),
+    if (!userId) return;
+
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    const authorUserFeedsRef = doc(db, "userFeeds", userId);
+
+    await runTransaction(db, async (transaction) => {
+      // 1. 피드 문서에서 삭제
+      const feedDoc = await transaction.get(feedDocRef);
+      const updatedComments = (feedDoc.data()?.commentsList || []).filter(
+        (c: FeedComment) => c.commentId !== commentId
+      );
+      transaction.update(feedDocRef, { commentsList: updatedComments });
+
+      // 2. 작성자 개인 피드 문서에서 삭제
+      const authorDoc = await transaction.get(authorUserFeedsRef);
+      if (authorDoc.exists()) {
+        const feeds = [...(authorDoc.data().feeds || [])];
+        const fIndex = feeds.findIndex((f) => f.feedId === feedId);
+        if (fIndex !== -1) {
+          feeds[fIndex].commentsList = (feeds[fIndex].commentsList || []).filter(
+            (c: FeedComment) => c.commentId !== commentId
+          );
+          transaction.update(authorUserFeedsRef, { feeds });
+        }
+      }
     });
-    if (userId) {
-      await safelySyncProfileFeedActivity(feedId, "comment", false, commentId);
-    }
 
     set((state) => ({
-      reviews: state.reviews.map((review) => {
+      feeds: state.feeds.map((r) => {
+        if (r.feedId !== feedId) return r;
+        const filtered = r.commentsList.filter((c) => c.commentId !== commentId);
+        return { ...r, commentsList: filtered };
+      }),
+    }));
+  },
+
+  onToggleCommentLike: async (feedId: string, commentId: string) => {
+    const { userId, actorId } = getAuthContext();
+    if (!userId || !actorId) return;
+
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    
+    // 트랜잭션을 사용하여 서버와 로컬 상태 동기화
+    await runTransaction(db, async (transaction) => {
+      const feedDoc = await transaction.get(feedDocRef);
+      if (!feedDoc.exists()) return;
+
+      const data = feedDoc.data();
+      const comments = data.commentsList || [];
+      
+      // 해당 댓글 찾기
+      const targetIndex = comments.findIndex((c: any) => c.commentId === commentId);
+      if (targetIndex === -1) return;
+
+      const targetComment = comments[targetIndex];
+      const isAlreadyLiked = targetComment.likedUserIds?.includes(actorId);
+      
+      // 상태 반전 계산
+      const nextLiked = !isAlreadyLiked;
+      const nextLikedUserIds = nextLiked
+        ? [...(targetComment.likedUserIds || []), actorId]
+        : (targetComment.likedUserIds || []).filter((id: string) => id !== actorId);
+
+      // 배열 업데이트
+      comments[targetIndex] = {
+        ...targetComment,
+        likesCount: nextLiked ? (targetComment.likesCount || 0) + 1 : Math.max(0, (targetComment.likesCount || 0) - 1),
+        likedUserIds: nextLikedUserIds,
+      };
+
+      transaction.update(feedDocRef, { commentsList: comments });
+    });
+
+    // 로컬 상태 즉시 갱신
+    set((state) => ({
+      feeds: state.feeds.map((review) => {
         if (review.feedId !== feedId) return review;
-
-        const commentsList = review.commentsList.filter((comment) => comment.commentId !== commentId);
-
         return {
           ...review,
-          comments: commentsList.length,
-          commentsList,
+          commentsList: review.commentsList.map((comment) => {
+            if (comment.commentId !== commentId) return comment;
+            const isNowLiked = comment.likedUserIds?.includes(actorId) || false;
+            return {
+              ...comment,
+              likesCount: isNowLiked ? (comment.likesCount || 0) - 1 : (comment.likesCount || 0) + 1,
+              likedUserIds: isNowLiked 
+                ? comment.likedUserIds?.filter((id) => id !== actorId) 
+                : [...(comment.likedUserIds || []), actorId],
+            };
+          }),
         };
       }),
     }));
   },
 
-  onToggleLike: async (feedId) => {
-    const { userId, currentProfile, actorId } = getAuthContext();
-    if (!userId || !currentProfile || !actorId) return;
-
-    const targetReview = get().reviews.find((review) => review.feedId === feedId);
-    if (!targetReview) return;
-
-    const nextLiked = !targetReview.liked;
-    const nextLikesCount = Math.max(0, targetReview.likesCount + (nextLiked ? 1 : -1));
-
-    await updateDoc(doc(db, FEEDS_COLLECTION, feedId), {
-      likesCount: nextLikesCount,
-      likedUserIds: nextLiked ? arrayUnion(actorId) : arrayRemove(actorId),
-    });
-    if (targetReview.userId !== userId || targetReview.profileId !== currentProfile.id) {
-      await safelySyncProfileFeedActivity(feedId, "like", nextLiked);
-    }
-
-    set((state) => ({
-      reviews: state.reviews.map((review) => (
-        review.feedId === feedId
-          ? {
-            ...review,
-            liked: nextLiked,
-            likesCount: nextLikesCount,
-            likedUserIds: nextLiked
-              ? [...new Set([...review.likedUserIds, actorId])]
-              : review.likedUserIds.filter((id) => id !== actorId),
-          }
-          : review
-      )),
-    }));
-  },
-
-  onToggleCommentLike: async (feedId, commentId) => {
-    const { userId, currentProfile, actorId } = getAuthContext();
-    if (!userId || !currentProfile || !actorId) return;
-
-    const targetReview = get().reviews.find((review) => review.feedId === feedId);
-    const targetComment = targetReview?.commentsList.find((comment) => comment.commentId === commentId);
-    if (!targetReview || !targetComment) return;
-
-    const nextLiked = !targetComment.liked;
-    const nextLikesCount = Math.max(0, targetComment.likesCount + (nextLiked ? 1 : -1));
-
-    await updateDoc(doc(db, FEEDS_COLLECTION, feedId, COMMENTS_COLLECTION, commentId), {
-      likesCount: nextLikesCount,
-      likedUserIds: nextLiked ? arrayUnion(actorId) : arrayRemove(actorId),
-    });
-
-    set((state) => ({
-      reviews: state.reviews.map((review) => (
-        review.feedId === feedId
-          ? {
-            ...review,
-            commentsList: review.commentsList.map((comment) => (
-              comment.commentId === commentId
-                ? {
-                  ...comment,
-                  liked: nextLiked,
-                  likesCount: nextLikesCount,
-                  likedUserIds: nextLiked
-                    ? [...new Set([...comment.likedUserIds, actorId])]
-                    : comment.likedUserIds.filter((id) => id !== actorId),
-                }
-                : comment
-            )),
-          }
-          : review
-      )),
-    }));
-  },
-
-  onReportReview: async (feedId, shouldReport, reason) => {
+  onReportFeed: async (feedId: string, shouldReport: boolean) => {
     const { userId, currentProfile } = getAuthContext();
     if (!userId || !currentProfile) return;
 
-    const targetReview = get().reviews.find((review) => review.feedId === feedId);
+    const targetReview = get().feeds.find((review) => review.feedId === feedId);
     if (!targetReview) return;
+    
+    // 본인 피드는 신고 불가
     if (targetReview.userId === userId && targetReview.profileId === currentProfile.id) return;
 
-    const reportsCount = Math.max(0, targetReview.reportsCount + (shouldReport ? 1 : -1));
-    await updateDoc(doc(db, FEEDS_COLLECTION, feedId), { reportsCount });
-    await safelySyncProfileFeedActivity(feedId, "report", shouldReport, undefined, reason);
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    
+    // 1. 계산된 새로운 신고 카운트
+    const newReportsCount = Math.max(0, targetReview.reportsCount + (shouldReport ? 1 : -1));
 
-    set((state) => ({
-      reviews: state.reviews.map((review) => (
-        review.feedId === feedId ? { ...review, reportsCount } : review
-      )),
-    }));
+    try {
+      // 2. Firestore 문서 업데이트 (reportsCount만)
+      await updateDoc(feedDocRef, {
+        reportsCount: newReportsCount
+      });
+
+      // 3. 로컬 상태 갱신
+      set((state) => ({
+        feeds: state.feeds.map((review) => (
+          review.feedId === feedId 
+            ? { ...review, reportsCount: newReportsCount } 
+            : review
+        )),
+      }));
+    } catch (error) {
+      console.error("피드 신고 업데이트 실패:", error);
+    }
   },
 }));

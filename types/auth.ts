@@ -17,12 +17,19 @@ export interface AuthState {
   currentProfile: UserProfile | null;
   onInitAuth: () => void;
   onLogin: (user: UserDocument) => void;
+  onKakaoLogin: () => Promise<boolean>;
+  onNaverLogin: () => Promise<boolean>;
   onLogout: () => Promise<void>;
   onSetProfile: (profile: UserProfile | null) => void;
   onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
   onUpdateProfile: (profile: UserProfile) => Promise<void>;
   onDeleteProfile: (profileId: string | number) => Promise<void>;
   toggleCommunity: () => Promise<void>;
+  updateUserLike: (reviewId: string, videoId: string) => Promise<void>;
+  updateUserLikeFeeds: (feedId: string) => Promise<void>;
+  updateUserCommentFeed: (feedId: string, commentId: string) => Promise<void>;
+  updateUserReportFeed: (feedId: string) => Promise<void>;
+  equipBadge: (badgeId: string) => Promise<void>;
 }
 
 export interface UserProfile {
@@ -39,7 +46,7 @@ export interface UserProfile {
 
   // 메뉴 및 뱃지
   headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
-  bages: BadgeList;
+  badges: BadgeList;
 
   alarm: AlarmInfo[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
   isCommunity: boolean;
@@ -94,7 +101,7 @@ export interface MovieList {
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
-  moodStats: UserGenreStats;
+  countryStats: UserGenreStats;
 }
 
 export interface BadgeInfo {
@@ -112,7 +119,10 @@ export interface CommunityList {
   followers: string[];   // 팔로워 유저 ID 목록
   following: string[]; // 팔로잉 유저 ID 목록
   reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
-  feeds: FeedActivity[]; // 내가 작성한 피드가 아니라 다른 피드에 남긴 댓글/좋아요 활동
+  likedfeeds: string[];
+  commentfeeds:string[];
+  reportfeeds:string[];
+  //commentfeeds: FeedActivity[]; // 내가 작성한 피드가 아니라 다른 피드에 남긴 댓글/좋아요 활동
 }
 
 export interface FeedActivity {
