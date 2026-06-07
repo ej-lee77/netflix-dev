@@ -12,6 +12,7 @@ import { useCommunityStore } from "@/store/useCommunityStore";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 import { filters } from "../category/page";
+import { PlayListItem } from "@/types/playList";
 
 const GENRE_COLORS: { [key: string]: string } = {
   // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
@@ -33,17 +34,25 @@ const getGenreColor = (genreName: string) => {
 
 export default function MyPage() {
   const { user, currentProfile, onLogout, toggleCommunity } = useAuthStore();
-  const { playList, onLoadPlayList } = usePlayListStore();
-  const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
+  const { playHist, onLoadPlayList } = usePlayListStore();
+  const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail } = useMovieStore();
 
   const userId = user?.userId;
   const { reviews, fetchUserReviews } = useCommunityStore();
-  const { mediaDetails, onFetchMediaDetail } = useMovieStore();
+  const [historyItems, setHistoryItems] = useState<PlayListItem[]>([]);
 
   // 1. 리뷰 로드 호출
   useEffect(() => {
     if (userId) fetchUserReviews();
   }, [userId, fetchUserReviews]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+        const items = await getDetailedHistory(playHist);
+        setHistoryItems(items);
+    };
+    loadHistory();
+  }, [playHist]);
 
   // 2. 영화 상세 정보 보완
   useEffect(() => {
@@ -124,10 +133,10 @@ export default function MyPage() {
         following: activeProfile.community?.following?.length || 0,
         review: activeProfile.community?.reviews?.length || 0,
         badge: activeProfile.bages?.earnedBadges?.filter(b => b.isComplete).length || 0,
-        watched: activeProfile.movies?.watchingVideos?.length || playList.length || 0, // 실제 담긴 목록 카운트 바인딩
+        watched: activeProfile.movies?.watchingVideos?.length || playHist.length || 0, // 실제 담긴 목록 카운트 바인딩
       }
     };
-  }, [activeProfile, playList]);
+  }, [activeProfile, playHist]);
 
   // 💡 [수정] 가짜 데이터 대신 실제 활성화된 프로필의 획득 뱃지 동기화
   const displayBadgesSummary = useMemo(() => {
@@ -151,6 +160,29 @@ export default function MyPage() {
       .sort((a, b) => (b.isEquipped ? 1 : 0) - (a.isEquipped ? 1 : 0))
       .slice(0, 5);
   }, [activeProfile]);
+
+  const getDetailedHistory = async (histKeys: string[]): Promise<PlayListItem[]> => {
+      const detailPromises = histKeys.map(async (key) => {
+          const [mediaType, id] = key.split("-");
+          const data = await fetchMediaDetail(id, mediaType as "movie" | "tv");
+          
+          if (!data) return null;
+
+          return {
+              id: Number(id),
+              title: data.title || data.name || "제목 없음",
+              poster_path: data.poster_path ?? "",
+              mediaType: mediaType as "movie" | "tv",
+              playTime: "", 
+              progress: 100,
+              episodeProgress: {}
+          };
+      });
+
+      const results = await Promise.all(detailPromises);
+      
+      return results.filter((item): item is PlayListItem => item !== null);
+  };
 
   // const genreMoodStats = useMemo(() => {
   //   const gStats = activeProfile?.movies?.genreStats || {};
@@ -240,31 +272,6 @@ export default function MyPage() {
       topMood: moods[0] || { tag: "없음" }
     };
   }, [activeProfile]);
-
-  const profileMovies = [...popMovies];
-
-  const friendActivities = profileMovies.slice(0, 3).map((m, i) => ({
-    id: m.id,
-    title: m.title,
-    poster: m.poster_path,
-    friend: ["친구A", "친구B", "친구C"][i],
-    action: ["에 ★★★★★ 평가", "을 시청했어요", "을 찜했어요"][i],
-    time: ["1시간 전", "3시간 전", "어제"][i],
-  }));
-
-  const myReviews = profileMovies.slice(0, 2).map((m, i) => ({
-    id: m.id,
-    title: m.title,
-    poster: m.poster_path,
-    stars: ["★★★★★", "★★¼☆☆"][i],
-    text: [
-      "이번 시즌은 정말 다른 차원이었어요. 첫 화부터 빠져들었고...",
-      "전체적으로 만족스럽지만 중반부가 살짝 늘어지는 느낌이...",
-    ][i],
-    likes: [132, 45][i],
-    comments: [14, 3][i],
-    time: ["2일 전", "1주 전"][i],
-  }));
 
   // Firestore에서 플랜/결제 정보 불러오기
   const [planType, setPlanType] = useState<string>("");
@@ -393,9 +400,9 @@ export default function MyPage() {
             <h2>최근 시청</h2>
             <Link href="/mypage/playlist" className="more">전체보기 →</Link>
           </div>
-          {playList.length > 0 ? (
+          {historyItems.length > 0 ? (
             <div className="poster-row">
-              {playList.slice(0, 6).map((item) => (
+              {historyItems.slice(0, 6).map((item) => (
                 <Link
                   key={item.id}
                   href={`/detail/${item.mediaType || 'movie'}/${item.id}`}

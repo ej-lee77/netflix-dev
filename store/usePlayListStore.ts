@@ -7,8 +7,6 @@ import { useAuthStore } from "./useAuthStore";
 import { PlaylistDocument } from "@/types/playList";
 import { useMovieStore } from "./useMovieStore";
 
-const LOCAL_PLAYLIST_KEY = "netflix-play-list";
-const LOCAL_MY_LIST_KEY = "netflix-my-list";
 const MAX_LIST_COUNT = 20;
 
 type MediaType = "movie" | "tv";
@@ -55,18 +53,6 @@ const putLatestFirst = (items: PlayListItem[], newItem: PlayListItem) => {
     return [merged, ...filtered].slice(0, MAX_LIST_COUNT);
 };
 
-const removeItem = (items: PlayListItem[], id: number, mediaType: MediaType) => {
-    const targetKey = getKeyFromParts(id, mediaType);
-
-    return items.filter((item) => getItemKey(item) !== targetKey);
-};
-
-const removeKey = (keys: string[], id: number, mediaType: MediaType) => {
-    const targetKey = getKeyFromParts(id, mediaType);
-
-    return keys.filter((key) => key !== targetKey);
-};
-
 const loadLocalList = (key: string) => {
     if (typeof window === "undefined") return [];
 
@@ -76,16 +62,6 @@ const loadLocalList = (key: string) => {
     } catch (err) {
         console.log("Failed to load local list", err);
         return [];
-    }
-};
-
-const saveLocalList = (key: string, items: PlayListItem[]) => {
-    if (typeof window === "undefined") return;
-
-    try {
-        window.localStorage.setItem(key, JSON.stringify(items));
-    } catch (err) {
-        console.log("Failed to save local list", err);
     }
 };
 
@@ -103,56 +79,14 @@ const getUserMoviePath = (fieldName: UserListField) => (
         : "movies.playlist.playlistVideos"
 );
 
-const syncAddUserMovieId = async (fieldName: UserListField, newKey: string) => {
-    const user = auth.currentUser;
-
-    if (!user) return true;
-
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) return false;
-
-    const prevKeys = getUserMovieIds(userDoc.data(), fieldName);
-    const nextKeys = [newKey, ...prevKeys.filter((key) => key !== newKey)].slice(0, MAX_LIST_COUNT);
-
-    await updateDoc(userDocRef, {
-        [getUserMoviePath(fieldName)]: nextKeys
-    });
-
-    return true;
-};
-
-const loadHydratedList = async (fieldName: UserListField, localKey: string) => {
-    const localItems = loadLocalList(localKey);
-    const user = auth.currentUser;
-
-    if (!user) return localItems;
-
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) return localItems;
-
-    const storedKeys = getUserMovieIds(userDoc.data(), fieldName);
-    if (!storedKeys.length) return localItems;
-
-    const hydratedItems = storedKeys
-        .map((key) => localItems.find((item) => getItemKey(item) === key))
-        .filter((item): item is PlayListItem => Boolean(item));
-
-    return hydratedItems.length ? hydratedItems : localItems;
-};
-
 // 1. 장르 통계 계산을 위한 유틸리티 함수
-const updateGenreStats = (currentStats: any = {}, genres: { id: number; name: string }[]) => {
+const countStats = (currentStats: Record<string, number>, ids: string[]) => {
   const newStats = { ...currentStats };
-  
-  genres.forEach((genre) => {
-    const key = genre.id.toString(); // ID를 문자열 키로 변환
-    newStats[key] = (newStats[key] || 0) + 1; // 해당 장르 ID의 카운트를 1 증가
+  ids.forEach(id => {
+    // 국가 코드 등은 대문자 통일 권장
+    const key = id.toUpperCase();
+    newStats[key] = (newStats[key] || 0) + 1;
   });
-  
   return newStats;
 };
 
@@ -163,7 +97,6 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     customPlaylists: [],
     onAddPlayList: async (item) => {
         try {
-            console.log(item)
             const authState = useAuthStore.getState();
             const userId = authState.user?.userId;
             const currentProfile = authState.currentProfile;
@@ -182,36 +115,44 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             const playItem = makePlayListItem(item);
             const itemKey = `${playItem.mediaType}-${playItem.id}`;
 
-            // 2. 프로필 복사본 및 데이터 업데이트
+            // 2. 프로필 복사본 및 통계 업데이트
             const updatedProfiles = [...profiles];
             const targetProfile = { ...updatedProfiles[profileIndex] };
-
-            const currentStats = targetProfile.movies?.genreStats || {};
-            const newGenreStats = updateGenreStats(currentStats, item.genres || []);
             
-            // --- watchingVideos 처리 (객체 전체 저장) ---
-            const prevList = targetProfile.movies?.watchingVideos || [];
-            const newWatchingVideos = putLatestFirst(prevList, playItem);
+            // 기존 통계 데이터 가져오기
+            const movies = targetProfile.movies || { 
+                genreStats: {}, 
+                countryStats: {}, 
+                watchingVideos: [], 
+                histMovies: [] 
+            };
 
-            const prevHist = targetProfile.movies?.histMovies || [];
-            const newHistMovies = [itemKey, ...prevHist.filter((k: string) => k !== itemKey)].slice(0, 50);
+            // 통계 업데이트 (장르 및 국가)
+            const newGenreStats = countStats(movies.genreStats || {}, item.genres?.map((g: any) => g.id.toString()) || []);
+            const newCountryStats = countStats(movies.countryStats || {}, item.origin_country || []);
+
+            // --- watchingVideos & histMovies 처리 ---
+            const newWatchingVideos = putLatestFirst(movies.watchingVideos || [], playItem);
+            const newHistMovies = [itemKey, ...movies.histMovies.filter((k: string) => k !== itemKey)].slice(0, 50);
 
             // 3. 데이터 구조 반영
             targetProfile.movies = {
-                ...targetProfile.movies,
+                ...movies,
                 watchingVideos: newWatchingVideos,
                 histMovies: newHistMovies,
-                genreStats: newGenreStats
+                genreStats: newGenreStats,
+                countryStats: newCountryStats
             };
 
             updatedProfiles[profileIndex] = targetProfile;
             await updateDoc(userDocRef, { profile: updatedProfiles });
 
-            // 4. [핵심] playList와 playHist 상태 동시 업데이트
+            // 4. 상태 동시 업데이트
             set({ 
                 playList: newWatchingVideos,
                 playHist: newHistMovies 
             });
+            
             return true;
         } catch (err) {
             console.error("데이터 저장 실패:", err);

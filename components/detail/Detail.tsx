@@ -28,6 +28,7 @@ type DetailMedia = (Movie | TV) & {
   status?: string;
   tagline?: string;
   vote_count?: number;
+  origin_country?: string[];
 };
 
 type DetailTab = "episodes" | "info" | "cast" | "director" | "review" | "related";
@@ -1442,26 +1443,28 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 {isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
               </button>
               <button
-                className={`detail-secondary-hover${isMyListAdded ? " detail-my-list-added" : ""}`}
+                className={`detail-circle-hover`}
                 onClick={handleMyList}
                 disabled={isAddingMyList}
                 aria-pressed={isMyListAdded}
                 style={{
-                  background: isMyListAdded ? "rgba(229,9,20,0.24)" : "rgba(255,255,255,0.1)",
-                  color: "#fff",
-                  height: 46,
-                  padding: "0 18px",
-                  fontSize: 16,
-                  fontWeight: 700,
-                  border: `1px solid ${isMyListAdded ? "rgba(229,9,20,0.72)" : "rgba(255,255,255,0.25)"}`,
-                  borderRadius: 4,
-                  cursor: isAddingMyList ? "default" : "pointer",
-                  opacity: isAddingMyList ? 0.7 : 1,
+                  background: mediaItem && wishlistIds.includes(String(itemKey)) ? "#e50914" : "rgba(229,9,20,0.1)",
+                  border: "1px solid #e50914",
+                  color: mediaItem && wishlistIds.includes(String(itemKey)) ? "#fff" : "#e50914",
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  cursor: isAddingWish ? "default" : "pointer",
+                  opacity: isAddingWish ? 0.6 : 1,
+                  fontSize: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {isMyListAdded ? "✓ 내 리스트" : "＋ 내 리스트"}
+                {isMyListAdded ? "♥" : "♡"}
               </button>
-              <button
+              {/* <button
                 className="detail-circle-hover"
                 onClick={handleWish}
                 disabled={isAddingWish}
@@ -1483,7 +1486,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 }}
               >
                 {mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "♥" : "♡"}
-              </button>
+              </button> */}
               {/* <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 🔔
               </button>   */}

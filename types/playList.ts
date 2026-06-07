@@ -24,6 +24,7 @@ type DetailMedia = (Movie | TV) & {
   status?: string;
   tagline?: string;
   vote_count?: number;
+  origin_country?: string[];
 };
 
 export interface PlayListState{

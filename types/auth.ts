@@ -100,7 +100,7 @@ export interface MovieList {
   wishlist: string[];
   playlist: PlayList;
   genreStats: UserGenreStats;
-  moodStats: UserGenreStats;
+  countryStats: UserGenreStats;
 }
 
 export interface BadgeInfo {

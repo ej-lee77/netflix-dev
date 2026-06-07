@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
@@ -20,17 +20,6 @@ type FilterType = "all" | "movie" | "tv";
 type WishFilterType = "all" | "movie" | "drama" | "animation";
 type WishSortType = "recent" | "title" | "rating";
 
-interface CustomPlaylist {
-  id: string;
-  title: string;
-  description?: string;
-  moodTags?: string[];
-  isPublic?: boolean;
-  itemKeys: string[];
-  createdAt: string;
-}
-
-const CUSTOM_PLAYLIST_KEY = "netflix-custom-playlists";
 const SELECTABLE_PAGE_SIZE = 10;
 const PLAYLIST_MOOD_TAGS = customMenus.filter((menu) => menu.path.startsWith("/mood/"));
 const getMoodIcon = (tag: string) => PLAYLIST_MOOD_TAGS.find((mood) => mood.title === tag)?.imgUrl;
@@ -77,22 +66,6 @@ const getProgress = (item: PlayListItem) => 35 + (item.id % 50);
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString("ko-KR");
 
-// const loadCustomPlaylists = () => {
-//   if (typeof window === "undefined") return [];
-
-//   try {
-//     const stored = window.localStorage.getItem(CUSTOM_PLAYLIST_KEY);
-//     return stored ? JSON.parse(stored) as CustomPlaylist[] : [];
-//   } catch {
-//     return [];
-//   }
-// };
-
-// const saveCustomPlaylists = (items: CustomPlaylist[]) => {
-//   if (typeof window === "undefined") return;
-//   window.localStorage.setItem(CUSTOM_PLAYLIST_KEY, JSON.stringify(items));
-// };
-
 export default function PlaylistPage() {
   return (
     <Suspense fallback={null}>
@@ -136,7 +109,6 @@ function ActivityContent() {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionPage, setSelectionPage] = useState(1);
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
-  // const [customPlaylists, setCustomPlaylists] = useState<CustomPlaylist[]>(loadCustomPlaylists);
   const [modifyPlaylistId, setModifyPlaylistId] = useState<string | null>(null);
   const [modifyTitle, setModifyTitle] = useState("");
   const [modifyDescription, setModifyDescription] = useState("");
@@ -345,12 +317,45 @@ function ActivityContent() {
   };
 
   const selectedItems = listItems.filter((item) => selectedKeys.includes(item));
-  const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
+  // 1. 필터링 & 정렬 적용 (데이터 가공)
+  const processedList = useMemo(() => {
+    let list = [...listItems];
+
+    // 1. 탭 필터링
+    if (wishFilter !== "all") {
+      // 드라마(drama) 필터 추가 적용
+      list = list.filter((item) => item.mediaType === wishFilter || (wishFilter === "drama" && item.mediaType === "tv"));
+    }
+
+    // 2. 정렬 로직
+    return list.sort((a, b) => {
+      switch (wishSort) {
+        case "title":
+          return a.title.localeCompare(b.title);
+        case "rating":
+          return b.vote_average - a.vote_average;
+        case "recent":
+        default:
+          // 최근 찜한 순 (보통 배열 순서가 최신이므로 기본 유지)
+          return 0; 
+      }
+    });
+  }, [listItems, wishFilter, wishSort]);
+
+  // 2. 페이지네이션 적용 (가공된 리스트 기준)
+  const totalSelectionPages = Math.max(1, Math.ceil(processedList.length / SELECTABLE_PAGE_SIZE));
   const currentSelectionPage = Math.min(selectionPage, totalSelectionPages);
-  const pagedSelectionItems = listItems.slice(
-    (currentSelectionPage - 1) * SELECTABLE_PAGE_SIZE,
-    currentSelectionPage * SELECTABLE_PAGE_SIZE
-  );
+
+  const pagedSelectionItems = useMemo(() => {
+    const start = (currentSelectionPage - 1) * SELECTABLE_PAGE_SIZE;
+    return processedList.slice(start, start + SELECTABLE_PAGE_SIZE);
+  }, [processedList, currentSelectionPage]);
+  // const totalSelectionPages = Math.max(1, Math.ceil(listItems.length / SELECTABLE_PAGE_SIZE));
+  // const currentSelectionPage = Math.min(selectionPage, totalSelectionPages);
+  // const pagedSelectionItems = listItems.slice(
+  //   (currentSelectionPage - 1) * SELECTABLE_PAGE_SIZE,
+  //   currentSelectionPage * SELECTABLE_PAGE_SIZE
+  // );
 
   const toggleSelected = (key: string) => {
     setSelectedKeys((prev) => (
@@ -1036,91 +1041,85 @@ function ActivityContent() {
 
   const renderPlaylists = () => (
     <section className="activity-section">
+      {/* 헤더 및 툴바 영역 */}
       <div className="section-head playlist-content-head">
         <div>
           <h2>위시리스트</h2>
-          {/* <h2>플레이리스트에 담을 콘텐츠</h2> */}
           <span>{selectedItems.length}개 선택됨</span>
         </div>
-        <button
-          type="button"
-          className="create-playlist-btn"
-          onClick={openCreatePlaylistModal}
-          disabled={selectedKeys.length === 0}
-        >
+        <button className="create-playlist-btn" onClick={openCreatePlaylistModal} disabled={selectedKeys.length === 0}>
           <div className="content">
-            <img src="/images/playlist/playlist-icon.svg" alt="" />
-            <p>플레이리스트 만들기</p>
+          <img src="/images/playlist/playlist-icon.svg" alt="플레이리스트 만들기" /> 플레이리스트 만들기
           </div>
-
         </button>
       </div>
 
-      <div className="playlist-content-layout" id="playlist-builder">
-        <div className="selectable-history-wrap playlist-content-panel">
-          {listItems.length > 0 ? (
+      <div className="wish-toolbar">
+        {/* // 필터 버튼 영역 */}
+        <div className="wish-chips">
+          {wishTabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.key}
+              className={wishFilter === tab.key ? "chip active" : "chip"}
+              onClick={() => {
+                setWishFilter(tab.key);
+                setSelectionPage(1); // 필터 변경 시 첫 페이지로 초기화
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* // 정렬 메뉴 영역 */}
+        {wishSortOpen && (
+          <ul className="wish-sort-menu">
+            {wishSortOptions.map((opt) => (
+              <li key={opt.key}>
+                <button
+                  type="button"
+                  className={`wish-sort-option${wishSort === opt.key ? " is-selected" : ""}`}
+                  onClick={() => {
+                    setWishSort(opt.key);
+                    setWishSortOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* 리스트 본문 */}
+      <div className="playlist-content-layout">
+        <div className="selectable-history-wrap">
+          {processedList.length > 0 ? (
             <div className="selectable-history">
               {pagedSelectionItems.map((item) => {
                 const key = getItemKey(item);
                 const isSelected = selectedKeys.includes(key);
-
                 return (
                   <article key={key} className={isSelected ? "select-card selected" : "select-card"}>
-                    <button
-                      type="button"
-                      className="select-card-main"
-                      onClick={() => toggleSelected(key)}
-                    >
+                    <button className="select-card-main" onClick={() => toggleSelected(key)}>
                       <span className="select-check">{isSelected ? "✓" : "+"}</span>
                       {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
                     </button>
-                    <div className="select-card-title-row">
-                      <strong>{item.title}</strong>
-                      <button
-                        type="button"
-                        className="select-delete-btn"
-                        onClick={() => handleDeleteMyListItem(item)}
-                        aria-label={`${item.title} 내 리스트 삭제`}
-                      >
-                        -
-                      </button>
-                    </div>
+                    <strong>{item.title}</strong>
                   </article>
                 );
               })}
             </div>
           ) : (
-            <div className="playlist-selection-empty">
-              {renderEmpty("아직 위시리스트가 없어요.")}
-            </div>
+            <div className="playlist-selection-empty">{renderEmpty("아직 위시리스트가 없어요.")}</div>
           )}
 
+          {/* 페이지네이션 버튼 영역 */}
           {totalSelectionPages > 1 && (
             <div className="selection-pagination">
-              <button
-                type="button"
-                onClick={() => setSelectionPage((page) => Math.max(1, page - 1))}
-                disabled={currentSelectionPage === 1}
-              >
-                ‹
-              </button>
-              {Array.from({ length: totalSelectionPages }, (_, index) => index + 1).map((page) => (
-                <button
-                  type="button"
-                  key={page}
-                  className={page === currentSelectionPage ? "active" : ""}
-                  onClick={() => setSelectionPage(page)}
-                >
-                  {page}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setSelectionPage((page) => Math.min(totalSelectionPages, page + 1))}
-                disabled={currentSelectionPage === totalSelectionPages}
-              >
-                ›
-              </button>
+              {/* 이전/페이지 번호/다음 버튼 로직 */}
             </div>
           )}
         </div>
@@ -1139,7 +1138,7 @@ function ActivityContent() {
         </div>
       ) : (
         <div className="playlist-empty-state">
-          <img src="/images/playlist/empty-playlist.png" alt="" />
+          <img src="/images/playlist/empty-playlist.png" alt="아직 플레이리스트가 없어요" />
           {/* <h3>아직 플레이리스트가 없어요</h3> */}
           <p>아직 플레이리스트가 없어요.</p>
           {/* <p>

@@ -133,7 +133,7 @@ export const useAuthStore = create<AuthState>()(
                 id: Date.now(),
                 nickname: "나",
                 imgUrl: FALLBACK_PROFILE_IMAGE,
-                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
+                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
                 community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
                 bages: { equippedBadges: "", earnedBadges: [] }
               });
@@ -369,7 +369,7 @@ export const useAuthStore = create<AuthState>()(
         const formattedProfile = normalizeProfile({ 
           ...newProfile, 
           id: nextId,
-          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
+          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
           community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
           bages: { equippedBadges: "", earnedBadges: [] }
         });
