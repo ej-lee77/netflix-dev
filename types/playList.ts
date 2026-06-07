@@ -32,6 +32,7 @@ export interface PlayListState{
     playHist: string[],
     myList: string[],
     customPlaylists: PlaylistDocument[],
+    currentPlaylist: PlaylistDocument | null,
     onAddPlayList: (item: DetailMedia)=>Promise<boolean>,
     onRemovePlayList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
@@ -44,6 +45,7 @@ export interface PlayListState{
     fetchMyCustomPlaylists: ()=>Promise<void>,
     updateCustomPlaylist: (listId: string, updatedData: Partial<PlaylistDocument>) => Promise<void>;
     deleteCustomPlaylist: (listId: string) => Promise<void>;
+    fetchPlaylist: (userId: string, listId: string) => Promise<void>;
 }
 
 // 플리 타입
@@ -56,8 +58,9 @@ export interface PlaylistDocument {
   tags: string[];          // 태그 (장르, 무드)
   likesCount: number;      // 좋아요
   createdAt: string;
-  isDelete: boolean;
+  items?:  string[];
+  //isDelete: boolean;
 
   // 파이어베이스 연동 및 관리를 위한 필수 확장 필드
-  userId: string;         // 플레이리스트 생성자 (유저 ID)
+  //userId: string;         // 플레이리스트 생성자 (유저 ID)
 }

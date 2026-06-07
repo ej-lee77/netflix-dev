@@ -159,6 +159,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     playHist: [],
     myList: [],
     customPlaylists: [],
+    currentPlaylist: null,
     onAddPlayList: async (item) => {
         try {
             const authState = useAuthStore.getState();
@@ -575,4 +576,35 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             console.error("Episode Progress Firestore 동기화 실패:", err);
         }
     },
+    fetchPlaylist: async (userId, listId) => {
+        try {
+            const docRef = doc(db, "playlists", userId);
+            const docSnap = await getDoc(docRef);
+            const fetchMedia = useMovieStore.getState().fetchMediaDetail;
+            
+            if (docSnap.exists()) {
+            const data = docSnap.data();
+            const foundList = data.playlists?.find((p: any) => p.listId === listId);
+            
+                if (foundList && foundList.videoIds) {
+                    // 모든 상세 정보를 한 번에 병렬로 가져옴
+                    const detailedItems = await Promise.all(
+                    foundList.videoIds.map(async (item: string) => {
+                        const [mediaType, id] = item.split("-");
+                        const data = await fetchMedia(id, mediaType as "movie" | "tv");
+                        return {
+                            id: Number(id),
+                            mediaType: mediaType as "movie" | "tv",
+                            title: data?.title || data?.name || "제목 없음",
+                            poster_path: data?.poster_path ?? "",
+                        };
+                    })
+                    );
+                    set({ currentPlaylist: { ...foundList, items: detailedItems } });
+                }
+            }
+        } catch (err) {
+            console.error("데이터 로드 실패:", err);
+        }
+    }
 }));
