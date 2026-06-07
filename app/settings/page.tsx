@@ -221,16 +221,19 @@ function SettingsContent() {
           customPlaylists: [], // 커스텀 플레이리스트 ID 목록
         },
         genreStats: {}, // 장르별 시청 횟수 통계
-        moodStats: {},
+        countryStats: {},
       },
       community: {
         followers: [], // 나를 팔로우하는 유저 ID 목록
         following: [], // 내가 팔로우하는 유저 ID 목록
         reviews: [], // 좋아요/싫어요/신고한 리뷰 ID 목록
-        feeds: [], // 다른 피드에 남긴 댓글/좋아요 활동 기록
+        // 다른 피드에 남긴 댓글/좋아요 활동 기록
+        likedfeeds: [],
+        commentfeeds:[],
+        reportfeeds:[]
       },
       headerMenus: [], // 헤더에 표시할 메뉴 ID 목록
-      bages: {
+      badges: {
         earnedBadges: [], // 획득한 뱃지 목록
         equippedBadges: "", // 현재 장착 중인 뱃지 ID
       },

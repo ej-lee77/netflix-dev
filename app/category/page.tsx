@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
+import { isHidden } from "@/data/hiddenContent";
 import "../scss/category.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -63,7 +64,7 @@ const filterTabs: Array<{ id: VisibleFilterTab; label: string }> = [
   { id: "curation", label: "큐레이션" },
 ];
 
-const filters: Record<FilterTab, FilterOption[]> = {
+export const filters: Record<FilterTab, FilterOption[]> = {
   genre: [
     {
       id: "action",
@@ -369,7 +370,8 @@ export default function CategoryPage() {
       overview: item.overview,
       genre_ids: item.genre_ids ?? [],
       media_type: mediaType,
-    }));
+    }))
+    .filter((item) => !isHidden(item.id, item.media_type));
 
   const fetchDiscoverPage = async (
     page: number,

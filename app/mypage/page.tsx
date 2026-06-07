@@ -11,6 +11,8 @@ import { BADGE_LIST } from "@/data/badge";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
+import { filters } from "../category/page";
+import { PlayListItem } from "@/types/playList";
 
 const GENRE_COLORS: { [key: string]: string } = {
   // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
@@ -32,17 +34,25 @@ const getGenreColor = (genreName: string) => {
 
 export default function MyPage() {
   const { user, currentProfile, onLogout, toggleCommunity } = useAuthStore();
-  const { playList, onLoadPlayList } = usePlayListStore();
-  const { popMovies, tvs, onFetchPopular, onFetchTvs } = useMovieStore();
+  const { playHist, onLoadPlayList } = usePlayListStore();
+  const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail } = useMovieStore();
 
   const userId = user?.userId;
   const { reviews, fetchUserReviews } = useCommunityStore();
-  const { mediaDetails, onFetchMediaDetail } = useMovieStore();
+  const [historyItems, setHistoryItems] = useState<PlayListItem[]>([]);
 
   // 1. 리뷰 로드 호출
   useEffect(() => {
-    if (userId) fetchUserReviews(userId);
+    if (userId) fetchUserReviews();
   }, [userId, fetchUserReviews]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+        const items = await getDetailedHistory(playHist);
+        setHistoryItems(items);
+    };
+    loadHistory();
+  }, [playHist]);
 
   // 2. 영화 상세 정보 보완
   useEffect(() => {
@@ -104,7 +114,6 @@ export default function MyPage() {
       .slice(0, 5); // 최근 활동 5개만 표시
   }, [activeProfile]);
 
-  // 💡 [수정] 가짜 데이터(mockUserData) 대신 실제 스토어의 activeProfile 기반 통계 계산
   const profileData = useMemo(() => {
     if (!activeProfile) {
       return {
@@ -114,7 +123,7 @@ export default function MyPage() {
     }
 
     // 장착된 대표 칭호/뱃지 찾기
-    const matchedBadge = BADGE_LIST.find((b) => b.id === activeProfile.bages?.equippedBadges);
+    const matchedBadge = BADGE_LIST.find((b) => b.id === activeProfile.badges?.equippedBadges);
 
     return {
       equippedBadgeName: matchedBadge ? matchedBadge.name : null,
@@ -122,17 +131,17 @@ export default function MyPage() {
         follower: activeProfile.community?.followers?.length || 0,
         following: activeProfile.community?.following?.length || 0,
         review: activeProfile.community?.reviews?.length || 0,
-        badge: activeProfile.bages?.earnedBadges?.filter(b => b.isComplete).length || 0,
-        watched: activeProfile.movies?.watchingVideos?.length || playList.length || 0, // 실제 담긴 목록 카운트 바인딩
+        badge: activeProfile.badges?.earnedBadges?.filter(b => b.isComplete).length || 0,
+        watched: activeProfile.movies?.watchingVideos?.length || playHist.length || 0, // 실제 담긴 목록 카운트 바인딩
       }
     };
-  }, [activeProfile, playList]);
+  }, [activeProfile, playHist]);
 
   // 💡 [수정] 가짜 데이터 대신 실제 활성화된 프로필의 획득 뱃지 동기화
   const displayBadgesSummary = useMemo(() => {
-    if (!activeProfile || !activeProfile.bages) return [];
+    if (!activeProfile || !activeProfile.badges) return [];
 
-    const { earnedBadges, equippedBadges } = activeProfile.bages;
+    const { earnedBadges, equippedBadges } = activeProfile.badges;
     const completedUserBadges = earnedBadges?.filter((b: any) => b.isComplete) || [];
 
     const mapped = completedUserBadges.map((userBadge: any) => {
@@ -151,76 +160,117 @@ export default function MyPage() {
       .slice(0, 5);
   }, [activeProfile]);
 
+  const getDetailedHistory = async (histKeys: string[]): Promise<PlayListItem[]> => {
+      const detailPromises = histKeys.map(async (key) => {
+          const [mediaType, id] = key.split("-");
+          const data = await fetchMediaDetail(id, mediaType as "movie" | "tv");
+          
+          if (!data) return null;
+
+          return {
+              id: Number(id),
+              title: data.title || data.name || "제목 없음",
+              poster_path: data.poster_path ?? "",
+              mediaType: mediaType as "movie" | "tv",
+              playTime: "", 
+              progress: 100,
+              episodeProgress: {}
+          };
+      });
+
+      const results = await Promise.all(detailPromises);
+      
+      return results.filter((item): item is PlayListItem => item !== null);
+  };
+
+  // const genreMoodStats = useMemo(() => {
+  //   const gStats = activeProfile?.movies?.genreStats || {};
+  //   const mStats = activeProfile?.movies?.moodStats || {};
+
+  //   const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
+
+  //   if (totalCount === 0) {
+  //     return {
+  //       isEmpty: true,
+  //       genres: [],
+  //       moods: [],
+  //       topGenre: { name: "없음" },
+  //       topMood: { tag: "없음" }
+  //     };
+  //   }
+
+  //   // 1. 장르 데이터 처리
+  //   const totalGenre = Object.values(gStats).reduce((a, b) => a + b, 0);
+  //   const genres = Object.entries(gStats)
+  //     .map(([name, count]) => ({
+  //       name,
+  //       count,
+  //       percentage: totalGenre > 0 ? Math.round((count / totalGenre) * 100) : 0,
+  //       color: getGenreColor(name)
+  //     }))
+  //     .sort((a, b) => b.count - a.count);
+
+  //   // 2. 무드 데이터 처리
+  //   const moods = Object.entries(mStats)
+  //     .map(([tag, count]) => ({
+  //       tag,
+  //       count,
+  //       type: "neutral", // 추후 로직에 따라 positive/negative 할당
+  //       img: `/images/header/menu/mood-${tag}.svg`
+  //     }))
+  //     .sort((a, b) => b.count - a.count);
+
+  //   return {
+  //     genres,
+  //     moods,
+  //     topGenre: genres[0] || { name: "없음", count: 0 },
+  //     topMood: moods[0] || { tag: "없음" },
+  //     totalGenre
+  //   };
+  // }, [activeProfile]);
+
   const genreMoodStats = useMemo(() => {
-    const gStats = activeProfile?.movies?.genreStats || {};
-    const mStats = activeProfile?.movies?.moodStats || {};
+    const stats = activeProfile?.movies?.genreStats || {}; // 통합된 stats 객체
+    const totalCount = Object.values(stats).reduce((a, b) => a + b, 0);
 
-    const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
+    if (totalCount === 0) return { isEmpty: true };
 
-    if (totalCount === 0) {
-      return {
-        isEmpty: true,
-        genres: [],
-        moods: [],
-        topGenre: { name: "없음" },
-        topMood: { tag: "없음" }
-      };
-    }
-
-    // 1. 장르 데이터 처리
-    const totalGenre = Object.values(gStats).reduce((a, b) => a + b, 0);
-    const genres = Object.entries(gStats)
-      .map(([name, count]) => ({
-        name,
-        count,
-        percentage: totalGenre > 0 ? Math.round((count / totalGenre) * 100) : 0,
-        color: getGenreColor(name)
-      }))
+    // 1. 장르 처리: filters.genre에 ID가 존재하는지 확인
+    const genres = Object.entries(stats)
+      .filter(([id]) => filters.genre.some(g => g.query.with_genres?.includes(id)))
+      .map(([id, count]) => {
+        const gInfo = filters.genre.find(g => g.query.with_genres?.includes(id));
+        return {
+          name: gInfo?.label || "기타",
+          count,
+          percentage: Math.round((count / totalCount) * 100),
+          color: "#6d28d9" // 필요시 별도 컬러 함수 사용
+        };
+      })
       .sort((a, b) => b.count - a.count);
 
-    // 2. 무드 데이터 처리
-    const moods = Object.entries(mStats)
-      .map(([tag, count]) => ({
-        tag,
-        count,
-        type: "neutral", // 추후 로직에 따라 positive/negative 할당
-        img: `/images/header/menu/mood-${tag}.svg`
-      }))
+    // 2. 무드 처리: filters.mood에 ID가 존재하는지 확인
+    const moods = Object.entries(stats)
+      .filter(([id]) => filters.mood.some(m => m.id === id))
+      .map(([id, count]) => {
+        const mInfo = filters.mood.find(m => m.id === id);
+        return {
+          tag: mInfo?.label || "일반",
+          count,
+          type: "neutral",
+          img: `/images/header/menu/mood-${id}.svg`
+        };
+      })
       .sort((a, b) => b.count - a.count);
 
     return {
+      isEmpty: false,
       genres,
       moods,
-      topGenre: genres[0] || { name: "없음", count: 0 },
-      topMood: moods[0] || { tag: "없음" },
-      totalGenre
+      topGenre: genres[0] || { name: "없음" },
+      topMood: moods[0] || { tag: "없음" }
     };
   }, [activeProfile]);
-
-  const profileMovies = [...popMovies];
-
-  const friendActivities = profileMovies.slice(0, 3).map((m, i) => ({
-    id: m.id,
-    title: m.title,
-    poster: m.poster_path,
-    friend: ["친구A", "친구B", "친구C"][i],
-    action: ["에 ★★★★★ 평가", "을 시청했어요", "을 찜했어요"][i],
-    time: ["1시간 전", "3시간 전", "어제"][i],
-  }));
-
-  const myReviews = profileMovies.slice(0, 2).map((m, i) => ({
-    id: m.id,
-    title: m.title,
-    poster: m.poster_path,
-    stars: ["★★★★★", "★★¼☆☆"][i],
-    text: [
-      "이번 시즌은 정말 다른 차원이었어요. 첫 화부터 빠져들었고...",
-      "전체적으로 만족스럽지만 중반부가 살짝 늘어지는 느낌이...",
-    ][i],
-    likes: [132, 45][i],
-    comments: [14, 3][i],
-    time: ["2일 전", "1주 전"][i],
-  }));
 
   // Firestore에서 플랜/결제 정보 불러오기
   const [planType, setPlanType] = useState<string>("");
@@ -349,9 +399,9 @@ export default function MyPage() {
             <h2>최근 시청</h2>
             <Link href="/mypage/playlist" className="more">전체보기 →</Link>
           </div>
-          {playList.length > 0 ? (
+          {historyItems.length > 0 ? (
             <div className="poster-row">
-              {playList.slice(0, 6).map((item) => (
+              {historyItems.slice(0, 6).map((item) => (
                 <Link
                   key={item.id}
                   href={`/detail/${item.mediaType || 'movie'}/${item.id}`}
@@ -401,7 +451,7 @@ export default function MyPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {genreMoodStats.genres.slice(0, 3).map((g, index) => (
+                        {genreMoodStats.genres?.slice(0, 3).map((g, index) => (
                           <tr key={index}>
                             <td className="rank-num">{index + 1}</td>
                             <td className="genre-name">{g.name}</td>
@@ -425,7 +475,7 @@ export default function MyPage() {
                   <h3>선호하는 무드</h3>
                   <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
                   <div className="mood-tag-cloud">
-                    {genreMoodStats.moods.map((m, index) => (
+                    {genreMoodStats.moods?.map((m, index) => (
                       <span key={index} className={`mood-tag-item ${m.type}`}>
                         <img src={m.img} alt={m.tag} />
                         {m.tag}
