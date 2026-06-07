@@ -1,158 +1,151 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../scss/friends.scss";
+import { db } from "@/firebase/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useFollowStore } from "@/store/useFollowStore";
 
-type TabType = "all" | "recommend" | "watchTogether";
+type TabType = "all" | "following" | "followers";
 
-interface Friend {
-  name: string;
-  watched: number;
-  reviews: number;
-  lastActivity: string;
-  affinity: number;
-  sharedGenres: string[];
-  otherGenres: string[];
+interface UserCard {
+  userId: string;
+  nickname: string;
+  imgUrl: string;
+  watchedCount: number;
 }
-
-const sampleFriends: Friend[] = [
-  {
-    name: "친구A",
-    watched: 234,
-    reviews: 45,
-    lastActivity: "1시간 전",
-    affinity: 92,
-    sharedGenres: ["스릴러", "미스터리", "한국 드라마"],
-    otherGenres: ["SF"],
-  },
-  {
-    name: "친구B",
-    watched: 189,
-    reviews: 32,
-    lastActivity: "3시간 전",
-    affinity: 85,
-    sharedGenres: ["로맨스", "코미디"],
-    otherGenres: ["드라마"],
-  },
-  {
-    name: "친구C",
-    watched: 312,
-    reviews: 67,
-    lastActivity: "어제",
-    affinity: 78,
-    sharedGenres: ["애니메이션", "SF"],
-    otherGenres: ["판타지"],
-  },
-  {
-    name: "친구D",
-    watched: 156,
-    reviews: 21,
-    lastActivity: "2일 전",
-    affinity: 71,
-    sharedGenres: ["다큐멘터리"],
-    otherGenres: ["역사", "드라마"],
-  },
-];
-
-const recommendFriends: Friend[] = [
-  {
-    name: "추천친구1",
-    watched: 412,
-    reviews: 89,
-    lastActivity: "30분 전",
-    affinity: 94,
-    sharedGenres: ["스릴러", "미스터리", "공포"],
-    otherGenres: [],
-  },
-  {
-    name: "추천친구2",
-    watched: 278,
-    reviews: 54,
-    lastActivity: "2시간 전",
-    affinity: 88,
-    sharedGenres: ["SF", "판타지"],
-    otherGenres: ["애니메이션"],
-  },
-];
 
 export default function FriendsPage() {
   const [tab, setTab] = useState<TabType>("all");
+  const [allUsers, setAllUsers] = useState<UserCard[]>([]);
+  const [search, setSearch] = useState("");
 
-  const displayFriends = tab === "recommend" ? recommendFriends : sampleFriends;
+  const { user, currentProfile } = useAuthStore();
+  const { follow, unfollow } = useFollowStore();
+
+  const followingIds: string[] = currentProfile?.community?.following ?? [];
+  const followerIds: string[] = currentProfile?.community?.followers ?? [];
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUsers = async () => {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const list: UserCard[] = [];
+      querySnapshot.forEach((docSnap) => {
+        if (docSnap.id === user.userId) return;
+        const data = docSnap.data();
+        const firstProfile = data.profile?.[0];
+        if (!firstProfile) return;
+        list.push({
+          userId: docSnap.id,
+          nickname: firstProfile.nickname ?? "유저",
+          imgUrl: firstProfile.imgUrl ?? "",
+          watchedCount: firstProfile.movies?.watchingVideos?.length ?? 0,
+        });
+      });
+      setAllUsers(list);
+    };
+    fetchUsers();
+  }, [user?.userId]);
+
+  const filtered = allUsers.filter((u) =>
+    u.nickname.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const displayList =
+    tab === "following"
+      ? filtered.filter((u) => followingIds.includes(u.userId))
+      : tab === "followers"
+      ? filtered.filter((u) => followerIds.includes(u.userId))
+      : filtered;
+
+  const handleFollowToggle = async (userId: string) => {
+    if (followingIds.includes(userId)) {
+      await unfollow(userId);
+    } else {
+      await follow(userId);
+    }
+  };
 
   return (
-    <div className="friends-page">
+    <div className="friends-page follow-variant">
       <div className="inner">
         <div className="page-head">
-          <h1>팔로워 • 팔로잉</h1>
-          <p>취향이 비슷한 팔로워를 찾고 함께 공유해보세요</p>
+          <h1>팔로우</h1>
+          <p>
+            팔로잉 {followingIds.length}명 · 팔로워 {followerIds.length}명
+          </p>
         </div>
 
-        {/* 검색 바 */}
         <div className="search-input">
           <span className="icon">⌕</span>
-          <input type="text" placeholder="이름·이메일로 찾기" />
+          <input
+            type="text"
+            placeholder="닉네임으로 찾기"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
 
-        {/* 탭 */}
         <div className="tab-bar">
-          <button className={tab === "all" ? "tab active" : "tab"} onClick={() => setTab("all")}>
-            팔로워 <span className="num">{sampleFriends.length}</span>
+          <button
+            className={tab === "all" ? "tab active" : "tab"}
+            onClick={() => setTab("all")}
+          >
+            전체 <span className="num">{allUsers.length}</span>
           </button>
           <button
-            className={tab === "watchTogether" ? "tab active" : "tab"}
-            onClick={() => setTab("watchTogether")}
+            className={tab === "following" ? "tab active" : "tab"}
+            onClick={() => setTab("following")}
           >
-            팔로잉 <span className="num">3</span>
+            팔로잉 <span className="num">{followingIds.length}</span>
           </button>
           <button
-            className={tab === "recommend" ? "tab active" : "tab"}
-            onClick={() => setTab("recommend")}
+            className={tab === "followers" ? "tab active" : "tab"}
+            onClick={() => setTab("followers")}
           >
-            추천 유저 <span className="num">{recommendFriends.length}</span>
+            팔로워 <span className="num">{followerIds.length}</span>
           </button>
         </div>
 
-        {/* 친구 카드 그리드 */}
-        <div className="friend-grid">
-          {displayFriends.map((friend) => (
-            <article key={friend.name} className="friend-card">
-              <div className="friend-head">
-                <div className="avatar"></div>
-                <div className="info">
-                  <h3>{friend.name}</h3>
-                  <p>
-                    시청 {friend.watched}편 · 리뷰 {friend.reviews}개 · 활동 {friend.lastActivity}
-                  </p>
-                </div>
-              </div>
-
-              <div className="affinity-row">
-                <div className="affinity-head">
-                  <span className="label">취향 유사도</span>
-                  <span className="value">{friend.affinity}%</span>
-                </div>
-                {/* <div className="affinity-bar">
-                  <div className="fill" style={{ width: `${friend.affinity}%` }}></div>
-                </div> */}
-              </div>
-
-              <div className="common-genres">
-                {friend.sharedGenres.map((g) => (
-                  <span key={g} className="genre-tag shared">{g}</span>
-                ))}
-                {friend.otherGenres.map((g) => (
-                  <span key={g} className="genre-tag">{g}</span>
-                ))}
-              </div>
-
-              <div className="actions">
-                
-                  {tab === "recommend" ? <button className="btn">＋ 팔로우</button> : ""}
-                
-              </div>
-            </article>
-          ))}
-        </div>
+        <ul className="follow-list">
+          {displayList.length === 0 ? (
+            <li className="follow-item" style={{ justifyContent: "center", opacity: 0.5 }}>
+              유저가 없습니다.
+            </li>
+          ) : (
+            displayList.map((u) => {
+              const isFollowing = followingIds.includes(u.userId);
+              const initials = u.nickname.slice(0, 2).toUpperCase();
+              return (
+                <li key={u.userId} className="follow-item">
+                  <div className="avatar">
+                    {u.imgUrl ? (
+                      <img
+                        src={u.imgUrl}
+                        alt={u.nickname}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{initials}</span>
+                    )}
+                  </div>
+                  <div className="info">
+                    <h3>{u.nickname}</h3>
+                    <p>시청 {u.watchedCount}편</p>
+                  </div>
+                  <button
+                    className="follow-btn"
+                    onClick={() => handleFollowToggle(u.userId)}
+                    style={isFollowing ? { opacity: 0.6 } : {}}
+                  >
+                    {isFollowing ? "팔로잉" : "팔로우"}
+                  </button>
+                </li>
+              );
+            })
+          )}
+        </ul>
       </div>
     </div>
   );

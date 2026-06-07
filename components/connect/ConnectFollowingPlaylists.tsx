@@ -1,174 +1,88 @@
 "use client";
 
 import SectionTitle from "@/components/common/SectionTitle";
-import { FreeMode } from "swiper/modules";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
+import { useAuthStore } from "@/store/useAuthStore";
+import { dummyPlaylists } from "@/data/dummyPlaylist";
 
 import "swiper/css";
 import "swiper/css/free-mode";
+import "swiper/css/navigation";
 import "./scss/connectSection.scss";
 import "./scss/connectFollowingPlaylists.scss";
 
-type FollowingPlaylist = {
-  user: string;
-  title: string;
-  badge: string;
-  posters: string[];
-};
-
-const followingPlaylists: FollowingPlaylist[] = [
-  {
-    user: "이진민",
-    title: "Action",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/uyiALGPVtVsrTY4YHSq2osSYls5.jpg",
-      "https://image.tmdb.org/t/p/w342/4LaJseYluZxp4Odlisd1Zb4RWHR.jpg",
-      "https://image.tmdb.org/t/p/w342/9gaN2j0yWeS7Te9Wjia7Pw3EBq1.jpg",
-      "https://image.tmdb.org/t/p/w342/u2aVXft5GLBQnjzWVNda7sdDpdu.jpg",
-    ],
-  },
-  {
-    user: "김시선",
-    title: "Comedy",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/f1i6kynpQDXcXxyZU5fpG9AwbKz.jpg",
-      "https://image.tmdb.org/t/p/w342/i1pkFRi96SsIqat5vIoFHCwysv1.jpg",
-      "https://image.tmdb.org/t/p/w342/ty2BX4V4ZBAg2ApG2WMmVYKwB1t.jpg",
-      "https://image.tmdb.org/t/p/w342/5NJmR3IA7Rk3inlA4AeQy5ZC5cA.jpg",
-    ],
-  },
-  {
-    user: "쥬시가십",
-    title: "Adventure",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/u2aVXft5GLBQnjzWVNda7sdDpdu.jpg",
-      "https://image.tmdb.org/t/p/w342/t7F6s18frvtkCnciCQeIOqzz9Tu.jpg",
-      "https://image.tmdb.org/t/p/w342/9gaN2j0yWeS7Te9Wjia7Pw3EBq1.jpg",
-      "https://image.tmdb.org/t/p/w342/hpxeGXdaXKqRdyZOjo1GhVEAtRp.jpg",
-    ],
-  },
-  {
-    user: "차지훈",
-    title: "Drama",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/4LaJseYluZxp4Odlisd1Zb4RWHR.jpg",
-      "https://image.tmdb.org/t/p/w342/ty2BX4V4ZBAg2ApG2WMmVYKwB1t.jpg",
-      "https://image.tmdb.org/t/p/w342/i1pkFRi96SsIqat5vIoFHCwysv1.jpg",
-      "https://image.tmdb.org/t/p/w342/uyiALGPVtVsrTY4YHSq2osSYls5.jpg",
-    ],
-  },
-  {
-    user: "무비로그",
-    title: "Thriller",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/t7F6s18frvtkCnciCQeIOqzz9Tu.jpg",
-      "https://image.tmdb.org/t/p/w342/hpxeGXdaXKqRdyZOjo1GhVEAtRp.jpg",
-      "https://image.tmdb.org/t/p/w342/5NJmR3IA7Rk3inlA4AeQy5ZC5cA.jpg",
-      "https://image.tmdb.org/t/p/w342/f1i6kynpQDXcXxyZU5fpG9AwbKz.jpg",
-    ],
-  },
-  {
-    user: "씨네마켓",
-    title: "Romance",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/ty2BX4V4ZBAg2ApG2WMmVYKwB1t.jpg",
-      "https://image.tmdb.org/t/p/w342/5NJmR3IA7Rk3inlA4AeQy5ZC5cA.jpg",
-      "https://image.tmdb.org/t/p/w342/4LaJseYluZxp4Odlisd1Zb4RWHR.jpg",
-      "https://image.tmdb.org/t/p/w342/f1i6kynpQDXcXxyZU5fpG9AwbKz.jpg",
-    ],
-  },
-  {
-    user: "필름토크",
-    title: "Mystery",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/i1pkFRi96SsIqat5vIoFHCwysv1.jpg",
-      "https://image.tmdb.org/t/p/w342/t7F6s18frvtkCnciCQeIOqzz9Tu.jpg",
-      "https://image.tmdb.org/t/p/w342/u2aVXft5GLBQnjzWVNda7sdDpdu.jpg",
-      "https://image.tmdb.org/t/p/w342/hpxeGXdaXKqRdyZOjo1GhVEAtRp.jpg",
-    ],
-  },
-  {
-    user: "리뷰온",
-    title: "Family",
-    badge: "Top 10 In",
-    posters: [
-      "https://image.tmdb.org/t/p/w342/5NJmR3IA7Rk3inlA4AeQy5ZC5cA.jpg",
-      "https://image.tmdb.org/t/p/w342/uyiALGPVtVsrTY4YHSq2osSYls5.jpg",
-      "https://image.tmdb.org/t/p/w342/ty2BX4V4ZBAg2ApG2WMmVYKwB1t.jpg",
-      "https://image.tmdb.org/t/p/w342/i1pkFRi96SsIqat5vIoFHCwysv1.jpg",
-    ],
-  },
-];
-
 export default function ConnectFollowingPlaylists() {
+  const { currentProfile } = useAuthStore();
+  const swiperRef = useRef<SwiperType | null>(null);
+  const roRef = useRef<ResizeObserver | null>(null);
+  const [swiperKey, setSwiperKey] = useState(0);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setSwiperKey((k) => k + 1));
+    return () => {
+      cancelAnimationFrame(id);
+      roRef.current?.disconnect();
+    };
+  }, []);
+
+  if (!currentProfile) return null;
+
   return (
     <section
       className="connect-section connect-following-playlists"
       aria-label="팔로우 유저의 플레이리스트"
     >
       <div className="connect-section__inner connect-following-playlists__inner">
-        <SectionTitle title="팔로우 유저의 플레이리스트" showMore={false} />
+        <SectionTitle title="추천하는 플레이리스트" showMore={false} />
 
+        <div className="connect-following-playlists__swiper-shell">
         <Swiper
+          key={swiperKey}
           className="connect-following-playlists__list"
           freeMode
-          modules={[FreeMode]}
+          navigation
+          modules={[FreeMode, Navigation]}
           slidesPerView="auto"
           spaceBetween={22}
+          observer
+          observeParents
+          onSwiper={(s) => { swiperRef.current = s; }}
           breakpoints={{
-            0: {
-              spaceBetween: 14,
-            },
-            861: {
-              spaceBetween: 22,
-            },
+            0: { spaceBetween: 14 },
+            861: { spaceBetween: 22 },
           }}
         >
-          {followingPlaylists.map((playlist) => (
+          {dummyPlaylists.map((playlist) => (
             <SwiperSlide
               className="connect-following-playlists__slide"
-              key={`${playlist.user}-${playlist.title}`}
+              key={playlist.userId}
             >
-              <button
-                className="connect-following-playlists__card"
-                type="button"
-              >
+              <Link className="connect-following-playlists__card" href={`/user/${playlist.userId}/playlist`}>
                 <span className="connect-following-playlists__poster-grid">
                   {playlist.posters.map((poster, index) => (
-                    <img
-                      src={poster}
-                      alt=""
-                      aria-hidden="true"
-                      key={`${poster}-${index}`}
-                    />
+                    <img src={poster} alt="" aria-hidden="true" key={index} />
                   ))}
                 </span>
-
                 <span className="connect-following-playlists__meta">
                   <span className="connect-following-playlists__badge">
-                    {playlist.user}
+                    {playlist.category ?? "영화"}
                   </span>
                   <span className="connect-following-playlists__title">
-                    {playlist.user}님의 추천작품
+                    {playlist.nickname}님의 추천작품
                   </span>
-                  <span
-                    className="connect-following-playlists__arrow"
-                    aria-hidden="true"
-                  >
+                  <span className="connect-following-playlists__arrow" aria-hidden="true">
                     ↗
                   </span>
                 </span>
-              </button>
+              </Link>
             </SwiperSlide>
           ))}
         </Swiper>
+        </div>
       </div>
     </section>
   );

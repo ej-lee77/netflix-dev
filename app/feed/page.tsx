@@ -290,19 +290,19 @@ const getNextStarRating = (currentRating: number, star: number) => {
 
 export default function FeedPage() {
   const router = useRouter();
-  const { user, currentProfile } = useAuthStore();
+  const { user, currentProfile, updateUserLikeFeeds, updateUserCommentFeed } = useAuthStore();
   const {
-    reviews,
+    feeds,
     onAddComment,
-    onAddReview,
+    onAddFeed,
     onDeleteComment,
-    onDeleteReview,
-    onHydrateReviews,
-    onReportReview,
+    onDeleteFeed,
+    onHydrateFeeds,
+    onReportFeed,
     onToggleCommentLike,
     onToggleLike,
     onUpdateComment,
-    onUpdateReview,
+    onUpdateFeed,
   } = useFeedStore();
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
   const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<
@@ -365,19 +365,19 @@ export default function FeedPage() {
   }, []);
 
   useEffect(() => {
-    void onHydrateReviews();
-  }, [currentProfile?.id, currentUserId, onHydrateReviews]);
+    void onHydrateFeeds();
+  }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
 
-  useEffect(() => {
-    const reportedFeedIds = (currentProfile?.community?.feeds || [])
-      .filter((activity) => activity.type === "report")
-      .map((activity) => activity.feedId);
-    const timeoutId = window.setTimeout(() => {
-      setReportedReviewIds([...new Set(reportedFeedIds)]);
-    }, 0);
+  // useEffect(() => {
+  //   const reportedFeedIds = (currentProfile?.community?.reportfeeds || [])
+  //     .filter((activity) => activity.type === "report")
+  //     .map((activity) => activity.feedId);
+  //   const timeoutId = window.setTimeout(() => {
+  //     setReportedReviewIds([...new Set(reportedFeedIds)]);
+  //   }, 0);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [currentProfile?.community?.feeds]);
+  //   return () => window.clearTimeout(timeoutId);
+  // }, [currentProfile?.community?.feeds]);
 
   useEffect(() => {
     if (!writeModalOpen && !commentTargetReviewId) return;
@@ -594,11 +594,11 @@ export default function FeedPage() {
 
   const filteredReviews =
     activeTab === "all"
-      ? reviews
-      : reviews.filter((review) => review.isFollowing);
+      ? feeds
+      : feeds.filter((review) => review.isFollowing);
 
   const selectedCommentReview =
-    reviews.find((review) => review.feedId === commentTargetReviewId) ?? null;
+    feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
@@ -618,6 +618,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
 
     void onToggleLike(feedId);
+    updateUserLikeFeeds(feedId);
   };
 
   const handleOpenCommentModal = (reviewId: string) => {
@@ -631,7 +632,7 @@ export default function FeedPage() {
     if (review.isMine) return;
 
     if (reportedReviewIds.includes(review.feedId)) {
-      await onReportReview(review.feedId, false);
+      await onReportFeed(review.feedId, false);
       setReportedReviewIds((prev) =>
         prev.filter((reviewId) => reviewId !== review.feedId),
       );
@@ -653,7 +654,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
     if (!reportTargetReviewId || !selectedReportReason) return;
 
-    await onReportReview(reportTargetReviewId, true, selectedReportReason);
+    await onReportFeed(reportTargetReviewId, true, selectedReportReason);
     setReportedReviewIds((prev) =>
       prev.includes(reportTargetReviewId)
         ? prev
@@ -742,6 +743,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
 
     void onToggleCommentLike(reviewId, commentId);
+    updateUserCommentFeed(reviewId, commentId)
   };
 
   const handleSubmitReview = async (
@@ -753,11 +755,11 @@ export default function FeedPage() {
     if (!currentUserId || !currentProfile) return;
 
     const editingReview = editingReviewId
-      ? reviews.find((review) => review.feedId === editingReviewId)
+      ? feeds.find((review) => review.feedId === editingReviewId)
       : null;
 
     if (editingReview) {
-      await onUpdateReview({
+      await onUpdateFeed({
         ...editingReview,
         videoId: `${selectedMedia.mediaType}-${selectedMedia.id}`,
         rating: newRating,
@@ -778,14 +780,13 @@ export default function FeedPage() {
       likesCount: 0,
       reportsCount: 0,
       createdAt: new Date().toISOString(),
-      isDelete: false,
       rating: newRating,
       isSpoiler: newHasSpoiler,
       isPublic: newIsPublic,
       likedUserIds: [],
     };
 
-    await onAddReview(nextReview);
+    await onAddFeed(nextReview);
     closeWriteModal();
   };
 
@@ -812,15 +813,15 @@ export default function FeedPage() {
             <div className="feed-modal-head">
               <div>
                 <h3 id="feed-write-title">
-                  {editingReviewId ? "리뷰 수정" : "리뷰 작성"}
+                  {editingReviewId ? "게시물 수정" : "게시물 작성"}
                 </h3>
-                <p>작품을 선택하고 커뮤니티에 공개할 리뷰를 남겨보세요.</p>
+                <p>작품을 선택하고 커뮤니티에 공개할 게시물을 남겨보세요.</p>
               </div>
               <button
                 type="button"
                 className="feed-modal-close"
                 onClick={closeWriteModal}
-                aria-label="리뷰 작성 닫기"
+                aria-label="게시물 작성 닫기"
               >
                 ×
               </button>
@@ -1023,11 +1024,11 @@ export default function FeedPage() {
               </div>
 
               <label className="feed-review-field">
-                <span>리뷰</span>
+                <span>내용</span>
                 <textarea
                   value={newReviewText}
                   onChange={(event) => setNewReviewText(event.target.value)}
-                  placeholder="리뷰를 작성해 주세요"
+                  placeholder="내용을 작성해 주세요"
                 />
               </label>
 
@@ -1098,7 +1099,7 @@ export default function FeedPage() {
           <div className="feed-modal-head">
             <div>
               <h3 id="feed-comment-title">댓글</h3>
-              <p>" {selectedCommentReview.mediaTitle} " 리뷰에 남긴 의견</p>
+              <p>" {selectedCommentReview.mediaTitle} " 게시물에 남긴 의견</p>
             </div>
             <button
               type="button"
@@ -1207,14 +1208,14 @@ export default function FeedPage() {
         <div className="page-head feed-page-head">
           <div>
             <h1>피드</h1>
-            <p>커뮤니티 리뷰와 팔로우한 유저의 감상을 둘러보세요.</p>
+            <p>커뮤니티 게시물과 팔로우한 유저의 감상을 둘러보세요.</p>
           </div>
           <button
             type="button"
             className="feed-write-btn"
             onClick={() => setWriteModalOpen(true)}
           >
-            리뷰 작성
+            게시물 작성
           </button>
         </div>
 
@@ -1229,7 +1230,7 @@ export default function FeedPage() {
             className={activeTab === "following" ? "chip active" : "chip"}
             onClick={() => setActiveTab("following")}
           >
-            팔로워 리뷰
+            팔로워 게시물
           </button>
         </div>
 
@@ -1416,7 +1417,7 @@ export default function FeedPage() {
                         <button
                           type="button"
                           className="action delete-review-btn"
-                          onClick={() => void onDeleteReview(review.feedId)}
+                          onClick={() => void onDeleteFeed(review.feedId)}
                         >
                           삭제
                         </button>

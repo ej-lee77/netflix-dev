@@ -61,10 +61,10 @@
   line-height: 1.3;
 
   // 좌측 아이콘 느낌 (선택)
-  &::before {
-    content: "🎬";
-    margin-right: 8px;
-  }
+  // &::before {
+  //   content: "🎬";
+  //   margin-right: 8px;
+  // }
 }
 
 .banner-desc {

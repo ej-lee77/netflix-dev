@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { auth } from "@/firebase/firebase";
-import { getItemKey, getMediaType } from "@/store/usePlayListStore";
+import { getItemKey, getMediaType, usePlayListStore } from "@/store/usePlayListStore";
 import "./wishlistButton.scss";
 
 // 위시리스트가 한 페이지 세션에서 한 번만 로드되도록 하는 가드
@@ -43,8 +43,8 @@ export default function WishlistButton({
   className,
   stopPropagation,
 }: WishlistButtonProps) {
-  const { onAddWish, onRemoveWish, onLoadWishlist, wishlistIds } =
-    useWishlistStore();
+  const { onAddMyList, onRemoveMyList, onLoadMyList, myList } =
+    usePlayListStore();
   const { user } = useAuthStore();
   const router = useRouter();
 
@@ -52,13 +52,13 @@ export default function WishlistButton({
   useEffect(() => {
     if (!wishlistLoadedOnce) {
       wishlistLoadedOnce = true;
-      onLoadWishlist();
+      onLoadMyList();
     }
-  }, [onLoadWishlist]);
+  }, [onLoadMyList]);
 
   const effectiveType: MediaType = mediaType ?? getMediaType(item);
   const key = getItemKey({ id: item.id, mediaType: effectiveType });
-  const wished = wishlistIds.includes(key);
+  const wished = myList.includes(key);
 
   const handleClick = async (e: React.MouseEvent) => {
     if (stopPropagation) e.stopPropagation();
@@ -73,9 +73,9 @@ export default function WishlistButton({
 
     const normalized = normalizeForType(item, mediaType);
     if (wished) {
-      await onRemoveWish(normalized);
+      await onRemoveMyList(item.id, effectiveType);
     } else {
-      await onAddWish(normalized);
+      await onAddMyList(normalized);
     }
   };
 

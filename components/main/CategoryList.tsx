@@ -193,12 +193,25 @@ export default function CategoryList({ category }: MediaListProps) {
                           <p className="hover-overview">{item.overview}</p>
                         )}
                         <div className="hover-actions">
-                          <button type="button" className="btn-play" onClick={(e) => e.stopPropagation()}>
+                          {/* ########### 여기 처럼 수정하기  */}
+                          {/* <button type="button" className="btn-play" onClick={(e) => e.stopPropagation()}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
-                            {t("common.play")}
-                          </button>
+                            재생하기
+                          </button> */}
+
+                          <Link
+                            className="btn-play"
+                            href={`/detail/${category === "netflix" ? "tv" : category
+                              }/${item.id}?play=1`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            재생하기
+                          </Link>
                           <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`} className="btn-detail">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="10" />
