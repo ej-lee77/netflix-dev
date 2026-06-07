@@ -144,6 +144,18 @@ const loadHydratedList = async (fieldName: UserListField, localKey: string) => {
     return hydratedItems.length ? hydratedItems : localItems;
 };
 
+// 1. 장르 통계 계산을 위한 유틸리티 함수
+const updateGenreStats = (currentStats: any = {}, genres: { id: number; name: string }[]) => {
+  const newStats = { ...currentStats };
+  
+  genres.forEach((genre) => {
+    const key = genre.id.toString(); // ID를 문자열 키로 변환
+    newStats[key] = (newStats[key] || 0) + 1; // 해당 장르 ID의 카운트를 1 증가
+  });
+  
+  return newStats;
+};
+
 export const usePlayListStore = create<PlayListState>((set, get) => ({
     playList: [],
     playHist: [],
@@ -151,6 +163,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     customPlaylists: [],
     onAddPlayList: async (item) => {
         try {
+            console.log(item)
             const authState = useAuthStore.getState();
             const userId = authState.user?.userId;
             const currentProfile = authState.currentProfile;
@@ -172,6 +185,9 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             // 2. 프로필 복사본 및 데이터 업데이트
             const updatedProfiles = [...profiles];
             const targetProfile = { ...updatedProfiles[profileIndex] };
+
+            const currentStats = targetProfile.movies?.genreStats || {};
+            const newGenreStats = updateGenreStats(currentStats, item.genres || []);
             
             // --- watchingVideos 처리 (객체 전체 저장) ---
             const prevList = targetProfile.movies?.watchingVideos || [];
@@ -184,7 +200,8 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             targetProfile.movies = {
                 ...targetProfile.movies,
                 watchingVideos: newWatchingVideos,
-                histMovies: newHistMovies
+                histMovies: newHistMovies,
+                genreStats: newGenreStats
             };
 
             updatedProfiles[profileIndex] = targetProfile;

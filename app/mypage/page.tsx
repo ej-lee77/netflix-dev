@@ -11,6 +11,7 @@ import { BADGE_LIST } from "@/data/badge";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
+import { filters } from "../category/page";
 
 const GENRE_COLORS: { [key: string]: string } = {
   // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
@@ -151,49 +152,92 @@ export default function MyPage() {
       .slice(0, 5);
   }, [activeProfile]);
 
+  // const genreMoodStats = useMemo(() => {
+  //   const gStats = activeProfile?.movies?.genreStats || {};
+  //   const mStats = activeProfile?.movies?.moodStats || {};
+
+  //   const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
+
+  //   if (totalCount === 0) {
+  //     return {
+  //       isEmpty: true,
+  //       genres: [],
+  //       moods: [],
+  //       topGenre: { name: "없음" },
+  //       topMood: { tag: "없음" }
+  //     };
+  //   }
+
+  //   // 1. 장르 데이터 처리
+  //   const totalGenre = Object.values(gStats).reduce((a, b) => a + b, 0);
+  //   const genres = Object.entries(gStats)
+  //     .map(([name, count]) => ({
+  //       name,
+  //       count,
+  //       percentage: totalGenre > 0 ? Math.round((count / totalGenre) * 100) : 0,
+  //       color: getGenreColor(name)
+  //     }))
+  //     .sort((a, b) => b.count - a.count);
+
+  //   // 2. 무드 데이터 처리
+  //   const moods = Object.entries(mStats)
+  //     .map(([tag, count]) => ({
+  //       tag,
+  //       count,
+  //       type: "neutral", // 추후 로직에 따라 positive/negative 할당
+  //       img: `/images/header/menu/mood-${tag}.svg`
+  //     }))
+  //     .sort((a, b) => b.count - a.count);
+
+  //   return {
+  //     genres,
+  //     moods,
+  //     topGenre: genres[0] || { name: "없음", count: 0 },
+  //     topMood: moods[0] || { tag: "없음" },
+  //     totalGenre
+  //   };
+  // }, [activeProfile]);
+
   const genreMoodStats = useMemo(() => {
-    const gStats = activeProfile?.movies?.genreStats || {};
-    const mStats = activeProfile?.movies?.moodStats || {};
+    const stats = activeProfile?.movies?.genreStats || {}; // 통합된 stats 객체
+    const totalCount = Object.values(stats).reduce((a, b) => a + b, 0);
 
-    const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
+    if (totalCount === 0) return { isEmpty: true };
 
-    if (totalCount === 0) {
-      return {
-        isEmpty: true,
-        genres: [],
-        moods: [],
-        topGenre: { name: "없음" },
-        topMood: { tag: "없음" }
-      };
-    }
-
-    // 1. 장르 데이터 처리
-    const totalGenre = Object.values(gStats).reduce((a, b) => a + b, 0);
-    const genres = Object.entries(gStats)
-      .map(([name, count]) => ({
-        name,
-        count,
-        percentage: totalGenre > 0 ? Math.round((count / totalGenre) * 100) : 0,
-        color: getGenreColor(name)
-      }))
+    // 1. 장르 처리: filters.genre에 ID가 존재하는지 확인
+    const genres = Object.entries(stats)
+      .filter(([id]) => filters.genre.some(g => g.query.with_genres?.includes(id)))
+      .map(([id, count]) => {
+        const gInfo = filters.genre.find(g => g.query.with_genres?.includes(id));
+        return {
+          name: gInfo?.label || "기타",
+          count,
+          percentage: Math.round((count / totalCount) * 100),
+          color: "#6d28d9" // 필요시 별도 컬러 함수 사용
+        };
+      })
       .sort((a, b) => b.count - a.count);
 
-    // 2. 무드 데이터 처리
-    const moods = Object.entries(mStats)
-      .map(([tag, count]) => ({
-        tag,
-        count,
-        type: "neutral", // 추후 로직에 따라 positive/negative 할당
-        img: `/images/header/menu/mood-${tag}.svg`
-      }))
+    // 2. 무드 처리: filters.mood에 ID가 존재하는지 확인
+    const moods = Object.entries(stats)
+      .filter(([id]) => filters.mood.some(m => m.id === id))
+      .map(([id, count]) => {
+        const mInfo = filters.mood.find(m => m.id === id);
+        return {
+          tag: mInfo?.label || "일반",
+          count,
+          type: "neutral",
+          img: `/images/header/menu/mood-${id}.svg`
+        };
+      })
       .sort((a, b) => b.count - a.count);
 
     return {
+      isEmpty: false,
       genres,
       moods,
-      topGenre: genres[0] || { name: "없음", count: 0 },
-      topMood: moods[0] || { tag: "없음" },
-      totalGenre
+      topGenre: genres[0] || { name: "없음" },
+      topMood: moods[0] || { tag: "없음" }
     };
   }, [activeProfile]);
 
@@ -401,7 +445,7 @@ export default function MyPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {genreMoodStats.genres.slice(0, 3).map((g, index) => (
+                        {genreMoodStats.genres?.slice(0, 3).map((g, index) => (
                           <tr key={index}>
                             <td className="rank-num">{index + 1}</td>
                             <td className="genre-name">{g.name}</td>
@@ -425,7 +469,7 @@ export default function MyPage() {
                   <h3>선호하는 무드</h3>
                   <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
                   <div className="mood-tag-cloud">
-                    {genreMoodStats.moods.map((m, index) => (
+                    {genreMoodStats.moods?.map((m, index) => (
                       <span key={index} className={`mood-tag-item ${m.type}`}>
                         <img src={m.img} alt={m.tag} />
                         {m.tag}

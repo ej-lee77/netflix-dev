@@ -12,12 +12,26 @@ export interface PlayListItem{
     episodeProgress: Record<number, number>; // episodeId → 0~100
 }
 
+type DetailMedia = (Movie | TV) & {
+  adult?: boolean;
+  created_by?: { id: number; name: string }[];
+  first_air_date?: string;
+  genres?: { id: number; name: string }[];
+  number_of_episodes?: number;
+  number_of_seasons?: number;
+  production_countries?: { iso_3166_1: string; name: string }[];
+  runtime?: number;
+  status?: string;
+  tagline?: string;
+  vote_count?: number;
+};
+
 export interface PlayListState{
     playList: PlayListItem[],
     playHist: string[],
     myList: string[],
     customPlaylists: PlaylistDocument[],
-    onAddPlayList: (item: Movie | TV)=>Promise<boolean>,
+    onAddPlayList: (item: DetailMedia)=>Promise<boolean>,
     onRemovePlayList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
     onAddMyList: (item: Movie | TV, mediaType?: "movie" | "tv")=>Promise<boolean>,
