@@ -64,7 +64,7 @@ const filterTabs: Array<{ id: VisibleFilterTab; label: string }> = [
   { id: "curation", label: "큐레이션" },
 ];
 
-const filters: Record<FilterTab, FilterOption[]> = {
+export const filters: Record<FilterTab, FilterOption[]> = {
   genre: [
     {
       id: "action",

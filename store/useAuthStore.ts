@@ -1,4 +1,4 @@
-import { auth, db } from "@/firebase/firebase"; 
+import { auth, db, kakaoProvider, naverProvider } from "@/firebase/firebase"; 
 import {
   AuthState,
   type Profile,
@@ -8,7 +8,7 @@ import {
   type UserInfo,
 } from "@/types/auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"; 
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore"; 
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
@@ -133,9 +133,9 @@ export const useAuthStore = create<AuthState>()(
                 id: Date.now(),
                 nickname: "나",
                 imgUrl: FALLBACK_PROFILE_IMAGE,
-                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
-                community: { followers: [], following: [], reviews: [], feeds: [] },
-                bages: { equippedBadges: "", earnedBadges: [] }
+                movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
+                community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
+                badges: { equippedBadges: "", earnedBadges: [] }
               });
 
               const newUserData = {
@@ -204,6 +204,152 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      // 카카오 로그인
+      onKakaoLogin: async () => {
+        try {
+          const kakaoKey = kakaoProvider;
+          if (!window.Kakao.isInitialized()) {
+            window.Kakao.init(kakaoKey);
+          }
+
+          const authObj = await new Promise((resolve, reject) => {
+            window.Kakao.Auth.login({
+              scope: 'profile_nickname, profile_image',
+              success: resolve,
+              fail: reject,
+            });
+          });
+
+          const res = await window.Kakao.API.request({
+            url: '/v2/user/me',
+          });
+
+          const uid = res.id.toString();
+          const userRef = doc(db, 'users', uid);
+          const userDoc = await getDoc(userRef);
+
+          // 공통 정규화 로직 적용을 위한 데이터 처리
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as UserDocument;
+            
+            // onLogin과 동일하게 profile 정규화
+            if (userData.profile) {
+              userData.profile = userData.profile.map(normalizeProfile);
+            }
+
+            // Zustand 상태 설정 (onLogin과 동일한 구조)
+            set({ 
+              user: userData, 
+              currentProfile: userData.profile?.[0] || null 
+            });
+            
+          } else {
+            // 카카오 정보를 기반으로 기본 프로필 생성
+            const newProfile = normalizeProfile({
+              id: 1,
+              nickname: res.kakao_account.profile?.nickname || '카카오사용자',
+              imgUrl: res.kakao_account.profile?.profile_image_url || FALLBACK_PROFILE_IMAGE
+            });
+
+            const newUser = {
+              userId: uid,
+              email: res.kakao_account?.email || '',
+              profile: [newProfile], // 정규화된 프로필 배열
+              // ...기타 필드
+            } as UserDocument;
+
+            await setDoc(userRef, newUser);
+            
+            // Zustand 상태 설정 (onLogin과 동일)
+            set({ 
+              user: newUser, 
+              currentProfile: newProfile 
+            });
+          }
+          return true;
+        } catch (err) {
+          console.error('카카오 로그인 중 오류:', err);
+          return false;
+        }
+      },
+
+      // 네이버 로그인 로직 (카카오 로그인 코드와 비슷한 구조)
+      onNaverLogin: async () => {
+        try {
+          // 1. 네이버 로그인 팝업 및 토큰 로직 (기존 유지)
+          const clientId = naverProvider;
+          const currentUrl = window.location.origin;
+          const callbackUrl = encodeURIComponent(currentUrl + "/login/naver");
+          const state = "random_string";
+          const naverLoginUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=token&client_id=${clientId}&redirect_uri=${callbackUrl}&state=${state}`;
+
+          const popup = window.open(naverLoginUrl, 'naverlogin', 'width=600,height=700');
+          const token = await new Promise((resolve, reject) => {
+            const handleMessage = (e: MessageEvent) => {
+              if (e.origin !== window.location.origin) return;
+              window.removeEventListener('message', handleMessage);
+              resolve(e.data.token);
+            };
+            window.addEventListener('message', handleMessage);
+          });
+
+          // 2. 사용자 정보 요청
+          const res = await fetch('/api/naver', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token }) // 서버로 토큰을 전달
+          });
+
+          const data = await res.json();
+          const userInfo = data.response;
+          const uid = `naver_${userInfo.id}`;
+
+          // 3. Firestore 데이터 처리
+          const userRef = doc(db, 'users', uid);
+          const userDoc = await getDoc(userRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as UserDocument;
+            
+            // 프로필 정규화 적용
+            if (userData.profile) {
+              userData.profile = userData.profile.map(normalizeProfile);
+            }
+
+            set({ 
+              user: userData, 
+              currentProfile: userData.profile?.[0] || null 
+            });
+          } else {
+            // 신규 사용자: 프로필 정규화 및 기본 데이터 생성
+            const newProfile = normalizeProfile({
+              id: 1,
+              nickname: userInfo.name || '네이버사용자',
+              imgUrl: userInfo.profile_image || FALLBACK_PROFILE_IMAGE
+            });
+
+            const newUser = {
+              userId: uid,
+              email: userInfo.email,
+              profile: [newProfile],
+              // ...기타 필드 초기화
+            } as UserDocument;
+
+            await setDoc(userRef, newUser);
+            
+            set({ 
+              user: newUser, 
+              currentProfile: newProfile 
+            });
+          }
+
+          return true;
+        } catch (err) {
+          console.error('네이버 로그인 오류:', err);
+          return false;
+        }
+      },
+
       // 3. 프로필 선택 (시청 프로필 전환)
       onSetProfile: (profile) => {
         // 💡 [수정] localStorage 관련 코드가 전부 빠지고 순수 상태만 변경합니다. 미들웨어가 알아서 감지하여 저장합니다.
@@ -223,9 +369,9 @@ export const useAuthStore = create<AuthState>()(
         const formattedProfile = normalizeProfile({ 
           ...newProfile, 
           id: nextId,
-          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, moodStats: {} },
-          community: { followers: [], following: [], reviews: [], feeds: [] },
-          bages: { equippedBadges: "", earnedBadges: [] }
+          movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
+          community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
+          badges: { equippedBadges: "", earnedBadges: [] }
         });
         
         const nextProfiles = [...currentProfiles, formattedProfile];
@@ -351,6 +497,151 @@ export const useAuthStore = create<AuthState>()(
           // 에러 발생 시 원상복구 로직 필요하면 추가
         }
       },
+      updateUserLike: async (reviewId: string, videoId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const reviewKey = `${videoId}#${reviewId}`;
+        const userDocRef = doc(db, "users", user.userId);
+
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          // 인터페이스 구조에 맞춰 필드명 확인 (reviews 또는 likedReviewKeys)
+          const targetCommunity = updatedProfiles[profileIndex].community;
+          const isLiked = targetCommunity.reviews.includes(reviewKey); // likedReviewKeys 사용 권장
+
+          if (isLiked) {
+            targetCommunity.reviews = targetCommunity.reviews.filter((k) => k !== reviewKey);
+          } else {
+            targetCommunity.reviews.push(reviewKey);
+          }
+
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+
+          // 데이터가 업데이트된 후 AuthStore 상태 최신화
+          get().onInitAuth(); 
+        } catch (error) {
+          console.error("좋아요 토글 실패:", error);
+        }
+      },
+      // 1. 좋아요 피드 토글
+      updateUserLikeFeeds: async (feedId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          const targetCommunity = updatedProfiles[profileIndex].community;
+
+          // 로컬에서 배열 조작
+          const currentFeeds = targetCommunity.likedfeeds || [];
+          if (currentFeeds.includes(feedId)) {
+            targetCommunity.likedfeeds = currentFeeds.filter((id) => id !== feedId);
+          } else {
+            targetCommunity.likedfeeds = [...currentFeeds, feedId];
+          }
+
+          // 전체 배열을 덮어쓰기 (안전한 방식)
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+          get().onInitAuth();
+        } catch (error) {
+          console.error("좋아요 피드 업데이트 실패:", error);
+        }
+      },
+
+      // 2. 댓글 활동 피드 토글
+      updateUserCommentFeed: async (feedId: string, commentId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+        const compositeId = `${feedId}#${commentId}`;
+
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          const targetCommunity = updatedProfiles[profileIndex].community;
+
+          const currentFeeds = targetCommunity.commentfeeds || [];
+          if (currentFeeds.includes(compositeId)) {
+            targetCommunity.commentfeeds = currentFeeds.filter((id) => id !== compositeId);
+          } else {
+            targetCommunity.commentfeeds = [...currentFeeds, compositeId];
+          }
+
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+          get().onInitAuth();
+        } catch (error) {
+          console.error("댓글 활동 업데이트 실패:", error);
+        }
+      },
+
+      // 3. 신고 피드 토글
+      updateUserReportFeed: async (feedId: string) => {
+        const { user, currentProfile } = get();
+        if (!user?.userId || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (!userDocSnap.exists()) return;
+
+          const userData = userDocSnap.data() as UserDocument;
+          const profileIndex = userData.profile.findIndex((p) => p.id === currentProfile.id);
+          if (profileIndex === -1) return;
+
+          const updatedProfiles = [...userData.profile];
+          const targetCommunity = updatedProfiles[profileIndex].community;
+
+          const currentFeeds = targetCommunity.reportfeeds || [];
+          if (currentFeeds.includes(feedId)) {
+            targetCommunity.reportfeeds = currentFeeds.filter((id) => id !== feedId);
+          } else {
+            targetCommunity.reportfeeds = [...currentFeeds, feedId];
+          }
+
+          await updateDoc(userDocRef, { profile: updatedProfiles });
+          get().onInitAuth();
+        } catch (error) {
+          console.error("신고 피드 업데이트 실패:", error);
+        }
+      },
+      equipBadge: async (badgeId: string) => {
+        const { user, currentProfile } = get();
+        if (!user || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+        const updatedProfiles = user.profile.map((p: any) => 
+          p.id === currentProfile.id 
+            ? { ...p, badges: { ...p.badges, equippedBadges: badgeId } } 
+            : p
+        );
+
+        await updateDoc(userDocRef, { profile: updatedProfiles });
+        get().onInitAuth();
+      }
     }),
     {
       name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.

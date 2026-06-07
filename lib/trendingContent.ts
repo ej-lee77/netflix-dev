@@ -1,3 +1,8 @@
+import {
+  allSearchOptions,
+  getSearchOptionQuery,
+} from "@/lib/searchOptions";
+
 export type TrendingMediaType = "movie" | "tv";
 export type TrendingMediaTypeFilter = "all" | TrendingMediaType;
 
@@ -223,6 +228,88 @@ export const fetchKeywordPreviewMedia = async (
     ...knownForItems,
     ...creditItems,
   ]).slice(0, limit);
+};
+
+const collectPreviewGenreIds = (
+  mediaType: TrendingMediaType,
+  selectedGenres: string[],
+  selectedMoods: string[],
+) => {
+  const selectedValues = new Set([...selectedGenres, ...selectedMoods]);
+  const genreIds = new Set<string>();
+
+  allSearchOptions
+    .filter((option) => selectedValues.has(option.value))
+    .forEach((option) => {
+      const genreValue = getSearchOptionQuery(option, mediaType).with_genres;
+      genreValue?.split(",").forEach((genreId) => {
+        const trimmedGenreId = genreId.trim();
+        if (trimmedGenreId) genreIds.add(trimmedGenreId);
+      });
+    });
+
+  return Array.from(genreIds);
+};
+
+export const fetchTaggedPreviewMedia = async (
+  selectedGenres: string[],
+  selectedMoods: string[],
+  signal: AbortSignal,
+  limit = 5,
+) => {
+  if (
+    !TMDB_KEY ||
+    (selectedGenres.length === 0 && selectedMoods.length === 0)
+  ) {
+    return [];
+  }
+
+  const requests = (["tv", "movie"] as const).flatMap((mediaType) => {
+    const genreIds = collectPreviewGenreIds(
+      mediaType,
+      selectedGenres,
+      selectedMoods,
+    );
+    if (genreIds.length === 0) return [];
+
+    const params = new URLSearchParams({
+      api_key: TMDB_KEY,
+      language: "ko-KR",
+      include_adult: "false",
+      page: "1",
+      sort_by: "popularity.desc",
+      with_genres: genreIds.join(","),
+      "vote_count.gte": "30",
+    });
+
+    return fetch(`${TMDB_BASE}/discover/${mediaType}?${params.toString()}`, {
+      signal,
+    }).then(async (response) => {
+      if (!response.ok) throw new Error("태그 결과를 불러오지 못했습니다.");
+
+      const data =
+        (await response.json()) as TmdbListResponse<TmdbTrendingCandidate>;
+      return (data.results ?? [])
+        .map((item) => normalizeTrendingMediaItem(item, mediaType))
+        .filter((item): item is TrendingMediaItem => Boolean(item));
+    });
+  });
+
+  const results = await Promise.all(requests);
+  return uniqueAndSortTrendingItems(results.flat()).slice(0, limit);
+};
+
+export const intersectTrendingItems = (
+  primaryItems: TrendingMediaItem[],
+  filterItems: TrendingMediaItem[],
+) => {
+  const filterKeys = new Set(
+    filterItems.map((item) => `${item.media_type}-${item.id}`),
+  );
+
+  return primaryItems.filter((item) =>
+    filterKeys.has(`${item.media_type}-${item.id}`),
+  );
 };
 
 const pickTrailerKey = (videos: TmdbVideoCandidate[]) => {
