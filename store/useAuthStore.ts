@@ -135,7 +135,7 @@ export const useAuthStore = create<AuthState>()(
                 imgUrl: FALLBACK_PROFILE_IMAGE,
                 movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
                 community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
-                bages: { equippedBadges: "", earnedBadges: [] }
+                badges: { equippedBadges: "", earnedBadges: [] }
               });
 
               const newUserData = {
@@ -371,7 +371,7 @@ export const useAuthStore = create<AuthState>()(
           id: nextId,
           movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
           community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
-          bages: { equippedBadges: "", earnedBadges: [] }
+          badges: { equippedBadges: "", earnedBadges: [] }
         });
         
         const nextProfiles = [...currentProfiles, formattedProfile];
@@ -627,6 +627,20 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error("신고 피드 업데이트 실패:", error);
         }
+      },
+      equipBadge: async (badgeId: string) => {
+        const { user, currentProfile } = get();
+        if (!user || !currentProfile) return;
+
+        const userDocRef = doc(db, "users", user.userId);
+        const updatedProfiles = user.profile.map((p: any) => 
+          p.id === currentProfile.id 
+            ? { ...p, badges: { ...p.badges, equippedBadges: badgeId } } 
+            : p
+        );
+
+        await updateDoc(userDocRef, { profile: updatedProfiles });
+        get().onInitAuth();
       }
     }),
     {

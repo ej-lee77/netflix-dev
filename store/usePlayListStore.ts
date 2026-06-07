@@ -6,6 +6,9 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, collection, qu
 import { useAuthStore } from "./useAuthStore";
 import { PlaylistDocument } from "@/types/playList";
 import { useMovieStore } from "./useMovieStore";
+import { BADGE_LIST } from "@/data/badge";
+import { BadgeList } from "@/types/auth";
+import { filters } from "@/app/category/page";
 
 const MAX_LIST_COUNT = 20;
 
@@ -90,6 +93,67 @@ const countStats = (currentStats: Record<string, number>, ids: string[]) => {
   return newStats;
 };
 
+// 장르 ID(숫자) -> badgeId 매핑 생성
+export const GENRE_ID_TO_BADGE_ID: Record<string, string> = {};
+
+filters.genre.forEach((g) => {
+  // query와 tvQuery에 있는 숫자들을 모두 수집
+  const ids = [
+    ...(g.query?.with_genres?.split(",") || []),
+    ...(g.tvQuery?.with_genres?.split(",") || []),
+  ];
+  
+  ids.forEach((id) => {
+    GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
+  });
+});
+console.log(GENRE_ID_TO_BADGE_ID)
+
+export const getNewlyEarnedBadges = (
+  currentBadges: BadgeList,
+  genreStats: Record<string, number>
+): BadgeList => {
+  const updatedEarnedBadges = [...currentBadges.earnedBadges];
+  let newEquipped = currentBadges.equippedBadges;
+
+  // 1. 모든 장르 뱃지에 대해 업데이트 수행
+  BADGE_LIST.forEach((badge) => {
+    if (!badge.id.startsWith("genre_")) return;
+
+    const genreId = Object.keys(GENRE_ID_TO_BADGE_ID).find(
+      (key) => GENRE_ID_TO_BADGE_ID[key] === badge.id
+    );
+    const count = genreId ? (genreStats[genreId] || 0) : 0;
+
+    // 2. 이미 존재하는 뱃지인지 확인
+    const existingBadgeIndex = updatedEarnedBadges.findIndex((b) => b.id === badge.id);
+
+    if (existingBadgeIndex !== -1) {
+      // 이미 획득했으면 진행도 업데이트
+      updatedEarnedBadges[existingBadgeIndex].progress = count;
+      updatedEarnedBadges[existingBadgeIndex].isComplete = count >= badge.total;
+    } else if (count > 0) {
+      // 새로 진행 중인 뱃지 추가
+      const isComplete = count >= badge.total;
+      updatedEarnedBadges.push({
+        id: badge.id,
+        progress: count,
+        isComplete: isComplete,
+      });
+
+      // 3. 첫 획득(완료) 시 자동 장착
+      if (isComplete && !newEquipped) {
+        newEquipped = badge.id;
+      }
+    }
+  });
+
+  return {
+    earnedBadges: updatedEarnedBadges,
+    equippedBadges: newEquipped,
+  };
+};
+
 export const usePlayListStore = create<PlayListState>((set, get) => ({
     playList: [],
     playHist: [],
@@ -130,6 +194,14 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             // 통계 업데이트 (장르 및 국가)
             const newGenreStats = countStats(movies.genreStats || {}, item.genres?.map((g: any) => g.id.toString()) || []);
             const newCountryStats = countStats(movies.countryStats || {}, item.origin_country || []);
+
+            const updatedBadgeList = getNewlyEarnedBadges(
+                targetProfile.badges || { earnedBadges: [], equippedBadges: "" }, 
+                newGenreStats
+            );
+
+            // 업데이트된 뱃지 리스트 반영
+            targetProfile.badges = updatedBadgeList;
 
             // --- watchingVideos & histMovies 처리 ---
             const newWatchingVideos = putLatestFirst(movies.watchingVideos || [], playItem);

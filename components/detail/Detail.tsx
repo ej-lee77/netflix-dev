@@ -177,7 +177,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const { playList, myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList, onUpdateProgress, onUpdateEpisodeProgress } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
   const { reviews, addReview, fetchVideoReviews, reportReview, updateReviewLikeCount } = useCommunityStore();
-  const { user, currentProfile, updateUserLike } = useAuthStore();
+  const { user, currentProfile, updateUserLike, onInitAuth } = useAuthStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -401,6 +401,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     setIsAddingPlayList(true);
     try {
       await onAddPlayList(mediaItem);
+      await onInitAuth();
       await openVideo();
     } finally {
       setIsAddingPlayList(false);

@@ -221,10 +221,38 @@
       margin-bottom: 14px;
     }
 
+    // .status-done {
+    //   font-size: g.$text-12;
+    //   color: #E50914;
+    //   font-weight: 600;
+    // }
     .status-done {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-size: g.$text-12;
       color: #E50914;
       font-weight: 600;
+      justify-content: center;
+
+      .equip-btn {
+        padding: 4px 8px;
+        background: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.75rem;
+
+        &:hover {
+          background: #555;
+        }
+      }
+
+      .current-badge {
+        font-weight: bold;
+        color: #ffd700; // 골드 컬러 등 강조
+      }
     }
 
     .progress-bar {
@@ -466,4 +494,6 @@
       line-height: 1.6;
     }
   }
+
+  
 }

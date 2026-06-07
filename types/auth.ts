@@ -29,6 +29,7 @@ export interface AuthState {
   updateUserLikeFeeds: (feedId: string) => Promise<void>;
   updateUserCommentFeed: (feedId: string, commentId: string) => Promise<void>;
   updateUserReportFeed: (feedId: string) => Promise<void>;
+  equipBadge: (badgeId: string) => Promise<void>;
 }
 
 export interface UserProfile {
@@ -45,7 +46,7 @@ export interface UserProfile {
 
   // 메뉴 및 뱃지
   headerMenus: string[];    // 헤더 표시 메뉴 ID 목록
-  bages: BadgeList;
+  badges: BadgeList;
 
   alarm: AlarmInfo[]; //위시리스트에 있는거 빼고 알림 설정한거 영상 리스트
   isCommunity: boolean;

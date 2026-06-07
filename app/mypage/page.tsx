@@ -114,7 +114,6 @@ export default function MyPage() {
       .slice(0, 5); // 최근 활동 5개만 표시
   }, [activeProfile]);
 
-  // 💡 [수정] 가짜 데이터(mockUserData) 대신 실제 스토어의 activeProfile 기반 통계 계산
   const profileData = useMemo(() => {
     if (!activeProfile) {
       return {
@@ -124,7 +123,7 @@ export default function MyPage() {
     }
 
     // 장착된 대표 칭호/뱃지 찾기
-    const matchedBadge = BADGE_LIST.find((b) => b.id === activeProfile.bages?.equippedBadges);
+    const matchedBadge = BADGE_LIST.find((b) => b.id === activeProfile.badges?.equippedBadges);
 
     return {
       equippedBadgeName: matchedBadge ? matchedBadge.name : null,
@@ -132,7 +131,7 @@ export default function MyPage() {
         follower: activeProfile.community?.followers?.length || 0,
         following: activeProfile.community?.following?.length || 0,
         review: activeProfile.community?.reviews?.length || 0,
-        badge: activeProfile.bages?.earnedBadges?.filter(b => b.isComplete).length || 0,
+        badge: activeProfile.badges?.earnedBadges?.filter(b => b.isComplete).length || 0,
         watched: activeProfile.movies?.watchingVideos?.length || playHist.length || 0, // 실제 담긴 목록 카운트 바인딩
       }
     };
@@ -140,9 +139,9 @@ export default function MyPage() {
 
   // 💡 [수정] 가짜 데이터 대신 실제 활성화된 프로필의 획득 뱃지 동기화
   const displayBadgesSummary = useMemo(() => {
-    if (!activeProfile || !activeProfile.bages) return [];
+    if (!activeProfile || !activeProfile.badges) return [];
 
-    const { earnedBadges, equippedBadges } = activeProfile.bages;
+    const { earnedBadges, equippedBadges } = activeProfile.badges;
     const completedUserBadges = earnedBadges?.filter((b: any) => b.isComplete) || [];
 
     const mapped = completedUserBadges.map((userBadge: any) => {
