@@ -112,7 +112,7 @@ function PosterGrid() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { onLogin } = useAuthStore();
+  const { onLogin, onKakaoLogin, onNaverLogin } = useAuthStore();
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -174,6 +174,34 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err);
       setError("Google 로그인에 실패했습니다.");
+    }
+  };
+
+  const handleKakaoLogin = async () => {
+    setError("");
+    try {
+      const result = await onKakaoLogin();
+
+      if(result){
+        router.push("/profiles");;
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Kakao 로그인에 실패했습니다.");
+    }
+  };
+
+  const handleNaverLogin = async () => {
+    setError("");
+    try {
+      const result = await onNaverLogin();
+
+      if(result){
+        router.push("/profiles");;
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Naver 로그인에 실패했습니다.");
     }
   };
 
@@ -268,7 +296,8 @@ export default function LoginPage() {
               </button>
             </li>
             <li>
-              <button type="button" className="social-btn social-naver">
+              <button type="button" className="social-btn social-naver"
+              onClick={handleNaverLogin}>
                 <span className="social-icon-wrap">
                   <Image src="/images/social/naver_login.svg" alt="Naver" width={24} height={24} />
                 </span>
@@ -276,7 +305,8 @@ export default function LoginPage() {
               </button>
             </li>
             <li>
-              <button type="button" className="social-btn social-kakao">
+              <button type="button" className="social-btn social-kakao"
+              onClick={handleKakaoLogin}>
                 <span className="social-icon-wrap">
                   <Image src="/images/social/kakao_login.svg" alt="Kakao" width={24} height={24} />
                 </span>

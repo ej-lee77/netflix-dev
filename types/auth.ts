@@ -17,6 +17,8 @@ export interface AuthState {
   currentProfile: UserProfile | null;
   onInitAuth: () => void;
   onLogin: (user: UserDocument) => void;
+  onKakaoLogin: () => Promise<boolean>;
+  onNaverLogin: () => Promise<boolean>;
   onLogout: () => Promise<void>;
   onSetProfile: (profile: UserProfile | null) => void;
   onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;

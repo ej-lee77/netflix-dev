@@ -38,8 +38,8 @@ const getMoodIcon = (tag: string) => PLAYLIST_MOOD_TAGS.find((mood) => mood.titl
 const tabs: { id: ActivityTab; label: string }[] = [
   { id: "watching", label: "시청중" },
   { id: "history", label: "시청기록" },
-  { id: "wishlist", label: "위시리스트" },
-  { id: "playlists", label: "플레이리스트" },
+  // { id: "wishlist", label: "위시리스트" },
+  { id: "playlists", label: "위시리스트" },
 ];
 
 // URL ?tab= 값이 유효한 탭인지 확인
@@ -865,103 +865,103 @@ function ActivityContent() {
   );
 
   // ── 찜하기 (위시리스트 통합) ──────────────────────────────────────────
-  const renderWishlist = () => (
-    <section className="activity-section">
-      <div className="section-head">
-        <h2>위시리스트</h2>
-        <span>{wishlist.length}개</span>
-      </div>
+  // const renderWishlist = () => (
+  //   <section className="activity-section">
+  //     <div className="section-head">
+  //       <h2>위시리스트</h2>
+  //       <span>{wishlist.length}개</span>
+  //     </div>
 
-      <div className="wish-toolbar">
-        <div className="wish-chips">
-          {wishTabs.map((tab) => (
-            <button
-              type="button"
-              key={tab.key}
-              className={wishFilter === tab.key ? "chip active" : "chip"}
-              onClick={() => setWishFilter(tab.key)}
-            >
-              {tab.label} {wishCount(tab.key)}
-            </button>
-          ))}
-        </div>
+  //     <div className="wish-toolbar">
+  //       <div className="wish-chips">
+  //         {wishTabs.map((tab) => (
+  //           <button
+  //             type="button"
+  //             key={tab.key}
+  //             className={wishFilter === tab.key ? "chip active" : "chip"}
+  //             onClick={() => setWishFilter(tab.key)}
+  //           >
+  //             {tab.label} {wishCount(tab.key)}
+  //           </button>
+  //         ))}
+  //       </div>
 
-        <div className="wish-sort">
-          <button
-            type="button"
-            className="wish-sort-btn"
-            onClick={() => setWishSortOpen((v) => !v)}
-          >
-            {currentWishSortLabel}
-            <svg
-              width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-              className={`wish-sort-arrow${wishSortOpen ? " is-open" : ""}`}
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          {wishSortOpen && (
-            <ul className="wish-sort-menu">
-              {wishSortOptions.map((opt) => (
-                <li key={opt.key}>
-                  <button
-                    type="button"
-                    className={`wish-sort-option${wishSort === opt.key ? " is-selected" : ""}`}
-                    onClick={() => {
-                      setWishSort(opt.key);
-                      setWishSortOpen(false);
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+  //       <div className="wish-sort">
+  //         <button
+  //           type="button"
+  //           className="wish-sort-btn"
+  //           onClick={() => setWishSortOpen((v) => !v)}
+  //         >
+  //           {currentWishSortLabel}
+  //           <svg
+  //             width="16" height="16" viewBox="0 0 24 24" fill="none"
+  //             stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+  //             className={`wish-sort-arrow${wishSortOpen ? " is-open" : ""}`}
+  //           >
+  //             <path d="M6 9l6 6 6-6" />
+  //           </svg>
+  //         </button>
+  //         {wishSortOpen && (
+  //           <ul className="wish-sort-menu">
+  //             {wishSortOptions.map((opt) => (
+  //               <li key={opt.key}>
+  //                 <button
+  //                   type="button"
+  //                   className={`wish-sort-option${wishSort === opt.key ? " is-selected" : ""}`}
+  //                   onClick={() => {
+  //                     setWishSort(opt.key);
+  //                     setWishSortOpen(false);
+  //                   }}
+  //                 >
+  //                   {opt.label}
+  //                 </button>
+  //               </li>
+  //             ))}
+  //           </ul>
+  //         )}
+  //       </div>
+  //     </div>
 
-      {wishLoading ? (
-        <div className="history-poster-grid">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <article className="mini-poster-card" key={i}>
-              <div className="mini-poster">
-                <div className="mini-poster__image wish-skeleton" />
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : !user ? (
-        <div className="empty">
-          <p>로그인하고 찜한 작품을 확인하세요.</p>
-          <Link href="/login" className="btn-primary">로그인하기</Link>
-        </div>
-      ) : sortedWish.length > 0 ? (
-        <div className="history-poster-grid">
-          {sortedWish.map((item) => (
-            <article className="mini-poster-card" key={`${item.mediaType}-${item.id}`}>
-              <button
-                type="button"
-                className="mini-delete-btn"
-                onClick={(e) => handleRemoveWish(e, item)}
-                aria-label={`${item.title} 찜 해제`}
-              >
-                삭제
-              </button>
-              <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
-                <div className="mini-poster__image">
-                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
-                </div>
-                <h3>{item.title}</h3>
-                <p>★ {item.vote_average.toFixed(1)}</p>
-              </Link>
-            </article>
-          ))}
-        </div>
-      ) : renderEmpty("아직 찜한 작품이 없어요.")}
-    </section>
-  );
+  //     {wishLoading ? (
+  //       <div className="history-poster-grid">
+  //         {Array.from({ length: 6 }).map((_, i) => (
+  //           <article className="mini-poster-card" key={i}>
+  //             <div className="mini-poster">
+  //               <div className="mini-poster__image wish-skeleton" />
+  //             </div>
+  //           </article>
+  //         ))}
+  //       </div>
+  //     ) : !user ? (
+  //       <div className="empty">
+  //         <p>로그인하고 찜한 작품을 확인하세요.</p>
+  //         <Link href="/login" className="btn-primary">로그인하기</Link>
+  //       </div>
+  //     ) : sortedWish.length > 0 ? (
+  //       <div className="history-poster-grid">
+  //         {sortedWish.map((item) => (
+  //           <article className="mini-poster-card" key={`${item.mediaType}-${item.id}`}>
+  //             <button
+  //               type="button"
+  //               className="mini-delete-btn"
+  //               onClick={(e) => handleRemoveWish(e, item)}
+  //               aria-label={`${item.title} 찜 해제`}
+  //             >
+  //               삭제
+  //             </button>
+  //             <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
+  //               <div className="mini-poster__image">
+  //                 {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
+  //               </div>
+  //               <h3>{item.title}</h3>
+  //               <p>★ {item.vote_average.toFixed(1)}</p>
+  //             </Link>
+  //           </article>
+  //         ))}
+  //       </div>
+  //     ) : renderEmpty("아직 찜한 작품이 없어요.")}
+  //   </section>
+  // );
 
   const renderPlaylistMosaic = (playlist: PlaylistDocument) => {
     // 1. 캐시에서 매칭되는 아이템들을 찾음
@@ -1038,7 +1038,8 @@ function ActivityContent() {
     <section className="activity-section">
       <div className="section-head playlist-content-head">
         <div>
-          <h2>플레이리스트에 담을 콘텐츠</h2>
+          <h2>위시리스트</h2>
+          {/* <h2>플레이리스트에 담을 콘텐츠</h2> */}
           <span>{selectedItems.length}개 선택됨</span>
         </div>
         <button
@@ -1090,7 +1091,7 @@ function ActivityContent() {
             </div>
           ) : (
             <div className="playlist-selection-empty">
-              {renderEmpty("아직 플레이리스트에 담을 콘텐츠가 없어요.")}
+              {renderEmpty("아직 위시리스트가 없어요.")}
             </div>
           )}
 
@@ -1196,7 +1197,7 @@ function ActivityContent() {
 
         {activeTab === "watching" && renderWatching()}
         {activeTab === "history" && renderHistory()}
-        {activeTab === "wishlist" && renderWishlist()}
+        {/* {activeTab === "wishlist" && renderWishlist()} */}
         {activeTab === "playlists" && renderPlaylists()}
         {renderCreatePlaylistModal()}
         {renderModifyCard()}

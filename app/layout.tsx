@@ -31,6 +31,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+        <script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js"></script>
+      </head>
       <body className={netflixSans.variable}>
         {/* 앱 시작 시 Firebase 인증 상태 복원 */}
         <AuthProvider>

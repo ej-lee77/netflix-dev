@@ -8,14 +8,14 @@ import "../scss/moodMain.scss";
 // 각 무드별 부가 설명과 색상
 const moodMeta: Record<string, { desc: string; color: string; emoji: string }> = {
   // DS: 강조색은 빨강 계열만 사용 (무드별 임의 색상 금지)
-  "/mood/chill": { desc: "조용히 마음을 어루만지는 잔잔한 작품들", color: "#E50914", emoji: "🌊" },
-  "/mood/exciting": { desc: "에너지 가득한 신나는 작품들", color: "#E50914", emoji: "⚡" },
-  "/mood/emotional": { desc: "마음 깊이 스며드는 감성 작품", color: "#E50914", emoji: "💧" },
-  "/mood/scary": { desc: "오싹한 공포와 스릴이 가득한 작품", color: "#E50914", emoji: "👻" },
-  "/mood/funny": { desc: "마음 가볍게 웃을 수 있는 유쾌한 작품", color: "#E50914", emoji: "😄" },
-  "/mood/thoughtful": { desc: "깊은 여운을 남기는 작품들", color: "#E50914", emoji: "💭" },
-  "/mood/romantic": { desc: "심장이 두근거리는 낭만적인 작품들", color: "#E50914", emoji: "💕" },
-  "/mood/dark": { desc: "묵직하고 어두운 분위기의 작품들", color: "#E50914", emoji: "🌙" },
+  "/mood/chill": { desc: "조용히 마음을 어루만지는 잔잔한 작품들", color: "#60a5fa", emoji: "🌊" },
+  "/mood/exciting": { desc: "에너지 가득한 신나는 작품들", color: "#f97316", emoji: "⚡" },
+  "/mood/emotional": { desc: "마음 깊이 스며드는 감성 작품", color: "#ec4899", emoji: "💧" },
+  "/mood/scary": { desc: "오싹한 공포와 스릴이 가득한 작품", color: "#7c3aed", emoji: "👻" },
+  "/mood/funny": { desc: "마음 가볍게 웃을 수 있는 유쾌한 작품", color: "#eab308", emoji: "😄" },
+  "/mood/thoughtful": { desc: "깊은 여운을 남기는 작품들", color: "#a78bfa", emoji: "💭" },
+  "/mood/romantic": { desc: "심장이 두근거리는 낭만적인 작품들", color: "#f472b6", emoji: "💕" },
+  "/mood/dark": { desc: "묵직하고 어두운 분위기의 작품들", color: "#475569", emoji: "🌙" },
 };
 
 export default function MoodMainPage() {

@@ -1,4 +1,4 @@
-import { auth, db } from "@/firebase/firebase"; 
+import { auth, db, kakaoProvider, naverProvider } from "@/firebase/firebase"; 
 import {
   AuthState,
   type Profile,
@@ -201,6 +201,152 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error("onLogin 에러:", error);
+        }
+      },
+
+      // 카카오 로그인
+      onKakaoLogin: async () => {
+        try {
+          const kakaoKey = kakaoProvider;
+          if (!window.Kakao.isInitialized()) {
+            window.Kakao.init(kakaoKey);
+          }
+
+          const authObj = await new Promise((resolve, reject) => {
+            window.Kakao.Auth.login({
+              scope: 'profile_nickname, profile_image',
+              success: resolve,
+              fail: reject,
+            });
+          });
+
+          const res = await window.Kakao.API.request({
+            url: '/v2/user/me',
+          });
+
+          const uid = res.id.toString();
+          const userRef = doc(db, 'users', uid);
+          const userDoc = await getDoc(userRef);
+
+          // 공통 정규화 로직 적용을 위한 데이터 처리
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as UserDocument;
+            
+            // onLogin과 동일하게 profile 정규화
+            if (userData.profile) {
+              userData.profile = userData.profile.map(normalizeProfile);
+            }
+
+            // Zustand 상태 설정 (onLogin과 동일한 구조)
+            set({ 
+              user: userData, 
+              currentProfile: userData.profile?.[0] || null 
+            });
+            
+          } else {
+            // 카카오 정보를 기반으로 기본 프로필 생성
+            const newProfile = normalizeProfile({
+              id: 1,
+              nickname: res.kakao_account.profile?.nickname || '카카오사용자',
+              imgUrl: res.kakao_account.profile?.profile_image_url || FALLBACK_PROFILE_IMAGE
+            });
+
+            const newUser = {
+              userId: uid,
+              email: res.kakao_account?.email || '',
+              profile: [newProfile], // 정규화된 프로필 배열
+              // ...기타 필드
+            } as UserDocument;
+
+            await setDoc(userRef, newUser);
+            
+            // Zustand 상태 설정 (onLogin과 동일)
+            set({ 
+              user: newUser, 
+              currentProfile: newProfile 
+            });
+          }
+          return true;
+        } catch (err) {
+          console.error('카카오 로그인 중 오류:', err);
+          return false;
+        }
+      },
+
+      // 네이버 로그인 로직 (카카오 로그인 코드와 비슷한 구조)
+      onNaverLogin: async () => {
+        try {
+          // 1. 네이버 로그인 팝업 및 토큰 로직 (기존 유지)
+          const clientId = naverProvider;
+          const currentUrl = window.location.origin;
+          const callbackUrl = encodeURIComponent(currentUrl + "/login/naver");
+          const state = "random_string";
+          const naverLoginUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=token&client_id=${clientId}&redirect_uri=${callbackUrl}&state=${state}`;
+
+          const popup = window.open(naverLoginUrl, 'naverlogin', 'width=600,height=700');
+          const token = await new Promise((resolve, reject) => {
+            const handleMessage = (e: MessageEvent) => {
+              if (e.origin !== window.location.origin) return;
+              window.removeEventListener('message', handleMessage);
+              resolve(e.data.token);
+            };
+            window.addEventListener('message', handleMessage);
+          });
+
+          // 2. 사용자 정보 요청
+          const res = await fetch('/api/naver', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token }) // 서버로 토큰을 전달
+          });
+
+          const data = await res.json();
+          const userInfo = data.response;
+          const uid = `naver_${userInfo.id}`;
+
+          // 3. Firestore 데이터 처리
+          const userRef = doc(db, 'users', uid);
+          const userDoc = await getDoc(userRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as UserDocument;
+            
+            // 프로필 정규화 적용
+            if (userData.profile) {
+              userData.profile = userData.profile.map(normalizeProfile);
+            }
+
+            set({ 
+              user: userData, 
+              currentProfile: userData.profile?.[0] || null 
+            });
+          } else {
+            // 신규 사용자: 프로필 정규화 및 기본 데이터 생성
+            const newProfile = normalizeProfile({
+              id: 1,
+              nickname: userInfo.name || '네이버사용자',
+              imgUrl: userInfo.profile_image || FALLBACK_PROFILE_IMAGE
+            });
+
+            const newUser = {
+              userId: uid,
+              email: userInfo.email,
+              profile: [newProfile],
+              // ...기타 필드 초기화
+            } as UserDocument;
+
+            await setDoc(userRef, newUser);
+            
+            set({ 
+              user: newUser, 
+              currentProfile: newProfile 
+            });
+          }
+
+          return true;
+        } catch (err) {
+          console.error('네이버 로그인 오류:', err);
+          return false;
         }
       },
 
