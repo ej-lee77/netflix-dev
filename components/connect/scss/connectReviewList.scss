@@ -9,9 +9,13 @@
 }
 
 .connect-review-list__inner {
-    width: 100%;
+    width: calc(100vw - #{g.$main-menu-width});
     margin: 0;
-    padding: 0;
+    padding-left: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
+}
+
+.connect-review-list .section-header {
+    padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
 }
 
 .connect-review-list__header {
@@ -44,39 +48,44 @@
 
     .swiper-button-prev,
     .swiper-button-next {
-        width: 23px;
-        height: 23px;
-        margin-top: -23px;
-        // border: 1px solid rgba(255, 255, 255, 0.18);
-        // border-radius: 8px;
-        background: rgba(0, 0, 0, 0.48);
+        background: none;
+        border: none;
         color: #fff;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
-        transition:
-            background 0.18s ease,
-            border-color 0.18s ease,
-            transform 0.18s ease;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.2s ease;
 
         &::after {
-            font-size: 0.9rem;
+            font-size: 20px;
             font-weight: 900;
         }
 
-        &:hover {
-            //border-color: g.$main-color;
-            //background: rgba(229, 9, 20, 0.86);
-            transform: scale(1.04);
-            color: g.$main-color;
+        &.swiper-button-disabled {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+    }
+
+    &:hover {
+
+        .swiper-button-prev,
+        .swiper-button-next {
+            opacity: 1;
+
+            &:hover {
+                opacity: 0.7;
+            }
         }
     }
 
     .swiper-button-prev {
-        left: 8px;
+        left: 10px;
     }
 
     .swiper-button-next {
-        right: 8px;
+        right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 10px);
     }
+
 }
 
 .connect-review-list__slide {
@@ -91,7 +100,7 @@
     border: 1px solid rgba(255, 255, 255, 0.11);
     border-radius: 8px;
     background:
-        linear-gradient(145deg, rgba(229, 9, 20, 0.08), transparent 42%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 42%),
         #111;
     color: #fff;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
@@ -101,7 +110,7 @@
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(circle at 86% 0%, rgba(229, 9, 20, 0.15), transparent 32%),
+        radial-gradient(circle at 86% 0%, rgba(255, 255, 255, 0.06), transparent 32%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 44%);
     pointer-events: none;
 }
@@ -135,10 +144,31 @@
     width: 42px;
     height: 42px;
     flex: 0 0 auto;
-    border: 1px solid rgba(229, 9, 20, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 50%;
     object-fit: cover;
     background: #2a2a2a;
+}
+
+.review-card__avatar--text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.review-card__follow.review-card__follow--active {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: default;
+
+    &:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.14);
+    }
 }
 
 .review-card h3 {
@@ -154,23 +184,21 @@
 
 .review-card__follow {
     flex: 0 0 auto;
-    border: 1px solid rgba(229, 9, 20, 0.28);
+    border: 1px solid #e50914;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.78);
+    background: #e50914;
+    color: #fff;
     cursor: pointer;
     font-size: 0.75rem;
     font-weight: 800;
     padding: 8px 13px;
     transition:
         background 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease;
+        border-color 0.18s ease;
 
     &:hover {
-        border-color: rgba(229, 9, 20, 0.56);
-        background: rgba(229, 9, 20, 0.16);
-        color: #fff;
+        border-color: #ff1f2b;
+        background: #ff1f2b;
     }
 }
 
@@ -180,7 +208,7 @@
     gap: 8px;
 
     span {
-        border: 1px solid rgba(229, 9, 20, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.18);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.06);
         color: rgba(255, 255, 255, 0.74);
@@ -218,12 +246,12 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: linear-gradient(150deg, #2a0003, #111);
+    background: linear-gradient(150deg, #2a2a2a, #111);
     padding: 8px;
     text-align: center;
 
     span {
-        color: g.$main-color;
+        color: rgba(255, 255, 255, 0.7);
         font-size: 1.8rem;
         font-weight: 900;
         line-height: 1;
@@ -256,6 +284,45 @@
     }
 }
 
+.review-card__movie-text .review-card__predicted-rating {
+    margin-bottom: 4px;
+    color: #eb7979;
+    font-size: 0.78rem;
+    font-weight: 500;
+    // letter-spacing: 0.2em;
+}
+
+.review-card__analysis-badge {
+    display: flex;
+    align-self: flex-end;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+
+    svg {
+        width: 22px;
+        height: 22px;
+        color: rgba(255, 255, 255, 0.38);
+    }
+}
+
+.connect-review-list__skeleton {
+    display: flex;
+    gap: 24px;
+    overflow: hidden;
+}
+
+.connect-review-list__skeleton-card {
+    width: 360px;
+    height: 292px;
+    flex: 0 0 auto;
+    border-radius: 8px !important;
+}
+
 @media (max-width: 768px) {
     .connect-review-list__inner {
         padding: 0;
@@ -275,6 +342,10 @@
     }
 
     .review-card {
+        width: min(82vw, 340px);
+    }
+
+    .connect-review-list__skeleton-card {
         width: min(82vw, 340px);
     }
 }

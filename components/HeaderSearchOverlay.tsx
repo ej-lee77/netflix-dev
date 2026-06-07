@@ -13,6 +13,9 @@ import {
 } from "@/lib/searchOptions";
 import {
   fetchKeywordPreviewMedia,
+  fetchTaggedPreviewMedia,
+  fetchTrendingMedia,
+  intersectTrendingItems,
   type TrendingMediaItem,
 } from "@/lib/trendingContent";
 import TrendingVideoSection from "./search/TrendingVideoSection";
@@ -78,17 +81,42 @@ export default function HeaderSearchOverlay({
     if (!isOpen) return;
 
     const trimmedKeyword = keyword.trim();
-    if (!trimmedKeyword) {
-      const timer = window.setTimeout(() => {
-        setPreviewItems([]);
-      }, 0);
-
-      return () => window.clearTimeout(timer);
-    }
+    const hasTags = activeGenres.length > 0 || activeMoods.length > 0;
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, 5)
+      const previewRequest = (() => {
+        if (trimmedKeyword && hasTags) {
+          return Promise.all([
+            fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, 12),
+            fetchTaggedPreviewMedia(
+              activeGenres,
+              activeMoods,
+              controller.signal,
+              24,
+            ),
+          ]).then(([keywordItems, taggedItems]) =>
+            intersectTrendingItems(keywordItems, taggedItems).slice(0, 5),
+          );
+        }
+
+        if (trimmedKeyword) {
+          return fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, 5);
+        }
+
+        if (hasTags) {
+          return fetchTaggedPreviewMedia(
+            activeGenres,
+            activeMoods,
+            controller.signal,
+            5,
+          );
+        }
+
+        return fetchTrendingMedia("all", controller.signal, 5);
+      })();
+
+      previewRequest
         .then(setPreviewItems)
         .catch((error: Error) => {
           if (error.name !== "AbortError") setPreviewItems([]);
@@ -99,7 +127,7 @@ export default function HeaderSearchOverlay({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [isOpen, keyword]);
+  }, [activeGenres, activeMoods, isOpen, keyword]);
 
   if (!isOpen) return null;
 

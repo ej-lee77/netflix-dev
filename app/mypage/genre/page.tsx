@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/selectGenre.scss";
+import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 
 // --- 메타데이터 없이 오직 path 기준으로만 데이터 분리 ---
 const genreOptions = customMenus
@@ -25,15 +26,33 @@ export default function SelectGenre() {
   const [genreTab, setGenreTab] = useState<"favorite" | "exclude">("favorite");
   const [moodTab, setMoodTab] = useState<"favorite" | "exclude">("favorite");
 
-  // 선택된 슬러그(slug)들을 저장하는 상태
-  const [favoriteGenres, setFavoriteGenres] = useState(["thriller", "mystery", "scifi", "drama", "romance"]);
-  const [excludedGenres, setExcludedGenres] = useState(["horror", "war", "documentary"]);
-  
-  const [favoriteMoods, setFavoriteMoods] = useState(["chill", "emotional"]);
-  const [excludedMoods, setExcludedMoods] = useState(["scary"]);
+  // 현재 프로필의 settings 에서 불러오고, 저장도 여기에 함
+  const currentProfile = useAuthStore((s) => s.currentProfile);
+  const onUpdateProfile = useAuthStore((s) => s.onUpdateProfile);
+
+  // 선택된 슬러그(slug)들을 저장하는 상태 (프로필 settings 로드)
+  const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
+  const [excludedGenres, setExcludedGenres] = useState<string[]>([]);
+  const [favoriteMoods, setFavoriteMoods] = useState<string[]>([]);
+  const [excludedMoods, setExcludedMoods] = useState<string[]>([]);
+
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // 프로필이 로드/전환되면 저장된 설정을 불러옴
+  useEffect(() => {
+    const s = currentProfile?.settings;
+    setFavoriteGenres(s?.favoriteGenres ?? []);
+    setExcludedGenres(s?.excludedGenres ?? []);
+    setFavoriteMoods(s?.favoriteMoods ?? []);
+    setExcludedMoods(s?.excludedMoods ?? []);
+    setSaved(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentProfile?.id]);
 
   // 장르 선택 토글
   const toggleGenre = (slug: string) => {
+    setSaved(false);
     if (genreTab === "favorite") {
       if (favoriteGenres.includes(slug)) {
         setFavoriteGenres(favoriteGenres.filter((g) => g !== slug));
@@ -53,6 +72,7 @@ export default function SelectGenre() {
 
   // 무드 선택 토글
   const toggleMood = (slug: string) => {
+    setSaved(false);
     if (moodTab === "favorite") {
       if (favoriteMoods.includes(slug)) {
         setFavoriteMoods(favoriteMoods.filter((m) => m !== slug));
@@ -76,6 +96,34 @@ export default function SelectGenre() {
     setExcludedGenres([]); // 제외 장르 비우기
     setFavoriteMoods([]);  // 선호 무드 비우기
     setExcludedMoods([]);   // 제외 무드 비우기
+    setSaved(false);
+  };
+
+  // 프로필 settings 에 저장
+  const handleSave = async () => {
+    if (!currentProfile) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      await onUpdateProfile({
+        ...currentProfile,
+        settings: {
+          ...currentProfile.settings,
+          maturityRating:
+            currentProfile.settings?.maturityRating ?? DEFAULT_PROFILE_SETTINGS.maturityRating,
+          subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
+          playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
+          hiddenWatchingVideos: currentProfile.settings?.hiddenWatchingVideos ?? [],
+          favoriteGenres,
+          excludedGenres,
+          favoriteMoods,
+          excludedMoods,
+        },
+      });
+      setSaved(true);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -182,6 +230,14 @@ export default function SelectGenre() {
               );
             })}
           </div>
+        </section>
+
+        {/* 저장 바 */}
+        <section className="save-panel">
+          <p>{saved ? "설정이 저장되었어요." : "변경한 선호/제외 설정을 저장합니다."}</p>
+          <button type="button" onClick={handleSave} disabled={saving || !currentProfile}>
+            {saving ? "저장 중..." : "저장하기"}
+          </button>
         </section>
 
         {/* 초기화 판넬 */}

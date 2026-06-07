@@ -19,6 +19,10 @@ export interface FeedComment {
   content: string;          // 댓글 내용
   reportsCount: number;     // 신고
   likesCount: number;       // 좋아요
+  profileId?: number;
+  createdAt: string;
+  updatedAt?: string;
+  likedUserIds?: string[];
 }
 
 // 2. 피드 메인 문서 인터페이스 (Main-collection용)
@@ -31,7 +35,6 @@ export interface FeedDocument {
   reportsCount: number;     // 신고
   comments: FeedComment;    // 댓글
   createdAt: string;
-  isDelete: boolean;
 }
 
 export interface CommunityStore {
@@ -41,5 +44,5 @@ export interface CommunityStore {
   fetchVideoReviews: (videoId: string) => Promise<void>;
   addReview: (data: { content: string; videoId: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
   reportReview: (reviewId: string, videoId: string) => Promise<void>;
-  toggleReviewLike: (reviewId: string, videoId: string) => Promise<void>;
+  updateReviewLikeCount: (videoId: string, reviewId: string, isLiked: boolean) => Promise<void>;
 }

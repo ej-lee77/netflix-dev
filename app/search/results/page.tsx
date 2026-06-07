@@ -6,7 +6,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   allSearchOptions,
-  getSearchOptionLabels,
   getSearchOptionQuery,
 } from "@/lib/searchOptions";
 import {
@@ -20,18 +19,21 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
 
 type MediaType = "movie" | "tv";
-type MediaTypeFilter = "all" | MediaType;
+type MediaTypeFilter = "all" | MediaType | "animation";
 type SearchSortType = "popularity" | "title" | "rating";
 
 type MediaItem = {
   id: number;
   title: string;
   poster_path: string | null;
+  backdrop_path: string | null;
+  overview: string;
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
   media_type: MediaType;
   popularity: number;
+  genre_ids: number[];
 };
 
 type TmdbMediaCandidate = {
@@ -40,10 +42,13 @@ type TmdbMediaCandidate = {
   title?: string;
   name?: string;
   poster_path?: string | null;
+  backdrop_path?: string | null;
+  overview?: string;
   vote_average?: number;
   release_date?: string;
   first_air_date?: string;
   popularity?: number;
+  genre_ids?: number[];
   adult?: boolean;
 };
 
@@ -71,6 +76,13 @@ const SEARCH_SORT_OPTIONS: { key: SearchSortType; label: string }[] = [
   { key: "rating", label: "평점순" },
 ];
 
+const TYPE_FILTER_OPTIONS: { key: MediaTypeFilter; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "movie", label: "영화" },
+  { key: "tv", label: "시리즈" },
+  { key: "animation", label: "애니메이션" },
+];
+
 const parseParamList = (value: string | null) =>
   value
     ?.split(",")
@@ -79,6 +91,17 @@ const parseParamList = (value: string | null) =>
 
 const isMediaType = (value: string | undefined): value is MediaType =>
   value === "movie" || value === "tv";
+
+const isMediaTypeFilter = (
+  value: string | undefined,
+): value is MediaTypeFilter =>
+  value === "all" ||
+  value === "movie" ||
+  value === "tv" ||
+  value === "animation";
+
+const isAnimationItem = (item: Pick<MediaItem, "genre_ids">) =>
+  item.genre_ids.includes(16);
 
 const normalizeMediaItem = (
   item: TmdbMediaCandidate,
@@ -95,11 +118,14 @@ const normalizeMediaItem = (
     id: item.id,
     title,
     poster_path: item.poster_path ?? null,
+    backdrop_path: item.backdrop_path ?? null,
+    overview: item.overview ?? "",
     vote_average: item.vote_average ?? 0,
     release_date: item.release_date,
     first_air_date: item.first_air_date,
     media_type: mediaType,
     popularity: item.popularity ?? 0,
+    genre_ids: item.genre_ids ?? [],
   };
 };
 
@@ -138,6 +164,19 @@ const mergeKeywordFirst = (
   return mergedItems;
 };
 
+const intersectMediaItems = (
+  primaryItems: MediaItem[],
+  filterItems: MediaItem[],
+) => {
+  const filterKeys = new Set(
+    filterItems.map((item) => `${item.media_type}-${item.id}`),
+  );
+
+  return primaryItems.filter((item) =>
+    filterKeys.has(`${item.media_type}-${item.id}`),
+  );
+};
+
 const collectGenreIds = (
   mediaType: MediaType,
   selectedGenres: string[],
@@ -157,6 +196,15 @@ const collectGenreIds = (
     });
 
   return Array.from(genreIds);
+};
+
+const getSelectedSearchOptions = (
+  selectedGenres: string[],
+  selectedMoods: string[],
+) => {
+  const selectedValues = new Set([...selectedGenres, ...selectedMoods]);
+
+  return allSearchOptions.filter((option) => selectedValues.has(option.value));
 };
 
 const fetchJson = async <T,>(url: string, signal: AbortSignal): Promise<T> => {
@@ -233,7 +281,11 @@ const fetchKeywordResults = async (
     ...directItems,
     ...knownForItems,
     ...creditItems,
-  ]).filter((item) => typeFilter === "all" || item.media_type === typeFilter);
+  ]).filter((item) => {
+    if (typeFilter === "all") return true;
+    if (typeFilter === "animation") return isAnimationItem(item);
+    return item.media_type === typeFilter;
+  });
 };
 
 const fetchTaggedResults = async (
@@ -250,10 +302,15 @@ const fetchTaggedResults = async (
   }
 
   const mediaTypes: MediaType[] =
-    typeFilter === "all" ? ["movie", "tv"] : [typeFilter];
+    typeFilter === "all" || typeFilter === "animation"
+      ? ["movie", "tv"]
+      : [typeFilter];
 
   const requests = mediaTypes.flatMap((mediaType) => {
     const genreIds = collectGenreIds(mediaType, selectedGenres, selectedMoods);
+    if (typeFilter === "animation" && !genreIds.includes("16")) {
+      genreIds.push("16");
+    }
     if (genreIds.length === 0) return [];
 
     const params = new URLSearchParams({
@@ -302,7 +359,7 @@ function SearchResultsContent() {
   );
   const typeParam = searchParams.get("type") ?? undefined;
 
-  const typeFilter: MediaTypeFilter = isMediaType(typeParam)
+  const typeFilter: MediaTypeFilter = isMediaTypeFilter(typeParam)
     ? typeParam
     : "all";
 
@@ -313,10 +370,7 @@ function SearchResultsContent() {
   const [sort, setSort] = useState<SearchSortType>("popularity");
   const [sortOpen, setSortOpen] = useState(false);
 
-  const selectedLabels = [
-    ...getSearchOptionLabels("genre", selectedGenres),
-    ...getSearchOptionLabels("mood", selectedMoods),
-  ];
+  const selectedOptions = getSelectedSearchOptions(selectedGenres, selectedMoods);
   const hasQuery =
     keyword.length > 0 || selectedGenres.length > 0 || selectedMoods.length > 0;
   const currentSortLabel =
@@ -356,7 +410,14 @@ function SearchResultsContent() {
       ),
     ])
       .then(([keywordItems, taggedItems]) => {
-        setItems(mergeKeywordFirst(keywordItems, taggedItems).slice(0, 72));
+        const hasKeyword = keyword.length > 0;
+        const hasTags = selectedGenres.length > 0 || selectedMoods.length > 0;
+        const nextItems =
+          hasKeyword && hasTags
+            ? intersectMediaItems(keywordItems, taggedItems)
+            : mergeKeywordFirst(keywordItems, taggedItems);
+
+        setItems(nextItems.slice(0, 72));
       })
       .catch((error: Error) => {
         if (error.name === "AbortError") return;
@@ -378,7 +439,11 @@ function SearchResultsContent() {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetchTrendingMedia(typeFilter, controller.signal, 6)
+    fetchTrendingMedia(
+      typeFilter === "animation" ? "all" : typeFilter,
+      controller.signal,
+      6,
+    )
       .then(setPopularItems)
       .catch((error: Error) => {
         if (error.name !== "AbortError") setPopularItems([]);
@@ -394,6 +459,19 @@ function SearchResultsContent() {
     router.push(`/search/results?${params.toString()}`);
   };
 
+  const removeSelectedOption = (group: "genre" | "mood", value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const paramName = group === "genre" ? "genres" : "moods";
+    const nextValues = parseParamList(params.get(paramName)).filter(
+      (item) => item !== value,
+    );
+
+    if (nextValues.length > 0) params.set(paramName, nextValues.join(","));
+    else params.delete(paramName);
+
+    router.push(`/search/results?${params.toString()}`);
+  };
+
   return (
     <main className="search-results-page">
       <section className="search-results-hero">
@@ -401,41 +479,47 @@ function SearchResultsContent() {
           <p>검색 결과</p>
           <div className="search-result-query-line">
             {keyword && <strong>{keyword}</strong>}
-            {selectedLabels.length > 0 && (
+            {selectedOptions.length > 0 && (
               <div className="search-result-chips">
-                {selectedLabels.map((label) => (
-                  <span key={label}>{label}</span>
+                {selectedOptions.map((option) => (
+                  <button
+                    type="button"
+                    key={`${option.group}-${option.value}`}
+                    onClick={() =>
+                      removeSelectedOption(option.group, option.value)
+                    }
+                    aria-label={`${option.label} 태그 제거`}
+                  >
+                    <span>{option.label}</span>
+                    <em aria-hidden="true">×</em>
+                  </button>
                 ))}
               </div>
             )}
-            {!keyword && selectedLabels.length === 0 && <strong>검색</strong>}
+            {!keyword && selectedOptions.length === 0 && (
+              <span className="search-result-empty-query">
+                검색결과가 없습니다
+              </span>
+            )}
           </div>
         </div>
       </section>
 
       <section className="search-results-content inner">
-        <div className="type-filter" aria-label="콘텐츠 유형">
-          <button
-            type="button"
-            className={typeFilter === "all" ? "active" : ""}
-            onClick={() => changeTypeFilter("all")}
-          >
-            전체
-          </button>
-          <button
-            type="button"
-            className={typeFilter === "movie" ? "active" : ""}
-            onClick={() => changeTypeFilter("movie")}
-          >
-            영화
-          </button>
-          <button
-            type="button"
-            className={typeFilter === "tv" ? "active" : ""}
-            onClick={() => changeTypeFilter("tv")}
-          >
-            시리즈
-          </button>
+        <div
+          className="type-filter"
+          aria-label="콘텐츠 유형"
+        >
+          {TYPE_FILTER_OPTIONS.map((option) => (
+            <button
+              type="button"
+              key={option.key}
+              className={typeFilter === option.key ? "active" : ""}
+              onClick={() => changeTypeFilter(option.key)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
@@ -489,33 +573,90 @@ function SearchResultsContent() {
               </div>
             </div>
             <div className="poster-grid">
-              {sortedItems.map((item) => (
-                <Link
-                  key={`${item.media_type}-${item.id}`}
-                  href={`/detail/${item.media_type}/${item.id}`}
-                  className="poster-card"
-                >
-                  <div className="poster">
-                    {item.poster_path ? (
-                      <Image
-                        src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                        alt={item.title}
-                        width={228}
-                        height={342}
-                      />
-                    ) : (
-                      <div className="no-image">이미지 없음</div>
-                    )}
-                    <span className="rating">
-                      ★ {item.vote_average.toFixed(1)}
-                    </span>
-                  </div>
-                  <h3>{item.title}</h3>
-                  <p className="year">
-                    {(item.release_date || item.first_air_date)?.slice(0, 4)}
-                  </p>
-                </Link>
-              ))}
+              {sortedItems.map((item) => {
+                const releaseYear = (
+                  item.release_date || item.first_air_date
+                )?.slice(0, 4);
+                const imagePath = item.backdrop_path || item.poster_path;
+
+                return (
+                  <Link
+                    key={`${item.media_type}-${item.id}`}
+                    href={`/detail/${item.media_type}/${item.id}`}
+                    className="poster-card"
+                  >
+                    <div className="poster">
+                      {item.poster_path ? (
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                          alt={item.title}
+                          width={228}
+                          height={342}
+                        />
+                      ) : (
+                        <div className="no-image">이미지 없음</div>
+                      )}
+                      <span className="rating">
+                        ★ {item.vote_average.toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="search-hover-card">
+                      <div className="search-hover-card__media">
+                        {imagePath ? (
+                          <Image
+                            src={`https://image.tmdb.org/t/p/w500${imagePath}`}
+                            alt={item.title}
+                            width={420}
+                            height={236}
+                          />
+                        ) : (
+                          <div className="no-image">이미지 없음</div>
+                        )}
+                      </div>
+                      <div className="search-hover-card__info">
+                        <div className="search-hover-card__title-row">
+                          <h3>{item.title}</h3>
+                        </div>
+                        <div className="search-hover-card__meta">
+                          {item.vote_average > 0 && (
+                            <>
+                              <span className="meta-star">★</span>
+                              <span className="meta-score">
+                                {item.vote_average.toFixed(1)}
+                              </span>
+                              {releaseYear && (
+                                <span className="meta-sep">|</span>
+                              )}
+                            </>
+                          )}
+                          {releaseYear && <span>{releaseYear}</span>}
+                        </div>
+                        {item.overview && (
+                          <p className="search-hover-card__overview">
+                            {item.overview}
+                          </p>
+                        )}
+                        <div className="search-hover-card__actions">
+                          <span className="btn-play" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            재생
+                          </span>
+                          <span className="btn-detail" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="12" y1="16" x2="12" y2="12" />
+                              <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            상세정보
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </>
         ) : (

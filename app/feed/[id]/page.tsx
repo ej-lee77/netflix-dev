@@ -33,10 +33,10 @@ export default function FeedDetailPage() {
   const router = useRouter();
   const { user, currentProfile } = useAuthStore();
   const {
-    reviews,
+    feeds,
     onAddComment,
     onDeleteComment,
-    onHydrateReviews,
+    onHydrateFeeds,
     onToggleCommentLike,
     onToggleLike,
     onUpdateComment,
@@ -50,13 +50,13 @@ export default function FeedDetailPage() {
     auth.currentUser?.uid;
 
   const review = useMemo(
-    () => reviews.find((item) => item.feedId === params.id) ?? null,
-    [params.id, reviews],
+    () => feeds.find((item) => item.feedId === params.id) ?? null,
+    [params.id, feeds],
   );
 
   useEffect(() => {
-    void onHydrateReviews();
-  }, [currentProfile?.id, currentUserId, onHydrateReviews]);
+    void onHydrateFeeds();
+  }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
 
   const handleSubmitComment = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
