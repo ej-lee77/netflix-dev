@@ -139,11 +139,10 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 export default function StepPlan({ onNext, currentPlanType, currentBilling, submitLabel = "다음", hideTitle, skipFirestore }: StepPlanProps) {
   const [billing, setBilling] = useState<BillingCycle>("monthly"); // 기본: 월간
   const [selected, setSelected] = useState<string>("standard");
-
-  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
-
   const router = useRouter();
   const { user } = useAuthStore();
+
+  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid ?? user?.userId;
 
   // 기존과 같은 플랜일경우 경고표시
   const [error, setError] = useState<string>("");
