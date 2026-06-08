@@ -597,6 +597,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
                             mediaType: mediaType as "movie" | "tv",
                             title: data?.title || data?.name || "제목 없음",
                             poster_path: data?.poster_path ?? "",
+                            overview: data?.overview ?? "",
                         };
                     })
                     );

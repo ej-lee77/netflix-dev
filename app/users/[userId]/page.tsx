@@ -17,6 +17,7 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
 
 interface TargetProfile {
+  profileId: number;
   nickname: string;
   imgUrl: string;
   movies?: any;
@@ -24,29 +25,26 @@ interface TargetProfile {
   badges?: any;
 }
 
-interface PosterItem {
-  id: string;
-  mediaType: "movie" | "tv";
-  poster: string;
+interface PlaylistCard {
+  listId: string;
+  name: string;
+  count: number;
+  isShare: boolean;
+  posters: string[];
 }
 
-// 영화/시리즈 어느 쪽이든 포스터 + 미디어타입을 찾아 반환
-async function fetchPoster(id: string): Promise<PosterItem | null> {
+// videoIds 는 "movie-123" / "tv-456" 형태 → 포스터 경로 반환
+async function fetchPosterByKey(key: string): Promise<string> {
   try {
-    const [movieRes, tvRes] = await Promise.all([
-      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=ko-KR`),
-      fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=ko-KR`),
-    ]);
-    const [movie, tv] = await Promise.all([movieRes.json(), tvRes.json()]);
-    if (movie.poster_path) {
-      return { id, mediaType: "movie", poster: `${TMDB_IMG}${movie.poster_path}` };
-    }
-    if (tv.poster_path) {
-      return { id, mediaType: "tv", poster: `${TMDB_IMG}${tv.poster_path}` };
-    }
-    return null;
+    const [mediaType, id] = key.split("-");
+    if (!mediaType || !id) return "";
+    const res = await fetch(
+      `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${TMDB_KEY}&language=ko-KR`,
+    );
+    const data = await res.json();
+    return data.poster_path ? `${TMDB_IMG}${data.poster_path}` : "";
   } catch {
-    return null;
+    return "";
   }
 }
 
@@ -60,7 +58,7 @@ export default function UserDetailPage() {
   const [target, setTarget] = useState<TargetProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [posters, setPosters] = useState<PosterItem[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistCard[]>([]);
 
   // 대상 유저 문서 로드 (profile[0] 기준)
   useEffect(() => {
@@ -89,6 +87,7 @@ export default function UserDetailPage() {
         }
         if (ignore) return;
         setTarget({
+          profileId: p.id ?? 0,
           nickname: p.nickname ?? "유저",
           imgUrl: p.imgUrl ?? "",
           movies: p.movies,
@@ -109,27 +108,46 @@ export default function UserDetailPage() {
     };
   }, [userId]);
 
-  // 플레이리스트(없으면 시청 중) 포스터 로드
+  // 대상 유저의 커스텀 플레이리스트(playlists/{userId}) 로드 + 각 카드용 포스터
   useEffect(() => {
     if (!target) return;
     let ignore = false;
-    const ids: string[] = (
-      target.movies?.playlist?.playlistVideos?.length
-        ? target.movies.playlist.playlistVideos
-        : target.movies?.watchingVideos ?? []
-    ).slice(0, 24);
 
-    if (ids.length === 0) {
-      setPosters([]);
-      return;
-    }
-    Promise.all(ids.map(fetchPoster)).then((res) => {
-      if (!ignore) setPosters(res.filter((p): p is PosterItem => p !== null));
-    });
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "playlists", userId));
+        if (!snap.exists()) {
+          if (!ignore) setPlaylists([]);
+          return;
+        }
+        const all: any[] = snap.data().playlists ?? [];
+        // 이 프로필이 만든 플레이리스트만
+        const mine = all.filter((p) => p.profileId === target.profileId);
+
+        const cards = await Promise.all(
+          mine.map(async (p) => {
+            const ids: string[] = (p.videoIds ?? []).slice(0, 4);
+            const posters = (await Promise.all(ids.map(fetchPosterByKey))).filter(Boolean);
+            return {
+              listId: p.listId,
+              name: p.name ?? "제목 없음",
+              count: (p.videoIds ?? []).length,
+              isShare: !!p.isShare,
+              posters,
+            } as PlaylistCard;
+          }),
+        );
+
+        if (!ignore) setPlaylists(cards);
+      } catch {
+        if (!ignore) setPlaylists([]);
+      }
+    })();
+
     return () => {
       ignore = true;
     };
-  }, [target]);
+  }, [target, userId]);
 
   const equippedBadgeName = useMemo(() => {
     const b = BADGE_LIST.find((x) => x.id === target?.badges?.equippedBadges);
@@ -195,13 +213,6 @@ export default function UserDetailPage() {
     if (isFollowing) unfollow(userId);
     else follow(userId);
   };
-
-  // 플레이리스트 포스터를 4개씩 묶어 콜라주 카드로
-  const collages = useMemo(() => {
-    const out: PosterItem[][] = [];
-    for (let i = 0; i < posters.length; i += 4) out.push(posters.slice(i, i + 4));
-    return out.slice(0, 8);
-  }, [posters]);
 
   if (loading) {
     return (
@@ -285,26 +296,30 @@ export default function UserDetailPage() {
           <div className="section-h">
             <h2>{target.nickname}님의 플레이리스트</h2>
           </div>
-          {collages.length > 0 ? (
+          {playlists.length > 0 ? (
             <div className="udp-playlist-row">
-              {collages.map((group, i) => (
-                <div className="udp-playlist-card" key={i}>
+              {playlists.map((pl) => (
+                <Link
+                  key={pl.listId}
+                  href={`/playlist/${userId}/${pl.listId}`}
+                  className="udp-playlist-card"
+                >
                   <div className="udp-collage">
-                    {group.map((item) => (
-                      <Link
-                        key={item.id}
-                        href={`/detail/${item.mediaType}/${item.id}`}
-                        className="udp-collage-cell"
-                      >
-                        <img src={item.poster} alt="" />
-                      </Link>
-                    ))}
+                    {pl.posters.length > 0 ? (
+                      pl.posters.map((src, j) => <img key={j} src={src} alt="" />)
+                    ) : (
+                      <div className="udp-collage-empty" />
+                    )}
                   </div>
-                </div>
+                  <div className="udp-playlist-meta">
+                    <h3>{pl.name}</h3>
+                    <span>{pl.count}개 작품</span>
+                  </div>
+                </Link>
               ))}
             </div>
           ) : (
-            <div className="empty-block">아직 플레이리스트에 담은 작품이 없어요</div>
+            <div className="empty-block">아직 만든 플레이리스트가 없어요</div>
           )}
         </section>
 
