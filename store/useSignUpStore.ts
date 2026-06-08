@@ -7,13 +7,12 @@ import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"; //
 import { auth, db } from "@/firebase/firebase";
 import type { UserDocument, PayInfo } from "@/types/auth";
 
-// ─── Firestore 저장 함수 ───────────────────────────────────────────────────────
+// ─── 회원가입 함수 (계정 생성 + 인증메일 발송만) ──────────────────────────────
 
 /**
- * 회원가입 함수
- * 1. Firebase Auth로 계정 생성
- * 2. Firestore users 컬렉션에 유저 문서 저장
- * 3. 이메일 인증 메일 발송
+ * 1. Firebase Auth 계정 생성
+ * 2. 이메일 인증 메일 발송
+ * ※ Firestore 저장은 이메일 인증 완료 후 createUserDocument()에서 처리
  * @returns 생성된 유저의 uid
  */
 export const signUp = async (
@@ -21,72 +20,75 @@ export const signUp = async (
   password: string,
 ): Promise<string> => {
   try {
-    // Firebase Auth 계정 생성
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
-
-    // Firestore에 저장할 초기 유저 데이터
-    // planType, profile 등 미입력 필드는 이후 단계에서 업데이트
-    const userDoc: UserDocument = {
-      userId: user.uid,
-      email: user.email!,
-      planType: "", // 플랜 선택 단계에서 채워짐
-      payment: {
-        pay: "",
-        bank: "",
-        num: "",
-        payDate: "",
-        nextDate: "",
-      },
-      profile: [
-        {
-          id: Date.now(),
-          nickname: "나",
-          imgUrl: "/images/profile/image/default_icons/17.png",
-          viewAge: "19",
-          movies: {
-            watchingVideos: [], // 시청 중인 영상 ID 목록
-            wishlist: [], // 찜한 영상 ID 목록
-            playlist: {
-              playlistVideos: [], // 플레이리스트 영상 ID 목록
-              customPlaylists: [], // 커스텀 플레이리스트 ID 목록
-            },
-            genreStats: {}, // 장르별 시청 횟수 통계
-            countryStats: {},
-          },
-          community: {
-            followers: [], // 나를 팔로우하는 유저 ID 목록
-            following: [], // 내가 팔로우하는 유저 ID 목록
-            reviews: [], // 좋아요/싫어요/신고한 리뷰 ID 목록
-            // 다른 피드에 남긴 댓글/좋아요 활동 기록 (신고 추가해야함)
-            likedfeeds: [],
-            commentfeeds:[],
-            reportfeeds:[]
-          },
-          headerMenus: [], // 헤더에 표시할 메뉴 ID 목록
-          badges: {
-            earnedBadges: [], // 획득한 뱃지 목록
-            equippedBadges: "", // 현재 장착 중인 뱃지 ID
-          },
-          alarm: [], // 알림 설정한 영상 ID 목록
-          isCommunity: true,
-        },
-      ],
-    };
-
-    // Firestore users 컬렉션에 문서 저장 (문서 ID = uid)
-    await setDoc(doc(db, "users", user.uid), {
-      ...userDoc,
-      createdAt: serverTimestamp(), // 서버 기준 생성 시각
-    });
-
-    // 이메일 인증 메일 발송
     await sendEmailVerification(user);
-
     return user.uid;
   } catch (error) {
     console.error("signUp error:", error);
     throw error;
   }
+};
+
+// ─── Firestore 유저 문서 생성 (이메일 인증 완료 후 호출) ──────────────────────
+
+/**
+ * StepVerify에서 emailVerified 확인 후 호출
+ * Firestore users 컬렉션에 유저 문서 저장
+ */
+export const createUserDocument = async (user: {
+  uid: string;
+  email: string;
+}): Promise<void> => {
+  const userDoc: UserDocument = {
+    userId: user.uid,
+    email: user.email,
+    planType: "",
+    payment: {
+      pay: "",
+      bank: "",
+      num: "",
+      payDate: "",
+      nextDate: "",
+    },
+    profile: [
+      {
+        id: Date.now(),
+        nickname: "나",
+        imgUrl: "/images/profile/image/default_icons/17.png",
+        viewAge: "19",
+        movies: {
+          watchingVideos: [],
+          wishlist: [],
+          playlist: {
+            playlistVideos: [],
+            customPlaylists: [],
+          },
+          genreStats: {},
+          countryStats: {},
+        },
+        community: {
+          followers: [],
+          following: [],
+          reviews: [],
+          likedfeeds: [],
+          commentfeeds: [],
+          reportfeeds: [],
+        },
+        headerMenus: [],
+        badges: {
+          earnedBadges: [],
+          equippedBadges: "",
+        },
+        alarm: [],
+        isCommunity: true,
+      },
+    ],
+  };
+
+  await setDoc(doc(db, "users", user.uid), {
+    ...userDoc,
+    createdAt: serverTimestamp(),
+  });
 };
 
 /**

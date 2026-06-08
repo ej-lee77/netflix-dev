@@ -7,6 +7,8 @@ import StepVerify from "./components/StepVerify";
 import StepPlan from "./components/StepPlan";
 import StepPayment from "./components/StepPayment";
 import StepComplete from "./components/StepComplete";
+import { auth } from "@/firebase/firebase";
+import { signOut } from "firebase/auth";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -67,10 +69,16 @@ export default function SigninPage() {
   const handlePayComplete = () => setCurrentStep(4);
 
   // 뒤로가기: 로그인 페이지로 이동
-  const handleGoBack = () => {
+  const handleGoBack = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      // 회원가입 중 이탈 시 생성된 계정 삭제 (인증 여부 무관)
+      await user.delete().catch(() => { });
+      // 혹시 남아있는 세션도 정리
+      await signOut(auth).catch(() => { });
+    }
     window.location.href = "/login";
   };
-
   // 완료 단계(step 4)에서는 뒤로가기 버튼 숨김
   const showBackButton = currentStep < 4;
 
