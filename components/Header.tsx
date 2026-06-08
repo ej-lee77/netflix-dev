@@ -110,7 +110,11 @@ export default function Header() {
 
   return (
     <>
-      <header className={isScrolled ? "scrolled" : ""}>
+      <header
+        className={`${isScrolled || isSearchOpen ? "scrolled" : ""}${
+          isSearchOpen ? " search-open" : ""
+        }`}
+      >
         <div className="flex-item">
           <div className="flex-item gap-6">
             <h1>
@@ -135,13 +139,30 @@ export default function Header() {
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
-            <li onClick={() => setIsSearchOpen(true)}>
-              <Image
-                src="/images/header/search.svg"
-                alt="검색"
-                width={24}
-                height={24}
-              />
+            <li>
+              <button
+                type="button"
+                className="header-search-toggle"
+                onClick={() => setIsSearchOpen((isOpen) => !isOpen)}
+                aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
+                aria-expanded={isSearchOpen}
+              >
+                {isSearchOpen ? (
+                  <span
+                    className="header-search-toggle__close"
+                    aria-hidden="true"
+                  >
+                    <img src="/images/header/header-search-close.svg" alt="." />
+                  </span>
+                ) : (
+                  <Image
+                    src="/images/header/search.svg"
+                    alt=""
+                    width={24}
+                    height={24}
+                  />
+                )}
+              </button>
             </li>
             <li>
               <Link href="/alarm">
@@ -219,16 +240,27 @@ export default function Header() {
 
                     <ul className="profile-link-list">
                       <li>
-                        <Link href="/mypage" onClick={() => setIsProfileMenuOpen(false)}>
+                        <Link
+                          href="/mypage"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
                           {t("header.mypage")}
                         </Link>
                       </li>
                       <li>
                         <Link
-                          href="/settings?tab=profile"
+                          href="/profiles"
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
-                          프로필 관리
+                          프로필 전환
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/settings"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          설정
                         </Link>
                       </li>
                     </ul>

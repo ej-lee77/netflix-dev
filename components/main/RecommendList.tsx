@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useT } from "@/lib/i18n";
 import Link from 'next/link';
 import { useMovieStore } from '@/store/useMovieStore';
@@ -10,7 +10,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import './scss/recommendList.scss';
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from '../common/SectionTitle';
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const GENRE_MAP: Record<number, string> = {
   28: '액션', 12: '모험', 16: '애니메이션', 35: '코미디', 80: '범죄',
@@ -33,7 +35,13 @@ function StarRating({ score }: { score: number }) {
 
 export default function RecommendList() {
   const t = useT();
-  const { recommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
+  const { recommended: rawRecommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
+  const excludedGenres = useExcludedGenres();
+  // 제외 장르 작품 숨김 (인덱스 정합성을 위해 이후 로직은 모두 이 목록을 사용)
+  const recommended = useMemo(
+    () => filterByExcludedGenres(rawRecommended, excludedGenres),
+    [rawRecommended, excludedGenres],
+  );
   const [activeBackdrop, setActiveBackdrop] = useState<{ id: number; backdropPath: string } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -176,6 +184,7 @@ export default function RecommendList() {
                     {t("common.detail")}
                   </Link>
                   <WishlistButton item={item} mediaType={item.media_type} className="card-wish" />
+                  <ShareButton mediaType={item.media_type} id={item.id} className="card-wish" />
                 </div>
               </div>
             </div>

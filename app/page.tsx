@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import Hero from "@/components/main/Hero";
 import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
+import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const SPLIT_BANNER_AFTER = 3; // 일본 애니(2) 다음, 미국 TV(3) 앞
@@ -159,6 +160,47 @@ export default function Home() {
   const [koreanSeries, setKoreanSeries] = useState<RankingItem[]>([]);
   const [koreanMovieRanking, setKoreanMovieRanking] = useState<RankingItem[]>([]);
 
+  // 선호 장르: 메인 상단에 "내가 선호하는 OO" 줄을 일반 테마보다 먼저 노출
+  const favoriteGenres = useFavoriteGenres();
+  const [favoriteRows, setFavoriteRows] = useState<{ title: string; href: string; items: ThemeItem[] }[]>([]);
+
+  useEffect(() => {
+    if (favoriteGenres.length === 0) {
+      setFavoriteRows([]);
+      return;
+    }
+    let ignore = false;
+
+    const configs = favoriteGenres
+      .map((slug) => {
+        const meta = GENRE_SLUG_META[slug];
+        if (!meta) return null;
+        return {
+          title: `내가 선호하는 ${meta.title}`,
+          href: `/genre/${slug}`,
+          apiUrl: `https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=${meta.movieId}&sort_by=popularity.desc&vote_count.gte=50`,
+          mediaType: "movie" as const,
+        };
+      })
+      .filter((c): c is { title: string; href: string; apiUrl: string; mediaType: "movie" } => c !== null);
+
+    Promise.all(configs.map((c) => fetchThemeItems(c.apiUrl, c.mediaType))).then((rows) => {
+      if (ignore) return;
+      const usedIds = new Set<number>();
+      const built = configs.map((c, i) => {
+        const items = (rows[i] ?? []).filter((item) =>
+          usedIds.has(item.id) ? false : (usedIds.add(item.id), true),
+        );
+        return { title: c.title, href: c.href, items };
+      });
+      setFavoriteRows(built);
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [favoriteGenres]);
+
   useEffect(() => {
     onFetchPopular();
     onFetchTvs();
@@ -183,6 +225,7 @@ export default function Home() {
             vote_average: t.vote_average,
             overview: t.overview,
             media_type: "tv" as const,
+            genre_ids: t.genre_ids ?? [],
           }));
         setKoreanSeries(items);
       });
@@ -203,6 +246,7 @@ export default function Home() {
             vote_average: m.vote_average,
             overview: m.overview,
             media_type: "tv" as const,
+            genre_ids: m.genre_ids ?? [],
           }));
         setKoreanMovieRanking(items);
       });
@@ -240,6 +284,12 @@ export default function Home() {
       {/* <RisingMovieList /> */}
       {/* 추천 */}
       <RecommendList />
+      {/* 선호 장르 우선 추천 — 일반 테마 줄보다 먼저 노출 */}
+      {favoriteRows.map((row) =>
+        row.items.length > 0 ? (
+          <ThemeRow key={`fav-${row.title}`} title={row.title} items={row.items} href={row.href} />
+        ) : null,
+      )}
       {/* <TopCast /> */}
       {/* 테마별 카테고리 — 앞부분 앞 (일본 애니까지) */}
       {themeLoading

@@ -13,8 +13,8 @@ import {
 } from "@/lib/searchOptions";
 import {
   fetchKeywordPreviewMedia,
+  fetchNetflixSeriesRecommendations,
   fetchTaggedPreviewMedia,
-  fetchTrendingMedia,
   intersectTrendingItems,
   type TrendingMediaItem,
 } from "@/lib/trendingContent";
@@ -22,12 +22,14 @@ import TrendingVideoSection from "./search/TrendingVideoSection";
 import "./scss/searchOverlay.scss";
 
 const recommendedSearches = [
-  "파묘",
-  "서울의 봄",
-  "듄: 파트2",
-  "웡카",
-  "노량",
-  "쿵푸팬더4",
+  "오징어 게임",
+  "기묘한 이야기",
+  "더 글로리",
+  "흑백요리사",
+  "웬즈데이",
+  "지금 우리 학교는",
+  "마스크걸",
+  "스위트홈",
 ];
 const creators = ["송강호", "전도연", "이병헌", "박찬욱", "봉준호", "놀란"];
 
@@ -53,6 +55,10 @@ export default function HeaderSearchOverlay({
     keyword.trim().length > 0 ||
     activeGenres.length > 0 ||
     activeMoods.length > 0;
+  const hasPreviewQuery = canSearch;
+  const previewSectionTitle = hasPreviewQuery
+    ? "검색 결과 미리보기"
+    : "넷플릭스 추천작";
 
   useEffect(() => {
     if (isOpen) {
@@ -113,7 +119,7 @@ export default function HeaderSearchOverlay({
           );
         }
 
-        return fetchTrendingMedia("all", controller.signal, 5);
+        return fetchNetflixSeriesRecommendations(controller.signal, 5);
       })();
 
       previewRequest
@@ -383,7 +389,7 @@ export default function HeaderSearchOverlay({
 
           <TrendingVideoSection
             items={previewItems}
-            title="검색 결과 미리보기"
+            title={previewSectionTitle}
             variant="overlay"
             onSelect={onClose}
           />

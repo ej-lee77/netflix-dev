@@ -6,6 +6,7 @@ import Image from "next/image";
 import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
 import { isHidden } from "@/data/hiddenContent";
+import { excludedSlugsToIdSet, isGenreExcluded, useExcludedGenres } from "@/data/excludedGenres";
 import "../scss/category.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -221,6 +222,8 @@ const defaultSelection: Record<FilterTab, string[]> = {
 export default function CategoryPage() {
   const [mainTab, setMainTab] = useState<MainTab>("movie");
   const [filterTab, setFilterTab] = useState<VisibleFilterTab>("genreMood");
+  const excludedGenres = useExcludedGenres();
+  const excludedIds = useMemo(() => excludedSlugsToIdSet(excludedGenres), [excludedGenres]);
   const [selected, setSelected] = useState(defaultSelection);
   const [selectedOrder, setSelectedOrder] = useState<SelectedFilterKey[]>([]);
   const [sort, setSort] = useState<SortType>("popularity.desc");
@@ -371,7 +374,8 @@ export default function CategoryPage() {
       genre_ids: item.genre_ids ?? [],
       media_type: mediaType,
     }))
-    .filter((item) => !isHidden(item.id, item.media_type));
+    .filter((item) => !isHidden(item.id, item.media_type))
+    .filter((item) => !isGenreExcluded(item.genre_ids, excludedIds));
 
   const fetchDiscoverPage = async (
     page: number,
@@ -504,7 +508,7 @@ export default function CategoryPage() {
 
     fetchCategoryBatch(1, controller.signal, true);
     return () => controller.abort();
-  }, [mainTab, mediaType, selectedOptions, sort]);
+  }, [mainTab, mediaType, selectedOptions, sort, excludedGenres]);
 
   const handleLoadMore = () => {
     const controller = new AbortController();

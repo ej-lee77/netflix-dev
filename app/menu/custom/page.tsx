@@ -6,6 +6,7 @@ import type { DragEvent } from "react";
 import { mainMenus, customMenus } from "@/data/mainMenu";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../../scss/menuCustom.scss";
+import BackButton from "@/components/common/BackButton";
 
 // 전체 선택 풀 생성 (순서 매핑용)
 const DEFAULT_HEADER_MENU_PATHS = [
@@ -379,6 +380,7 @@ export default function MenuCustomPage() {
   return (
     <section className="menu-custom-page">
       <div className="menu-custom-page__inner">
+        <BackButton fallback="/mypage" />
         {/* 헤더 타이틀 */}
         <div className="menu-custom-page__hero">
           <h1>메뉴 커스텀 설정</h1>
