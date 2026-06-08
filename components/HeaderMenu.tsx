@@ -164,6 +164,7 @@ export default function HeaderMenu() {
     : false;
 
   return (
+  <>
     <nav>
       <div className="main-menu sidebar-icons">
         {homeMenu && (
@@ -214,34 +215,6 @@ export default function HeaderMenu() {
                   />
                   <span className="sb-label">{tm(menu.title)}</span>
                 </Link>
-
-                {categoryPanelMenus.length > 0 && (
-                  <div className="category-hover-panel">
-                    {categoryPanelMenus.map((childMenu) => {
-                      const isActive = isMenuActive(childMenu.path);
-
-                      return (
-                        <div
-                          key={childMenu.path}
-                          className={`category-hover-icon ${isActive ? "active" : ""
-                            }`}
-                        >
-                          <Link href={childMenu.path}>
-                            <Image
-                              src={childMenu.imgUrl}
-                              alt={childMenu.title}
-                              width="24"
-                              height="24"
-                            />
-                            <span className="sb-label">
-                              {tm(childMenu.title)}
-                            </span>
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             );
           }
@@ -298,5 +271,30 @@ export default function HeaderMenu() {
         </Link>
       </div>
     </nav>
+
+    {categoryPanelMenus.length > 0 && (
+      <div className="category-hover-panel">
+        {categoryPanelMenus.map((childMenu) => {
+          const isActive = isMenuActive(childMenu.path);
+          return (
+            <div
+              key={childMenu.path}
+              className={`category-hover-icon ${isActive ? "active" : ""}`}
+            >
+              <Link href={childMenu.path}>
+                <Image
+                  src={childMenu.imgUrl}
+                  alt={childMenu.title}
+                  width="24"
+                  height="24"
+                />
+                <span className="sb-label">{tm(childMenu.title)}</span>
+              </Link>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </>
   );
 }

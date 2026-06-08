@@ -5,6 +5,8 @@ import { auth } from "@/firebase/firebase";
 import { updatePlan, useSignUpStore } from "@/store/useSignUpStore";
 import { getFaqItems } from "@/data/faq";
 import FaqAccordion from "@/components/common/FaqAccordion";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -140,6 +142,8 @@ export default function StepPlan({ onNext, currentPlanType, currentBilling, subm
 
   const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
 
+  const router = useRouter();
+  const { user } = useAuthStore();
 
   // 기존과 같은 플랜일경우 경고표시
   const [error, setError] = useState<string>("");
@@ -324,7 +328,11 @@ export default function StepPlan({ onNext, currentPlanType, currentBilling, subm
 
       {/* 다음 버튼 */}
       <div className="plan-next-wrap">
-        <button type="button" className="plan-next-btn" onClick={handleNext}>
+        <button
+          type="button"
+          className="plan-next-btn"
+          onClick={handleNext}
+        >
           {submitLabel}
         </button>
       </div>

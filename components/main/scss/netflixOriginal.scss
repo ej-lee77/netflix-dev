@@ -18,7 +18,7 @@
     grid-template-columns: 220px 1fr;
     gap: 24px;
     align-items: center;
-    padding-left: clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
+    padding-left: g.$main-menu-width;
   }
 
   /* 로고 영역: 배경 투명, 페이지 배경이 그대로 비치도록 */

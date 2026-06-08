@@ -28,6 +28,7 @@ interface StepPaymentProps {
   currentPayInfo?: PayInfo | null;
   submitLabel?: string;
   amountLabel?: string;
+  hideTitle?: boolean; // 타이틀 숨김 여부
 }
 
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
@@ -44,7 +45,7 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, submitLabel = "결제하기", amountLabel = "결제 금액" }: StepPaymentProps) {
+export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, hideTitle, submitLabel = "결제하기", amountLabel = "결제 금액" }: StepPaymentProps) {
   const router = useRouter();
   const { onLogin } = useAuthStore();
 
@@ -237,7 +238,7 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
 
   return (
     <div className="payment-page">
-      <h1 className="payment-title">결제 수단</h1>
+      {!hideTitle && <h1 className="payment-title">결제 수단</h1>}
 
       {/* 플랜 요약 — hidePlanSummary일 때 숨김 */}
       {!hidePlanSummary && (

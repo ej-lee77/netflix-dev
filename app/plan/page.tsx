@@ -56,7 +56,7 @@ export default function PlanPage() {
           <StepPlan
             hideTitle
             skipFirestore
-            submitLabel="선택하기"
+            submitLabel="구독 시작하기"
             onNext={(plan) => {
               // 선택한 플랜 임시 저장
               setPendingPlan({
