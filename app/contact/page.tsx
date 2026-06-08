@@ -237,10 +237,10 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <div className="form-field">
+                {/* <div className="form-field">
                   <label>첨부파일 (선택)</label>
                   <div className="form-attach">📎 파일 끌어다 놓기 · 클릭하여 업로드 (최대 5MB)</div>
-                </div>
+                </div> */}
 
                 <div className="form-field">
                   <label>답변 받을 이메일</label>

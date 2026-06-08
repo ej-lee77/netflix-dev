@@ -1555,28 +1555,36 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
       {/* TabNav */}
       <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "0 40px", marginTop: 24 }}>
-        {tabItems.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              height: 48,
-              padding: "0 14px 0 4px",
-              marginRight: 8,
-              background: "none",
-              border: "none",
-              borderBottom: activeTab === tab.id ? "2px solid #e50914" : "2px solid transparent",
-              marginBottom: -1,
-              color: activeTab === tab.id ? "#fff" : "#888",
-              fontWeight: activeTab === tab.id ? 700 : 400,
-              fontSize: 16,
-              cursor: "pointer",
-            }}
-          >
-            {tab.label}
-            {tab.meta && <span style={{ fontSize: 10, color: "#555", marginLeft: 2 }}>{tab.meta}</span>}
-          </button>
-        ))}
+        {tabItems
+          // 1. 리뷰 탭이면서 권한이 없는 경우 필터링 (렌더링하지 않음)
+          .filter((tab) => {
+            if (tab.id === "review") {
+              return !user || currentProfile?.isCommunity;
+            }
+            return true; // 다른 탭은 모두 유지
+          })
+          .map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                height: 48,
+                padding: "0 14px 0 4px",
+                marginRight: 8,
+                background: "none",
+                border: "none",
+                borderBottom: activeTab === tab.id ? "2px solid #e50914" : "2px solid transparent",
+                marginBottom: -1,
+                color: activeTab === tab.id ? "#fff" : "#888",
+                fontWeight: activeTab === tab.id ? 700 : 400,
+                fontSize: 16,
+                cursor: "pointer",
+              }}
+            >
+              {tab.label}
+              {tab.meta && <span style={{ fontSize: 10, color: "#555", marginLeft: 2 }}>{tab.meta}</span>}
+            </button>
+          ))}
       </div>
 
       {/* Tab content */}
@@ -1587,7 +1595,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         {activeTab === "info" && !isTv && renderRelated()}
         {activeTab === "cast" && renderCast()}
         {activeTab === "director" && renderDirector()}
-        {activeTab === "review" && !isUpcoming && renderReviewTab()}
+        {(!user || currentProfile?.isCommunity) && activeTab === "review" && renderReviewTab()}
         {activeTab === "related" && renderRelated()}
       </div>
 

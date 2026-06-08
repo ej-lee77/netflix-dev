@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import "../scss/friends.scss";
 import { db } from "@/firebase/firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -23,9 +24,18 @@ export default function FriendsPage() {
 
   const { user, currentProfile } = useAuthStore();
   const { follow, unfollow } = useFollowStore();
+  const router = useRouter();
 
   const followingIds: string[] = currentProfile?.community?.following ?? [];
   const followerIds: string[] = currentProfile?.community?.followers ?? [];
+
+  // 1. visibleCount 상태 추가
+  const [visibleCount, setVisibleCount] = useState(30);
+
+  // 2. 탭이 바뀔 때마다 다시 30개부터 시작하도록 초기화
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [tab, search]);
 
   useEffect(() => {
     if (!user) return;
@@ -59,6 +69,13 @@ export default function FriendsPage() {
       : tab === "followers"
       ? filtered.filter((u) => followerIds.includes(u.userId))
       : filtered;
+
+  const paginatedList = displayList.slice(0, visibleCount);
+
+  // 4. 더보기 버튼 로직
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 30);
+  };
 
   const handleFollowToggle = async (userId: string) => {
     if (followingIds.includes(userId)) {
@@ -116,11 +133,17 @@ export default function FriendsPage() {
               유저가 없습니다.
             </li>
           ) : (
-            displayList.map((u) => {
+            <>
+            {paginatedList.map((u) => {
               const isFollowing = followingIds.includes(u.userId);
               const initials = u.nickname.slice(0, 2).toUpperCase();
               return (
-                <li key={u.userId} className="follow-item">
+                <li
+                  key={u.userId}
+                  className="follow-item"
+                  onClick={() => router.push(`/users/${u.userId}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="avatar">
                     {u.imgUrl ? (
                       <img
@@ -137,15 +160,27 @@ export default function FriendsPage() {
                     <p>시청 {u.watchedCount}편</p>
                   </div>
                   <button
-                    className="follow-btn"
-                    onClick={() => handleFollowToggle(u.userId)}
-                    style={isFollowing ? { opacity: 0.6 } : {}}
-                  >
-                    {isFollowing ? "팔로잉" : "팔로우"}
+                      className="follow-btn"
+                      onClick={() => handleFollowToggle(u.userId)}
+                      style={isFollowing ? { opacity: 0.6 } : {}}
+                    >
+                      {isFollowing ? "팔로잉" : "팔로우"}
                   </button>
                 </li>
-              );
-            })
+                  );
+                })}
+                {/* 더보기 버튼 추가 */}
+                {visibleCount < displayList.length && (
+                  <li className="follow-item" style={{ justifyContent: "center" }}>
+                    <button 
+                      onClick={() => setVisibleCount(prev => prev + 30)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}
+                    >
+                      더보기 ({visibleCount} / {displayList.length})
+                    </button>
+                  </li>
+                )}
+            </>
           )}
         </ul>
       </div>

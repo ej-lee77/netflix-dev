@@ -75,7 +75,7 @@ export default function MoodMainPage() {
           <div className="info-card">
             <h3>⚙️ 더 정확한 추천을 받고 싶다면?</h3>
             <p>
-              <Link href="/menu/custom">메뉴 커스텀</Link>에서 선호 무드와 제외 무드를 설정하세요. 추천 알고리즘이
+              <Link href="/mypage/genre">장르 관리</Link>에서 선호 무드와 제외 무드를 설정하세요. 추천 알고리즘이
               여러분의 취향을 더 잘 학습해드려요.
             </p>
           </div>
