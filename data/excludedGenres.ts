@@ -29,6 +29,23 @@ export const GENRE_SLUG_TO_IDS: Record<string, number[]> = {
 // selector 가 매 렌더마다 새 배열을 만들지 않도록 고정 빈 배열 사용
 const EMPTY_SLUGS: string[] = [];
 
+// 슬러그 → 표시용 타이틀 + discover 엔드포인트용 movie/tv genre_id
+// (app/genre/[name] 의 genreMap 과 동일하게 맞춤 — 선호 장르 추천 줄을 만들 때 사용)
+export const GENRE_SLUG_META: Record<string, { title: string; movieId: number; tvId: number }> = {
+  action: { title: "액션", movieId: 28, tvId: 10759 },
+  animation: { title: "애니메이션", movieId: 16, tvId: 16 },
+  comedy: { title: "코미디", movieId: 35, tvId: 35 },
+  documentary: { title: "다큐멘터리", movieId: 99, tvId: 99 },
+  drama: { title: "드라마", movieId: 18, tvId: 18 },
+  fantasy: { title: "판타지", movieId: 14, tvId: 10765 },
+  horror: { title: "공포", movieId: 27, tvId: 9648 },
+  mystery: { title: "미스터리", movieId: 9648, tvId: 9648 },
+  romance: { title: "로맨스", movieId: 10749, tvId: 10749 },
+  scifi: { title: "SF", movieId: 878, tvId: 10765 },
+  thriller: { title: "스릴러", movieId: 53, tvId: 9648 },
+  war: { title: "전쟁", movieId: 10752, tvId: 10768 },
+};
+
 // 제외 슬러그 목록 → 제외 genre_id Set
 export function excludedSlugsToIdSet(slugs: string[]): Set<number> {
   const ids = new Set<number>();
@@ -67,4 +84,9 @@ export function filterByExcludedGenres<T extends { genre_ids?: number[] }>(
 // 현재 프로필의 제외 장르 슬러그 목록을 구독하는 훅 (클라이언트 컴포넌트 전용)
 export function useExcludedGenres(): string[] {
   return useAuthStore((s) => s.currentProfile?.settings?.excludedGenres ?? EMPTY_SLUGS);
+}
+
+// 현재 프로필의 선호 장르 슬러그 목록을 구독하는 훅 (클라이언트 컴포넌트 전용)
+export function useFavoriteGenres(): string[] {
+  return useAuthStore((s) => s.currentProfile?.settings?.favoriteGenres ?? EMPTY_SLUGS);
 }
