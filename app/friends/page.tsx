@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import "../scss/friends.scss";
 import { db } from "@/firebase/firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -23,6 +24,7 @@ export default function FriendsPage() {
 
   const { user, currentProfile } = useAuthStore();
   const { follow, unfollow } = useFollowStore();
+  const router = useRouter();
 
   const followingIds: string[] = currentProfile?.community?.following ?? [];
   const followerIds: string[] = currentProfile?.community?.followers ?? [];
@@ -120,7 +122,12 @@ export default function FriendsPage() {
               const isFollowing = followingIds.includes(u.userId);
               const initials = u.nickname.slice(0, 2).toUpperCase();
               return (
-                <li key={u.userId} className="follow-item">
+                <li
+                  key={u.userId}
+                  className="follow-item"
+                  onClick={() => router.push(`/users/${u.userId}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="avatar">
                     {u.imgUrl ? (
                       <img
@@ -138,7 +145,10 @@ export default function FriendsPage() {
                   </div>
                   <button
                     className="follow-btn"
-                    onClick={() => handleFollowToggle(u.userId)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFollowToggle(u.userId);
+                    }}
                     style={isFollowing ? { opacity: 0.6 } : {}}
                   >
                     {isFollowing ? "팔로잉" : "팔로우"}
