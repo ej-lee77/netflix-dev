@@ -2,6 +2,7 @@
 
 .split-banner {
   padding: 0 clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px);
+  padding-left: g.$main-menu-width;
   margin-bottom: 48px;
 
   .split-panels {
