@@ -133,7 +133,8 @@ export default function FriendsPage() {
               유저가 없습니다.
             </li>
           ) : (
-            paginatedList.map((u) => {
+            <>
+            {paginatedList.map((u) => {
               const isFollowing = followingIds.includes(u.userId);
               const initials = u.nickname.slice(0, 2).toUpperCase();
               return (
@@ -166,6 +167,8 @@ export default function FriendsPage() {
                       {isFollowing ? "팔로잉" : "팔로우"}
                   </button>
                 </li>
+                  );
+                })}
                 {/* 더보기 버튼 추가 */}
                 {visibleCount < displayList.length && (
                   <li className="follow-item" style={{ justifyContent: "center" }}>
