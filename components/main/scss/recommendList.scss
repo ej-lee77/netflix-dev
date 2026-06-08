@@ -44,6 +44,7 @@
     width: 100%;
     overflow: visible;
     padding: 20px clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px) 40px;
+    padding-left: g.$main-menu-width;
   }
 
   /* 페이징 버튼 — 카테고리 섹션과 동일 */

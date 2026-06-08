@@ -121,22 +121,38 @@
     }
 
     .btn-notify {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       padding: 14px 24px;
-      background: rgba(255, 255, 255, 0.1);
+      background: transparent;
       border: 1px solid #3a3a3a;
-      color: g.$w-color;
+      color: g.$g-color;
       border-radius: g.$radius-md;
       font-size: g.$text-14;
       cursor: pointer;
       backdrop-filter: blur(8px);
 
+      img {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+      }
+
       &.active {
         background: g.$main-color;
         border-color: g.$main-color;
+        color: g.$w-color;
+
+        img {
+          filter: brightness(0) invert(1);
+        }
       }
 
       &:hover:not(.active) {
-        background: rgba(255, 255, 255, 0.2);
+        border-color: g.$w-color;
+        color: g.$w-color;
       }
     }
   }
@@ -242,6 +258,10 @@
       flex-direction: column;
 
       .notify-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         height: 34px;
         width: 100%;
         padding: 7px 12px;
@@ -253,10 +273,20 @@
         cursor: pointer;
         transition: all 0.2s;
 
+        img {
+          width: 16px;
+          height: 16px;
+          flex: 0 0 auto;
+        }
+
         &.active {
-          background: rgba(229, 9, 20, 0.15);
+          background: g.$main-color;
           border-color: g.$main-color;
-          color: g.$main-color;
+          color: g.$w-color;
+
+          img {
+            filter: brightness(0) invert(1);
+          }
         }
 
         &:hover:not(.active) {

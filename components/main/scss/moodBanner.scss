@@ -3,7 +3,7 @@
 .mood-banner-section {
   padding-top: 40px;
   padding-bottom: 0;
-  padding-left: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
+  padding-left: g.$main-menu-width;
   padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
 }
 

@@ -15,11 +15,13 @@ import { Movie, TV } from "@/types/movie";
 import { WishItem } from "@/types/wishlist";
 import { convertToMedia } from "../wishlist/page";
 import { PlaylistDocument } from "@/types/playList";
+import Image from "next/image";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
-type FilterType = "all" | "movie" | "tv";
+type FilterType = "all" | "movie" | "tv" | "animation";
 type WishFilterType = "all" | "movie" | "drama" | "animation";
 type WishSortType = "recent" | "title" | "rating";
+// type playlistSortType = "recent" | "title" | "rating";
 
 const SELECTABLE_PAGE_SIZE = 10;
 const PLAYLIST_MOOD_TAGS = customMenus.filter((menu) => menu.path.startsWith("/mood/"));
@@ -40,7 +42,7 @@ const isActivityTab = (value: string | null): value is ActivityTab =>
 const wishTabs: { key: WishFilterType; label: string }[] = [
   { key: "all", label: "전체" },
   { key: "movie", label: "영화" },
-  { key: "drama", label: "드라마" },
+  { key: "drama", label: "시리즈" },
   { key: "animation", label: "애니메이션" },
 ];
 
@@ -50,10 +52,16 @@ const wishSortOptions: { key: WishSortType; label: string }[] = [
   { key: "rating", label: "평점순" },
 ];
 
+// const playlistSortOptions: { key: playlistSortType; label: string }[] = [
+//   { key: "recent", label: "최근 시청 순" },
+//   { key: "title", label: "제목순" },
+//   { key: "rating", label: "평점순" },
+// ];
+
 const getItemKey = (item: Pick<PlayListItem, "id" | "mediaType">) => `${item.mediaType}-${item.id}`;
 
-const getPosterUrl = (path?: string) => (
-  path ? `https://image.tmdb.org/t/p/w500${path}` : ""
+const getPosterUrl = (path?: string, size: "w500" | "w780" | "w1280" | "original" = "w500") => (
+  path ? `https://image.tmdb.org/t/p/${size}${path}` : ""
 );
 
 const getBackdropUrl = (item: PlayListItem): string => {
@@ -120,6 +128,7 @@ function ActivityContent() {
   const [modifyItemKeys, setModifyItemKeys] = useState<string[]>([]);
   const [listItems, setListItems] = useState<any[]>([]);
   const [playlistDetailsCache, setPlaylistDetailsCache] = useState<Record<string, any>>({});
+  const [detailedSelectedItems, setDetailedSelectedItems] = useState<PlayListItem[]>([]);
 
   const getDetailedHistory = async (histKeys: string[]): Promise<PlayListItem[]> => {
       const detailPromises = histKeys.map(async (key) => {
@@ -287,6 +296,7 @@ function ActivityContent() {
   // 3. 타입별 카운트 (객체 속성 사용)
   const movieCount = visibleHistoryItems.filter((item) => item.mediaType === "movie").length;
   const tvCount = visibleHistoryItems.filter((item) => item.mediaType === "tv").length;
+  const animationCount = visibleHistoryItems.filter((item) => item.genre_ids?.includes(16)).length;
 
   // ── 찜하기 필터/정렬 ──────────────────────────────────────────────────
   const wishCount = (key: WishFilterType) => {
@@ -309,7 +319,7 @@ function ActivityContent() {
   });
 
   const currentWishSortLabel = wishSortOptions.find((o) => o.key === wishSort)?.label;
-  const currentPlaylistSortLabel = wishSortOptions.find((o) => o.key === playlistSort)?.label;
+  // const currentPlaylistSortLabel = playlistSortOptions.find((o) => o.key === playlistSort)?.label;
 
   const handleRemoveWish = async (e: React.MouseEvent, item: WishItem) => {
     e.preventDefault();
@@ -320,7 +330,12 @@ function ActivityContent() {
     await onRemoveWish(mediaItem);
   };
 
-  const selectedItems = listItems.filter((item) => selectedKeys.includes(item));
+  const selectedItems = myList.filter((item) => selectedKeys.includes(item));
+
+  const plmovieCount = listItems.filter((item) => item.mediaType === "movie").length;
+  const pltvCount = listItems.filter((item) => item.mediaType === "tv").length;
+  const planimationCount = listItems.filter((item) => item.genre_ids?.includes(16)).length;
+
   // 1. 필터링 & 정렬 적용 (데이터 가공)
   const processedList = useMemo(() => {
     let list = [...listItems];
@@ -345,6 +360,14 @@ function ActivityContent() {
       }
     });
   }, [listItems, wishFilter, wishSort]);
+
+  useEffect(() => {
+  if (createPlaylistOpen && selectedKeys.length > 0) {
+    getDetailedHistory(selectedKeys).then((data) => {
+      setDetailedSelectedItems(data);
+    });
+  }
+}, [createPlaylistOpen, selectedKeys]);
 
   // 2. 페이지네이션 적용 (가공된 리스트 기준)
   const totalSelectionPages = Math.max(1, Math.ceil(processedList.length / SELECTABLE_PAGE_SIZE));
@@ -467,6 +490,21 @@ function ActivityContent() {
     ));
   };
 
+  const handleAddPlaylist = async(playlist: PlaylistDocument, newVideoIds: string[])=>{
+
+      // 업데이트할 데이터 객체 생성
+      const updatedData: Partial<PlaylistDocument> = {
+          name: playlist.name,
+          content: playlist.content || "",
+          tags: playlist.tags || [],
+          isShare: Boolean(playlist.isShare),
+          videoIds: newVideoIds
+      };
+
+      // 스토어 메서드 호출
+      await updateCustomPlaylist(playlist.listId, updatedData);
+  }
+
   const handleSaveModifyPlaylist = async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (!modifyPlaylistId) return;
@@ -504,6 +542,10 @@ function ActivityContent() {
         subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
         playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
         hiddenWatchingVideos: [...hiddenWatchingVideos, itemKey],
+        favoriteGenres: currentProfile.settings?.favoriteGenres ?? DEFAULT_PROFILE_SETTINGS.favoriteGenres,
+        excludedGenres: currentProfile.settings?.excludedGenres ?? DEFAULT_PROFILE_SETTINGS.excludedGenres,
+        favoriteMoods: currentProfile.settings?.favoriteMoods ?? DEFAULT_PROFILE_SETTINGS.favoriteMoods,
+        excludedMoods: currentProfile.settings?.excludedMoods ?? DEFAULT_PROFILE_SETTINGS.excludedMoods
       },
     });
   };
@@ -629,7 +671,7 @@ function ActivityContent() {
                     >
                       {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
                       <span>{isSelected ? "✓" : "+"}</span>
-                      <strong>{item.title}</strong>
+                      {/* <strong>{item.title}</strong> */}
                     </button>
                   );
                 })}
@@ -699,9 +741,11 @@ function ActivityContent() {
             </div>
 
             <div className="create-selected-strip" aria-label="선택된 콘텐츠">
-              {selectedItems.slice(0, 6).map((item) => (
-                <span key={getItemKey(item)}>
-                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+              {detailedSelectedItems.slice(0, 6).map((item) => (
+                <span key={item.id}> {/* 여기서 item은 이제 객체입니다 */}
+                  {item.poster_path && (
+                    <img src={getPosterUrl(item.poster_path)} alt={item.title} />
+                  )}
                 </span>
               ))}
               {selectedItems.length > 6 && <em>+{selectedItems.length - 6}</em>}
@@ -805,7 +849,7 @@ function ActivityContent() {
               </button>
               <Link href={`/detail/${item.mediaType}/${item.id}`}>
                 <div className="watch-thumb">
-                  {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
+                  {item.backdrop_path && <img src={getPosterUrl(item.backdrop_path, "w780")} alt={item.title} />}
                   <span className="progress-bar" style={{ width: `${getProgress(item)}%` }} />
                 </div>
                 <div className="watch-info">
@@ -827,7 +871,7 @@ function ActivityContent() {
     <section className="activity-section">
       <div className="section-head">
         <h2>{hideMode ? "시청기록 숨기기" : "시청기록"}</h2>
-        <div className="wish-sort">
+        {/* <div className="wish-sort">
           <button
             type="button"
             className="wish-sort-btn"
@@ -845,7 +889,7 @@ function ActivityContent() {
           
           {playlistSortOpen && (
             <ul className="wish-sort-menu">
-              {wishSortOptions.map((opt) => (
+              {playlistSortOptions.map((opt) => (
                 <li key={opt.key}>
                   <button
                     type="button"
@@ -861,7 +905,7 @@ function ActivityContent() {
               ))}
             </ul>
           )}
-        </div>
+        </div> */}
       </div>
 
       <div className="filter-row">
@@ -873,7 +917,10 @@ function ActivityContent() {
             영화 {movieCount}
           </button>
           <button className={filter === "tv" ? "chip active" : "chip"} onClick={() => setFilter("tv")}>
-            TV 프로그램 {tvCount}
+            시리즈 {tvCount}
+          </button>
+          <button className={filter === "animation" ? "chip active" : "chip"} onClick={() => setFilter("animation")}>
+            애니메이션 {animationCount}
           </button>
         </div>
       </div>
@@ -1010,6 +1057,7 @@ function ActivityContent() {
         .filter(Boolean);
 
     const previewItems = playlistItems.slice(0, 4);
+    const hasNewItems = selectedKeys.some((key) => !playlist.videoIds.includes(key));
 
     return (
       <article className="custom-playlist-card" key={playlist.listId}>
@@ -1021,42 +1069,56 @@ function ActivityContent() {
         >
           -
         </button>
-
-        <div className="playlist-mosaic">
-          {previewItems.map((item) => (
-            <div key={getItemKey(item)}>
-              {(item.backdrop_path || item.poster_path) && (
-                <img src={getBackdropUrl(item)} alt={typeof item === 'object' && 'title' in item ? item.title : '작품'} />
-              )}
-            </div>
-          ))}
-          {playlistItems.length > 4 && <span>+{playlistItems.length - 4}</span>}
-        </div>
-
-        <h3>{playlist.name}</h3>
-        {playlist.content && <p className="playlist-description">{playlist.content}</p>}
-
-        {playlist.tags && playlist.tags.length > 0 && (
-          <div className="playlist-tag-row">
-            {playlist.tags.map((tag) => {
-              const icon = getMoodIcon(tag);
-              return (
-                <span key={tag}>
-                  {icon && <img src={icon} alt="" />}
-                  {tag}
-                </span>
-              );
-            })}
-          </div>
+        {selectedKeys.length > 0 && (
+          hasNewItems ? (
+            <button type="button" className="playlist-add-btn" 
+            onClick={() => {
+              const combinedIds = Array.from(new Set([...playlist.videoIds, ...selectedKeys]));
+              handleAddPlaylist(playlist, combinedIds);}}>
+              추가하기
+            </button>
+          ) : (
+            <span className="playlist-already-added">이미 추가됨</span>
+          )
         )}
+        <Link href={`/playlist/${user?.userId}/${playlist.listId}`} className="mini-poster">
+          <div className="playlist-mosaic">
+            {previewItems.map((item) => (
+              <div key={getItemKey(item)}>
+                {(item.backdrop_path || item.poster_path) && (
+                  <img src={getBackdropUrl(item)} alt={typeof item === 'object' && 'title' in item ? item.title : '작품'} />
+                )}
+              </div>
+            ))}
+            {playlistItems.length > 4 && <span>+{playlistItems.length - 4}</span>}
+          </div>
 
-        <span className={playlist.isShare ? "playlist-visibility public" : "playlist-visibility"}>
-          {playlist.isShare ? "피드 공개" : "비공개"}
-        </span>
+          <h3>{playlist.name}</h3>
+          {playlist.content && <p className="playlist-description">{playlist.content}</p>}
 
-        <div className="playlist-extra-area">
-          <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
-          <button
+          {playlist.tags && playlist.tags.length > 0 && (
+            <div className="playlist-tag-row">
+              {playlist.tags.map((tag) => {
+                const icon = getMoodIcon(tag);
+                return (
+                  <span key={tag}>
+                    {icon && <img src={icon} alt="tag" />}
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <span className={playlist.isShare ? "playlist-visibility public" : "playlist-visibility"}>
+            {playlist.isShare ? "피드 공개" : "비공개"}
+          </span>
+
+          <div className="playlist-extra-area">
+            <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
+          </div>
+        </Link>
+        <button
             className="playcard-more-btn"
             type="button"
             onClick={() => openModifyCard(playlist)}
@@ -1069,7 +1131,6 @@ function ActivityContent() {
               />
             </svg>
           </button>
-        </div>
       </article>
     );
   };
@@ -1078,20 +1139,19 @@ function ActivityContent() {
     <section className="activity-section">
       {/* 헤더 및 툴바 영역 */}
       <div className="section-head playlist-content-head">
-        <div>
+        <div className="title-list">
           <h2>위시리스트</h2>
           <span>{selectedItems.length}개 선택됨</span>
         </div>
         <button className="create-playlist-btn" onClick={openCreatePlaylistModal} disabled={selectedKeys.length === 0}>
           <div className="content">
-          <img src="/images/playlist/playlist-icon.svg" alt="플레이리스트 만들기" /> 플레이리스트 만들기
+          <img src="/images/playlist/playlist-icon.svg" alt="플레이리스트 만들기" />{selectedKeys.length === 0 ? "영상을 선택하세요" : "플레이리스트 만들기"} 
           </div>
         </button>
       </div>
-
       <div className="wish-toolbar">
         {/* // 필터 버튼 영역 */}
-        <div className="wish-chips">
+        <div className="filter-chips">
           {wishTabs.map((tab) => (
             <button
               type="button"
@@ -1102,7 +1162,9 @@ function ActivityContent() {
                 setSelectionPage(1); // 필터 변경 시 첫 페이지로 초기화
               }}
             >
-              {tab.label}
+              {tab.label} {tab.label === "전체" ? listItems.length : 
+              tab.label === "영화" ? plmovieCount : tab.label === "시리즈" ? pltvCount :
+              planimationCount}
             </button>
           ))}
         </div>
@@ -1157,9 +1219,11 @@ function ActivityContent() {
                   <article key={key} className={isSelected ? "select-card selected" : "select-card"}>
                     <button className="select-card-main" onClick={() => toggleSelected(key)}>
                       <span className="select-check">{isSelected ? "✓" : "+"}</span>
-                      {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
                     </button>
-                    <strong>{item.title}</strong>
+                    <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
+                      {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+                    </Link>
+                    {/* <strong>{item.title}</strong> */}
                   </article>
                 );
               })}
@@ -1233,7 +1297,7 @@ function ActivityContent() {
             <p>내가 찜·시청하고 기록한 모든 작품</p>
           </div>
 
-          <nav className="activity-tabs" aria-label="콘텐츠 활동 탭">
+          <div className="activity-tabs" aria-label="콘텐츠 활동 탭">
             {tabs.map((tab) => (
               <button
                 type="button"
@@ -1244,7 +1308,7 @@ function ActivityContent() {
                 {tab.label}
               </button>
             ))}
-          </nav>
+          </div>
         </div>
 
         {activeTab === "watching" && renderWatching()}
