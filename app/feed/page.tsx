@@ -290,7 +290,8 @@ const getNextStarRating = (currentRating: number, star: number) => {
 
 export default function FeedPage() {
   const router = useRouter();
-  const { user, currentProfile, updateUserLikeFeeds, updateUserCommentFeed } = useAuthStore();
+  const { user, currentProfile, updateUserLikeFeeds, updateUserCommentFeed } =
+    useAuthStore();
   const {
     feeds,
     onAddComment,
@@ -593,9 +594,7 @@ export default function FeedPage() {
   };
 
   const filteredReviews =
-    activeTab === "all"
-      ? feeds
-      : feeds.filter((review) => review.isFollowing);
+    activeTab === "all" ? feeds : feeds.filter((review) => review.isFollowing);
 
   const selectedCommentReview =
     feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
@@ -743,7 +742,7 @@ export default function FeedPage() {
     if (!requireFeedAuth()) return;
 
     void onToggleCommentLike(reviewId, commentId);
-    updateUserCommentFeed(reviewId, commentId)
+    updateUserCommentFeed(reviewId, commentId);
   };
 
   const handleSubmitReview = async (
@@ -1182,7 +1181,12 @@ export default function FeedPage() {
                 </div>
               ))
             ) : (
-              <div className="comment-empty">아직 댓글이 없어요.</div>
+              <div className="comment-empty">
+                <div className="empty-img">
+                  <img src="/images/feed/empty-comment.svg" alt="." />
+                </div>
+                <div>아직 댓글이 없어요.</div>
+              </div>
             )}
           </div>
 
