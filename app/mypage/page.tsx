@@ -8,6 +8,7 @@ import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
 import { BADGE_LIST } from "@/data/badge";
+import { useCommunityEnabled } from "@/data/maturityFilter";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
@@ -63,8 +64,8 @@ export default function MyPage() {
     });
   }, [reviews, mediaDetails, onFetchMediaDetail]);
 
-  // 스토어의 값을 기준으로 UI 판단 (true면 표시, false면 숨김)
-  const isCommunityEnabled = currentProfile?.isCommunity ?? true;
+  // 스토어의 isCommunity + 관람등급(12세 이하 자동 숨김) 기준으로 UI 판단
+  const isCommunityEnabled = useCommunityEnabled();
   const hideCommunity = !isCommunityEnabled;
 
   const activeProfile = useMemo(() => {
@@ -484,22 +485,8 @@ export default function MyPage() {
                   </div>
 
                   <div className="mood-summary-box">
-                    {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
-                      <p>
-                        💡 주로 
-                        {genreMoodStats.topGenre?.name !== "없음" && (
-                          <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
-                        )}
-                        
-                        {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
-                        {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
-                        
-                        {genreMoodStats.topMood?.tag !== "없음" && (
-                          <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
-                        )}
-                        의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
-                      </p>
-                    )}
+                    💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와
+                    <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
                   </div>
                 </div>
               </>
