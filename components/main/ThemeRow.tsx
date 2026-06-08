@@ -15,6 +15,7 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -46,8 +47,14 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   const t = useT();
   const router = useRouter();
   const excludedGenres = useExcludedGenres();
-  const items = filterByExcludedGenres(rawItems, excludedGenres);
+  const maturityCeiling = useMaturityCeiling();
   const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
+  const items = filterByMaturity(
+    filterByExcludedGenres(rawItems, excludedGenres),
+    maturityCeiling,
+    certifications,
+    (it) => `${it.mediaType}-${it.id}`,
+  );
 
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);

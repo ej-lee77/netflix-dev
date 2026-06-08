@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
@@ -16,6 +16,7 @@ import ShareButton from "@/components/common/ShareButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -102,7 +103,26 @@ export default function CategoryList({ category }: MediaListProps) {
         }));
 
   // 제외 장르 작품 숨김
-  const currentList = filterByExcludedGenres(rawCurrentList, excludedGenres);
+  const excludedList = filterByExcludedGenres(rawCurrentList, excludedGenres);
+
+  // 관람등급 필터 (netflix 카테고리는 tv 등급으로 조회)
+  const maturityCeiling = useMaturityCeiling();
+  const certMediaType = category === "netflix" ? "tv" : category;
+  const currentList = filterByMaturity(
+    excludedList,
+    maturityCeiling,
+    certifications,
+    (it: { id: number }) => `${certMediaType}-${it.id}`,
+  );
+
+  // hover 전에도 등급 필터가 동작하도록 현재 목록의 등급을 미리 로드
+  useEffect(() => {
+    if (maturityCeiling >= 19) return;
+    excludedList.forEach((it: { id: number }) =>
+      onFetchCertification(it.id, certMediaType as "movie" | "tv"),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, maturityCeiling, excludedList.length]);
 
   const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
     setHover(id);

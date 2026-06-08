@@ -337,17 +337,42 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const { certifications } = get();
         if (certifications[key] !== undefined) return;
 
+        // 미국 등급 → 한국 등급 환산 (KR 등급이 비어있을 때 폴백)
+        const usMovieToKr: Record<string, string> = {
+            "G": "전체관람가", "PG": "전체관람가", "PG-13": "15", "R": "19", "NC-17": "19",
+        };
+        const usTvToKr: Record<string, string> = {
+            "TV-Y": "전체관람가", "TV-Y7": "전체관람가", "TV-G": "전체관람가",
+            "TV-PG": "12", "TV-14": "15", "TV-MA": "19",
+        };
+
         let cert = "";
-        if (mediaType === "movie") {
-            const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/release_dates?api_key=${TMDB_KEY}`);
-            const data = await res.json();
-            const kr = (data.results ?? []).find((r: any) => r.iso_3166_1 === "KR");
-            cert = kr?.release_dates?.[0]?.certification ?? "";
-        } else {
-            const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/content_ratings?api_key=${TMDB_KEY}`);
-            const data = await res.json();
-            const kr = (data.results ?? []).find((r: any) => r.iso_3166_1 === "KR");
-            cert = kr?.rating ?? "";
+        try {
+            if (mediaType === "movie") {
+                const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/release_dates?api_key=${TMDB_KEY}`);
+                const data = await res.json();
+                const results = data.results ?? [];
+                const kr = results.find((r: any) => r.iso_3166_1 === "KR");
+                // KR release_dates 중 비어있지 않은 첫 등급
+                cert = (kr?.release_dates ?? []).map((d: any) => d.certification).find((c: string) => c) ?? "";
+                if (!cert) {
+                    const us = results.find((r: any) => r.iso_3166_1 === "US");
+                    const usCert = (us?.release_dates ?? []).map((d: any) => d.certification).find((c: string) => c) ?? "";
+                    cert = usMovieToKr[usCert] ?? "";
+                }
+            } else {
+                const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/content_ratings?api_key=${TMDB_KEY}`);
+                const data = await res.json();
+                const results = data.results ?? [];
+                const kr = results.find((r: any) => r.iso_3166_1 === "KR");
+                cert = kr?.rating ?? "";
+                if (!cert) {
+                    const us = results.find((r: any) => r.iso_3166_1 === "US");
+                    cert = usTvToKr[us?.rating ?? ""] ?? "";
+                }
+            }
+        } catch {
+            cert = "";
         }
 
         set((state) => ({

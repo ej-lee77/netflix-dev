@@ -19,8 +19,8 @@ $hero-h: clamp(420px, 40vw, 900px);
   margin-top: calc(-#{g.$header-height} + 30px) !important;
   overflow: hidden;
   background: #0a0a0a;
-  display: flex;
-  align-items: center;
+  // flex 제거: Swiper를 absolute positioning으로 처리
+  // → flex 레이아웃 계산 타이밍과 Swiper 너비 읽기 간 race condition 제거
 
   // 상단/하단 페이드아웃
   &::before,
@@ -58,8 +58,15 @@ $hero-h: clamp(420px, 40vw, 900px);
 
 // ── Swiper ──────────────────────────────────────────────
 .connect-hero__swiper {
-  width: 100%;
-  height: calc(100% - 72px); // 위아래 36px씩 배경 노출
+  // absolute positioning으로 flex 의존성 제거
+  // left:0/right:0이 width를 명시적으로 결정하므로 flex 계산 불필요
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: calc(#{$hero-h} - 16px);
+  overflow: visible !important;
   z-index: 1;
 }
 
@@ -376,11 +383,11 @@ $hero-h: clamp(420px, 40vw, 900px);
   }
 
   .swiper-button-prev {
-    left: calc(#{$side-margin} + 14px);
+    left: calc(#{$side-margin} + 14px) !important;
   }
 
   .swiper-button-next {
-    right: calc(#{$side-margin} + 14px);
+    right: calc(#{$side-margin} + 14px) !important;
   }
 }
 
@@ -407,9 +414,8 @@ $hero-h: clamp(420px, 40vw, 900px);
 
 @media (max-width: 640px) {
 
-  // clamp 최솟값(400px)이 이미 보장되므로 height 오버라이드 불필요
   .connect-hero__swiper {
-    height: calc(100% - 48px);
+    height: calc(#{$hero-h} + #{g.$header-height} - 48px);
   }
 
   .connect-hero__swiper .swiper-slide {

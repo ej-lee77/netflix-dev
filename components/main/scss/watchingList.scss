@@ -6,7 +6,7 @@
 
   .watching-swiper-wrap {
     position: relative;
-    padding-left: clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
+    padding-left: g.$main-menu-width;
     overflow: hidden;
   }
 

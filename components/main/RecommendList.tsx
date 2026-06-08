@@ -13,6 +13,7 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from '../common/SectionTitle';
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
 
 const GENRE_MAP: Record<number, string> = {
   28: '액션', 12: '모험', 16: '애니메이션', 35: '코미디', 80: '범죄',
@@ -37,11 +38,30 @@ export default function RecommendList() {
   const t = useT();
   const { recommended: rawRecommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
+  const maturityCeiling = useMaturityCeiling();
   // 제외 장르 작품 숨김 (인덱스 정합성을 위해 이후 로직은 모두 이 목록을 사용)
-  const recommended = useMemo(
+  const genreFiltered = useMemo(
     () => filterByExcludedGenres(rawRecommended, excludedGenres),
     [rawRecommended, excludedGenres],
   );
+  // 관람등급 필터
+  const recommended = useMemo(
+    () =>
+      filterByMaturity(
+        genreFiltered,
+        maturityCeiling,
+        certifications,
+        (it: { media_type: string; id: number }) => `${it.media_type}-${it.id}`,
+      ),
+    [genreFiltered, maturityCeiling, certifications],
+  );
+
+  // hover 전에도 등급 필터가 동작하도록 등급 미리 로드
+  useEffect(() => {
+    if (maturityCeiling >= 19) return;
+    genreFiltered.forEach((it) => onFetchCertification(it.id, it.media_type));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [genreFiltered, maturityCeiling]);
   const [activeBackdrop, setActiveBackdrop] = useState<{ id: number; backdropPath: string } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
