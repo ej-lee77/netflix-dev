@@ -509,7 +509,7 @@
         }
       }
 
-      button,
+      // button,
       span {
         background: transparent;
         border: 0;
@@ -592,7 +592,7 @@
         position: absolute;
         left: 0;
         bottom: 0;
-        height: 4px;
+        height: 2px;
         background: g.$main-color;
       }
     }
@@ -602,7 +602,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-      padding: 18px 20px;
+      padding: 10px 16px;
 
       h3 {
         font-size: g.$text-18;
@@ -819,7 +819,7 @@
     .playlist-content-head {
       align-items: flex-end;
 
-      >div {
+      .title-list {
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -1040,7 +1040,7 @@
       min-width: 0;
       height: 100%;
       min-height: 300px;
-      padding: 28px;
+      // padding: 28px;
       // border: 1px solid #242424;
       border-radius: g.$radius-md;
       // background: rgba(255, 255, 255, 0.02);
@@ -1048,8 +1048,8 @@
 
     .selectable-history {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 22px;
     }
 
     .playlist-selection-empty {
@@ -1194,7 +1194,7 @@
 
     .custom-playlist-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 24px;
     }
 
@@ -1243,10 +1243,13 @@
       flex-direction: column;
       min-width: 0;
       min-height: 360px;
-      padding: 14px;
       border: 1px solid #2a2a2a;
       border-radius: g.$radius-md;
       background: rgba(255, 255, 255, 0.025);
+
+      a{
+        padding: 14px;
+      }
 
       h3 {
         margin-top: 14px;
@@ -1274,7 +1277,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin-top: 10px;
+        margin: 10px 0;
 
         span {
           display: inline-flex;
@@ -1344,6 +1347,59 @@
       }
     }
 
+    .playlist-add-btn {
+      position: absolute;
+      top: 22px;
+      right: 60px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: g.$radius-md;
+      background: rgba(0, 0, 0, 0.72);
+      color: g.$w-color;
+      font-size: g.$text-12;
+      font-weight: 500;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 1;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.42);
+        color: g.$w-color;
+        transform: scale(1.04);
+      }
+    }
+
+    .playlist-already-added {
+      position: absolute;
+      top: 22px;
+      right: 60px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: g.$radius-md;
+      background: rgba(0, 0, 0, 0.72);
+      color: g.$w-color;
+      font-size: g.$text-12;
+      font-weight: 500;
+      line-height: 1;
+      opacity: 1;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+
     .playlist-mosaic {
       position: relative;
       display: grid;
@@ -1392,32 +1448,35 @@
       justify-content: space-between;
       gap: 12px;
 
-      .playcard-more-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 28px;
-        height: 28px;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        background: transparent;
+    }
+    .playcard-more-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.1);
         color: #fff;
-        cursor: pointer;
-        transition: background 0.2s, color 0.2s, transform 0.2s;
-
-        svg {
-          width: 16px;
-          height: 16px;
-        }
-
-        &:hover,
-        &:focus-visible {
-          background: rgba(255, 255, 255, 0.1);
-          color: #fff;
-          transform: scale(1.04);
-          outline: none;
-        }
+        transform: scale(1.04);
+        outline: none;
       }
     }
 
@@ -1842,6 +1901,11 @@
         .create-playlist-btn {
           width: 100%;
         }
+        // .btn-list{
+        //   display: flex;
+        //   gap: 10px;
+        //   flex-direction: row;
+        // }
       }
 
       .selectable-history {

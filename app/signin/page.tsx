@@ -135,7 +135,7 @@ export default function SigninPage() {
         <StepVerify email={sentEmail} onVerified={handleVerified} />
       )}
       {currentStep === 2 && (
-        <StepPlan onNext={handlePlanNext} />
+        <StepPlan onNext={handlePlanNext} submitLabel="선택하기" />
       )}
       {currentStep === 3 && (
         <StepPayment

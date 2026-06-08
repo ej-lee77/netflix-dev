@@ -5,6 +5,8 @@ import { auth } from "@/firebase/firebase";
 import { updatePlan, useSignUpStore } from "@/store/useSignUpStore";
 import { getFaqItems } from "@/data/faq";
 import FaqAccordion from "@/components/common/FaqAccordion";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -137,9 +139,10 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 export default function StepPlan({ onNext, currentPlanType, currentBilling, submitLabel = "다음", hideTitle, skipFirestore }: StepPlanProps) {
   const [billing, setBilling] = useState<BillingCycle>("monthly"); // 기본: 월간
   const [selected, setSelected] = useState<string>("standard");
+  const router = useRouter();
+  const { user } = useAuthStore();
 
-  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;;
-
+  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid ?? user?.userId;
 
   // 기존과 같은 플랜일경우 경고표시
   const [error, setError] = useState<string>("");
@@ -324,7 +327,11 @@ export default function StepPlan({ onNext, currentPlanType, currentBilling, subm
 
       {/* 다음 버튼 */}
       <div className="plan-next-wrap">
-        <button type="button" className="plan-next-btn" onClick={handleNext}>
+        <button
+          type="button"
+          className="plan-next-btn"
+          onClick={handleNext}
+        >
           {submitLabel}
         </button>
       </div>

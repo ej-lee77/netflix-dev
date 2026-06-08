@@ -9,6 +9,7 @@ import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
 import { filterHidden } from "@/data/hiddenContent";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { useMaturityFiltered } from "@/data/maturityFilter";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -186,12 +187,14 @@ export default function MoodPage() {
     };
   }, [moodName]);
 
+  const visibleItems = useMaturityFiltered(items, (it) => it.media_type);
+
   if (!info) return null;
 
-  const featured = pinnedHero ?? items[0];
+  const featured = pinnedHero ?? visibleItems[0];
   const otherItems = pinnedHero
-    ? items.filter((item) => item.id !== pinnedHero.id)
-    : items.slice(1);
+    ? visibleItems.filter((item) => item.id !== pinnedHero.id)
+    : visibleItems.slice(1);
 
   return (
     <div className="category-page mood-variant">

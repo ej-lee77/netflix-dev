@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SectionTitle from "../common/SectionTitle";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { fetchUpcomingItems, type UpcomingItem } from "@/lib/upcoming";
 import "./scss/release.scss";
 
@@ -21,6 +22,7 @@ function getColCount(width: number): number {
 export default function Release() {
   const [colCount, setColCount] = useState(3);
   const [upcomings, setUpcomings] = useState<UpcomingItem[]>([]);
+  const excludedGenres = useExcludedGenres();
 
   useEffect(() => {
     let ignore = false;
@@ -45,7 +47,11 @@ export default function Release() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  const cards = upcomings.slice(0, colCount * 2);
+  const filteredUpcomings = useMemo(
+    () => filterByExcludedGenres(upcomings, excludedGenres),
+    [upcomings, excludedGenres],
+  );
+  const cards = filteredUpcomings.slice(0, colCount * 2);
 
   return (
     <section className="release-section">

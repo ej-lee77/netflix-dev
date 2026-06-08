@@ -6,10 +6,15 @@ export interface PlayListItem{
     // name?: string;
     poster_path: string | null;
     backdrop_path: string | null;
+    genre_ids?: number[];
     mediaType: "movie" | "tv";
     playTime: string;
+    vote_average: number;
+    overview: string;
     progress: number; // 0~100
     episodeProgress: Record<number, number>; // episodeId → 0~100
+    first_air_date: string;
+    release_date: string;
 }
 
 type DetailMedia = (Movie | TV) & {
