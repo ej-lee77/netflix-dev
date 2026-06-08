@@ -2,6 +2,7 @@
 
 import SectionTitle from "@/components/common/SectionTitle";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FreeMode } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
@@ -14,6 +15,7 @@ import "./scss/connectSection.scss";
 import "./scss/connectFollowingUsers.scss";
 
 export default function ConnectFollowingUsers() {
+  const router = useRouter();
   const { currentProfile } = useAuthStore();
   const { followingUsers, isLoadingFollowing, fetchFollowingUsers } = useFollowStore();
   const swiperRef = useRef<SwiperType | null>(null);
@@ -27,9 +29,9 @@ export default function ConnectFollowingUsers() {
   }, [currentProfile?.id, followingIds.length]);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setSwiperKey((k) => k + 1));
+    const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
     return () => {
-      cancelAnimationFrame(id);
+      clearTimeout(id);
       roRef.current?.disconnect();
     };
   }, []);
@@ -54,7 +56,21 @@ export default function ConnectFollowingUsers() {
     );
   }
 
-  if (followingUsers.length === 0) return null;
+  if (followingUsers.length === 0) {
+    return (
+      <section className="connect-section connect-following-users" aria-label="팔로우하는 유저">
+        <div className="connect-section__inner connect-following-users__inner">
+          <SectionTitle title="팔로우하는 유저" showMore={false} />
+          <div className="connect-following-users__empty">
+            <p className="connect-following-users__empty-desc">아직 팔로우하는 유저가 없어요</p>
+            <button type="button" className="connect-following-users__empty-btn" onClick={() => router.push("/friends")}>
+              나에게 맞는 팔로우 찾기
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

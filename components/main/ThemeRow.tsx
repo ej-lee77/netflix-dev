@@ -12,6 +12,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/categoryList.scss";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
@@ -190,6 +191,7 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                             {t("common.detail")}
                           </Link>
                           <WishlistButton item={item} mediaType={item.mediaType} stopPropagation className="card-wish" />
+                          <ShareButton mediaType={item.mediaType} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>

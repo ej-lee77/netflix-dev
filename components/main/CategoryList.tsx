@@ -12,6 +12,7 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
@@ -37,13 +38,14 @@ export default function CategoryList({ category }: MediaListProps) {
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
-  const [rightEdgeIndex, setRightEdgeIndex] = useState(Infinity);
+  const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
 
-  // 현재 보이는 슬라이드의 좌/우 끝 인덱스 갱신 (오른쪽 끝 카드가 컨테이너 밖으로 안 나가게)
-  const updateEdges = (swiper: { activeIndex: number; params: { slidesPerView: number | string } }) => {
-    const spv = typeof swiper.params.slidesPerView === "number" ? swiper.params.slidesPerView : 1;
-    setLeftEdgeIndex(swiper.activeIndex);
-    setRightEdgeIndex(swiper.activeIndex + Math.floor(spv) - 1);
+  const updateEdges = (swiper: any) => {
+    const left = swiper.activeIndex;
+    setLeftEdgeIndex(left);
+    const spv = swiper.params.slidesPerView;
+    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    setRightEdgeIndex(left + numVisible);
   };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
@@ -236,6 +238,7 @@ export default function CategoryList({ category }: MediaListProps) {
                             {t("common.detail")}
                           </Link>
                           <WishlistButton item={item} mediaType={(category === "netflix" ? "tv" : category) as "movie" | "tv"} stopPropagation className="card-wish" />
+                          <ShareButton mediaType={(category === "netflix" ? "tv" : category) as "movie" | "tv"} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>

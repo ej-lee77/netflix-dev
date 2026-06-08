@@ -3,6 +3,7 @@
 import { auth } from "@/firebase/firebase";
 import { sendEmailVerification } from "firebase/auth";
 import { useEffect, useRef, useState } from "react";
+import { createUserDocument } from "@/store/useSignUpStore";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -26,9 +27,10 @@ export default function StepVerify({ email, onVerified }: StepVerifyProps) {
     pollingRef.current = setInterval(async () => {
       const user = auth.currentUser;
       if (!user) return;
-      await user.reload(); // Firebase에서 최신 상태 갱신
+      await user.reload();
       if (user.emailVerified) {
         clearInterval(pollingRef.current!);
+        await createUserDocument({ uid: user.uid, email: user.email! });
         onVerified();
       }
     }, 5000);
