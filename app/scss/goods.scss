@@ -56,10 +56,13 @@
 
   /* 통계 */
   .collection-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    position: absolute;
+    display: flex;
     gap: 16px;
     margin-bottom: 32px;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
 
     @media (max-width: 700px) {
       grid-template-columns: repeat(2, 1fr);
@@ -69,9 +72,10 @@
   .stat-card {
     padding: 20px;
     text-align: center;
-    background: rgba(255, 255, 255, 0.03);
+    background: #191919;
     border: 1px solid #2a2a2a;
-    border-radius: g.$radius-md;
+    border-radius: g.$radius-lg;
+    width: 200px;
 
     .num {
       font-size: g.$text-32;
@@ -90,6 +94,12 @@
     .hint {
       font-size: g.$text-12;
       color: #555;
+    }
+    .matche{
+      display: flex;
+      align-items: center;
+      height: 80%;
+      justify-content: center;
     }
   }
 

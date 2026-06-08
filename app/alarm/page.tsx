@@ -191,7 +191,7 @@ function AlarmContent() {
         </div>
 
         {/* 알림 받지 않을 장르 */}
-        <div className="excluded-section">
+        {/* <div className="excluded-section">
           <div className="ex-head">
             <h3>알림 받지 않을 장르</h3>
             <Link href="/mypage/genre" className="ex-link">＋ 추가</Link>
@@ -205,12 +205,12 @@ function AlarmContent() {
               </span>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* 액션 바 */}
         <div className="action-row">
           <span>읽지 않은 알림 {unreadCount}개</span>
-          <button onClick={handleReadAll}>모두 읽음 처리 · 설정</button>
+          <button onClick={handleReadAll}>모두 읽음 처리</button>
         </div>
 
         {/* 오늘 */}
