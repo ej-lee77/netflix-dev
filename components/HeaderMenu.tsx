@@ -49,7 +49,8 @@ export default function HeaderMenu() {
   const searchParams = useSearchParams();
   const tm = useMenuLabel();
   const currentProfile = useAuthStore((state) => state.currentProfile);
-  const [, setStorageRevision] = useState(0);
+  const [storageRevision, setStorageRevision] = useState(0);
+  const [liveMenuPaths, setLiveMenuPaths] = useState<string[] | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
   const queryString = searchParams.toString();
@@ -62,12 +63,22 @@ export default function HeaderMenu() {
     setIsMounted(true); // 클라이언트에서만 실행
   }, []);
 
+  useEffect(() => {
+    setLiveMenuPaths(null);
+  }, [currentProfile?.id]);
+
   const dynamicMenus = useMemo(() => {
     // 1. 마운트 전(서버)에는 무조건 기본 메뉴 반환 (Hydration 불일치 방지)
     if (!isMounted) {
       return DEFAULT_HEADER_MENU_PATHS.map((path) =>
         allSelectablePool.find((m) => m.path === path)
       ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
+    }
+
+    if (liveMenuPaths) {
+      return ensureCategoryMenuPath(liveMenuPaths)
+        .map((path) => allSelectablePool.find((m) => m.path === path))
+        .filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
     }
 
     // 2. 마운트 후(클라이언트)에는 로직대로 메뉴 계산
@@ -96,10 +107,14 @@ export default function HeaderMenu() {
     return DEFAULT_HEADER_MENU_PATHS.map((path) =>
       allSelectablePool.find((m) => m.path === path)
     ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
-  }, [isMounted, currentProfile]); // 의존성 추가
+  }, [isMounted, currentProfile, liveMenuPaths, storageRevision]); // 의존성 추가
 
   useEffect(() => {
-    const handleCustomMenuStorageUpdate = () => {
+    const handleCustomMenuStorageUpdate = (event: Event) => {
+      const paths = (event as CustomEvent<{ paths?: string[] }>).detail?.paths;
+      if (Array.isArray(paths)) {
+        setLiveMenuPaths(paths);
+      }
       setStorageRevision((revision) => revision + 1);
     };
 

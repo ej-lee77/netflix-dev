@@ -408,7 +408,7 @@ nav {
     .sb-category-group {
         .category-hover-panel {
             position: fixed;
-            top: g.$header-height;
+            top: 0;
             bottom: 0;
             left: g.$main-menu-width;
             z-index: 99998;
@@ -416,7 +416,7 @@ nav {
             width: g.$main-menu-width;
             flex-direction: column;
             align-items: center;
-            padding: 14px 0;
+            padding: calc(g.$header-height + 14px) 0 14px;
             background: rgba(34, 34, 33, 0.72);
             border-left: 1px solid rgba(255, 255, 255, 0.06);
             border-right: 1px solid rgba(255, 255, 255, 0.04);
