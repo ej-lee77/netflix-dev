@@ -2,6 +2,8 @@
 
 import { signUp, useSignUpStore } from "@/store/useSignUpStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { auth } from "@/firebase/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 
 // ─── 아이콘 ────────────────────────────────────────────────────────────────────
@@ -22,7 +24,7 @@ const EyeOffIcon = () => (
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface StepRegisterProps {
-  onVerificationSent: (email: string) => void; // 인증메일 발송 완료 → 다음 단계
+  onVerificationSent: (email: string) => void;
 }
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
@@ -79,19 +81,34 @@ export default function StepRegister({ onVerificationSent }: StepRegisterProps) 
     setIsLoading(true);
     try {
       const uid = await signUp(email, password);
-      setUid(uid);           // 다음 단계에서 쓸 uid 저장
-      // 로그인 스토어에 바로 사용자 정보를 불러오도록 호출해서
-      // 이메일 인증 전에도 기본 프로필을 볼 수 있게 만듭니다.
+      setUid(uid);
       const onLogin = useAuthStore.getState().onLogin;
-      if (onLogin) {
-        // 호출 파라미터는 최소 userId 필드를 포함하면 됩니다.
-        onLogin({ userId: uid } as any);
-      }
+      if (onLogin) onLogin({ userId: uid } as any);
       onVerificationSent(email);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
+
       if (code === "auth/email-already-in-use") {
-        setError("이미 사용 중인 이메일입니다.");
+        // 같은 이메일+비밀번호로 로그인 시도해서 미인증 계정인지 확인
+        try {
+          const { user: existingUser } = await signInWithEmailAndPassword(auth, email, password);
+          if (!existingUser.emailVerified) {
+            // 미인증 계정이면 삭제 후 재가입
+            await existingUser.delete();
+            const uid = await signUp(email, password);
+            setUid(uid);
+            const onLogin = useAuthStore.getState().onLogin;
+            if (onLogin) onLogin({ userId: uid } as any);
+            onVerificationSent(email);
+            return;
+          } else {
+            // 인증된 계정이면 진짜 중복
+            setError("이미 사용 중인 이메일입니다.");
+          }
+        } catch {
+          // 비밀번호가 달라서 로그인 실패 = 다른 사람 계정
+          setError("이미 사용 중인 이메일입니다.");
+        }
       } else if (code === "auth/weak-password") {
         setError("비밀번호가 너무 약합니다. 영문+숫자 조합 8자 이상을 사용해주세요.");
       } else {
@@ -101,7 +118,6 @@ export default function StepRegister({ onVerificationSent }: StepRegisterProps) 
       setIsLoading(false);
     }
   };
-
 
   return (
     <>

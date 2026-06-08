@@ -14,6 +14,7 @@ import "./scss/categoryList.scss";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -41,9 +42,11 @@ interface ThemeRowProps {
   href?: string;
 }
 
-export default function ThemeRow({ title, items, href }: ThemeRowProps) {
+export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps) {
   const t = useT();
   const router = useRouter();
+  const excludedGenres = useExcludedGenres();
+  const items = filterByExcludedGenres(rawItems, excludedGenres);
   const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
 
   const [hover, setHover] = useState<number | null>(null);

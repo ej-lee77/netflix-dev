@@ -15,6 +15,7 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -58,7 +59,9 @@ export default function CategoryList({ category }: MediaListProps) {
     ...tvs.slice(0, profileOffset),
   ];
 
-  const currentList =
+  const excludedGenres = useExcludedGenres();
+
+  const rawCurrentList =
     category === "movie"
       ? movieSource.slice(0, 18).map((movie) => ({
         id: movie.id,
@@ -97,6 +100,9 @@ export default function CategoryList({ category }: MediaListProps) {
           videos: tvVideos[tv.id],
           fetchVideo: () => onFetchTvVideos(tv.id),
         }));
+
+  // 제외 장르 작품 숨김
+  const currentList = filterByExcludedGenres(rawCurrentList, excludedGenres);
 
   const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
     setHover(id);
