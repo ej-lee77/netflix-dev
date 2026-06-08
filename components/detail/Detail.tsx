@@ -7,6 +7,8 @@ import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import type { CastMember, Movie, RecommendedItem, TV, Video } from "@/types/movie";
 import VideoPlayer from "@/components/common/VideoPlayer";
+import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import "./detail.module.scss";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -1443,54 +1445,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               >
                 {isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
               </button>
-              <button
-                className={`detail-circle-hover`}
-                onClick={handleMyList}
-                disabled={isAddingMyList}
-                aria-pressed={isMyListAdded}
-                style={{
-                  background: mediaItem && wishlistIds.includes(String(itemKey)) ? "#e50914" : "rgba(229,9,20,0.1)",
-                  border: "1px solid #e50914",
-                  color: mediaItem && wishlistIds.includes(String(itemKey)) ? "#fff" : "#e50914",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  cursor: isAddingWish ? "default" : "pointer",
-                  opacity: isAddingWish ? 0.6 : 1,
-                  fontSize: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {isMyListAdded ? "♥" : "♡"}
-              </button>
-              {/* <button
-                className="detail-circle-hover"
-                onClick={handleWish}
-                disabled={isAddingWish}
-                aria-pressed={mediaItem ? wishlistIds.includes(String(itemKey)) : false}
-                aria-label="위시리스트에 추가"
-                style={{
-                  background: mediaItem && wishlistIds.includes(String(itemKey)) ? "#e50914" : "rgba(229,9,20,0.1)",
-                  border: "1px solid #e50914",
-                  color: mediaItem && wishlistIds.includes(String(itemKey)) ? "#fff" : "#e50914",
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  cursor: isAddingWish ? "default" : "pointer",
-                  opacity: isAddingWish ? 0.6 : 1,
-                  fontSize: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {mediaItem && wishlistIds.includes(String(mediaItem.id)) ? "♥" : "♡"}
-              </button> */}
-              {/* <button className="detail-circle-hover" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.2)", color: "#888", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                🔔
-              </button>   */}
+              {mediaItem && <WishlistButton item={mediaItem} mediaType={type} />}
+              {mediaItem && <ShareButton mediaType={type} id={mediaItem.id} />}
             </div>
           </div>
         </div>
@@ -1555,7 +1511,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         </div>
       )}
 
-      {/* Video popup */}
       {showPopup && popupVideoKey && (
         <VideoPlayer
           videoKey={popupVideoKey}

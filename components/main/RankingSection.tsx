@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import type { KeyboardEvent, PointerEvent } from "react";
 import Link from "next/link";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import { useT } from "@/lib/i18n";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode } from "swiper/modules";
@@ -283,6 +284,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
                         {t("common.detailMore")}
                       </Link>
                       <WishlistButton item={movie} mediaType={movie.media_type ?? "movie"} stopPropagation className="card-wish" />
+                      <ShareButton mediaType={movie.media_type ?? "movie"} id={movie.id} stopPropagation className="card-wish" />
                     </span>
                   </span>
 

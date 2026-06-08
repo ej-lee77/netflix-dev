@@ -53,13 +53,6 @@ export default function ConnectPage() {
   } = useMovieStore();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      window.dispatchEvent(new Event("resize"));
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
     if (!trendingMovies.length) onFetchTrending();
     if (!popMovies.length) onFetchPopular();
     if (!newMovies.length) onFetchNewest();
