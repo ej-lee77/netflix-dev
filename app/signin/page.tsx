@@ -49,10 +49,11 @@ export default function SigninPage() {
     annualDiscount: 27000,
   });
 
-  //currentStep 바뀔때마다 스크롤 초기화
+  // currentStep 바뀔때마다 스크롤 초기화
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep]);
+
   const steps = buildSteps(currentStep);
 
   const handleVerificationSent = (email: string) => {
@@ -65,8 +66,41 @@ export default function SigninPage() {
   const handlePayBack = () => setCurrentStep(2);
   const handlePayComplete = () => setCurrentStep(4);
 
+  // 뒤로가기: 로그인 페이지로 이동
+  const handleGoBack = () => {
+    window.location.href = "/login";
+  };
+
+  // 완료 단계(step 4)에서는 뒤로가기 버튼 숨김
+  const showBackButton = currentStep < 4;
+
   return (
     <div className="signin-page">
+
+      {/* ── 뒤로가기 버튼 ──────────────────────────────────────────────── */}
+      {showBackButton && (
+        <button
+          className="signin-back-btn"
+          onClick={handleGoBack}
+          aria-label="뒤로가기"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 18L9 12L15 6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* ── 스텝 인디케이터 ──────────────────────────────────────────────── */}
       <div className="step-bar" aria-label="가입 단계">
