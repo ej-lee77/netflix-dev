@@ -37,6 +37,15 @@ export default function CategoryList({ category }: MediaListProps) {
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
+  const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
+
+  const updateEdges = (swiper: any) => {
+    const left = swiper.activeIndex;
+    setLeftEdgeIndex(left);
+    const spv = swiper.params.slidesPerView;
+    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    setRightEdgeIndex(left + numVisible);
+  };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
 
@@ -120,8 +129,9 @@ export default function CategoryList({ category }: MediaListProps) {
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
           }}
-          onSwiper={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
-          onSlideChange={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
+          onSwiper={updateEdges}
+          onSlideChange={updateEdges}
+          onBreakpoint={updateEdges}
           className="media-swiper"
         >
           {currentList.map((item, index) => {
@@ -147,7 +157,7 @@ export default function CategoryList({ category }: MediaListProps) {
 
                   {/* 호버 팝업 카드 */}
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}${index === rightEdgeIndex ? ' right-edge' : ''}`}>
                       <div className="hover-video">
                         {autoplayPreview && trailerKey && videoReady === item.id ? (
                           <iframe

@@ -549,15 +549,16 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   key={season.id}
                   onClick={() => handleSeasonSelect(season.season_number)}
                   style={{
-                    background: isSelected ? "#e50914" : "transparent",
-                    border: `1px solid ${isSelected ? "#e50914" : "#3a3a48"}`,
+                    background: "transparent",
+                    border: "1px solid #3a3a48",
                     padding: "8px 18px",
                     borderRadius: 100,
                     cursor: "pointer",
                     fontSize: 14,
-                    fontWeight: isSelected ? 700 : 400,
-                    color: isSelected ? "#fff" : "#888",
+                    fontWeight: 400,
+                    color: "#888",
                     whiteSpace: "nowrap",
+                    opacity: isSelected ? 1 : 0.4,
                   }}
                 >
                   {season.name}
@@ -665,10 +666,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 onClick={() => setEpisodePage(page)}
                 style={{
                   width: 34, height: 34, borderRadius: 4, fontSize: 14, cursor: "pointer",
-                  background: page === episodePage ? "#e50914" : "none",
-                  border: `1px solid ${page === episodePage ? "#e50914" : "#3a3a48"}`,
-                  color: page === episodePage ? "#fff" : "#888",
-                  fontWeight: page === episodePage ? 700 : 400,
+                  background: "none",
+                  border: "1px solid #3a3a48",
+                  color: "#888",
+                  fontWeight: 400,
+                  opacity: page === episodePage ? 1 : 0.4,
                 }}
               >
                 {page}
