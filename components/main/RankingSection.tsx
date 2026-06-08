@@ -44,9 +44,10 @@ function getStars(rating: number) {
 interface RankingSectionProps {
   title?: string;
   items?: RankingItem[];
+  href?: string;
 }
 
-export default function RankingSection({ title, items: externalItems }: RankingSectionProps = {}) {
+export default function RankingSection({ title, items: externalItems, href }: RankingSectionProps = {}) {
   const t = useT();
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
   const excludedGenres = useExcludedGenres();
@@ -148,7 +149,7 @@ export default function RankingSection({ title, items: externalItems }: RankingS
   return (
     <section className="ranking-section">
       <div className="section-title-outer">
-        <SectionTitle title={title ?? t("home.top10")} href="/category" />
+        <SectionTitle title={title ?? t("home.top10")} href={href ?? "/category"} />
       </div>
 
       <div className="ranking-swiper-wrap">

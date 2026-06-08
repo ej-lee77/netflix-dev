@@ -29,31 +29,31 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
     title: "한국 액션 & 어드벤처 시리즈",
     apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ko&with_genres=10759&sort_by=popularity.desc",
     mediaType: "tv",
-    href: "/genre/action",
+    href: "/category?type=tv&countries=kr&genres=action",
   },
   {
     title: "아시아 시리즈",
     apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_origin_country=KR%7CJP%7CCN%7CTW&sort_by=popularity.desc",
     mediaType: "tv",
-    href: "/category",
+    href: "/category?type=tv&countries=kr,jp,in,cn,tw",
   },
   {
     title: "일본 애니 시리즈",
     apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=16&sort_by=popularity.desc",
     mediaType: "tv",
-    href: "/genre/animation",
+    href: "/category?type=animation&countries=jp",
   },
   {
     title: "미국 TV 프로그램",
     apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=en&sort_by=popularity.desc",
     mediaType: "tv",
-    href: "/category",
+    href: "/category?type=tv&countries=us",
   },
   {
     title: "액션 영화",
     apiUrl: "https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=28&sort_by=popularity.desc",
     mediaType: "movie",
-    href: "/genre/action",
+    href: "/category?type=movie&genres=action",
   },
   {
     title: "범죄 드라마",
@@ -65,7 +65,7 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
     title: "한국 로맨스 시리즈",
     apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ko&with_genres=10749&sort_by=popularity.desc",
     mediaType: "tv",
-    href: "/genre/romance",
+    href: "/category?type=tv&countries=kr&genres=romance",
   },
   {
     title: "모험 애니메이션",
@@ -84,13 +84,13 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
     title: "판타지 영화",
     apiUrl: "https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=14&sort_by=popularity.desc",
     mediaType: "movie",
-    href: "/genre/fantasy",
+    href: "/category?type=movie&genres=fantasy",
   },
   {
     title: "오늘 가장 많이보는 시리즈",
     apiUrl: "https://api.themoviedb.org/3/trending/tv/day?language=ko-KR",
     mediaType: "tv",
-    href: "/category",
+    href: "/category?type=tv&source=trending-tv-day",
   },
 ];
 
@@ -313,7 +313,11 @@ export default function Home() {
       }
       {/* 중간 랭킹: 한국 시리즈 TOP 10 */}
       {koreanSeries.length > 0 && (
-        <RankingSection title={t("home.koreanSeries")} items={koreanSeries} />
+        <RankingSection
+          title={t("home.koreanSeries")}
+          items={koreanSeries}
+          href="/category?type=tv&countries=kr&source=korean-series-top10&limit=10"
+        />
       )}
       {/* 테마별 카테고리 — 뒷부분 앞 (해외 코미디까지) */}
       {themeLoading
