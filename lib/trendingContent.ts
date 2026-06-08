@@ -150,6 +150,106 @@ export const fetchTrendingMedia = async (
   return uniqueAndSortTrendingItems(items).slice(0, limit);
 };
 
+const uniqueTrendingItemsInOrder = (items: TrendingMediaItem[]) => {
+  const seenKeys = new Set<string>();
+  const uniqueItems: TrendingMediaItem[] = [];
+
+  items.forEach((item) => {
+    const key = `${item.media_type}-${item.id}`;
+    if (seenKeys.has(key)) return;
+
+    seenKeys.add(key);
+    uniqueItems.push(item);
+  });
+
+  return uniqueItems;
+};
+
+const fetchKeywordSeries = async (
+  keywords: string[],
+  signal: AbortSignal,
+) => {
+  if (!TMDB_KEY) return [];
+
+  const requests = keywords.map(async (keyword) => {
+    const params = new URLSearchParams({
+      api_key: TMDB_KEY,
+      language: "ko-KR",
+      include_adult: "false",
+      page: "1",
+      query: keyword,
+    });
+
+    const response = await fetch(
+      `${TMDB_BASE}/search/tv?${params.toString()}`,
+      { signal },
+    );
+    if (!response.ok) return [];
+
+    const data = (await response.json()) as TmdbListResponse<TmdbTrendingCandidate>;
+    const normalizedItems = (data.results ?? [])
+      .map((item) => normalizeTrendingMediaItem(item, "tv"))
+      .filter((item): item is TrendingMediaItem => Boolean(item));
+
+    const exactMatch =
+      normalizedItems.find((item) => item.title === keyword) ??
+      normalizedItems[0];
+
+    return exactMatch ? [exactMatch] : [];
+  });
+
+  return (await Promise.all(requests)).flat();
+};
+
+const fetchLatestNetflixSeries = async (
+  signal: AbortSignal,
+  limit: number,
+) => {
+  if (!TMDB_KEY) return [];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const params = new URLSearchParams({
+    api_key: TMDB_KEY,
+    language: "ko-KR",
+    include_adult: "false",
+    include_null_first_air_dates: "false",
+    page: "1",
+    sort_by: "first_air_date.desc",
+    with_networks: "213",
+    "first_air_date.lte": today,
+    "vote_count.gte": "1",
+  });
+
+  const response = await fetch(
+    `${TMDB_BASE}/discover/tv?${params.toString()}`,
+    { signal },
+  );
+  if (!response.ok) throw new Error("넷플릭스 최신 시리즈를 불러오지 못했습니다.");
+
+  const data = (await response.json()) as TmdbListResponse<TmdbTrendingCandidate>;
+  return (data.results ?? [])
+    .map((item) => normalizeTrendingMediaItem(item, "tv"))
+    .filter((item): item is TrendingMediaItem => Boolean(item))
+    .slice(0, limit);
+};
+
+export const fetchNetflixSeriesRecommendations = async (
+  signal: AbortSignal,
+  limit = 5,
+) => {
+  const [priorityItems, latestItems, popularItems] = await Promise.all([
+    fetchKeywordSeries(["참교육"], signal),
+    fetchLatestNetflixSeries(signal, limit * 2),
+    fetchTrendingMedia("tv", signal, limit * 2),
+  ]);
+
+  return uniqueTrendingItemsInOrder([
+    ...priorityItems,
+    ...latestItems,
+    ...popularItems,
+  ]).slice(0, limit);
+};
+
 export const fetchKeywordPreviewMedia = async (
   keyword: string,
   signal: AbortSignal,
