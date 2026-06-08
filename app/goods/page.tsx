@@ -66,35 +66,25 @@ export default function GoodsPage() {
             나만의 컬렉션
           </h1>
           <p>뱃지를 모으고 칭호를 획득하세요</p>
-        </div>
+        
 
-        {/* 컬렉션 통계 */}
-        <div className="collection-stats">
-          <div className="stat-card">
-            <div className="num">{currentProfile?.badges?.earnedBadges.length}</div>
-            <div className="label">획득 뱃지</div>
-            <div className="hint">전체 {BADGE_LIST.length}개</div>
-          </div>
-          <div className="stat-card">
-            <div className="label">대표 칭호</div>
-            <div className="">{matchedBadge ? matchedBadge.name : "없음"}</div>
-            {/* <div className="hint">대표: 한국영화 마니아</div> */}
-          </div>
-        </div>
-
-        <div className="collection-info mb-2">
-          <div className="info-card">
-            <h3>🎯 뱃지 시스템</h3>
-            <p>시청 활동에 따라 자동으로 뱃지가 해금됩니다. 획득한 뱃지는 프로필에 표시됩니다.</p>
-          </div>
-          <div className="info-card">
-            <h3>👑 칭호 시스템</h3>
-            <p>뱃지마다 고유한 칭호가 있어요. 대표 칭호를 선택해 친구들에게 보여줄 수 있습니다.</p>
+          {/* 컬렉션 통계 */}
+          <div className="collection-stats">
+            <div className="stat-card">
+              <div className="num">{currentProfile?.badges?.earnedBadges.length}</div>
+              <div className="label">획득 뱃지</div>
+              <div className="hint">전체 {BADGE_LIST.length}개</div>
+            </div>
+            <div className="stat-card">
+              <div className="label">대표 칭호</div>
+              <div className="matche">{matchedBadge ? matchedBadge.name : "없음"}</div>
+              {/* <div className="hint">대표: 한국영화 마니아</div> */}
+            </div>
           </div>
         </div>
 
         {/* 뱃지 탭 */}
-        <h2 className="section-h">뱃지 보상 — 칭호 시스템</h2>
+        {/* <h2 className="section-h">뱃지 보상 — 칭호 시스템</h2> */}
         <div className="badge-grid">
           {displayBadges.map((b) => (
             <article

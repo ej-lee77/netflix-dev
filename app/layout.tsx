@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.scss";
+import Script from "next/script";
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -32,16 +33,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <head>
-        <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
-        <script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js"></script>
-      </head>
       <body className={netflixSans.variable}>
         <AuthProvider>
           <ConditionalLayout>
             {children}
           </ConditionalLayout>
         </AuthProvider>
+        <Script 
+          src="https://developers.kakao.com/sdk/js/kakao.js" 
+          strategy="afterInteractive" 
+        />
+        <Script 
+          src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js" 
+          strategy="afterInteractive" 
+        />
       </body>
     </html>
   );
