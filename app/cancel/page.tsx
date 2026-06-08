@@ -80,7 +80,7 @@ export default function CancelPage() {
               </div>
               <div className="receipt-row">
                 <span className="receipt-label">콘텐츠 이용</span>
-                <span className="receipt-value">{nextDate ? `${nextDate}까지 유지` : "만료일까지 유지"}</span>
+                <span className="receipt-value">{nextDate ? `${nextDate} 까지 유지` : "만료일까지 유지"}</span>
               </div>
               <div className="receipt-row">
                 <span className="receipt-label">자동 결제</span>
