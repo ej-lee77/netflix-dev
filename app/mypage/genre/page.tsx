@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/selectGenre.scss";
 import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
+import BackButton from "@/components/common/BackButton";
 
 // --- 메타데이터 없이 오직 path 기준으로만 데이터 분리 ---
 const genreOptions = customMenus
@@ -95,6 +96,7 @@ export default function SelectGenre() {
   return (
     <section className="menu-custom-page">
       <div className="menu-custom-page__inner">
+        <BackButton fallback="/mypage" />
         <div className="menu-custom-page__hero">
           <h1>장르 관리</h1>
           <p>선호하는 장르와 추천에서 제외할 장르를 설정할 수 있어요</p>

@@ -10,6 +10,7 @@ import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import type { PlayListItem } from "@/types/playList";
 import "../../scss/mediaList.scss";
 import { useMovieStore } from "@/store/useMovieStore";
+import BackButton from "@/components/common/BackButton";
 import { Movie, TV } from "@/types/movie";
 import { WishItem } from "@/types/wishlist";
 import { convertToMedia } from "../wishlist/page";
@@ -1174,6 +1175,7 @@ function ActivityContent() {
   return (
     <div className="media-list-page activity-page">
       <div className="inner">
+        <BackButton fallback="/mypage" />
         <div className="activity-hero">
           <div className="page-head">
             <h1>콘텐츠 활동</h1>

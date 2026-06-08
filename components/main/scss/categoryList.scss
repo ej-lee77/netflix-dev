@@ -315,6 +315,13 @@
     transform: translateY(-50%);
   }
 
+  // 오른쪽 끝 카드: 오른쪽 정렬해서 컨테이너 밖으로 안 잘리게
+  .hover-card.right-edge {
+    left: auto;
+    right: 0;
+    transform: translateY(-50%);
+  }
+
   // 스켈레톤
   &.skeleton-section {
     .skeleton-title-bar {
@@ -405,6 +412,10 @@
     animation: fadeIn 0.5s cubic-bezier(0.34, 1.12, 0.64, 1) 0.5s both;
 
     &.left-edge {
+      animation-name: fadeInLeftEdge;
+    }
+
+    &.right-edge {
       animation-name: fadeInLeftEdge;
     }
   }

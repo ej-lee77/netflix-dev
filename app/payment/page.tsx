@@ -10,6 +10,7 @@ import StepPayment from "@/app/signin/components/StepPayment";
 import type { PayInfo } from "@/types/auth";
 import "@/app/signin/signin.scss";
 import "./payment.scss";
+import BackButton from "@/components/common/BackButton";
 
 // 플랜별 가격 매핑
 const PLAN_PRICES: Record<string, { monthlyPrice: number; annualTotal: number; annualDiscount: number }> = {
@@ -96,6 +97,7 @@ export default function PaymentPage() {
 
   return (
     <div className="signin-page">
+      <BackButton fallback="/settings" />
       <div className="pay-change-page">
         <h1 className="pay-change-title">
           {pendingPlan ? "결제 수단 선택" : "결제 수단 변경"}

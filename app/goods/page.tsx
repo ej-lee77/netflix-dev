@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import "../scss/goods.scss";
 import { BADGE_LIST } from "@/data/badge";
 import { useAuthStore } from "@/store/useAuthStore";
+import BackButton from "@/components/common/BackButton";
 
 const limitedGoods = [
   { id: 1, name: "오리지널 시리즈 포스터 (A2 사이즈)", desc: "시즌2 메인 비주얼 · 액자 별매", price: 3500, stock: 234, type: "LIMITED" as const },
@@ -56,6 +57,7 @@ export default function GoodsPage() {
   return (
     <div className="goods-page">
       <div className="inner">
+        <BackButton fallback="/mypage" />
         {/* 히어로 */}
         <div className="goods-hero">
           <div className="hero-eyebrow">REWARDS</div>
