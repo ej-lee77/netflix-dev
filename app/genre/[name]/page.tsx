@@ -9,6 +9,7 @@ import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
 import { filterHidden } from "@/data/hiddenContent";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { useMaturityFiltered } from "@/data/maturityFilter";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -93,10 +94,12 @@ export default function GenrePage() {
     fetchGenre();
   }, [type, genreName, info, sort, excludedGenres]);
 
+  const visibleItems = useMaturityFiltered(items, (it) => it.media_type);
+
   if (!info) return null;
 
-  const featured = items[0];
-  const otherItems = items.slice(1);
+  const featured = visibleItems[0];
+  const otherItems = visibleItems.slice(1);
 
   return (
     <div className="category-page mood-variant">

@@ -43,7 +43,29 @@ export function useMaturityCeiling(): number {
   return ratingCeiling(rating);
 }
 
+// 등급 데이터가 없을 때 장르로 연령을 보수적으로 추정 (TMDB genre id 기준)
+const RESTRICTED_GENRES: Record<number, number> = {
+  27: 19,    // 공포(Horror)
+  53: 15,    // 스릴러(Thriller)
+  80: 15,    // 범죄(Crime)
+  10752: 15, // 전쟁(War)
+  9648: 15,  // 미스터리(Mystery)
+  37: 12,    // 서부(Western)
+  10768: 15, // War & Politics (TV)
+};
+
+export function genreLevel(genreIds?: number[]): number {
+  if (!genreIds || !genreIds.length) return -1;
+  let max = -1;
+  for (const id of genreIds) {
+    const lv = RESTRICTED_GENRES[id];
+    if (lv !== undefined && lv > max) max = lv;
+  }
+  return max; // 제한 장르가 없으면 -1
+}
+
 // items 를 등급으로 필터링. getKey 로 certifications 맵 키(`${mediaType}-${id}`)를 만든다.
+// 등급(cert)이 미상이면 genre_ids 로 추정한다(제한 장르 없으면 전체관람가로 간주해 표시).
 export function filterByMaturity<T>(
   items: T[],
   ceiling: number,
@@ -52,8 +74,11 @@ export function filterByMaturity<T>(
 ): T[] {
   if (ceiling >= 19) return items; // 19+ 프로필은 전체 허용
   return items.filter((item) => {
-    const level = certToLevel(certifications[getKey(item)]);
-    if (level < 0) return true; // 등급 미상은 표시 유지
+    let level = certToLevel(certifications[getKey(item)]);
+    if (level < 0) {
+      const gl = genreLevel((item as { genre_ids?: number[] }).genre_ids);
+      level = gl < 0 ? 0 : gl; // 등급·제한장르 모두 없으면 전체관람가로 간주
+    }
     return level <= ceiling;
   });
 }

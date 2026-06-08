@@ -14,6 +14,7 @@ import {
 } from "@/lib/trendingContent";
 import TrendingVideoSection from "@/components/search/TrendingVideoSection";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { useMaturityFiltered } from "@/data/maturityFilter";
 import "../search.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -387,6 +388,9 @@ function SearchResultsContent() {
     });
   }, [items, sort, excludedGenres]);
 
+  // 관람등급 필터 (hover 전에도 적용되도록 등급 선반입)
+  const visibleItems = useMaturityFiltered(sortedItems, (it) => it.media_type);
+
   useEffect(() => {
     if (!hasQuery) {
       const timeoutId = window.setTimeout(() => {
@@ -529,11 +533,11 @@ function SearchResultsContent() {
           <div className="loading">검색 중...</div>
         ) : errorMessage ? (
           <div className="empty">{errorMessage}</div>
-        ) : sortedItems.length > 0 ? (
+        ) : visibleItems.length > 0 ? (
           <>
             <div className="search-results-summary">
               <div className="search-results-count">
-                {sortedItems.length.toLocaleString()}개 작품
+                {visibleItems.length.toLocaleString()}개 작품
               </div>
               <div className="search-results-sort">
                 <button
@@ -576,7 +580,7 @@ function SearchResultsContent() {
               </div>
             </div>
             <div className="poster-grid">
-              {sortedItems.map((item) => {
+              {visibleItems.map((item) => {
                 const releaseYear = (
                   item.release_date || item.first_air_date
                 )?.slice(0, 4);

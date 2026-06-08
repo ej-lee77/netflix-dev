@@ -18,6 +18,7 @@ import "swiper/css/navigation";
 import "./scss/rankingSection.scss";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { useMaturityFiltered } from "@/data/maturityFilter";
 
 export interface RankingItem {
   id: number;
@@ -64,15 +65,25 @@ export default function RankingSection({ title, items: externalItems }: RankingS
     }
   }, [externalItems, onFetchKoreanMovies, koreanMovies.length]);
 
-  const rankingItems: RankingItem[] = useMemo(() => {
+  const genreFilteredRanking: RankingItem[] = useMemo(() => {
     const source = externalItems
       ? externalItems
       : koreanMovies
           .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
           .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }));
-    // 제외 장르 작품 숨김 후 상위 10개
-    return filterByExcludedGenres(source, excludedGenres).slice(0, 10);
+    // 제외 장르 작품 숨김
+    return filterByExcludedGenres(source, excludedGenres);
   }, [externalItems, koreanMovies, excludedGenres]);
+
+  // 관람등급 필터 후 상위 10개
+  const maturityFilteredRanking = useMaturityFiltered(
+    genreFilteredRanking,
+    (it) => (it.media_type ?? "movie") as "movie" | "tv",
+  );
+  const rankingItems: RankingItem[] = useMemo(
+    () => maturityFilteredRanking.slice(0, 10),
+    [maturityFilteredRanking],
+  );
 
   useEffect(() => {
     if (!activeId && rankingItems[0]) {
