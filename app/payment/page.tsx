@@ -29,7 +29,7 @@ export default function PaymentPage() {
 
   // useEffect 하나로 합침
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? user?.uid ?? auth.currentUser?.uid;
     if (!uid) return;
     getDoc(doc(db, "users", uid)).then((snap) => {
       if (!snap.exists()) return;
@@ -38,7 +38,7 @@ export default function PaymentPage() {
       setPayInfo(data.payment ?? null);
       setBilling(data.billing ?? "monthly");
     });
-  }, [user?.uid]);
+  }, [user?.userId ?? user?.uid]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -145,7 +145,7 @@ export default function PaymentPage() {
           onComplete={async () => {
             // 비구독자가 새로 구독하는 경우 planType 저장
             if (pendingPlan) {
-              const uid = user?.uid ?? auth.currentUser?.uid;
+              const uid = user?.userId ?? user?.uid ?? auth.currentUser?.uid;
               if (uid) await updatePlan(uid, pendingPlan.planType, pendingPlan.billing);
             }
             setDone(true);

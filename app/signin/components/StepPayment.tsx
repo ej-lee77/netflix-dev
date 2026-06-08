@@ -92,7 +92,8 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
   };
 
   // ── 결제하기 ────────────────────────────────────────────────────────────────
-  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;
+  const { user } = useAuthStore();
+  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid ?? user?.userId;
   // 결제수단
   const setPayInfo = useSignUpStore((s) => s.setPayInfo);
 
@@ -161,7 +162,9 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
       await new Promise((res) => setTimeout(res, 1500));
 
       const currentUser = auth.currentUser;
-      if (!currentUser) {
+      const isLoggedIn = !!(currentUser || user?.userId);
+
+      if (!isLoggedIn) {
         setError("로그인 세션이 만료되었습니다. 다시 로그인 해주세요.");
         return;
       }
@@ -211,12 +214,14 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
         setPayInfo(paymentInfo);
       }
 
-      onLogin({
-        uid: currentUser.uid,
-        email: currentUser.email ?? "",
-        displayName: currentUser.displayName ?? "사용자",
-        profile: defaultProfiles,
-      } as any);
+      if (currentUser) {
+        onLogin({
+          uid: currentUser.uid,
+          email: currentUser.email ?? "",
+          displayName: currentUser.displayName ?? "사용자",
+          profile: defaultProfiles,
+        } as any);
+      }
 
       onComplete();
     } catch (err) {
