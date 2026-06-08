@@ -315,10 +315,10 @@
     transform: translateY(-50%);
   }
 
-  // 오른쪽 끝 카드: 호버 카드 오른쪽 끝을 컨테이너 경계에 맞춤
-  // left: -150% = 카드 너비 1.5배 왼쪽 이동, -16px = spaceBetween(12px) / 2 보정
+  // 오른쪽 끝 카드: 오른쪽 정렬해서 컨테이너 밖으로 안 잘리게
   .hover-card.right-edge {
-    left: calc(-150% - 16px);
+    left: auto;
+    right: 0;
     transform: translateY(-50%);
   }
 
@@ -441,7 +441,7 @@
     }
 
     &.right-edge {
-      animation-name: fadeInRightEdge;
+      animation-name: fadeInLeftEdge;
     }
   }
 }

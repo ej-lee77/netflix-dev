@@ -86,8 +86,8 @@
     z-index: 5;
     pointer-events: none;
     background:
-      linear-gradient(90deg, rgba(20, 20, 20, 0.55) 0%, rgba(20, 20, 20, 0.25) 45%, transparent 80%),
-      linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.3) 35%, transparent 60%);
+      linear-gradient(90deg, rgba(20, 20, 20, 0.38) 0%, rgba(20, 20, 20, 0.14) 45%, transparent 80%),
+      linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.18) 35%, transparent 60%);
   }
 
   .hero-backdrop::after {
@@ -95,8 +95,8 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(90deg, rgba(20, 20, 20, 0.55) 0%, rgba(20, 20, 20, 0.25) 45%, transparent 80%),
-      linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.3) 35%, transparent 60%);
+      linear-gradient(90deg, rgba(20, 20, 20, 0.38) 0%, rgba(20, 20, 20, 0.14) 45%, transparent 80%),
+      linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.18) 35%, transparent 60%);
   }
 
   .hero-backdrop.no-img {
