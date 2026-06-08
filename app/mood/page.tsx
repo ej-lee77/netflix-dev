@@ -52,7 +52,7 @@ export default function MoodMainPage() {
                 <div className="mood-icon-wrap" style={{ borderColor: meta.color }}>
                   <Image src={mood.imgUrl} alt={mood.title} width={36} height={36} />
                 </div>
-                <div className="mood-emoji">{meta.emoji}</div>
+                {/* <div className="mood-emoji">{meta.emoji}</div> */}
                 <h3>{mood.title}</h3>
                 <p>{meta.desc}</p>
                 <span className="mood-cta" style={{ color: meta.color }}>

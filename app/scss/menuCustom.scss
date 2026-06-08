@@ -224,8 +224,13 @@
     min-height: 40px;
     align-items: center;
     overflow-x: auto; /* 넘칠 경우 가로 스크롤 */
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   /* 카테고리(두번째 행)는 항목이 많아지면 2줄까지 허용 */

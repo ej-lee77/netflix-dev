@@ -53,6 +53,8 @@ interface RegisteredReview {
 
 const USER_REVIEWS_KEY = "netflix-user-reviews";
 
+const getToday = () => new Date().toISOString().slice(0, 10);
+
 // const loadUserReviews = () => {
 //   if (typeof window === "undefined") return [];
 
@@ -288,6 +290,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   const title = getTitle(mediaItem);
   const releaseDate = isTv ? mediaItem?.first_air_date : (mediaItem as Movie | undefined)?.release_date;
+  const today = getToday();
+  const isUpcomingFromReleaseSection = searchParams.get("upcoming") === "1";
+  const hasUpcomingEpisodes = isTv && episodes.some((episode) => episode.air_date && episode.air_date > today);
+  const isUpcoming = isUpcomingFromReleaseSection || (!!releaseDate && releaseDate > today) || hasUpcomingEpisodes;
   const releaseYear = releaseDate?.split("-")[0] ?? "";
   const countryText = mediaItem?.production_countries?.slice(0, 2).map(getKoreanCountryName).join(", ") ?? "";
   const seasonOrRuntimeText = isTv
@@ -339,7 +345,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     : (mediaItem ? popVideos[mediaItem.id] : undefined);
   const trailer = videos?.find((v: Video) => v.type === "Trailer" || v.type === "Teaser");
   const selectedEpisode = isTv
-    ? (episodes.find((ep) => ep.id === selectEpisodeId) ?? episodes[0] ?? null)
+    ? (episodes.find((ep) => ep.id === selectEpisodeId) ?? episodes.find((ep) => !isUpcoming || !ep.air_date || ep.air_date >= today) ?? episodes[0] ?? null)
     : null;
   const activeEpisodeId = selectedEpisode?.id ?? null;
   const detailBackdrop =
@@ -364,6 +370,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   // }));
   // 1. 먼저 전체 리뷰에서 신고 수(reportsCount)가 5 이하인 리뷰만 필터링합니다.
   const filteredReviews = reviews.filter((review) => (review.reportsCount ?? 0) <= 5);
+  const visibleEpisodes = isUpcoming
+    ? episodes.filter((episode) => episode.air_date && episode.air_date > today).slice(0, 1)
+    : episodes;
+  const visibleSeasons = isUpcoming
+    ? seasons.filter((season) => season.season_number > 0).slice(0, 1)
+    : seasons;
 
   // 2. 필터링된 데이터를 기준으로 페이지 관련 계산을 수행합니다.
   const totalReviewPages = Math.ceil(filteredReviews.length / REVIEW_PAGE_SIZE);
@@ -375,19 +387,36 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   );
 
   const tabItems: { id: DetailTab; label: string; meta?: string }[] = [
-    ...(isTv ? [{ id: "episodes" as const, label: "회차", meta: episodes.length ? `${episodes.length}` : undefined }] : []),
+    ...(isTv ? [{ id: "episodes" as const, label: isUpcoming ? "공개예정" : "회차", meta: visibleEpisodes.length ? `${visibleEpisodes.length}` : undefined }] : []),
     ...(!isTv ? [{ id: "info" as const, label: "작품 정보" }] : []),
     { id: "cast", label: "출연진", meta: castList.length ? `${castList.length}` : undefined },
     { id: "director", label: "감독" },
-    { id: "review", label: "리뷰", meta: isTv ? "12.8k" : "4.2k" },
+    ...(!isUpcoming ? [{ id: "review" as const, label: "리뷰", meta: isTv ? "12.8k" : "4.2k" }] : []),
     { id: "related", label: "관련 콘텐츠" },
   ];
+
+  useEffect(() => {
+    if (isUpcoming && activeTab === "review") {
+      setActiveTab(isTv ? "episodes" : "info");
+    }
+  }, [activeTab, isTv, isUpcoming]);
 
   const handleSeasonSelect = (seasonNumber: number) => {
     setSelectSeason(seasonNumber);
     setSelectEpisodeId(null);
     setEpisodePage(1);
   };
+
+  useEffect(() => {
+    if (!isUpcoming || !isTv || visibleSeasons.length === 0) return;
+
+    const nextSeasonNumber = visibleSeasons[0].season_number;
+    if (selectSeason !== nextSeasonNumber) {
+      setSelectSeason(nextSeasonNumber);
+      setSelectEpisodeId(null);
+      setEpisodePage(1);
+    }
+  }, [isUpcoming, isTv, selectSeason, visibleSeasons]);
 
   const openVideo = async (key?: string | null) => {
     if (!mediaItem) return;
@@ -398,6 +427,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const handlePlay = async () => {
+    if (isUpcoming) {
+      handleNotifyUpcoming();
+      return;
+    }
     if (!mediaItem || isAddingPlayList) return;
 
     setIsAddingPlayList(true);
@@ -408,6 +441,32 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     } finally {
       setIsAddingPlayList(false);
     }
+  };
+
+  const handleNotifyUpcoming = () => {
+    if (!mediaItem) return;
+
+    const storageKey = "netflix-upcoming-notifications";
+    const nextNotification = {
+      id: mediaId,
+      type,
+      title,
+      releaseDate,
+      posterPath: mediaItem.poster_path,
+    };
+
+    try {
+      const saved = window.localStorage.getItem(storageKey);
+      const notifications = saved ? JSON.parse(saved) as Array<typeof nextNotification> : [];
+      const exists = notifications.some((item) => item.id === mediaId && item.type === type);
+      if (!exists) {
+        window.localStorage.setItem(storageKey, JSON.stringify([...notifications, nextNotification]));
+      }
+    } catch {
+      window.localStorage.setItem(storageKey, JSON.stringify([nextNotification]));
+    }
+
+    window.alert("공개 알림을 받을 작품에 추가했습니다.");
   };
 
   const handleMyList = async () => {
@@ -506,18 +565,19 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   useEffect(() => {
-    if (!shouldAutoPlay || hasAutoPlayed.current || !mediaItem || !videos) return;
+    if (isUpcoming || !shouldAutoPlay || hasAutoPlayed.current || !mediaItem || !videos) return;
 
     hasAutoPlayed.current = true;
     handlePlay();
-  }, [shouldAutoPlay, mediaItem, videos]);
+  }, [isUpcoming, shouldAutoPlay, mediaItem, videos]);
 
   // ─── Render sections ────────────────────────────────────────────────────────
 
   const renderEpisodesTab = () => {
     const PAGE_SIZE = 6;
-    const totalPages = Math.ceil(episodes.length / PAGE_SIZE);
-    const paged = episodes.slice((episodePage - 1) * PAGE_SIZE, episodePage * PAGE_SIZE);
+    const episodeItems = visibleEpisodes;
+    const totalPages = Math.ceil(episodeItems.length / PAGE_SIZE);
+    const paged = episodeItems.slice((episodePage - 1) * PAGE_SIZE, episodePage * PAGE_SIZE);
     const playListItem = playList.find((item) => item.id === mediaId && item.mediaType === type);
     const getVisibleEpisodePages = () => {
       const maxVisible = 5;
@@ -542,7 +602,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         {/* Header row */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
-            {seasons.map((season) => {
+            {visibleSeasons.map((season) => {
               const isSelected = selectSeason === season.season_number;
               return (
                 <button
@@ -584,6 +644,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               <div
                 key={ep.id}
                 onClick={async () => {
+                  if (isUpcoming) {
+                    handleNotifyUpcoming();
+                    return;
+                  }
                   setSelectEpisodeId(ep.id);
                   await onAddPlayList(mediaItem!);
                   await openVideo();
@@ -612,7 +676,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     opacity: (selectEpisodeId !== null && isActive) || hoveredEpisodeId === ep.id ? 1 : 0,
                     transition: "opacity 0.2s",
                   }}>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20 }}>▶</div>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20 }}>{isUpcoming ? "🔔" : "▶"}</div>
                   </div>
                   {(() => {
                     const epProgress = playListItem?.episodeProgress?.[ep.id] ?? 0;
@@ -627,20 +691,27 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
                   <p style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.4 }}>
-                    {ep.episode_number}. {ep.name}
+                    {isUpcoming ? "공개예정" : `${ep.episode_number}. ${ep.name}`}
                   </p>
                   {meta && <p style={{ fontSize: 14, color: "#666", margin: 0 }}>{meta}</p>}
-                  <p style={{
-                    fontSize: 14, color: "#999", margin: 0, lineHeight: 1.6,
-                    overflow: "hidden", display: "-webkit-box",
-                    WebkitBoxOrient: "vertical", WebkitLineClamp: 3,
-                  } as CSSProperties}>
-                    {ep.overview}
-                  </p>
+                  {!isUpcoming && ep.overview && (
+                    <p style={{
+                      fontSize: 14, color: "#999", margin: 0, lineHeight: 1.6,
+                      overflow: "hidden", display: "-webkit-box",
+                      WebkitBoxOrient: "vertical", WebkitLineClamp: 3,
+                    } as CSSProperties}>
+                      {ep.overview}
+                    </p>
+                  )}
                 </div>
               </div>
             );
           })}
+          {paged.length === 0 && (
+            <p style={{ gridColumn: "1 / -1", color: "#888", fontSize: 14, margin: 0, padding: "20px 0" }}>
+              공개 예정 회차 정보가 아직 없습니다.
+            </p>
+          )}
         </div>
 
         {/* Pagination */}
@@ -696,7 +767,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     );
   };
 
-  const renderSynopsis = ({ compact = false }: { compact?: boolean } = {}) => (
+  const renderSynopsis = ({ compact = false }: { compact?: boolean } = {}) => !isUpcoming && (
     <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: compact ? "0 0 24px" : "56px 40px 0" }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
         {isTv ? "시리즈 줄거리" : "영화 줄거리"}
@@ -1427,7 +1498,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             </div>
 
             {/* Score */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {!isUpcoming && <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ color: "#e50914", fontSize: 16, letterSpacing: -7 }}>★</span>
               <span style={{ fontWeight: 500, fontSize: 16, color: "#fff" }}>
                 {mediaItem?.vote_average?.toFixed(1) ?? "-"}
@@ -1435,17 +1506,28 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               {mediaItem?.vote_count && (
                 <span style={{ fontSize: 14, color: "#888" }}>{mediaItem.vote_count.toLocaleString()}명 평가</span>
               )}
-            </div>
+            </div>}
 
             {/* Action buttons */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
               <button
                 className="detail-primary-hover"
                 onClick={handlePlay}
-                disabled={isAddingPlayList}
-                style={{ background: "#e50914", color: "#fff", height: 46, padding: "0 22px", fontSize: 16, fontWeight: 700, border: "none", borderRadius: 4, cursor: isAddingPlayList ? "default" : "pointer", opacity: isAddingPlayList ? 0.7 : 1 }}
+                disabled={!isUpcoming && isAddingPlayList}
+                style={{
+                  background: isUpcoming ? "#fff" : "#e50914",
+                  color: isUpcoming ? "#111" : "#fff",
+                  height: 46,
+                  padding: "0 22px",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: !isUpcoming && isAddingPlayList ? "default" : "pointer",
+                  opacity: !isUpcoming && isAddingPlayList ? 0.7 : 1,
+                }}
               >
-                {isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
+                {isUpcoming ? "🔔 알림받기" : isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
               </button>
               {mediaItem && <WishlistButton item={mediaItem} mediaType={type} />}
               {mediaItem && <ShareButton mediaType={type} id={mediaItem.id} />}
