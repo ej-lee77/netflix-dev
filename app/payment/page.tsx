@@ -129,6 +129,7 @@ export default function PaymentPage() {
         )}
 
         <StepPayment
+          hideTitle
           plan={{
             name: planLabel,
             billing: activeBilling,

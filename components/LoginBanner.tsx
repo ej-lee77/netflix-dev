@@ -68,10 +68,10 @@ export default function LoginBanner() {
 
         {/* 우측 버튼 그룹 */}
         <div className="banner-actions">
-          <Link href="/plan" className="banner-btn banner-btn-ghost">
+          {/* <Link href="/plan" className="banner-btn banner-btn-ghost">
             플랜 소개
-          </Link>
-          <Link href="/signin" className="banner-btn banner-btn-primary">
+          </Link> */}
+          <Link href="/plan" className="banner-btn banner-btn-primary">
             구독 시작하기
           </Link>
         </div>
