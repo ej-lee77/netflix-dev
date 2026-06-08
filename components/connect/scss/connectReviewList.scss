@@ -10,7 +10,8 @@
 .connect-review-list__inner {
     width: calc(100vw - #{g.$main-menu-width});
     margin: 0;
-    padding-left: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
+    margin-left: g.$main-menu-width;
+    padding-left: 0;
 }
 
 .connect-review-list .section-header {
