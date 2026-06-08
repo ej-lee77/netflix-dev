@@ -6,11 +6,15 @@
   &__list {
     width: 100%;
     padding: 8px 0 10px;
-    overflow: visible;
+    overflow: visible !important;
     cursor: default;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    .connect-following-users__slide {
+      width: 100px;
     }
   }
 
@@ -44,10 +48,26 @@
       }
 
       .connect-following-users__avatar {
-        border-color: g.$main-color;
+        border-color: rgba(255, 255, 255, 0.55);
         transform: translateY(-4px);
       }
     }
+
+    &--me {
+      cursor: pointer;
+
+      strong {
+        color: #fff;
+      }
+    }
+  }
+
+  &__avatar-wrap {
+    position: relative;
+    display: block;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
   }
 
   &__avatar {
@@ -55,7 +75,6 @@
     display: grid;
     width: 100px;
     height: 100px;
-    margin: 0 auto;
     place-items: center;
     overflow: hidden;
     border: 2px solid rgba(255, 255, 255, 0.1);
@@ -74,6 +93,77 @@
       font-weight: 900;
       letter-spacing: 0;
     }
+
+    &--me {
+      border-color: rgba(255, 255, 255, 0.7);
+      box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.34),
+        0 0 0 3px rgba(255, 255, 255, 0.25);
+
+      .connect-following-users__item--me:hover & {
+        border-color: rgb(255, 255, 255);
+      }
+    }
+  }
+
+  &__avatar-add {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    background: #000;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.25rem;
+    font-weight: 400;
+    line-height: 1;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+
+    .connect-following-users__item--me:hover & {
+      // transform: scale(1.15);
+    }
+  }
+}
+
+.connect-following-users__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 0 10px;
+}
+
+.connect-following-users__empty-desc {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.9rem;
+}
+
+.connect-following-users__empty-btn {
+  padding: 10px 22px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
   }
 }
 
@@ -114,6 +204,11 @@
       width: 82px;
     }
 
+    &__list .connect-following-users__slide {
+      width: 82px;
+    }
+
+    &__avatar-wrap,
     &__avatar {
       width: 82px;
       height: 82px;

@@ -52,16 +52,25 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 async function fetchHeroItems(): Promise<HeroItem[]> {
-  const trendRes = await fetch(
-    `https://api.themoviedb.org/3/trending/all/day?language=ko-KR&api_key=${KEY}`
-  );
-  const trendData = await trendRes.json();
+  const NETFLIX_PROVIDER = 8;
+  const EXCLUDED_TITLES = ["케이프 피어", "Cape Fear"];
 
-  // 후보를 셔플해서 8개 선택 → 로고 있는 작품 위주로 4개 추림
-  const pool = (trendData.results as any[]).filter(
-    (r: any) => r.media_type !== "person" && r.backdrop_path
+  // 넷플릭스 제공 콘텐츠만 discover API로 직접 조회
+  const [movieRes, tvRes] = await Promise.all([
+    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${KEY}&language=ko-KR&with_watch_providers=${NETFLIX_PROVIDER}&watch_region=KR&sort_by=popularity.desc`),
+    fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${KEY}&language=ko-KR&with_watch_providers=${NETFLIX_PROVIDER}&watch_region=KR&sort_by=popularity.desc`),
+  ]);
+  const [movieData, tvData] = await Promise.all([movieRes.json(), tvRes.json()]);
+
+  const pool = [
+    ...(movieData.results as any[]).map((r: any) => ({ ...r, media_type: "movie" })),
+    ...(tvData.results as any[]).map((r: any) => ({ ...r, media_type: "tv" })),
+  ].filter(
+    (r: any) =>
+      r.backdrop_path &&
+      !EXCLUDED_TITLES.includes(r.title ?? r.name)
   );
-  const candidates = shuffle(pool).slice(0, 8);
+  const candidates = shuffle(pool).slice(0, 12);
 
   const detailed = await Promise.all(
     candidates.map(async (item: any) => {
@@ -156,11 +165,18 @@ export default function ConnectHero() {
   const [items, setItems] = useState<HeroItem[]>([]);
   const [showVideo, setShowVideo] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Set<number>>(new Set());
+  const [swiperKey, setSwiperKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetchHeroItems().then(setItems).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
+    return () => clearTimeout(id);
+  }, [items.length]);
 
   // 슬라이드 변경 시 영상 리셋 → 2초 후 재생
   useEffect(() => {
@@ -197,6 +213,7 @@ export default function ConnectHero() {
       ))}
 
       <Swiper
+        key={swiperKey}
         className="connect-hero__swiper"
         centeredSlides
         slidesPerView="auto"

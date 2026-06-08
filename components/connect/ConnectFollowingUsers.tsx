@@ -2,6 +2,7 @@
 
 import SectionTitle from "@/components/common/SectionTitle";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FreeMode } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
@@ -14,6 +15,7 @@ import "./scss/connectSection.scss";
 import "./scss/connectFollowingUsers.scss";
 
 export default function ConnectFollowingUsers() {
+  const router = useRouter();
   const { currentProfile } = useAuthStore();
   const { followingUsers, isLoadingFollowing, fetchFollowingUsers } = useFollowStore();
   const swiperRef = useRef<SwiperType | null>(null);
@@ -27,9 +29,9 @@ export default function ConnectFollowingUsers() {
   }, [currentProfile?.id, followingIds.length]);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setSwiperKey((k) => k + 1));
+    const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
     return () => {
-      cancelAnimationFrame(id);
+      clearTimeout(id);
       roRef.current?.disconnect();
     };
   }, []);
@@ -54,7 +56,6 @@ export default function ConnectFollowingUsers() {
     );
   }
 
-  if (followingUsers.length === 0) return null;
 
   return (
     <section
@@ -79,6 +80,26 @@ export default function ConnectFollowingUsers() {
             861: { spaceBetween: 30 },
           }}
         >
+          <SwiperSlide className="connect-following-users__slide">
+            <button className="connect-following-users__item connect-following-users__item--me" type="button" onClick={() => router.push("/mypage")}>
+              <span className="connect-following-users__avatar-wrap">
+                <span className="connect-following-users__avatar connect-following-users__avatar--me">
+                  {currentProfile.imgUrl ? (
+                    <img
+                      src={currentProfile.imgUrl}
+                      alt={currentProfile.nickname}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span>{currentProfile.nickname.slice(0, 2).toUpperCase()}</span>
+                  )}
+                </span>
+                <span className="connect-following-users__avatar-add" aria-hidden="true">+</span>
+              </span>
+              <strong>{currentProfile.nickname}</strong>
+            </button>
+          </SwiperSlide>
+
           {followingUsers.map((user) => {
             const initials = user.nickname.slice(0, 2).toUpperCase();
             return (

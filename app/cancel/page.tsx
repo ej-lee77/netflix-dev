@@ -7,6 +7,7 @@ import { auth, db } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import "@/app/signin/signin.scss";
 import "./cancel.scss";  // ← 추가
+import BackButton from "@/components/common/BackButton";
 
 type Step = 1 | 2;
 
@@ -60,6 +61,7 @@ export default function CancelPage() {
   return (
     <div className="signin-page">
 
+      <BackButton fallback="/settings" />
       {/* step 1 — 해지 확인 */}
       {step === 1 && (
         <div className="complete-page">
@@ -80,7 +82,7 @@ export default function CancelPage() {
               </div>
               <div className="receipt-row">
                 <span className="receipt-label">콘텐츠 이용</span>
-                <span className="receipt-value">{nextDate ? `${nextDate}까지 유지` : "만료일까지 유지"}</span>
+                <span className="receipt-value">{nextDate ? `${nextDate} 까지 유지` : "만료일까지 유지"}</span>
               </div>
               <div className="receipt-row">
                 <span className="receipt-label">자동 결제</span>

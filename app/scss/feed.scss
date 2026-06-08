@@ -683,6 +683,15 @@
     color: #8f8f8f;
     font-size: g.$text-13;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    .empty-img {
+      img {
+        filter: invert(50%);
+      }
+      margin: 0 auto;
+    }
   }
 
   .comment-write {

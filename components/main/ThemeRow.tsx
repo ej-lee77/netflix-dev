@@ -12,7 +12,9 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/categoryList.scss";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -40,15 +42,25 @@ interface ThemeRowProps {
   href?: string;
 }
 
-export default function ThemeRow({ title, items, href }: ThemeRowProps) {
+export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps) {
   const t = useT();
   const router = useRouter();
+  const excludedGenres = useExcludedGenres();
+  const items = filterByExcludedGenres(rawItems, excludedGenres);
   const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
 
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
+  const [rightEdgeIndex, setRightEdgeIndex] = useState(Infinity);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 현재 보이는 슬라이드의 좌/우 끝 인덱스 갱신 (오른쪽 끝 카드가 컨테이너 밖으로 안 나가게)
+  const updateEdges = (swiper: { activeIndex: number; params: { slidesPerView: number | string } }) => {
+    const spv = typeof swiper.params.slidesPerView === "number" ? swiper.params.slidesPerView : 1;
+    setLeftEdgeIndex(swiper.activeIndex);
+    setRightEdgeIndex(swiper.activeIndex + Math.floor(spv) - 1);
+  };
 
   const handleMouseEnter = async (item: ThemeItem) => {
     setHover(item.id);
@@ -86,8 +98,9 @@ export default function ThemeRow({ title, items, href }: ThemeRowProps) {
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
           }}
-          onSwiper={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
-          onSlideChange={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
+          onSwiper={(swiper) => updateEdges(swiper)}
+          onSlideChange={(swiper) => updateEdges(swiper)}
+          onBreakpoint={(swiper) => updateEdges(swiper)}
           className="media-swiper"
         >
           {items.map((item, index) => {
@@ -113,7 +126,7 @@ export default function ThemeRow({ title, items, href }: ThemeRowProps) {
                   </div>
 
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : ""}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : index >= rightEdgeIndex ? " right-edge" : ""}`}>
                       <div className="hover-video">
                         {trailerKey && videoReady === item.id ? (
                           <iframe
@@ -178,6 +191,7 @@ export default function ThemeRow({ title, items, href }: ThemeRowProps) {
                             {t("common.detail")}
                           </Link>
                           <WishlistButton item={item} mediaType={item.mediaType} stopPropagation className="card-wish" />
+                          <ShareButton mediaType={item.mediaType} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>

@@ -8,6 +8,7 @@ import "../../scss/category.scss";
 import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
 import { filterHidden } from "@/data/hiddenContent";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -101,6 +102,7 @@ export default function MoodPage() {
 
   const [type, setType] = useState<"movie" | "tv" | "animation">("movie");
   const [sort, setSort] = useState<string>("popularity.desc");
+  const excludedGenres = useExcludedGenres();
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [pinnedHero, setPinnedHero] = useState<MediaItem | null>(null);
@@ -141,12 +143,12 @@ export default function MoodPage() {
         genre_ids: item.genre_ids ?? [],
         media_type: endpoint,
       }));
-      setItems(filterHidden(list));
+      setItems(filterByExcludedGenres(filterHidden(list), excludedGenres));
       setLoading(false);
     };
 
     fetchMood();
-  }, [type, moodName, info, sort]);
+  }, [type, moodName, info, sort, excludedGenres]);
 
   // 무드별 히어로 고정 작품 로드 (영화 → 실패 시 시리즈 순으로 시도)
   useEffect(() => {

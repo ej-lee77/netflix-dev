@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import "./posterCard.scss";
 
 // 홈 카드와 동일한 장르 매핑
@@ -150,6 +151,7 @@ export default function PosterCard({
                 stopPropagation
                 className="card-wish"
               />
+              <ShareButton mediaType={mediaType} id={wishItem.id} stopPropagation className="card-wish" />
             </div>
           </div>
         </div>

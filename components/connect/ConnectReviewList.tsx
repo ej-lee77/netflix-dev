@@ -41,9 +41,9 @@ export default function ConnectReviewList() {
     }, []);
 
     useEffect(() => {
-        const id = requestAnimationFrame(() => setSwiperKey((k) => k + 1));
+        const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
         return () => {
-            cancelAnimationFrame(id);
+            clearTimeout(id);
             roRef.current?.disconnect();
         };
     }, []);
