@@ -8,6 +8,7 @@ import "../../scss/category.scss";
 import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
 import { filterHidden } from "@/data/hiddenContent";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
@@ -46,6 +47,7 @@ export default function GenrePage() {
 
   const [type, setType] = useState<"movie" | "tv" | "animation">("movie");
   const [sort, setSort] = useState<string>("popularity.desc");
+  const excludedGenres = useExcludedGenres();
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -83,12 +85,13 @@ export default function GenrePage() {
         genre_ids: item.genre_ids ?? [],
         media_type: endpoint,
       }));
-      setItems(filterHidden(list));
+      // 제외 장르 숨김 (단, 지금 보고 있는 이 장르 자체는 면제)
+      setItems(filterByExcludedGenres(filterHidden(list), excludedGenres, [genreName]));
       setLoading(false);
     };
 
     fetchGenre();
-  }, [type, genreName, info, sort]);
+  }, [type, genreName, info, sort, excludedGenres]);
 
   if (!info) return null;
 
