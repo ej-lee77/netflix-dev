@@ -155,7 +155,7 @@ const renderStars = (rating: number) => {
   const roundedRating = Math.round(rating); // 반올림하여 정수 별 개수 계산
   const fullStars = '★'.repeat(roundedRating);
   const emptyStars = '☆'.repeat(5 - roundedRating);
-  
+
   return fullStars + emptyStars;
 };
 
@@ -885,7 +885,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       </span>
                     )}
                   </div>
-                  
+
                   <button
                     type="button"
                     className={`detail-outline-hover${isReported ? " detail-report-active" : ""}`}
@@ -905,7 +905,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   >
                     신고
                   </button>
-                  
+
                   {/* 신고 타겟 ID가 이 리뷰인 경우 신고 UI 표시 */}
                   {reportTargetReviewId === review.reviewId && (
                     <div style={{
@@ -1017,7 +1017,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>
                   {new Date(review.createdAt).toLocaleDateString("ko-KR")}
                 </time>
-                
+
                 <button
                   type="button"
                   className="detail-secondary-hover"
@@ -1311,8 +1311,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center", opacity: 0.45 }}
           />
         )}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(20,20,20,0.7) 0%, rgba(20,20,20,0.4) 40%, transparent 75%)" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #141414 0%, rgba(20,20,20,0.2) 30%, transparent 60%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(20,20,20,0.35) 0%, rgba(20,20,20,0.12) 40%, transparent 75%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #141414 0%, rgba(20,20,20,0.12) 30%, transparent 60%)" }} />
 
         {/* Hero spacer */}
         <div style={{ height: 600 }} />
