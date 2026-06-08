@@ -15,11 +15,15 @@
   &__list {
     width: 100%;
     padding: 0 0 12px;
-    overflow: visible;
+    overflow: visible !important;
     cursor: default;
 
     &::-webkit-scrollbar {
       display: none;
+    }
+
+    .connect-following-playlists__slide {
+      width: 288px;
     }
 
     .swiper-button-prev,
@@ -78,9 +82,9 @@
     overflow: hidden;
     color: #fff;
     text-align: left;
-    background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 42%),
-      #111;
+    // background:
+    //   linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 42%),
+    //   #111;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
     cursor: default;
     transition:
@@ -91,9 +95,9 @@
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 86% 0%, rgba(255, 255, 255, 0.06), transparent 32%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 44%);
+      // background:
+      //   radial-gradient(circle at 86% 0%, rgba(255, 255, 255, 0.06), transparent 32%),
+      //   linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 44%);
       pointer-events: none;
     }
 
@@ -220,6 +224,10 @@
 
     &__slide,
     &__card {
+      width: 232px;
+    }
+
+    &__list .connect-following-playlists__slide {
       width: 232px;
     }
 

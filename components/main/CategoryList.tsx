@@ -12,8 +12,10 @@ import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -36,6 +38,15 @@ export default function CategoryList({ category }: MediaListProps) {
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
+  const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
+
+  const updateEdges = (swiper: any) => {
+    const left = swiper.activeIndex;
+    setLeftEdgeIndex(left);
+    const spv = swiper.params.slidesPerView;
+    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    setRightEdgeIndex(left + numVisible);
+  };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
 
@@ -48,7 +59,9 @@ export default function CategoryList({ category }: MediaListProps) {
     ...tvs.slice(0, profileOffset),
   ];
 
-  const currentList =
+  const excludedGenres = useExcludedGenres();
+
+  const rawCurrentList =
     category === "movie"
       ? movieSource.slice(0, 18).map((movie) => ({
         id: movie.id,
@@ -88,6 +101,9 @@ export default function CategoryList({ category }: MediaListProps) {
           fetchVideo: () => onFetchTvVideos(tv.id),
         }));
 
+  // 제외 장르 작품 숨김
+  const currentList = filterByExcludedGenres(rawCurrentList, excludedGenres);
+
   const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
     setHover(id);
     setVideoReady(null);
@@ -119,8 +135,9 @@ export default function CategoryList({ category }: MediaListProps) {
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
           }}
-          onSwiper={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
-          onSlideChange={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
+          onSwiper={updateEdges}
+          onSlideChange={updateEdges}
+          onBreakpoint={updateEdges}
           className="media-swiper"
         >
           {currentList.map((item, index) => {
@@ -146,7 +163,7 @@ export default function CategoryList({ category }: MediaListProps) {
 
                   {/* 호버 팝업 카드 */}
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}${index === rightEdgeIndex ? ' right-edge' : ''}`}>
                       <div className="hover-video">
                         {autoplayPreview && trailerKey && videoReady === item.id ? (
                           <iframe
@@ -221,6 +238,7 @@ export default function CategoryList({ category }: MediaListProps) {
                             {t("common.detail")}
                           </Link>
                           <WishlistButton item={item} mediaType={(category === "netflix" ? "tv" : category) as "movie" | "tv"} stopPropagation className="card-wish" />
+                          <ShareButton mediaType={(category === "netflix" ? "tv" : category) as "movie" | "tv"} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>
