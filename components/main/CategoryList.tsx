@@ -135,9 +135,9 @@ export default function CategoryList({ category }: MediaListProps) {
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
           }}
-          onSwiper={updateEdges}
-          onSlideChange={updateEdges}
-          onBreakpoint={updateEdges}
+          onSwiper={(swiper) => updateEdges(swiper)}
+          onSlideChange={(swiper) => updateEdges(swiper)}
+          onBreakpoint={(swiper) => updateEdges(swiper)}
           className="media-swiper"
         >
           {currentList.map((item, index) => {
@@ -163,7 +163,7 @@ export default function CategoryList({ category }: MediaListProps) {
 
                   {/* 호버 팝업 카드 */}
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : ''}${index === rightEdgeIndex ? ' right-edge' : ''}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? ' left-edge' : index >= rightEdgeIndex ? ' right-edge' : ''}`}>
                       <div className="hover-video">
                         {autoplayPreview && trailerKey && videoReady === item.id ? (
                           <iframe

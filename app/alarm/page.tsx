@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/alarm.scss";
+import BackButton from "@/components/common/BackButton";
 
 type NotifType = "episode" | "friend" | "upcoming" | "reaction";
 type FilterType = "all" | NotifType;
@@ -164,6 +165,7 @@ function AlarmContent() {
   return (
     <div className="alarm-page">
       <div className="inner">
+        <BackButton fallback="/mypage" />
         <div className="page-head">
           <h1>알림</h1>
           <p>새로운 활동과 업데이트를 확인하세요</p>

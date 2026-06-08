@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useSignUpStore } from "@/store/useSignUpStore";
 import StepPlan, { SelectedPlan } from "@/app/signin/components/StepPlan";
 import StepPlanComplete from "./components/StepPlanComplete";
+import BackButton from "@/components/common/BackButton";
 import "@/app/signin/signin.scss";
 
 export default function PlanPage() {
@@ -77,6 +78,7 @@ export default function PlanPage() {
 
   return (
     <div className="signin-page">
+      <BackButton fallback="/settings" />
       {currentStep === 1 && (
         <StepPlan
           currentPlanType={planType ?? ""}

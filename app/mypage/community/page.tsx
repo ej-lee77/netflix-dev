@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import BackButton from "@/components/common/BackButton";
 import "../../scss/communityPage.scss";
 import Review from "@/components/mypage/Review";
 import { useCommunityStore } from "@/store/useCommunityStore";
@@ -122,7 +123,7 @@ function CommunityContent() {
   return (
     <div className="media-list-page community-page">
       <div className="community-inner">
-        
+        <BackButton fallback="/mypage" />
         {/* 1. 타이틀 헤더 */}
         <div className="community-header">
           <h1>커뮤니티 관리</h1>
