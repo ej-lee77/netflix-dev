@@ -605,6 +605,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
                         title: data?.title || data?.name || "제목 없음",
                         poster_path: data?.poster_path ?? "",
                         overview: data?.overview ?? "",
+                        vote_average: data?.vote_average ?? 0,
                     };
                 })
                 );
@@ -613,5 +614,58 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
         } catch (err) {
             console.error("데이터 로드 실패:", err);
         }
-    }
+    },
+
+    togglePlaylistLike: async (ownerUserId, listId) => {
+        const myUserId = useAuthStore.getState().user?.userId ?? auth.currentUser?.uid;
+        if (!myUserId) return;
+
+        // 더미 플레이리스트는 Firestore 문서가 없으므로 로컬 상태만 토글
+        if (ownerUserId.startsWith("dummy")) {
+            set((state) => {
+                if (!state.currentPlaylist) return {} as any;
+                const likedBy: string[] = (state.currentPlaylist as any).likedBy ?? [];
+                const has = likedBy.includes(myUserId);
+                const next = has ? likedBy.filter((id) => id !== myUserId) : [...likedBy, myUserId];
+                return {
+                    currentPlaylist: { ...state.currentPlaylist, likedBy: next, likesCount: next.length },
+                };
+            });
+            return;
+        }
+
+        try {
+            const docRef = doc(db, "playlists", ownerUserId);
+            const snap = await getDoc(docRef);
+            if (!snap.exists()) return;
+
+            const all = snap.data().playlists ?? [];
+            let updatedLikedBy: string[] = [];
+            const nextPlaylists = all.map((p: any) => {
+                if (p.listId !== listId) return p;
+                const likedBy: string[] = p.likedBy ?? [];
+                const has = likedBy.includes(myUserId);
+                updatedLikedBy = has
+                    ? likedBy.filter((id: string) => id !== myUserId)
+                    : [...likedBy, myUserId];
+                return { ...p, likedBy: updatedLikedBy, likesCount: updatedLikedBy.length };
+            });
+
+            await updateDoc(docRef, { playlists: nextPlaylists });
+
+            set((state) =>
+                state.currentPlaylist
+                    ? {
+                          currentPlaylist: {
+                              ...state.currentPlaylist,
+                              likedBy: updatedLikedBy,
+                              likesCount: updatedLikedBy.length,
+                          },
+                      }
+                    : ({} as any),
+            );
+        } catch (e) {
+            console.error("좋아요 저장 실패:", e);
+        }
+    },
 }));
