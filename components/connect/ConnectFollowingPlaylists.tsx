@@ -61,7 +61,7 @@ export default function ConnectFollowingPlaylists() {
               className="connect-following-playlists__slide"
               key={playlist.userId}
             >
-              <Link className="connect-following-playlists__card" href={`/user/${playlist.userId}/playlist`}>
+              <Link className="connect-following-playlists__card" href={`/playlist/${playlist.userId}/${playlist.listId}`}>
                 <span className="connect-following-playlists__poster-grid">
                   {playlist.posters.map((poster, index) => (
                     <img src={poster} alt="" aria-hidden="true" key={index} />

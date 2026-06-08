@@ -9,6 +9,7 @@ import { useMovieStore } from "./useMovieStore";
 import { BADGE_LIST } from "@/data/badge";
 import { BadgeList } from "@/types/auth";
 import { filters } from "@/app/category/page";
+import { dummyPlaylists } from "@/data/dummyPlaylist";
 
 const MAX_LIST_COUNT = 20;
 
@@ -578,33 +579,93 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     },
     fetchPlaylist: async (userId, listId) => {
         try {
-            const docRef = doc(db, "playlists", userId);
-            const docSnap = await getDoc(docRef);
             const fetchMedia = useMovieStore.getState().fetchMediaDetail;
-            
-            if (docSnap.exists()) {
-            const data = docSnap.data();
-            const foundList = data.playlists?.find((p: any) => p.listId === listId);
-            
-                if (foundList && foundList.videoIds) {
-                    // 모든 상세 정보를 한 번에 병렬로 가져옴
-                    const detailedItems = await Promise.all(
-                    foundList.videoIds.map(async (item: string) => {
-                        const [mediaType, id] = item.split("-");
-                        const data = await fetchMedia(id, mediaType as "movie" | "tv");
-                        return {
-                            id: Number(id),
-                            mediaType: mediaType as "movie" | "tv",
-                            title: data?.title || data?.name || "제목 없음",
-                            poster_path: data?.poster_path ?? "",
-                        };
-                    })
-                    );
-                    set({ currentPlaylist: { ...foundList, items: detailedItems } });
+
+            // 더미(추천하는 플레이리스트)면 로컬 데이터에서 찾고, 아니면 Firestore에서 조회
+            let foundList: any = null;
+            if (userId.startsWith("dummy")) {
+                foundList = dummyPlaylists.find((p) => p.listId === listId) ?? null;
+            } else {
+                const docRef = doc(db, "playlists", userId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    foundList = docSnap.data().playlists?.find((p: any) => p.listId === listId) ?? null;
                 }
+            }
+
+            if (foundList && foundList.videoIds) {
+                // 모든 상세 정보를 한 번에 병렬로 가져옴
+                const detailedItems = await Promise.all(
+                foundList.videoIds.map(async (item: string) => {
+                    const [mediaType, id] = item.split("-");
+                    const data = await fetchMedia(id, mediaType as "movie" | "tv");
+                    return {
+                        id: Number(id),
+                        mediaType: mediaType as "movie" | "tv",
+                        title: data?.title || data?.name || "제목 없음",
+                        poster_path: data?.poster_path ?? "",
+                        overview: data?.overview ?? "",
+                        vote_average: data?.vote_average ?? 0,
+                    };
+                })
+                );
+                set({ currentPlaylist: { ...foundList, items: detailedItems } });
             }
         } catch (err) {
             console.error("데이터 로드 실패:", err);
         }
-    }
+    },
+
+    togglePlaylistLike: async (ownerUserId, listId) => {
+        const myUserId = useAuthStore.getState().user?.userId ?? auth.currentUser?.uid;
+        if (!myUserId) return;
+
+        // 더미 플레이리스트는 Firestore 문서가 없으므로 로컬 상태만 토글
+        if (ownerUserId.startsWith("dummy")) {
+            set((state) => {
+                if (!state.currentPlaylist) return {} as any;
+                const likedBy: string[] = (state.currentPlaylist as any).likedBy ?? [];
+                const has = likedBy.includes(myUserId);
+                const next = has ? likedBy.filter((id) => id !== myUserId) : [...likedBy, myUserId];
+                return {
+                    currentPlaylist: { ...state.currentPlaylist, likedBy: next, likesCount: next.length },
+                };
+            });
+            return;
+        }
+
+        try {
+            const docRef = doc(db, "playlists", ownerUserId);
+            const snap = await getDoc(docRef);
+            if (!snap.exists()) return;
+
+            const all = snap.data().playlists ?? [];
+            let updatedLikedBy: string[] = [];
+            const nextPlaylists = all.map((p: any) => {
+                if (p.listId !== listId) return p;
+                const likedBy: string[] = p.likedBy ?? [];
+                const has = likedBy.includes(myUserId);
+                updatedLikedBy = has
+                    ? likedBy.filter((id: string) => id !== myUserId)
+                    : [...likedBy, myUserId];
+                return { ...p, likedBy: updatedLikedBy, likesCount: updatedLikedBy.length };
+            });
+
+            await updateDoc(docRef, { playlists: nextPlaylists });
+
+            set((state) =>
+                state.currentPlaylist
+                    ? {
+                          currentPlaylist: {
+                              ...state.currentPlaylist,
+                              likedBy: updatedLikedBy,
+                              likesCount: updatedLikedBy.length,
+                          },
+                      }
+                    : ({} as any),
+            );
+        } catch (e) {
+            console.error("좋아요 저장 실패:", e);
+        }
+    },
 }));
