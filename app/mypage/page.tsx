@@ -543,7 +543,7 @@ export default function MyPage() {
                       <div key={review.reviewId} className="review-item">
                         <div className="review-thumb">
                           <img
-                            src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : '/placeholder.png'}
+                            src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : 'https://image.tmdb.org/t/p/w200/evoEi8SBSvllEveM3V6nCJ6vKj8.jpg'}
                             alt={movie?.title || movie?.name || '영화 포스터'}
                           />
                         </div>

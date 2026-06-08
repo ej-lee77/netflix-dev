@@ -119,6 +119,10 @@ const normalizeProfileSetting = (
     ...(settings?.playback ?? {}),
   },
   hiddenWatchingVideos: settings?.hiddenWatchingVideos ?? [],
+  favoriteGenres: settings?.favoriteGenres ?? [],
+  excludedGenres: settings?.excludedGenres ?? [],
+  favoriteMoods: settings?.favoriteMoods ?? [],
+  excludedMoods: settings?.excludedMoods ?? [],
 });
 
 const ratingFromViewAge = (viewAge?: string): MaturityRating => {

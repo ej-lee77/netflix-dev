@@ -129,9 +129,9 @@ export default function PlaylistPage() {
           >
             <span aria-hidden="true">👍</span> 좋아요
           </button>
-          <button type="button" className="pl-action">
+          {/* <button type="button" className="pl-action">
             <span aria-hidden="true">💬</span> 댓글
-          </button>
+          </button> */}
           <button type="button" className="pl-action" onClick={handleShare}>
             <span aria-hidden="true">↗</span> 공유
           </button>

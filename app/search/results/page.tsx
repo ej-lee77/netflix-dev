@@ -19,6 +19,7 @@ import "../search.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
+const SEARCH_PAGE_BATCH_SIZE = 3;
 
 type MediaType = "movie" | "tv";
 type MediaTypeFilter = "all" | MediaType | "animation";
@@ -65,6 +66,8 @@ type TmdbPersonCredit = TmdbMediaCandidate & {
 
 type TmdbListResponse<T> = {
   results?: T[];
+  total_pages?: number;
+  total_results?: number;
 };
 
 type TmdbPersonCreditsResponse = {
@@ -218,30 +221,53 @@ const fetchJson = async <T,>(url: string, signal: AbortSignal): Promise<T> => {
 const fetchKeywordResults = async (
   keyword: string,
   typeFilter: MediaTypeFilter,
+  startPage: number,
   signal: AbortSignal,
 ) => {
-  if (!TMDB_KEY || !keyword) return [];
+  if (!TMDB_KEY || !keyword) return { items: [], totalPages: 0 };
 
-  const baseParams = new URLSearchParams({
-    api_key: TMDB_KEY,
-    language: "ko-KR",
-    query: keyword,
-    include_adult: "false",
-    page: "1",
-  });
+  const pageNumbers = Array.from(
+    { length: SEARCH_PAGE_BATCH_SIZE },
+    (_, index) => startPage + index,
+  );
 
-  const [multiData, personData] = await Promise.all([
-    fetchJson<TmdbListResponse<TmdbMediaCandidate>>(
-      `${TMDB_BASE}/search/multi?${baseParams.toString()}`,
-      signal,
-    ),
-    fetchJson<TmdbListResponse<TmdbPersonResult>>(
-      `${TMDB_BASE}/search/person?${baseParams.toString()}`,
-      signal,
-    ),
-  ]);
+  const multiPages = await Promise.all(
+    pageNumbers.map((page) => {
+      const params = new URLSearchParams({
+        api_key: TMDB_KEY,
+        language: "ko-KR",
+        query: keyword,
+        include_adult: "false",
+        page: String(page),
+      });
 
-  const directItems = (multiData.results ?? [])
+      return fetchJson<TmdbListResponse<TmdbMediaCandidate>>(
+        `${TMDB_BASE}/search/multi?${params.toString()}`,
+        signal,
+      );
+    }),
+  );
+
+  const personData =
+    startPage === 1
+      ? await (() => {
+          const params = new URLSearchParams({
+            api_key: TMDB_KEY,
+            language: "ko-KR",
+            query: keyword,
+            include_adult: "false",
+            page: "1",
+          });
+
+          return fetchJson<TmdbListResponse<TmdbPersonResult>>(
+            `${TMDB_BASE}/search/person?${params.toString()}`,
+            signal,
+          );
+        })()
+      : ({ results: [] } as TmdbListResponse<TmdbPersonResult>);
+
+  const directItems = multiPages
+    .flatMap((page) => page.results ?? [])
     .map((item) => normalizeMediaItem(item))
     .filter((item): item is MediaItem => Boolean(item));
 
@@ -279,7 +305,7 @@ const fetchKeywordResults = async (
     .map((item) => normalizeMediaItem(item))
     .filter((item): item is MediaItem => Boolean(item));
 
-  return uniqueAndSortItems([
+  const items = uniqueAndSortItems([
     ...directItems,
     ...knownForItems,
     ...creditItems,
@@ -288,25 +314,38 @@ const fetchKeywordResults = async (
     if (typeFilter === "animation") return isAnimationItem(item);
     return item.media_type === typeFilter;
   });
+
+  return {
+    items,
+    totalPages: Math.min(
+      Math.max(...multiPages.map((page) => page.total_pages ?? 1), 1),
+      500,
+    ),
+  };
 };
 
 const fetchTaggedResults = async (
   selectedGenres: string[],
   selectedMoods: string[],
   typeFilter: MediaTypeFilter,
+  startPage: number,
   signal: AbortSignal,
 ) => {
   if (
     !TMDB_KEY ||
     (selectedGenres.length === 0 && selectedMoods.length === 0)
   ) {
-    return [];
+    return { items: [], totalPages: 0 };
   }
 
   const mediaTypes: MediaType[] =
     typeFilter === "all" || typeFilter === "animation"
       ? ["movie", "tv"]
       : [typeFilter];
+  const pageNumbers = Array.from(
+    { length: SEARCH_PAGE_BATCH_SIZE },
+    (_, index) => startPage + index,
+  );
 
   const requests = mediaTypes.flatMap((mediaType) => {
     const genreIds = collectGenreIds(mediaType, selectedGenres, selectedMoods);
@@ -315,28 +354,39 @@ const fetchTaggedResults = async (
     }
     if (genreIds.length === 0) return [];
 
-    const params = new URLSearchParams({
-      api_key: TMDB_KEY,
-      language: "ko-KR",
-      include_adult: "false",
-      page: "1",
-      sort_by: "popularity.desc",
-      with_genres: genreIds.join(","),
-      "vote_count.gte": "30",
-    });
+    return pageNumbers.map((page) => {
+      const params = new URLSearchParams({
+        api_key: TMDB_KEY,
+        language: "ko-KR",
+        include_adult: "false",
+        page: String(page),
+        sort_by: "popularity.desc",
+        with_genres: genreIds.join(","),
+        "vote_count.gte": "30",
+      });
 
-    return fetchJson<TmdbListResponse<TmdbMediaCandidate>>(
-      `${TMDB_BASE}/discover/${mediaType}?${params.toString()}`,
-      signal,
-    ).then((data) =>
-      (data.results ?? [])
-        .map((item) => normalizeMediaItem(item, mediaType))
-        .filter((item): item is MediaItem => Boolean(item)),
-    );
+      return fetchJson<TmdbListResponse<TmdbMediaCandidate>>(
+        `${TMDB_BASE}/discover/${mediaType}?${params.toString()}`,
+        signal,
+      ).then((data) => ({
+        items: (data.results ?? [])
+          .map((item) => normalizeMediaItem(item, mediaType))
+          .filter((item): item is MediaItem => Boolean(item)),
+        totalPages: data.total_pages ?? 1,
+      }));
+    });
   });
 
+  if (requests.length === 0) return { items: [], totalPages: 0 };
+
   const results = await Promise.all(requests);
-  return uniqueAndSortItems(results.flat());
+  return {
+    items: uniqueAndSortItems(results.flatMap((result) => result.items)),
+    totalPages: Math.min(
+      Math.max(...results.map((result) => result.totalPages), 1),
+      500,
+    ),
+  };
 };
 
 export default function SearchResultsPage() {
@@ -369,9 +419,12 @@ function SearchResultsContent() {
   const excludedGenres = useExcludedGenres();
   const [popularItems, setPopularItems] = useState<TrendingMediaItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sort, setSort] = useState<SearchSortType>("popularity");
   const [sortOpen, setSortOpen] = useState(false);
+  const [nextPage, setNextPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   const selectedOptions = getSelectedSearchOptions(selectedGenres, selectedMoods);
   const hasQuery =
@@ -388,6 +441,55 @@ function SearchResultsContent() {
     });
   }, [items, sort, excludedGenres]);
 
+  const fetchSearchBatch = async (
+    startPage: number,
+    signal: AbortSignal,
+    reset = false,
+  ) => {
+    if (reset) setLoading(true);
+    else setLoadingMore(true);
+    setErrorMessage("");
+
+    try {
+      const [keywordResult, taggedResult] = await Promise.all([
+        fetchKeywordResults(keyword, typeFilter, startPage, signal),
+        fetchTaggedResults(
+          selectedGenres,
+          selectedMoods,
+          typeFilter,
+          startPage,
+          signal,
+        ),
+      ]);
+      const hasKeyword = keyword.length > 0;
+      const hasTags = selectedGenres.length > 0 || selectedMoods.length > 0;
+      const nextItems =
+        hasKeyword && hasTags
+          ? intersectMediaItems(keywordResult.items, taggedResult.items)
+          : mergeKeywordFirst(keywordResult.items, taggedResult.items);
+      const queryTotalPages =
+        hasKeyword && hasTags
+          ? Math.min(keywordResult.totalPages, taggedResult.totalPages)
+          : Math.max(keywordResult.totalPages, taggedResult.totalPages);
+
+      setItems((currentItems) =>
+        reset ? nextItems : mergeKeywordFirst(currentItems, nextItems),
+      );
+      setTotalPages(queryTotalPages);
+      setNextPage(startPage + SEARCH_PAGE_BATCH_SIZE);
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      if (reset) setItems([]);
+      setErrorMessage(
+        "검색 결과를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      if (!signal.aborted) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
+  };
   // 관람등급 필터 (hover 전에도 적용되도록 등급 선반입)
   const visibleItems = useMaturityFiltered(sortedItems, (it) => it.media_type);
 
@@ -396,6 +498,8 @@ function SearchResultsContent() {
       const timeoutId = window.setTimeout(() => {
         setItems([]);
         setErrorMessage("");
+        setNextPage(1);
+        setTotalPages(0);
       }, 0);
 
       return () => window.clearTimeout(timeoutId);
@@ -408,23 +512,30 @@ function SearchResultsContent() {
     }, 0);
 
     Promise.all([
-      fetchKeywordResults(keyword, typeFilter, controller.signal),
+      fetchKeywordResults(keyword, typeFilter, 1, controller.signal),
       fetchTaggedResults(
         selectedGenres,
         selectedMoods,
         typeFilter,
+        1,
         controller.signal,
       ),
     ])
-      .then(([keywordItems, taggedItems]) => {
+      .then(([keywordResult, taggedResult]) => {
         const hasKeyword = keyword.length > 0;
         const hasTags = selectedGenres.length > 0 || selectedMoods.length > 0;
         const nextItems =
           hasKeyword && hasTags
-            ? intersectMediaItems(keywordItems, taggedItems)
-            : mergeKeywordFirst(keywordItems, taggedItems);
+            ? intersectMediaItems(keywordResult.items, taggedResult.items)
+            : mergeKeywordFirst(keywordResult.items, taggedResult.items);
+        const queryTotalPages =
+          hasKeyword && hasTags
+            ? Math.min(keywordResult.totalPages, taggedResult.totalPages)
+            : Math.max(keywordResult.totalPages, taggedResult.totalPages);
 
-        setItems(nextItems.slice(0, 72));
+        setItems(nextItems);
+        setTotalPages(queryTotalPages);
+        setNextPage(1 + SEARCH_PAGE_BATCH_SIZE);
       })
       .catch((error: Error) => {
         if (error.name === "AbortError") return;
@@ -477,6 +588,11 @@ function SearchResultsContent() {
     else params.delete(paramName);
 
     router.push(`/search/results?${params.toString()}`);
+  };
+
+  const handleLoadMore = () => {
+    const controller = new AbortController();
+    void fetchSearchBatch(nextPage, controller.signal);
   };
 
   return (
@@ -665,6 +781,18 @@ function SearchResultsContent() {
                 );
               })}
             </div>
+            {nextPage <= totalPages && (
+              <div className="load-more-wrap">
+                <button
+                  type="button"
+                  className="load-more-btn"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? "불러오는 중..." : "더보기"}
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <>

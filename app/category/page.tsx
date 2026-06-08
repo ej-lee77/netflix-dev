@@ -3,8 +3,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import PosterCard from "@/components/common/PosterCard";
 import CustomSelect from "@/components/common/CustomSelect";
+import { getTmdbLang } from "@/lib/i18n";
 import { isHidden } from "@/data/hiddenContent";
 import { excludedSlugsToIdSet, isGenreExcluded, useExcludedGenres } from "@/data/excludedGenres";
 import "../scss/category.scss";
@@ -17,6 +19,7 @@ type MainTab = "movie" | "tv" | "animation";
 type FilterTab = "genre" | "country" | "mood" | "curation";
 type VisibleFilterTab = "genreMood" | "country" | "curation";
 type SortType = "popularity.desc" | "vote_average.desc" | "release_date.desc";
+type CategorySource = "discover" | "trending-tv-day" | "korean-series-top10";
 
 type FilterOption = {
   id: string;
@@ -37,6 +40,19 @@ type MediaItem = {
   overview?: string;
   genre_ids?: number[];
   media_type: "movie" | "tv";
+};
+
+type TmdbListItem = {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  vote_average?: number;
+  release_date?: string;
+  first_air_date?: string;
+  backdrop_path?: string | null;
+  overview?: string;
+  genre_ids?: number[];
 };
 
 type SelectedFilterOption = FilterOption & {
@@ -219,13 +235,60 @@ const defaultSelection: Record<FilterTab, string[]> = {
   curation: [],
 };
 
+const parseParamList = (value: string | null) =>
+  value
+    ?.split(",")
+    .map((item) => item.trim())
+    .filter(Boolean) ?? [];
+
+const isMainTab = (value: string | null): value is MainTab =>
+  value === "movie" || value === "tv" || value === "animation";
+
 export default function CategoryPage() {
-  const [mainTab, setMainTab] = useState<MainTab>("movie");
-  const [filterTab, setFilterTab] = useState<VisibleFilterTab>("genreMood");
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get("type");
+  const initialGenres = searchParams.get("genres");
+  const initialCountries = searchParams.get("countries");
+  const sourceParam = searchParams.get("source");
+  const limitParam = searchParams.get("limit");
+  const source: CategorySource =
+    sourceParam === "trending-tv-day" || sourceParam === "korean-series-top10"
+      ? sourceParam
+      : "discover";
+  const resultLimit = Number(limitParam) > 0 ? Number(limitParam) : undefined;
+  const initialMainTab = isMainTab(initialType) ? initialType : "movie";
+  const initialSelected = useMemo(() => {
+    const genreIds = new Set(filters.genre.map((option) => option.id));
+    const countryIds = new Set(filters.country.map((option) => option.id));
+
+    return {
+      ...defaultSelection,
+      genre: parseParamList(initialGenres).filter((id) => genreIds.has(id)),
+      country: parseParamList(initialCountries).filter((id) =>
+        countryIds.has(id),
+      ),
+    };
+  }, [initialCountries, initialGenres]);
+  const initialSelectedOrder = useMemo<SelectedFilterKey[]>(
+    () => [
+      ...initialSelected.genre.map((id) => ({ group: "genre" as const, id })),
+      ...initialSelected.country.map((id) => ({
+        group: "country" as const,
+        id,
+      })),
+    ],
+    [initialSelected],
+  );
+
+  const [mainTab, setMainTab] = useState<MainTab>(initialMainTab);
+  const [filterTab, setFilterTab] = useState<VisibleFilterTab>(
+    initialSelected.country.length > 0 ? "country" : "genreMood",
+  );
   const excludedGenres = useExcludedGenres();
   const excludedIds = useMemo(() => excludedSlugsToIdSet(excludedGenres), [excludedGenres]);
-  const [selected, setSelected] = useState(defaultSelection);
-  const [selectedOrder, setSelectedOrder] = useState<SelectedFilterKey[]>([]);
+  const [selected, setSelected] = useState(initialSelected);
+  const [selectedOrder, setSelectedOrder] =
+    useState<SelectedFilterKey[]>(initialSelectedOrder);
   const [sort, setSort] = useState<SortType>("popularity.desc");
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -361,15 +424,15 @@ export default function CategoryPage() {
     }
   };
 
-  const normalizeResults = (results: any[]): MediaItem[] =>
-    (results || []).map((item: any) => ({
+  const normalizeResults = (results: TmdbListItem[]): MediaItem[] =>
+    (results || []).map((item) => ({
       id: item.id,
-      title: item.title || item.name,
-      poster_path: item.poster_path,
-      vote_average: item.vote_average,
+      title: item.title || item.name || "",
+      poster_path: item.poster_path ?? null,
+      vote_average: item.vote_average ?? 0,
       release_date: item.release_date,
       first_air_date: item.first_air_date,
-      backdrop_path: item.backdrop_path,
+      backdrop_path: item.backdrop_path ?? null,
       overview: item.overview,
       genre_ids: item.genre_ids ?? [],
       media_type: mediaType,
@@ -432,6 +495,87 @@ export default function CategoryPage() {
     };
   };
 
+  const fetchTrendingBatch = async (startPage: number, signal: AbortSignal) => {
+    const params = new URLSearchParams({
+      api_key: TMDB_KEY ?? "",
+      language: "ko-KR",
+      page: String(startPage),
+    });
+    const res = await fetch(
+      `https://api.themoviedb.org/3/trending/tv/day?${params.toString()}`,
+      { signal },
+    );
+    const firstPageData = await res.json();
+    const queryTotalPages = Number(firstPageData.total_pages) || 1;
+    const endPage = Math.min(
+      queryTotalPages,
+      startPage + DISCOVER_FETCH_BATCH_SIZE - 1,
+    );
+    const items = normalizeResults(firstPageData.results);
+    const queryTotalResults =
+      Number(firstPageData.total_results) || items.length;
+
+    if (startPage < endPage) {
+      const pageNumbers = Array.from(
+        { length: endPage - startPage },
+        (_, index) => startPage + index + 1,
+      );
+      const batchResults = await Promise.all(
+        pageNumbers.map((pageNumber) => {
+          const pageParams = new URLSearchParams({
+            api_key: TMDB_KEY ?? "",
+            language: "ko-KR",
+            page: String(pageNumber),
+          });
+
+          return fetch(
+            `https://api.themoviedb.org/3/trending/tv/day?${pageParams.toString()}`,
+            { signal },
+          ).then((response) => response.json());
+        }),
+      );
+      items.push(
+        ...batchResults.flatMap((data) => normalizeResults(data.results)),
+      );
+    }
+
+    return {
+      items: items.slice(0, LOAD_ITEMS_PER_BATCH),
+      totalPages: queryTotalPages,
+      totalResults: queryTotalResults,
+      nextPage: endPage + 1,
+    };
+  };
+
+  const fetchKoreanSeriesTop10Batch = async (signal: AbortSignal) => {
+    const params = new URLSearchParams({
+      api_key: TMDB_KEY ?? "",
+      language: getTmdbLang(),
+      with_original_language: "ko",
+      without_genres: "10764,10767",
+      "first_air_date.gte": "2025-01-01",
+      sort_by: "popularity.desc",
+      page: "1",
+    });
+    const res = await fetch(
+      `https://api.themoviedb.org/3/discover/tv?${params.toString()}`,
+      { signal },
+    );
+    const data = await res.json();
+    const items = normalizeResults(
+      ((data.results || []) as TmdbListItem[]).filter(
+        (item) => item.poster_path && item.backdrop_path,
+      ),
+    ).slice(0, 10);
+
+    return {
+      items,
+      totalPages: 1,
+      totalResults: items.length,
+      nextPage: 2,
+    };
+  };
+
   // 큐레이션 다중선택을 AND로: 같은 키는 가장 엄격한 임계값으로 병합(.gte=최댓값, .lte=최솟값)
   const buildMergedCuration = (
     options: SelectedFilterOption[],
@@ -473,11 +617,12 @@ export default function CategoryPage() {
         curationOptions.length > 0
           ? buildMergedCuration(curationOptions)
           : undefined;
-      const response = await fetchDiscoverBatch(
-        startPage,
-        signal,
-        mergedCuration,
-      );
+      const response =
+        source === "trending-tv-day"
+          ? await fetchTrendingBatch(startPage, signal)
+          : source === "korean-series-top10"
+            ? await fetchKoreanSeriesTop10Batch(signal)
+            : await fetchDiscoverBatch(startPage, signal, mergedCuration);
 
       const merged = new Map<number, MediaItem>();
       if (!reset) items.forEach((item) => merged.set(item.id, item));
@@ -508,12 +653,13 @@ export default function CategoryPage() {
 
     fetchCategoryBatch(1, controller.signal, true);
     return () => controller.abort();
-  }, [mainTab, mediaType, selectedOptions, sort, excludedGenres]);
+  }, [mainTab, mediaType, selectedOptions, sort, excludedGenres, source]);
 
   const handleLoadMore = () => {
     const controller = new AbortController();
     fetchCategoryBatch(nextPage, controller.signal);
   };
+  const visibleItems = resultLimit ? items.slice(0, resultLimit) : items;
 
   return (
     <div className="category-catalog-page">
@@ -646,10 +792,10 @@ export default function CategoryPage() {
 
             {loading ? (
               <div className="state-text">작품을 불러오는 중...</div>
-            ) : items.length > 0 ? (
+            ) : visibleItems.length > 0 ? (
               <>
                 <div className="poster-grid">
-                  {items.map((item) => (
+                  {visibleItems.map((item) => (
                     <PosterCard
                       key={item.id}
                       id={item.id}
@@ -664,7 +810,7 @@ export default function CategoryPage() {
                     />
                   ))}
                 </div>
-                {nextPage <= totalPages && (
+                {!resultLimit && nextPage <= totalPages && (
                   <div className="load-more-wrap">
                     <button
                       type="button"
