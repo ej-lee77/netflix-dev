@@ -4,7 +4,13 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const ALLOWED_LANGUAGES = new Set(["ko", "en"]);
 const EXCLUDED_GENRE_IDS = new Set([99, 10763, 10764, 10767]);
-const UPCOMING_FETCH_PAGES = [1, 2, 3, 4, 5];
+const UPCOMING_FETCH_PAGES = [1, 2, 3];
+const MAX_UPCOMING_DAYS = 100;
+const UPCOMING_CACHE_TTL_MS = 1000 * 60 * 10;
+
+let cachedUpcomingItems: UpcomingItem[] | null = null;
+let cachedUpcomingAt = 0;
+let pendingUpcomingRequest: Promise<UpcomingItem[]> | null = null;
 
 export type UpcomingItem = {
   id: number;
@@ -20,6 +26,12 @@ export type UpcomingItem = {
 };
 
 export const getToday = () => new Date().toISOString().slice(0, 10);
+
+const getDaysUntilRelease = (dateStr: string) => {
+  const today = new Date(getToday());
+  const release = new Date(dateStr);
+  return Math.ceil((release.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
 
 const hasUsOrKrOrigin = (item: any) => {
   const countries = Array.isArray(item.origin_country) ? item.origin_country : [];
@@ -76,6 +88,31 @@ const normalizeTv = (item: any): UpcomingItem | null => {
 export async function fetchUpcomingItems(): Promise<UpcomingItem[]> {
   if (!TMDB_KEY) return [];
 
+  const now = Date.now();
+  if (cachedUpcomingItems && now - cachedUpcomingAt < UPCOMING_CACHE_TTL_MS) {
+    return cachedUpcomingItems;
+  }
+
+  if (pendingUpcomingRequest) {
+    return pendingUpcomingRequest;
+  }
+
+  pendingUpcomingRequest = fetchUpcomingItemsFromTmdb()
+    .then((items) => {
+      cachedUpcomingItems = items;
+      cachedUpcomingAt = Date.now();
+      return items;
+    })
+    .finally(() => {
+      pendingUpcomingRequest = null;
+    });
+
+  return pendingUpcomingRequest;
+}
+
+async function fetchUpcomingItemsFromTmdb(): Promise<UpcomingItem[]> {
+  if (!TMDB_KEY) return [];
+
   const today = getToday();
   const language = getTmdbLang();
   const movieBaseParams = `api_key=${TMDB_KEY}&language=${language}&primary_release_date.gte=${today}&sort_by=popularity.desc&include_adult=false`;
@@ -83,24 +120,31 @@ export async function fetchUpcomingItems(): Promise<UpcomingItem[]> {
   const requests = UPCOMING_FETCH_PAGES.flatMap((page) => [
     { type: "movie" as const, url: `${TMDB_BASE}/movie/upcoming?api_key=${TMDB_KEY}&language=${language}&region=KR&page=${page}` },
     { type: "movie" as const, url: `${TMDB_BASE}/movie/upcoming?api_key=${TMDB_KEY}&language=${language}&region=US&page=${page}` },
-    { type: "movie" as const, url: `${TMDB_BASE}/discover/movie?${movieBaseParams}&with_origin_country=KR&page=${page}` },
-    { type: "movie" as const, url: `${TMDB_BASE}/discover/movie?${movieBaseParams}&with_origin_country=US&page=${page}` },
     { type: "movie" as const, url: `${TMDB_BASE}/discover/movie?${movieBaseParams}&with_original_language=ko&page=${page}` },
     { type: "movie" as const, url: `${TMDB_BASE}/discover/movie?${movieBaseParams}&with_original_language=en&page=${page}` },
     { type: "tv" as const, url: `${TMDB_BASE}/discover/tv?${tvBaseParams}&with_origin_country=KR&page=${page}` },
     { type: "tv" as const, url: `${TMDB_BASE}/discover/tv?${tvBaseParams}&with_origin_country=US&page=${page}` },
-    { type: "tv" as const, url: `${TMDB_BASE}/discover/tv?${tvBaseParams}&with_original_language=ko&page=${page}` },
-    { type: "tv" as const, url: `${TMDB_BASE}/discover/tv?${tvBaseParams}&with_original_language=en&page=${page}` },
   ]);
 
-  const responses = await Promise.all(requests.map((request) => fetch(request.url)));
-  const payloads = await Promise.all(responses.map((response) => response.json()));
+  const payloads = await Promise.allSettled(
+    requests.map(async (request) => {
+      const response = await fetch(request.url);
+      if (!response.ok) return { results: [] };
+      return response.json();
+    }),
+  );
+
   const rawItems = payloads
-    .flatMap((payload, index) => {
+    .flatMap((result, index) => {
+      const payload = result.status === "fulfilled" ? result.value : { results: [] };
       const normalize = requests[index].type === "movie" ? normalizeMovie : normalizeTv;
       return (payload.results ?? []).map(normalize);
     })
-    .filter((item): item is UpcomingItem => !!item && item.release_date >= today);
+    .filter((item): item is UpcomingItem => {
+      if (!item || item.release_date < today) return false;
+      const daysUntilRelease = getDaysUntilRelease(item.release_date);
+      return daysUntilRelease <= MAX_UPCOMING_DAYS;
+    });
 
   const seen = new Set<string>();
   return rawItems
