@@ -37,6 +37,10 @@ const makePlayListItem = (item: Movie | TV): PlayListItem => ({
     playTime: new Date().toISOString(),
     progress:  0, 
     episodeProgress: {},
+    first_air_date: "",
+    release_date: "",
+    vote_average: 0,
+    overview: "",
 });
 
 export const getItemKey = (item: Pick<PlayListItem, "id" | "mediaType">) => (
@@ -604,8 +608,12 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
                         mediaType: mediaType as "movie" | "tv",
                         title: data?.title || data?.name || "제목 없음",
                         poster_path: data?.poster_path ?? "",
+                        backdrop_path: data?.backdrop_path ?? "",
+                        genre_ids: data?.genre_ids ?? [],
                         overview: data?.overview ?? "",
                         vote_average: data?.vote_average ?? 0,
+                        release_date: data?.release_date,
+                        first_air_date: data?.first_air_date
                     };
                 })
                 );
