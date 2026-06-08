@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import BackButton from "@/components/common/BackButton";
 import "../scss/wishlist.scss";
 import { Movie, TV } from "@/types/movie";
 import { WishItem } from "@/types/wishlist";
@@ -125,6 +126,7 @@ export default function WishlistPage() {
   return (
     <div className="wishlist-page">
       <div className="wishlist-inner">
+        <BackButton fallback="/mypage" />
         {/* ── 헤더 ──────────────────────────────────────────────────────── */}
         <div className="wishlist-header">
           <h1 className="wishlist-title">위시리스트</h1>

@@ -5,6 +5,7 @@ import { db } from "@/firebase/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
+import BackButton from "@/components/common/BackButton";
 
 type TabType = "all" | "following" | "followers";
 
@@ -70,6 +71,7 @@ export default function FriendsPage() {
   return (
     <div className="friends-page follow-variant">
       <div className="inner">
+        <BackButton fallback="/mypage" />
         <div className="page-head">
           <h1>팔로우</h1>
           <p>

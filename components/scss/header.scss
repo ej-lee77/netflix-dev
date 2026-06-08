@@ -75,6 +75,51 @@ header {
         }
     }
 
+    .header-search-toggle {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border: 0;
+        padding: 0;
+        color: #fff;
+        background: transparent;
+        cursor: pointer;
+        line-height: 1;
+
+        img {
+            opacity: 0.86;
+            transition: opacity 0.16s ease;
+        }
+
+        &:hover img,
+        &:focus-visible img {
+            opacity: 1;
+        }
+
+        &:focus-visible {
+            outline: 1px solid rgba(255, 255, 255, 0.55);
+            outline-offset: 3px;
+        }
+    }
+
+    .header-search-toggle__close {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 22px;
+        font-weight: 300;
+        line-height: 1;
+        transition: color 0.16s ease;
+    }
+
+    .header-search-toggle:hover .header-search-toggle__close,
+    .header-search-toggle:focus-visible .header-search-toggle__close {
+        color: #fff;
+    }
+
     .login-link {
         color: #fff;
         font-size: 0.9rem;

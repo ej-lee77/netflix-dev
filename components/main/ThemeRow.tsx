@@ -52,15 +52,14 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
-  const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
+  const [rightEdgeIndex, setRightEdgeIndex] = useState(Infinity);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const updateEdges = (swiper: any) => {
-    const left = swiper.activeIndex;
-    setLeftEdgeIndex(left);
-    const spv = swiper.params.slidesPerView;
-    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
-    setRightEdgeIndex(left + numVisible);
+  // 현재 보이는 슬라이드의 좌/우 끝 인덱스 갱신 (오른쪽 끝 카드가 컨테이너 밖으로 안 나가게)
+  const updateEdges = (swiper: { activeIndex: number; params: { slidesPerView: number | string } }) => {
+    const spv = typeof swiper.params.slidesPerView === "number" ? swiper.params.slidesPerView : 1;
+    setLeftEdgeIndex(swiper.activeIndex);
+    setRightEdgeIndex(swiper.activeIndex + Math.floor(spv) - 1);
   };
 
   const handleMouseEnter = async (item: ThemeItem) => {
@@ -99,9 +98,9 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
           }}
-          onSwiper={updateEdges}
-          onSlideChange={updateEdges}
-          onBreakpoint={updateEdges}
+          onSwiper={(swiper) => updateEdges(swiper)}
+          onSlideChange={(swiper) => updateEdges(swiper)}
+          onBreakpoint={(swiper) => updateEdges(swiper)}
           className="media-swiper"
         >
           {items.map((item, index) => {
@@ -127,7 +126,7 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                   </div>
 
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : ""}${index === rightEdgeIndex ? " right-edge" : ""}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : index >= rightEdgeIndex ? " right-edge" : ""}`}>
                       <div className="hover-video">
                         {trailerKey && videoReady === item.id ? (
                           <iframe
