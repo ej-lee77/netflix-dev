@@ -132,9 +132,11 @@ export default function Header() {
               <li className={pathname === "/" ? "active" : ""}>
                 <Link href="/">{t("header.cinema")}</Link>
               </li>
-              <li className={pathname?.startsWith("/connect") ? "active" : ""}>
-                <Link href="/connect">{t("header.connect")}</Link>
-              </li>
+              {(!user || currentProfile?.isCommunity) && (
+                <li className={pathname?.startsWith("/connect") ? "active" : ""}>
+                  <Link href="/connect">{t("header.connect")}</Link>
+                </li>
+              )}
             </ul>
           </div>
 

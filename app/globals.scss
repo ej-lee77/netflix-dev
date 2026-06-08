@@ -39,6 +39,28 @@ $main-menu-color: #8a8a88;
 // GAP
 $section-gap: 40px;
 
+* {
+  &::-webkit-scrollbar {
+    width: 8px;              // 세로 스크롤 너비
+    height: 8px;             // 가로 스크롤 높이
+    background-color: $d-color; // 전체 배경을 검은색으로
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #333;  // 스크롤 막대 색상
+    border-radius: $radius-md; // 8px (둥근 모서리)
+    border: 2px solid $d-color; // 막대 주변에 여백을 준 듯한 효과
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #555;  // 마우스 올렸을 때 조금 밝게
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: $d-color; // 트랙 배경색
+  }
+}
+
 .profile-pin-gate-backdrop {
   position: fixed;
   inset: 0;
