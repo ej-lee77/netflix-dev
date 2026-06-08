@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useCommunityEnabled } from "@/data/maturityFilter";
 import ConnectHero from "@/components/connect/ConnectHero";
 import ConnectFollowingUsers from "@/components/connect/ConnectFollowingUsers";
 import ConnectFollowingPlaylists from "@/components/connect/ConnectFollowingPlaylists";
@@ -52,6 +54,14 @@ export default function ConnectPage() {
     newMovies, onFetchNewest,
   } = useMovieStore();
 
+  const router = useRouter();
+  // isCommunity 비활성(12세 이하 포함) 프로필은 커넥트 접근 차단
+  const communityEnabled = useCommunityEnabled();
+
+  useEffect(() => {
+    if (!communityEnabled) router.replace("/");
+  }, [communityEnabled, router]);
+
   useEffect(() => {
     if (!trendingMovies.length) onFetchTrending();
     if (!popMovies.length) onFetchPopular();
@@ -61,6 +71,8 @@ export default function ConnectPage() {
   const rankingItems = useMemo(() => toRankingItems(popMovies), [popMovies]);
   const trendingItems = useMemo(() => toThemeItems(trendingMovies, "movie"), [trendingMovies]);
   const newItems = useMemo(() => toThemeItems(newMovies, "movie"), [newMovies]);
+
+  if (!communityEnabled) return null;
 
   return (
     <div className="main-page-wrap">

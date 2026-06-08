@@ -5,6 +5,8 @@
 
 import { useAuthStore } from "@/store/useAuthStore";
 import type { MaturityRating } from "@/types/auth";
+import { useEffect, useMemo } from "react";
+import { useMovieStore } from "@/store/useMovieStore";
 
 // TMDB KR 등급 문자열 → 숫자 레벨
 export function certToLevel(cert?: string): number {
@@ -54,4 +56,36 @@ export function filterByMaturity<T>(
     if (level < 0) return true; // 등급 미상은 표시 유지
     return level <= ceiling;
   });
+}
+
+// 리스트에 대해 등급(certification) 을 미리 로드하고 필터링까지 해주는 훅.
+// hover 전에도 등급 필터가 동작하도록 현재 목록의 등급을 선반입한다.
+export function useMaturityFiltered<T extends { id: number }>(
+  items: T[],
+  getMediaType: (item: T) => "movie" | "tv",
+): T[] {
+  const ceiling = useMaturityCeiling();
+  const certifications = useMovieStore((s) => s.certifications);
+  const onFetchCertification = useMovieStore((s) => s.onFetchCertification);
+
+  useEffect(() => {
+    if (ceiling >= 19) return;
+    items.forEach((it) => onFetchCertification(it.id, getMediaType(it)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, ceiling]);
+
+  return useMemo(
+    () => filterByMaturity(items, ceiling, certifications, (it) => `${getMediaType(it)}-${it.id}`),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, ceiling, certifications],
+  );
+}
+
+// 커뮤니티/커넥트 모드 노출 여부.
+// - 프로필 isCommunity 플래그(기본 true)를 기본 게이트로 사용
+// - 관람등급 12세 이하(전체관람가·12+) 프로필은 자동으로 비활성화
+export function useCommunityEnabled(): boolean {
+  const isCommunity = useAuthStore((s) => s.currentProfile?.isCommunity);
+  const ceiling = useMaturityCeiling();
+  return (isCommunity ?? true) && ceiling > 12;
 }

@@ -8,6 +8,7 @@ import HeaderMenu from "./HeaderMenu";
 import ProfilePinGate, { getProfilePin } from "./ProfilePinGate";
 import ProfileSwitchOverlay from "./ProfileSwitchOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCommunityEnabled } from "@/data/maturityFilter";
 import type { UserProfile } from "@/types/auth";
 import "./scss/header.scss";
 import HeaderSearchOverlay from "./HeaderSearchOverlay";
@@ -19,6 +20,8 @@ export default function Header() {
   const t = useT();
   const pathname = usePathname();
   const router = useRouter();
+  // 커넥트 모드: isCommunity 플래그 기반 (12세 이하 프로필은 자동 비활성)
+  const canUseConnect = useCommunityEnabled();
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [pendingProfile, setPendingProfile] = useState<UserProfile | null>(
@@ -132,7 +135,7 @@ export default function Header() {
               <li className={pathname === "/" ? "active" : ""}>
                 <Link href="/">{t("header.cinema")}</Link>
               </li>
-              {(!user || currentProfile?.isCommunity) && (
+              {canUseConnect && (
                 <li className={pathname?.startsWith("/connect") ? "active" : ""}>
                   <Link href="/connect">{t("header.connect")}</Link>
                 </li>
