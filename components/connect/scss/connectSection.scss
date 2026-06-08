@@ -20,8 +20,8 @@
 .connect-section__inner {
   position: relative;
   width: min(1920px, calc(100vw - #{g.$main-menu-width}));
-  margin-left: 0;
+  margin-left: g.$main-menu-width;
   margin-right: 0;
-  padding-left: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
+  padding-left: 0;
   padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
 }

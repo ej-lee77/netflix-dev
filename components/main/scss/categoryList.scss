@@ -7,7 +7,7 @@
 
   .swiper-outer {
     position: relative;
-    padding-left: clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px);
+    padding-left: g.$main-menu-width;
     overflow-x: clip;
 
     // 오른쪽 그라데이션 오버레이

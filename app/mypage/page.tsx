@@ -8,6 +8,7 @@ import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/mypage.scss";
 import { BADGE_LIST } from "@/data/badge";
+import { useCommunityEnabled } from "@/data/maturityFilter";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
@@ -55,16 +56,31 @@ export default function MyPage() {
   }, [playHist]);
 
   // 2. 영화 상세 정보 보완
-  useEffect(() => {
-    reviews.forEach(review => {
-      if (!mediaDetails[`movie-${review.videoId}`]) {
-        onFetchMediaDetail(review.videoId, 'movie');
-      }
-    });
-  }, [reviews, mediaDetails, onFetchMediaDetail]);
+  const [enrichedReviews, setEnrichedReviews] = useState<any[]>([]);
 
-  // 스토어의 값을 기준으로 UI 판단 (true면 표시, false면 숨김)
-  const isCommunityEnabled = currentProfile?.isCommunity ?? true;
+  useEffect(() => {
+    const updateEnriched = async () => {
+      const data = await Promise.all(
+        reviews.map(async (review) => {
+          const [type, id] = review.videoId.split('-');
+          // onFetchMediaDetail 호출하여 데이터 획득
+          const detail = await fetchMediaDetail(id, type as 'movie' | 'tv');
+          return {
+            ...review,
+            mediaInfo: detail
+          };
+        })
+      );
+      setEnrichedReviews(data);
+    };
+
+    if (reviews.length > 0) {
+      updateEnriched();
+    }
+  }, [reviews]);
+
+  // 스토어의 isCommunity + 관람등급(12세 이하 자동 숨김) 기준으로 UI 판단
+  const isCommunityEnabled = useCommunityEnabled();
   const hideCommunity = !isCommunityEnabled;
 
   const activeProfile = useMemo(() => {
@@ -499,7 +515,7 @@ export default function MyPage() {
                         )}
                         의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
                       </p>
-                    )}
+                    )}                  
                   </div>
                 </div>
               </>
@@ -550,8 +566,8 @@ export default function MyPage() {
 
               {reviews.length > 0 ? (
                 <div className="review-list">
-                  {reviews.map((review) => {
-                    const movie = mediaDetails[`movie-${review.videoId}`];
+                  {enrichedReviews.map((review) => {
+                    const movie = review.mediaInfo;
                     return (
                       <div key={review.reviewId} className="review-item">
                         <div className="review-thumb">
@@ -571,7 +587,7 @@ export default function MyPage() {
                           </p>
                           <div className="meta">
                             <span>{new Date(review.createdAt).toLocaleDateString()}</span>
-                            <span>신고 {review.reportsCount}회</span>
+                            {/* <span>신고 {review.reportsCount}회</span> */}
                           </div>
                         </div>
                       </div>

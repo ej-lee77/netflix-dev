@@ -28,6 +28,7 @@ interface StepPaymentProps {
   currentPayInfo?: PayInfo | null;
   submitLabel?: string;
   amountLabel?: string;
+  hideTitle?: boolean; // 타이틀 숨김 여부
 }
 
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
@@ -44,7 +45,7 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, submitLabel = "결제하기", amountLabel = "결제 금액" }: StepPaymentProps) {
+export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, hideTitle, submitLabel = "결제하기", amountLabel = "결제 금액" }: StepPaymentProps) {
   const router = useRouter();
   const { onLogin } = useAuthStore();
 
@@ -91,7 +92,8 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
   };
 
   // ── 결제하기 ────────────────────────────────────────────────────────────────
-  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid;
+  const { user } = useAuthStore();
+  const uid = useSignUpStore((s) => s.uid) ?? auth.currentUser?.uid ?? user?.userId;
   // 결제수단
   const setPayInfo = useSignUpStore((s) => s.setPayInfo);
 
@@ -160,7 +162,9 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
       await new Promise((res) => setTimeout(res, 1500));
 
       const currentUser = auth.currentUser;
-      if (!currentUser) {
+      const isLoggedIn = !!(currentUser || user?.userId);
+
+      if (!isLoggedIn) {
         setError("로그인 세션이 만료되었습니다. 다시 로그인 해주세요.");
         return;
       }
@@ -210,12 +214,14 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
         setPayInfo(paymentInfo);
       }
 
-      onLogin({
-        uid: currentUser.uid,
-        email: currentUser.email ?? "",
-        displayName: currentUser.displayName ?? "사용자",
-        profile: defaultProfiles,
-      } as any);
+      if (currentUser) {
+        onLogin({
+          uid: currentUser.uid,
+          email: currentUser.email ?? "",
+          displayName: currentUser.displayName ?? "사용자",
+          profile: defaultProfiles,
+        } as any);
+      }
 
       onComplete();
     } catch (err) {
@@ -237,7 +243,7 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
 
   return (
     <div className="payment-page">
-      <h1 className="payment-title">결제 수단</h1>
+      {!hideTitle && <h1 className="payment-title">결제 수단</h1>}
 
       {/* 플랜 요약 — hidePlanSummary일 때 숨김 */}
       {!hidePlanSummary && (

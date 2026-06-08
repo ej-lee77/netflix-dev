@@ -289,7 +289,7 @@
   .hero-content {
     position: absolute;
     bottom: 28px;
-    left: clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
+    left: max(#{g.$main-menu-width}, clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px));
     z-index: 10;
     max-width: 520px;
   }
@@ -531,7 +531,7 @@
     .hero-content {
       right: 24px;
       bottom: 92px;
-      left: 24px;
+      left: #{g.$main-menu-width};
       max-width: none;
     }
 

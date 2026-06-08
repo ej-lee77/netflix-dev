@@ -174,7 +174,9 @@ export default function ConnectHero() {
 
   useEffect(() => {
     if (items.length === 0) return;
-    const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
+    // 시네마→커넥트 전환 시 flex 레이아웃 확정 후 Swiper 재마운트
+    // setTimeout으로 브라우저 레이아웃 패스가 완료될 때까지 대기
+    const id = setTimeout(() => setSwiperKey((k) => k + 1), 300);
     return () => clearTimeout(id);
   }, [items.length]);
 
@@ -219,10 +221,18 @@ export default function ConnectHero() {
         slidesPerView="auto"
         spaceBetween={14}
         loop
+        loopAdditionalSlides={1}
         modules={[Navigation]}
         navigation
         speed={520}
-        onSwiper={(s) => { swiperRef.current = s; }}
+        onSwiper={(s) => {
+          swiperRef.current = s;
+          // 레이아웃 확정 후 크기 재계산 + 0번 슬라이드 강제 이동
+          requestAnimationFrame(() => {
+            s.update();
+            s.slideToLoop(0, 0);
+          });
+        }}
         onSlideChange={(s) => { setRealIndex(s.realIndex); }}
       >
         {items.map((item, i) => (

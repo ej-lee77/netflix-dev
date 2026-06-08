@@ -8,6 +8,8 @@ import ShareButton from "@/components/common/ShareButton";
 import { useT, getTmdbLang } from "@/lib/i18n";
 import { useLangStore } from "@/store/useLangStore";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { ratingCeiling, certToLevel, genreLevel } from "@/data/maturityFilter";
+import { useMovieStore } from "@/store/useMovieStore";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -336,7 +338,27 @@ export default function Hero() {
         if (ignore) return;
 
         // 제외 장르 작품은 히어로 후보에서 제거
-        const nextItems = filterByExcludedGenres(fetched, excludedGenres);
+        const nextItemsRaw = filterByExcludedGenres(fetched, excludedGenres);
+
+        // 관람등급 필터: 허용 등급 초과 작품은 히어로 후보에서 제외
+        let nextItems = nextItemsRaw;
+        const ceiling = ratingCeiling(currentProfile?.settings?.maturityRating);
+        if (ceiling < 19 && nextItems.length) {
+          const fetchCert = useMovieStore.getState().onFetchCertification;
+          await Promise.all(
+            nextItems.map((it) => (it.media_type ? fetchCert(it.id, it.media_type) : Promise.resolve())),
+          );
+          if (ignore) return;
+          const certs = useMovieStore.getState().certifications;
+          nextItems = nextItems.filter((it) => {
+            let level = certToLevel(certs[`${it.media_type}-${it.id}`]);
+            if (level < 0) {
+              const gl = genreLevel((it as { genre_ids?: number[] }).genre_ids);
+              level = gl < 0 ? 0 : gl;
+            }
+            return level <= ceiling;
+          });
+        }
 
         const randomIndex = Math.floor(Math.random() * nextItems.length);
         setItems(nextItems);
@@ -356,7 +378,7 @@ export default function Hero() {
     return () => {
       ignore = true;
     };
-  }, [lang, excludedGenres]);
+  }, [lang, excludedGenres, currentProfile?.settings?.maturityRating]);
 
   useEffect(() => {
     itemsRef.current = items;

@@ -95,16 +95,35 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
 ];
 
 async function fetchCert(id: number, mediaType: "movie" | "tv"): Promise<string> {
-  if (mediaType === "movie") {
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/release_dates?api_key=${TMDB_KEY}`);
-    const data = await res.json();
-    const kr = (data.results ?? []).find((r: any) => r.iso_3166_1 === "KR");
-    return kr?.release_dates?.[0]?.certification ?? "";
-  } else {
-    const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/content_ratings?api_key=${TMDB_KEY}`);
-    const data = await res.json();
-    const kr = (data.results ?? []).find((r: any) => r.iso_3166_1 === "KR");
-    return kr?.rating ?? "";
+  const usMovieToKr: Record<string, string> = { "G": "전체관람가", "PG": "전체관람가", "PG-13": "15", "R": "19", "NC-17": "19" };
+  const usTvToKr: Record<string, string> = { "TV-Y": "전체관람가", "TV-Y7": "전체관람가", "TV-G": "전체관람가", "TV-PG": "12", "TV-14": "15", "TV-MA": "19" };
+  try {
+    if (mediaType === "movie") {
+      const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/release_dates?api_key=${TMDB_KEY}`);
+      const data = await res.json();
+      const results = data.results ?? [];
+      const kr = results.find((r: any) => r.iso_3166_1 === "KR");
+      let cert = (kr?.release_dates ?? []).map((d: any) => d.certification).find((c: string) => c) ?? "";
+      if (!cert) {
+        const us = results.find((r: any) => r.iso_3166_1 === "US");
+        const usCert = (us?.release_dates ?? []).map((d: any) => d.certification).find((c: string) => c) ?? "";
+        cert = usMovieToKr[usCert] ?? "";
+      }
+      return cert;
+    } else {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${id}/content_ratings?api_key=${TMDB_KEY}`);
+      const data = await res.json();
+      const results = data.results ?? [];
+      const kr = results.find((r: any) => r.iso_3166_1 === "KR");
+      let cert = kr?.rating ?? "";
+      if (!cert) {
+        const us = results.find((r: any) => r.iso_3166_1 === "US");
+        cert = usTvToKr[us?.rating ?? ""] ?? "";
+      }
+      return cert;
+    }
+  } catch {
+    return "";
   }
 }
 
