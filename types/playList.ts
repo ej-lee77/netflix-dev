@@ -46,6 +46,7 @@ export interface PlayListState{
     updateCustomPlaylist: (listId: string, updatedData: Partial<PlaylistDocument>) => Promise<void>;
     deleteCustomPlaylist: (listId: string) => Promise<void>;
     fetchPlaylist: (userId: string, listId: string) => Promise<void>;
+    togglePlaylistLike: (ownerUserId: string, listId: string) => Promise<void>;
 }
 
 // 플리 타입
@@ -57,6 +58,7 @@ export interface PlaylistDocument {
   isShare: boolean;        // 공개여부
   tags: string[];          // 태그 (장르, 무드)
   likesCount: number;      // 좋아요
+  likedBy?: string[];      // 좋아요한 유저 ID 목록 (likesCount = likedBy.length)
   createdAt: string;
   items?:  string[];
   //isDelete: boolean;

@@ -484,8 +484,22 @@ export default function MyPage() {
                   </div>
 
                   <div className="mood-summary-box">
-                    💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와
-                    <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                    {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
+                      <p>
+                        💡 주로 
+                        {genreMoodStats.topGenre?.name !== "없음" && (
+                          <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
+                        )}
+                        
+                        {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
+                        {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
+                        
+                        {genreMoodStats.topMood?.tag !== "없음" && (
+                          <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
+                        )}
+                        의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                      </p>
+                    )}
                   </div>
                 </div>
               </>
