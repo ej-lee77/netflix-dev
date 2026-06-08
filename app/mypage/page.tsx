@@ -48,8 +48,8 @@ export default function MyPage() {
 
   useEffect(() => {
     const loadHistory = async () => {
-        const items = await getDetailedHistory(playHist);
-        setHistoryItems(items);
+      const items = await getDetailedHistory(playHist);
+      setHistoryItems(items);
     };
     loadHistory();
   }, [playHist]);
@@ -92,7 +92,7 @@ export default function MyPage() {
 
   const quickMenuItems = useMemo(() => {
     const allItems = [
-      { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "저장한 작품 모음", isCommunity: false },
+      { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "내가 찜·시청하고 기록한 모든 작품", isCommunity: false },
       { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드", isCommunity: true },
       { href: "/menu/custom", icon: menuIcons.custom, title: "메뉴 커스텀", desc: "나만의 메뉴 커스텀", isCommunity: false },
       { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", hasDot: true, isCommunity: false },
@@ -161,26 +161,26 @@ export default function MyPage() {
   }, [activeProfile]);
 
   const getDetailedHistory = async (histKeys: string[]): Promise<PlayListItem[]> => {
-      const detailPromises = histKeys.map(async (key) => {
-          const [mediaType, id] = key.split("-");
-          const data = await fetchMediaDetail(id, mediaType as "movie" | "tv");
-          
-          if (!data) return null;
+    const detailPromises = histKeys.map(async (key) => {
+      const [mediaType, id] = key.split("-");
+      const data = await fetchMediaDetail(id, mediaType as "movie" | "tv");
 
-          return {
-              id: Number(id),
-              title: data.title || data.name || "제목 없음",
-              poster_path: data.poster_path ?? "",
-              mediaType: mediaType as "movie" | "tv",
-              playTime: "", 
-              progress: 100,
-              episodeProgress: {}
-          };
-      });
+      if (!data) return null;
 
-      const results = await Promise.all(detailPromises);
-      
-      return results.filter((item): item is PlayListItem => item !== null);
+      return {
+        id: Number(id),
+        title: data.title || data.name || "제목 없음",
+        poster_path: data.poster_path ?? "",
+        mediaType: mediaType as "movie" | "tv",
+        playTime: "",
+        progress: 100,
+        episodeProgress: {}
+      };
+    });
+
+    const results = await Promise.all(detailPromises);
+
+    return results.filter((item): item is PlayListItem => item !== null);
   };
 
   // const genreMoodStats = useMemo(() => {
