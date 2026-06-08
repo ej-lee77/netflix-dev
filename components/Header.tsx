@@ -249,10 +249,18 @@ export default function Header() {
                       </li>
                       <li>
                         <Link
-                          href="/settings?tab=profile"
+                          href="/profiles"
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
-                          프로필 관리
+                          프로필 전환
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          href="/settings"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          설정
                         </Link>
                       </li>
                     </ul>
