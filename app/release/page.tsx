@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { fetchUpcomingItems, type UpcomingItem } from "@/lib/upcoming";
+import { createUpcomingAlarm, getUpcomingDetailLink, isUpcomingNotificationSet, removeUpcomingAlarm } from "@/lib/upcomingNotifications";
+import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/release.scss";
 
 type PeriodType = "week" | "month" | "all";
 
-const getItemKey = (item: UpcomingItem) => `${item.media_type}-${item.id}`;
-
 export default function ReleasePage() {
   const [upcomings, setUpcomings] = useState<UpcomingItem[]>([]);
   const [period, setPeriod] = useState<PeriodType>("all");
-  const [notifySet, setNotifySet] = useState<Set<string>>(new Set());
+  const currentProfile = useAuthStore((state) => state.currentProfile);
+  const onUpdateProfile = useAuthStore((state) => state.onUpdateProfile);
+  const excludedGenres = useExcludedGenres();
 
   useEffect(() => {
     let ignore = false;
@@ -31,27 +34,32 @@ export default function ReleasePage() {
   }, []);
 
   const now = new Date();
-  const filtered = upcomings.filter((item) => {
-    const release = new Date(item.release_date);
-    const diff = (release.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    if (period === "week") return diff >= 0 && diff <= 7;
-    if (period === "month") return diff >= 0 && diff <= 30;
-    return diff >= 0;
-  });
+  const filtered = useMemo(
+    () => filterByExcludedGenres(upcomings, excludedGenres).filter((item) => {
+      const release = new Date(item.release_date);
+      const diff = (release.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+      if (period === "week") return diff >= 0 && diff <= 7;
+      if (period === "month") return diff >= 0 && diff <= 30;
+      return diff >= 0;
+    }),
+    [excludedGenres, now, period, upcomings],
+  );
 
   const featured = filtered[0];
   const others = filtered.slice(1);
 
-  const handleNotify = (item: UpcomingItem, event: React.MouseEvent) => {
+  const handleNotify = async (item: UpcomingItem, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!currentProfile) return;
 
-    const itemKey = getItemKey(item);
-    setNotifySet((current) => {
-      const next = new Set(current);
-      if (next.has(itemKey)) next.delete(itemKey);
-      else next.add(itemKey);
-      return next;
+    const alarm = isUpcomingNotificationSet(currentProfile.alarm, item.media_type, item.id)
+      ? removeUpcomingAlarm(currentProfile.alarm, item.media_type, item.id)
+      : [...(currentProfile.alarm ?? []), createUpcomingAlarm(item)];
+
+    await onUpdateProfile({
+      ...currentProfile,
+      alarm,
     });
   };
 
@@ -61,6 +69,9 @@ export default function ReleasePage() {
     if (diff <= 0) return "D-Day";
     return `D-${diff}`;
   };
+
+  const isNotified = (item: UpcomingItem) =>
+    isUpcomingNotificationSet(currentProfile?.alarm, item.media_type, item.id);
 
   return (
     <div className="release-page">
@@ -80,14 +91,15 @@ export default function ReleasePage() {
             <h1>{featured.title}</h1>
             <p className="hero-meta">{featured.release_date}</p>
             <div className="hero-actions">
-              <Link href={`/detail/${featured.media_type}/${featured.id}?upcoming=1`} className="btn-primary">
+              <Link href={getUpcomingDetailLink(featured.media_type, featured.id)} className="btn-primary">
                 자세히 보기
               </Link>
               <button
-                className={`btn-notify ${notifySet.has(getItemKey(featured)) ? "active" : ""}`}
+                className={`btn-notify ${isNotified(featured) ? "active" : ""}`}
                 onClick={(event) => handleNotify(featured, event)}
               >
-                {notifySet.has(getItemKey(featured)) ? "알림 설정됨" : "알림받기"}
+                <img src="/images/header/alarm.svg" alt="" />
+                {isNotified(featured) ? "알림설정됨" : "알림받기"}
               </button>
             </div>
           </div>
@@ -116,8 +128,8 @@ export default function ReleasePage() {
           <div className="release-grid">
             {others.map((item) => (
               <Link
-                key={getItemKey(item)}
-                href={`/detail/${item.media_type}/${item.id}?upcoming=1`}
+                key={`${item.media_type}-${item.id}`}
+                href={getUpcomingDetailLink(item.media_type, item.id)}
                 className="release-card"
               >
                 <div className="thumb">
@@ -126,10 +138,11 @@ export default function ReleasePage() {
                 </div>
                 <div className="info">
                   <button
-                    className={`notify-btn ${notifySet.has(getItemKey(item)) ? "active" : ""}`}
+                    className={`notify-btn ${isNotified(item) ? "active" : ""}`}
                     onClick={(event) => handleNotify(item, event)}
                   >
-                    {notifySet.has(getItemKey(item)) ? "알림 설정됨" : "알림받기"}
+                    <img src="/images/header/alarm.svg" alt="" />
+                    {isNotified(item) ? "알림설정됨" : "알림받기"}
                   </button>
                 </div>
               </Link>
