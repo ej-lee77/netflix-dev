@@ -187,9 +187,9 @@
   }
 
   /* 1:1 문의 폼 */
-  .inquiry-form-wrap {
-    max-width: 700px;
-  }
+  // .inquiry-form-wrap {
+  //   max-width: 700px;
+  // }
 
   .form-info {
     padding: 14px 18px;
@@ -239,6 +239,7 @@
         resize: vertical;
         min-height: 120px;
         line-height: 1.6;
+        resize: none;
       }
     }
   }
