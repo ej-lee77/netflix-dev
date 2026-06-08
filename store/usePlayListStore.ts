@@ -206,7 +206,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
 
             // --- watchingVideos & histMovies 처리 ---
             const newWatchingVideos = putLatestFirst(movies.watchingVideos || [], playItem);
-            const newHistMovies = [itemKey, ...movies.histMovies.filter((k: string) => k !== itemKey)].slice(0, 50);
+            const newHistMovies = [itemKey, ...(movies.histMovies || []).filter((k: string) => k !== itemKey)].slice(0, 50);
 
             // 3. 데이터 구조 반영
             targetProfile.movies = {
