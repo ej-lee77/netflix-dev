@@ -183,6 +183,7 @@ export default function Home() {
             vote_average: t.vote_average,
             overview: t.overview,
             media_type: "tv" as const,
+            genre_ids: t.genre_ids ?? [],
           }));
         setKoreanSeries(items);
       });
@@ -203,6 +204,7 @@ export default function Home() {
             vote_average: m.vote_average,
             overview: m.overview,
             media_type: "tv" as const,
+            genre_ids: m.genre_ids ?? [],
           }));
         setKoreanMovieRanking(items);
       });

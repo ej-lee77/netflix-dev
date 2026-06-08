@@ -13,6 +13,7 @@ import {
   type TrendingMediaItem,
 } from "@/lib/trendingContent";
 import TrendingVideoSection from "@/components/search/TrendingVideoSection";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import "../search.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -364,6 +365,7 @@ function SearchResultsContent() {
     : "all";
 
   const [items, setItems] = useState<MediaItem[]>([]);
+  const excludedGenres = useExcludedGenres();
   const [popularItems, setPopularItems] = useState<TrendingMediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -377,12 +379,13 @@ function SearchResultsContent() {
     SEARCH_SORT_OPTIONS.find((option) => option.key === sort)?.label ??
     SEARCH_SORT_OPTIONS[0].label;
   const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
+    // 제외 장르 작품 숨김 후 정렬
+    return filterByExcludedGenres([...items], excludedGenres).sort((a, b) => {
       if (sort === "title") return a.title.localeCompare(b.title, "ko-KR");
       if (sort === "rating") return b.vote_average - a.vote_average;
       return b.popularity - a.popularity;
     });
-  }, [items, sort]);
+  }, [items, sort, excludedGenres]);
 
   useEffect(() => {
     if (!hasQuery) {

@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import WishlistButton from "@/components/common/WishlistButton";
 import { useT, getTmdbLang } from "@/lib/i18n";
 import { useLangStore } from "@/store/useLangStore";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -310,6 +311,7 @@ export default function Hero() {
   const lang = useLangStore((s) => s.lang);
   const router = useRouter();
   const { currentProfile } = useAuthStore();
+  const excludedGenres = useExcludedGenres();
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -328,9 +330,12 @@ export default function Hero() {
     async function loadHero() {
       try {
         setLoadState("loading");
-        const nextItems = await fetchHeroItems();
+        const fetched = await fetchHeroItems();
 
         if (ignore) return;
+
+        // 제외 장르 작품은 히어로 후보에서 제거
+        const nextItems = filterByExcludedGenres(fetched, excludedGenres);
 
         const randomIndex = Math.floor(Math.random() * nextItems.length);
         setItems(nextItems);
@@ -350,7 +355,7 @@ export default function Hero() {
     return () => {
       ignore = true;
     };
-  }, [lang]);
+  }, [lang, excludedGenres]);
 
   useEffect(() => {
     itemsRef.current = items;
