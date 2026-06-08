@@ -11,6 +11,7 @@ import { FAQ_CATEGORIES, FAQ_CATEGORY_LABELS } from "@/data/faq";
 import { ContactStatus } from "@/types/contact";
 import FaqAccordion from "@/components/common/FaqAccordion";
 import CustomSelect from "@/components/common/CustomSelect";
+import BackButton from "@/components/common/BackButton";
 
 type TabType = "faq" | "inquiry" | "history";
 type FilterStatusType = "all" | "pending" | "processing" | "answered";
@@ -129,6 +130,7 @@ export default function ContactPage() {
   return (
     <div className="contact-page">
       <div className="inner">
+        <BackButton fallback="/mypage" />
         <div className="page-head">
           <h1>고객 센터</h1>
         </div>
