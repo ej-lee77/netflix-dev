@@ -229,8 +229,8 @@ function SettingsContent() {
         reviews: [], // 좋아요/싫어요/신고한 리뷰 ID 목록
         // 다른 피드에 남긴 댓글/좋아요 활동 기록
         likedfeeds: [],
-        commentfeeds:[],
-        reportfeeds:[]
+        commentfeeds: [],
+        reportfeeds: []
       },
       headerMenus: [], // 헤더에 표시할 메뉴 ID 목록
       badges: {
@@ -266,9 +266,9 @@ function SettingsContent() {
     } catch (err: unknown) {
       const errorCode =
         typeof err === "object" &&
-        err !== null &&
-        "code" in err &&
-        typeof err.code === "string"
+          err !== null &&
+          "code" in err &&
+          typeof err.code === "string"
           ? err.code
           : "";
 
@@ -346,7 +346,8 @@ function SettingsContent() {
                   <p className="acset-row-desc" style={{ padding: "20px 0" }}>
                     불러오는 중...
                   </p>
-                ) : (
+                ) : planType ? (
+                  // 구독 중일 때
                   <>
                     <div className="acset-plan-box">
                       <div>
@@ -361,11 +362,22 @@ function SettingsContent() {
                       </div>
                     </div>
                     <Row label="결제 수단" desc={payLabel}>
-                      <Link href="/payment" className="acset-btn">
-                        관리
-                      </Link>
+                      <Link href="/payment" className="acset-btn">관리</Link>
                     </Row>
                   </>
+                ) : (
+                  // 구독 중이 아닐 때
+                  <div style={{ padding: "32px 0", textAlign: "center" }}>
+                    <p style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>
+                      현재 구독 중인 플랜이 없어요
+                    </p>
+                    <p className="acset-row-desc" style={{ marginBottom: "24px" }}>
+                      지금 구독하고 12,000편 이상의 콘텐츠를 무제한으로 즐겨보세요.
+                    </p>
+                    <Link href="/plan" className="acset-btn red">
+                      구독하기
+                    </Link>
+                  </div>
                 )}
               </>
             )}

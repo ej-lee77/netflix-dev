@@ -17,8 +17,8 @@ export interface AuthState {
   currentProfile: UserProfile | null;
   onInitAuth: () => void;
   onLogin: (user: UserDocument) => void;
-  onKakaoLogin: () => Promise<boolean>;
-  onNaverLogin: () => Promise<boolean>;
+  onKakaoLogin: () => Promise<{ isNewUser: boolean } | false>;
+  onNaverLogin: () => Promise<{ isNewUser: boolean } | false>;
   onLogout: () => Promise<void>;
   onSetProfile: (profile: UserProfile | null) => void;
   onAddProfile: (profile: Omit<UserProfile, "id">) => Promise<void>;
@@ -120,8 +120,8 @@ export interface CommunityList {
   following: string[]; // 팔로잉 유저 ID 목록
   reviews: string[]; //리뷰 ID 목록 내 리뷰 말고 좋아요한거 싫어요 한거 신고한거
   likedfeeds: string[];
-  commentfeeds:string[];
-  reportfeeds:string[];
+  commentfeeds: string[];
+  reportfeeds: string[];
   //commentfeeds: FeedActivity[]; // 내가 작성한 피드가 아니라 다른 피드에 남긴 댓글/좋아요 활동
 }
 

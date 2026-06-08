@@ -29,7 +29,7 @@ export default function PaymentPage() {
 
   // useEffect 하나로 합침
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? user?.uid ?? auth.currentUser?.uid;
     if (!uid) return;
     getDoc(doc(db, "users", uid)).then((snap) => {
       if (!snap.exists()) return;
@@ -38,7 +38,7 @@ export default function PaymentPage() {
       setPayInfo(data.payment ?? null);
       setBilling(data.billing ?? "monthly");
     });
-  }, [user?.uid]);
+  }, [user?.userId ?? user?.uid]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -84,17 +84,17 @@ export default function PaymentPage() {
             </svg>
           </div>
           <h1 className="complete-title">
-            {isNewSubscription ? "구독이 시작되었어요!" : "결제 수단이 변경되었어요!"}
+            {planType ? "결제 수단이 변경되었어요!" : "구독이 시작되었어요!"}
           </h1>
           <p className="complete-sub">
-            {isNewSubscription ? `${planLabel} 플랜으로 무제한 시청을 즐겨보세요` : "새로운 결제 수단으로 변경되었습니다"}
+            {planType ? "새로운 결제 수단으로 변경되었습니다" : `${planLabel} 플랜으로 무제한 시청을 즐겨보세요`}
           </p>
           <button
             type="button"
             className="complete-home-btn"
-            onClick={() => router.push(isNewSubscription ? "/" : "/settings?tab=membership")}
+            onClick={() => router.push(planType ? "/settings?tab=membership" : "/")}
           >
-            {isNewSubscription ? "메인으로 가기" : "설정으로 돌아가기"}
+            {planType ? "설정으로 돌아가기" : "메인으로 가기"}
           </button>
         </div>
       </div>
@@ -129,6 +129,7 @@ export default function PaymentPage() {
         )}
 
         <StepPayment
+          hideTitle
           plan={{
             name: planLabel,
             billing: activeBilling,
@@ -138,13 +139,13 @@ export default function PaymentPage() {
           }}
           hidePlanSummary
           currentPayInfo={planType ? payInfo : null}  // 구독 중일 때만 현재 결제수단 비교
-          submitLabel={pendingPlan ? "결제하기" : "변경하기"}
+          submitLabel={planType ? "변경하기" : "결제하기"}
           amountLabel="결제 예정 금액"
           onBack={() => router.push(pendingPlan ? "/plan" : "/settings?tab=membership")}
           onComplete={async () => {
             // 비구독자가 새로 구독하는 경우 planType 저장
             if (pendingPlan) {
-              const uid = user?.uid ?? auth.currentUser?.uid;
+              const uid = user?.userId ?? user?.uid ?? auth.currentUser?.uid;
               if (uid) await updatePlan(uid, pendingPlan.planType, pendingPlan.billing);
             }
             setDone(true);

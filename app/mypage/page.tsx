@@ -56,13 +56,28 @@ export default function MyPage() {
   }, [playHist]);
 
   // 2. 영화 상세 정보 보완
+  const [enrichedReviews, setEnrichedReviews] = useState<any[]>([]);
+
   useEffect(() => {
-    reviews.forEach(review => {
-      if (!mediaDetails[`movie-${review.videoId}`]) {
-        onFetchMediaDetail(review.videoId, 'movie');
-      }
-    });
-  }, [reviews, mediaDetails, onFetchMediaDetail]);
+    const updateEnriched = async () => {
+      const data = await Promise.all(
+        reviews.map(async (review) => {
+          const [type, id] = review.videoId.split('-');
+          // onFetchMediaDetail 호출하여 데이터 획득
+          const detail = await fetchMediaDetail(id, type as 'movie' | 'tv');
+          return {
+            ...review,
+            mediaInfo: detail
+          };
+        })
+      );
+      setEnrichedReviews(data);
+    };
+
+    if (reviews.length > 0) {
+      updateEnriched();
+    }
+  }, [reviews]);
 
   // 스토어의 isCommunity + 관람등급(12세 이하 자동 숨김) 기준으로 UI 판단
   const isCommunityEnabled = useCommunityEnabled();
@@ -485,8 +500,22 @@ export default function MyPage() {
                   </div>
 
                   <div className="mood-summary-box">
-                    💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와
-                    <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                    {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
+                      <p>
+                        💡 주로 
+                        {genreMoodStats.topGenre?.name !== "없음" && (
+                          <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
+                        )}
+                        
+                        {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
+                        {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
+                        
+                        {genreMoodStats.topMood?.tag !== "없음" && (
+                          <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
+                        )}
+                        의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                      </p>
+                    )}                  
                   </div>
                 </div>
               </>
@@ -537,8 +566,8 @@ export default function MyPage() {
 
               {reviews.length > 0 ? (
                 <div className="review-list">
-                  {reviews.map((review) => {
-                    const movie = mediaDetails[`movie-${review.videoId}`];
+                  {enrichedReviews.map((review) => {
+                    const movie = review.mediaInfo;
                     return (
                       <div key={review.reviewId} className="review-item">
                         <div className="review-thumb">
@@ -558,7 +587,7 @@ export default function MyPage() {
                           </p>
                           <div className="meta">
                             <span>{new Date(review.createdAt).toLocaleDateString()}</span>
-                            <span>신고 {review.reportsCount}회</span>
+                            {/* <span>신고 {review.reportsCount}회</span> */}
                           </div>
                         </div>
                       </div>

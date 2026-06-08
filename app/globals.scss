@@ -288,7 +288,6 @@ body {
 
 main {
   padding-top: $header-height;
-  padding-left: $main-menu-width;
 }
 
 .flex-item {
@@ -303,7 +302,7 @@ main {
 
     .inner {
       width: min(1920px, calc(100vw - #{$main-menu-width}));
-      margin-left: 0;
+      margin-left: $main-menu-width;
       margin-right: 0;
       padding-left: clamp(
         24px,
@@ -319,11 +318,8 @@ main {
 
     .section-title-outer {
       width: calc(100vw - #{$main-menu-width});
-      padding-left: clamp(
-        24px,
-        calc((100vw - #{$main-menu-width} - 1920px) / 2),
-        80px
-      );
+      margin-left: $main-menu-width;
+      padding-left: 0;
       padding-right: clamp(
         24px,
         calc((100vw - #{$main-menu-width} - 1920px) / 2),

@@ -12,6 +12,7 @@ import ShareButton from "@/components/common/ShareButton";
 import "./detail.module.scss";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { createUpcomingAlarm, isUpcomingNotificationSet, removeUpcomingAlarm } from "@/lib/upcomingNotifications";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -181,7 +182,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const { playList, myList, onAddPlayList, onAddMyList, onRemoveMyList, onLoadMyList, onUpdateProgress, onUpdateEpisodeProgress } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } = useWishlistStore();
   const { reviews, addReview, fetchVideoReviews, reportReview, updateReviewLikeCount } = useCommunityStore();
-  const { user, currentProfile, updateUserLike, onInitAuth } = useAuthStore();
+  const { user, currentProfile, updateUserLike, onInitAuth, onUpdateProfile } = useAuthStore();
 
   const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
@@ -310,6 +311,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const moodTags = getMoodTags(mediaItem?.genres);
   const castKey = `${type}-${mediaId}`;
   const castList: CastMember[] = casts[castKey] ?? [];
+  const isUpcomingNotified = isUpcomingNotificationSet(currentProfile?.alarm, type, mediaId);
 
   useEffect(() => {
     const measureSynopsis = () => {
@@ -443,30 +445,26 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     }
   };
 
-  const handleNotifyUpcoming = () => {
-    if (!mediaItem) return;
+  const handleNotifyUpcoming = async () => {
+    if (!mediaItem || !currentProfile) return;
 
-    const storageKey = "netflix-upcoming-notifications";
-    const nextNotification = {
-      id: mediaId,
-      type,
-      title,
-      releaseDate,
-      posterPath: mediaItem.poster_path,
-    };
+    const alarm = isUpcomingNotified
+      ? removeUpcomingAlarm(currentProfile.alarm, type, mediaId)
+      : [
+        ...(currentProfile.alarm ?? []),
+        createUpcomingAlarm({
+          id: mediaId,
+          media_type: type,
+          title: title || "공개 예정",
+          release_date: releaseDate ?? "",
+          poster_path: mediaItem.poster_path,
+        }),
+      ];
 
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      const notifications = saved ? JSON.parse(saved) as Array<typeof nextNotification> : [];
-      const exists = notifications.some((item) => item.id === mediaId && item.type === type);
-      if (!exists) {
-        window.localStorage.setItem(storageKey, JSON.stringify([...notifications, nextNotification]));
-      }
-    } catch {
-      window.localStorage.setItem(storageKey, JSON.stringify([nextNotification]));
-    }
-
-    window.alert("공개 알림을 받을 작품에 추가했습니다.");
+    await onUpdateProfile({
+      ...currentProfile,
+      alarm,
+    });
   };
 
   const handleMyList = async () => {
@@ -1515,19 +1513,38 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 onClick={handlePlay}
                 disabled={!isUpcoming && isAddingPlayList}
                 style={{
-                  background: isUpcoming ? "#fff" : "#e50914",
-                  color: isUpcoming ? "#111" : "#fff",
-                  height: 46,
-                  padding: "0 22px",
-                  fontSize: 16,
+                  background: isUpcoming
+                    ? (isUpcomingNotified ? "#e50914" : "transparent")
+                    : "#e50914",
+                  color: isUpcoming
+                    ? (isUpcomingNotified ? "#fff" : "#aaa")
+                    : "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  height: isUpcoming ? 48 : 46,
+                  padding: isUpcoming ? "14px 24px" : "0 22px",
+                  fontSize: isUpcoming ? 14 : 16,
                   fontWeight: 700,
-                  border: "none",
+                  border: isUpcoming
+                    ? `1px solid ${isUpcomingNotified ? "#e50914" : "#3a3a3a"}`
+                    : "none",
                   borderRadius: 4,
                   cursor: !isUpcoming && isAddingPlayList ? "default" : "pointer",
                   opacity: !isUpcoming && isAddingPlayList ? 0.7 : 1,
                 }}
               >
-                {isUpcoming ? "🔔 알림받기" : isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
+                {isUpcoming ? (
+                  <>
+                    <img
+                      src="/images/header/alarm.svg"
+                      alt=""
+                      style={{ width: 20, height: 20, filter: isUpcomingNotified ? "brightness(0) invert(1)" : undefined }}
+                    />
+                    <span style={{ fontSize: 14 }}>{isUpcomingNotified ? "알림설정됨" : "알림받기"}</span>
+                  </>
+                ) : isAddingPlayList ? "추가 중..." : `▶ 재생하기`}
               </button>
               {mediaItem && <WishlistButton item={mediaItem} mediaType={type} />}
               {mediaItem && <ShareButton mediaType={type} id={mediaItem.id} />}

@@ -28,14 +28,14 @@ export default function PlanPage() {
   const [currentBilling, setCurrentBilling] = useState<string>("");
 
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? user?.uid ?? auth.currentUser?.uid;
     if (!uid) { setLoading(false); return; }
 
     getDoc(doc(db, "users", uid)).then((snap) => {
       setPlanType(snap.exists() ? (snap.data().planType ?? "") : "");
       setCurrentBilling(snap.exists() ? (snap.data().billing ?? "monthly") : "monthly");
     }).finally(() => setLoading(false));
-  }, [user?.uid]);
+  }, [user?.userId ?? user?.uid]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -43,7 +43,7 @@ export default function PlanPage() {
 
   if (loading) return null;
 
-  const isLoggedIn = !!(user?.uid ?? auth.currentUser?.uid);
+  const isLoggedIn = !!(user?.userId ?? user?.uid ?? auth.currentUser?.uid);
 
   // 비로그인 or 비구독자
   if (!isLoggedIn || planType === "") {
@@ -56,14 +56,14 @@ export default function PlanPage() {
           <StepPlan
             hideTitle
             skipFirestore
-            submitLabel="선택하기"
+            submitLabel="구독 시작하기"
             onNext={(plan) => {
               // 선택한 플랜 임시 저장
               setPendingPlan({
                 planType: plan.name === "베이직" ? "basic" : plan.name === "스탠다드" ? "standard" : "premium",
                 billing: plan.billing,
               });
-              const uid = user?.uid ?? auth.currentUser?.uid;
+              const uid = user?.userId ?? user?.uid ?? auth.currentUser?.uid;
               if (uid) {
                 router.push("/payment");
               } else {
