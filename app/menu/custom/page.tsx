@@ -85,12 +85,22 @@ export default function MenuCustomPage() {
   }, [currentProfileId, currentProfileHeaderMenus]);
 
   // 2. 토글 핸들러 (클릭한 순서대로 배열 끝에 추가됨)
-  const saveHeaderMenus = async (paths: string[]) => {
+  const syncHeaderMenusLocally = (paths: string[]) => {
     const sanitizedPaths = normalizeHeaderMenuPaths(paths);
 
     setSelectedMenuPaths(sanitizedPaths);
     localStorage.setItem("custom_header_menus", JSON.stringify(sanitizedPaths));
-    window.dispatchEvent(new Event("customMenuStorageUpdate"));
+    window.dispatchEvent(
+      new CustomEvent("customMenuStorageUpdate", {
+        detail: { paths: sanitizedPaths },
+      }),
+    );
+
+    return sanitizedPaths;
+  };
+
+  const saveHeaderMenus = async (paths: string[]) => {
+    const sanitizedPaths = syncHeaderMenusLocally(paths);
 
     if (!currentProfile) return;
 
@@ -271,9 +281,9 @@ export default function MenuCustomPage() {
     nextPaths.splice(targetIndex, 0, movedPath);
     pendingFlowRectsRef.current = getFlowChipRects();
     setDraggedMenuPath(sourcePath);
-    setSelectedMenuPaths(nextPaths);
-    // defer persisting until drag end to avoid layout churn
-    pendingSaveRef.current = nextPaths;
+    const syncedPaths = syncHeaderMenusLocally(nextPaths);
+    // defer Firestore profile persistence until drag end to avoid layout churn
+    pendingSaveRef.current = syncedPaths;
   };
 
   const handlePreviewDragEnd = () => {

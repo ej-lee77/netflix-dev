@@ -79,14 +79,4 @@
     text-overflow: ellipsis;
   }
 
-  .card-overview {
-    font-size: clamp(0.72rem, 0.85vw, 0.85rem);
-    color: rgba(g.$w-color, 0.5);
-    line-height: 1.5;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-    overflow: hidden;
-  }
 }
