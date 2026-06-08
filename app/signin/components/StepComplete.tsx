@@ -51,6 +51,7 @@ export default function StepComplete({ plan }: StepCompleteProps) {
   const isAnnual = plan.billing === "annual";
   const orderId = generateOrderId();
   const paidAmount = isAnnual ? plan.annualTotal : plan.monthlyPrice;
+  const clear = useSignUpStore((s) => s.clear);
 
   // 결제 수단 표기 텍스트
   const payLabel = (() => {
@@ -109,6 +110,7 @@ export default function StepComplete({ plan }: StepCompleteProps) {
         type="button"
         className="complete-home-btn"
         onClick={async () => {
+          clear(); // pendingPlan 포함 스토어 초기화
           await signOut(auth);
           router.push("/login");
         }}
