@@ -19,7 +19,8 @@ export default function CancelPage() {
   const [error, setError] = useState("");
 
   const handleCancel = async () => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
+    console.log("uid:", uid);
     if (!uid) {
       setError("로그인 정보를 확인할 수 없습니다.");
       return;
@@ -50,13 +51,13 @@ export default function CancelPage() {
   const [nextDate, setNextDate] = useState<string>("");
 
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
     if (!uid) return;
     getDoc(doc(db, "users", uid)).then((snap) => {
       if (!snap.exists()) return;
       setNextDate(snap.data().payment?.nextDate ?? "");
     });
-  }, [user?.uid]);
+  }, [user?.userId]);
 
   return (
     <div className="signin-page">

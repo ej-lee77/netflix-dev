@@ -5,6 +5,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import "./scss/loginBanner.scss";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase/firebase";
+
 
 /**
  * 비로그인 사용자에게 화면 하단에 고정으로 노출되는 배너
@@ -15,14 +19,31 @@ import "./scss/loginBanner.scss";
  */
 
 // 배너를 표시하지 않을 경로들
-const HIDDEN_PATHS = ["/login", "/signin", "/payment", "/forgot-password"];
+const HIDDEN_PATHS = ["/login", "/signin", "/payment", "/forgot-password", "/plan"];
 
 export default function LoginBanner() {
   const { user } = useAuthStore();
   const pathname = usePathname();
+  const [planType, setPlanType] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 로그인 상태가 아니면 planType 초기화
+    if (!user?.userId) {
+      setPlanType(null);
+      return;
+    }
+    // Firestore에서 구독 플랜 정보 조회
+    getDoc(doc(db, "users", user.userId)).then((snap) => {
+      if (!snap.exists()) return;
+      // planType이 없으면 빈 문자열 (미구독 상태)
+      setPlanType(snap.data().planType ?? "");
+    });
+  }, [user?.userId, pathname]); // 유저 변경 시마다 재조회
 
   // 표시 안 함 조건들
-  if (user) return null;
+  // 로그인 + 구독 중이면 숨김, 로그인 + 미구독이면 표시
+  if (user && planType) return null;
+  if (user && planType === null) return null; // 아직 로딩 중
   if (HIDDEN_PATHS.some((path) => pathname?.startsWith(path))) return null;
 
   return (
