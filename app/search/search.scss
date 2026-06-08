@@ -754,6 +754,41 @@
     color: g.$g-color;
     font-size: g.$text-16;
   }
+
+  .load-more-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 34px;
+  }
+
+  .load-more-btn {
+    min-width: 128px;
+    min-height: 40px;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: g.$w-color;
+    cursor: pointer;
+    font-size: g.$text-13;
+    font-weight: 700;
+    padding: 10px 24px;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      opacity 0.18s ease;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      border-color: g.$main-color;
+      background: g.$main-color;
+      outline: none;
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+  }
 }
 
 .search-results-hero {
