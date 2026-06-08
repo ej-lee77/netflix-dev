@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useWishlistStore } from "@/store/useWishlistStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { auth } from "@/firebase/firebase";
 import { getItemKey, getMediaType, usePlayListStore } from "@/store/usePlayListStore";
@@ -47,6 +47,8 @@ export default function WishlistButton({
     usePlayListStore();
   const { user } = useAuthStore();
   const router = useRouter();
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastHiding, setToastHiding] = useState(false);
 
   // 홈 등에서는 위시리스트를 따로 로드하지 않으므로, 최초 1회 로드해 하트 상태를 맞춤
   useEffect(() => {
@@ -76,10 +78,15 @@ export default function WishlistButton({
       await onRemoveMyList(item.id, effectiveType);
     } else {
       await onAddMyList(normalized);
+      setToastVisible(true);
+      setToastHiding(false);
+      setTimeout(() => setToastHiding(true), 1750);
+      setTimeout(() => setToastVisible(false), 2000);
     }
   };
 
   return (
+    <>
     <button
       type="button"
       className={`wishlist-heart-btn ${wished ? "is-wished" : ""} ${className ?? ""}`}
@@ -88,7 +95,30 @@ export default function WishlistButton({
       aria-label="위시리스트에 추가"
       title="위시리스트"
     >
-      {wished ? "♥" : "♡"}
+      <svg
+        className="wishlist-icon"
+        width="20"
+        height="20"
+        viewBox="0 0 30 30"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M5.60549 7.60371C6.63378 6.61891 8.02827 6.06567 9.48229 6.06567C10.9363 6.06567 12.3308 6.61891 13.3591 7.60371L14.9657 9.14157L16.5724 7.60371C17.0782 7.10199 17.6833 6.70179 18.3523 6.42648C19.0213 6.15117 19.7408 6.00625 20.4689 6.0002C21.197 5.99414 21.9191 6.12705 22.593 6.39117C23.2669 6.65531 23.8791 7.04537 24.3939 7.5386C24.9088 8.03183 25.316 8.61835 25.5917 9.26394C25.8674 9.90953 26.0062 10.6013 25.9998 11.2988C25.9935 11.9963 25.8423 12.6855 25.5548 13.3265C25.2674 13.9674 24.8497 14.547 24.326 15.0316L14.9657 24L5.60549 15.0316C4.5775 14.0465 4 12.7106 4 11.3177C4 9.92473 4.5775 8.58882 5.60549 7.60371Z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </svg>
     </button>
+    {toastVisible && createPortal(
+      <div className={`wish-toast${toastHiding ? " wish-toast--hiding" : ""}`}>
+        <img src="/images/header/menu/wishlist.svg" alt="" width={18} height={18} />
+        위시리스트에 추가되었습니다.
+      </div>,
+      document.body
+    )}
+    </>
   );
 }
