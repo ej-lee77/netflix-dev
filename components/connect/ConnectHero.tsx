@@ -156,11 +156,18 @@ export default function ConnectHero() {
   const [items, setItems] = useState<HeroItem[]>([]);
   const [showVideo, setShowVideo] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Set<number>>(new Set());
+  const [swiperKey, setSwiperKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetchHeroItems().then(setItems).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
+    return () => clearTimeout(id);
+  }, [items.length]);
 
   // 슬라이드 변경 시 영상 리셋 → 2초 후 재생
   useEffect(() => {
@@ -197,6 +204,7 @@ export default function ConnectHero() {
       ))}
 
       <Swiper
+        key={swiperKey}
         className="connect-hero__swiper"
         centeredSlides
         slidesPerView="auto"

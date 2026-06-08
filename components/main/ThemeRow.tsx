@@ -12,6 +12,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/categoryList.scss";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
@@ -51,7 +52,16 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
+  const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const updateEdges = (swiper: any) => {
+    const left = swiper.activeIndex;
+    setLeftEdgeIndex(left);
+    const spv = swiper.params.slidesPerView;
+    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    setRightEdgeIndex(left + numVisible);
+  };
 
   const handleMouseEnter = async (item: ThemeItem) => {
     setHover(item.id);
@@ -89,8 +99,9 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
           }}
-          onSwiper={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
-          onSlideChange={(swiper) => setLeftEdgeIndex(swiper.activeIndex)}
+          onSwiper={updateEdges}
+          onSlideChange={updateEdges}
+          onBreakpoint={updateEdges}
           className="media-swiper"
         >
           {items.map((item, index) => {
@@ -116,7 +127,7 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                   </div>
 
                   {hover === item.id && (
-                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : ""}`}>
+                    <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : ""}${index === rightEdgeIndex ? " right-edge" : ""}`}>
                       <div className="hover-video">
                         {trailerKey && videoReady === item.id ? (
                           <iframe
@@ -181,6 +192,7 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                             {t("common.detail")}
                           </Link>
                           <WishlistButton item={item} mediaType={item.mediaType} stopPropagation className="card-wish" />
+                          <ShareButton mediaType={item.mediaType} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>

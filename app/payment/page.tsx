@@ -44,6 +44,13 @@ export default function PaymentPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [done]);
 
+  const [isNewSubscription, setIsNewSubscription] = useState(false);
+
+  useEffect(() => {
+    // pendingPlan 있으면 신규 구독 모드
+    if (pendingPlan) setIsNewSubscription(true);
+  }, []);
+
   // 현재 플랜 or 비구독자가 선택한 임시 플랜
   const activePlanType = planType || pendingPlan?.planType || "";
   const activeBilling = (billing || pendingPlan?.billing || "monthly") as "monthly" | "annual";
@@ -77,17 +84,17 @@ export default function PaymentPage() {
             </svg>
           </div>
           <h1 className="complete-title">
-            {pendingPlan ? "구독이 시작되었어요!" : "결제 수단이 변경되었어요!"}
+            {isNewSubscription ? "구독이 시작되었어요!" : "결제 수단이 변경되었어요!"}
           </h1>
           <p className="complete-sub">
-            {pendingPlan ? `${planLabel} 플랜으로 무제한 시청을 즐겨보세요` : "새로운 결제 수단으로 변경되었습니다"}
+            {isNewSubscription ? `${planLabel} 플랜으로 무제한 시청을 즐겨보세요` : "새로운 결제 수단으로 변경되었습니다"}
           </p>
           <button
             type="button"
             className="complete-home-btn"
-            onClick={() => router.push(pendingPlan ? "/" : "/settings?tab=membership")}
+            onClick={() => router.push(isNewSubscription ? "/" : "/settings?tab=membership")}
           >
-            {pendingPlan ? "메인으로 가기" : "설정으로 돌아가기"}
+            {isNewSubscription ? "메인으로 가기" : "설정으로 돌아가기"}
           </button>
         </div>
       </div>

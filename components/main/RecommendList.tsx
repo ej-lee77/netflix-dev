@@ -10,6 +10,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import './scss/recommendList.scss';
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from '../common/SectionTitle';
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
@@ -183,6 +184,7 @@ export default function RecommendList() {
                     {t("common.detail")}
                   </Link>
                   <WishlistButton item={item} mediaType={item.media_type} className="card-wish" />
+                  <ShareButton mediaType={item.media_type} id={item.id} className="card-wish" />
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginBanner from "@/components/LoginBanner";
 import AuthProvider from "@/components/AuthProvider";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 const netflixSans = localFont({
   src: [
@@ -36,13 +37,10 @@ export default function RootLayout({
         <script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js"></script>
       </head>
       <body className={netflixSans.variable}>
-        {/* 앱 시작 시 Firebase 인증 상태 복원 */}
         <AuthProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-          {/* 비로그인 사용자에게 표시되는 하단 고정 배너 */}
-          <LoginBanner />
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
         </AuthProvider>
       </body>
     </html>

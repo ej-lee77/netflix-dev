@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useSignUpStore } from "@/store/useSignUpStore";
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebase/firebase";
 
 // ─── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -106,7 +108,10 @@ export default function StepComplete({ plan }: StepCompleteProps) {
       <button
         type="button"
         className="complete-home-btn"
-        onClick={() => router.push("/login")}
+        onClick={async () => {
+          await signOut(auth);
+          router.push("/login");
+        }}
       >
         로그인하러 가기
       </button>

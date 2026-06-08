@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 import { useT, getTmdbLang } from "@/lib/i18n";
 import { useLangStore } from "@/store/useLangStore";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
@@ -673,6 +674,7 @@ export default function Hero() {
             {t("common.detail")}
           </button>
           <WishlistButton item={activeItem} mediaType={activeItem.media_type} className="hero-wish" />
+          <ShareButton mediaType={activeItem.media_type} id={activeItem.id} className="hero-wish" />
         </div>
       </div>
 
