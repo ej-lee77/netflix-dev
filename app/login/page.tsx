@@ -3,7 +3,7 @@
 import { auth, googleProvider } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Movie } from "@/types/movie";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -161,16 +161,17 @@ export default function LoginPage() {
     setError("");
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
 
-      // 💥 BUG FIX: 소셜 로그인 결과도 안전하게 일반 구조체 객체로 매핑
       onLogin({
         uid: result.user.uid,
         email: result.user.email ?? "",
         displayName: result.user.displayName ?? "나",
-        profiles: defaultProfiles
+        profiles: defaultProfiles,
       } as any);
 
-      router.push("/profiles");;
+      // 신규면 플랜 선택, 기존이면 프로필 선택
+      router.push(isNewUser ? "/plan" : "/profiles");
     } catch (err) {
       console.error(err);
       setError("Google 로그인에 실패했습니다.");
@@ -181,9 +182,8 @@ export default function LoginPage() {
     setError("");
     try {
       const result = await onKakaoLogin();
-
-      if(result){
-        router.push("/profiles");;
+      if (result) {
+        router.push(result.isNewUser ? "/plan" : "/profiles");
       }
     } catch (err) {
       console.error(err);
@@ -195,9 +195,8 @@ export default function LoginPage() {
     setError("");
     try {
       const result = await onNaverLogin();
-
-      if(result){
-        router.push("/profiles");;
+      if (result) {
+        router.push(result.isNewUser ? "/plan" : "/profiles");
       }
     } catch (err) {
       console.error(err);
@@ -297,7 +296,7 @@ export default function LoginPage() {
             </li>
             <li>
               <button type="button" className="social-btn social-naver"
-              onClick={handleNaverLogin}>
+                onClick={handleNaverLogin}>
                 <span className="social-icon-wrap">
                   <Image src="/images/social/naver_login.svg" alt="Naver" width={24} height={24} />
                 </span>
@@ -306,7 +305,7 @@ export default function LoginPage() {
             </li>
             <li>
               <button type="button" className="social-btn social-kakao"
-              onClick={handleKakaoLogin}>
+                onClick={handleKakaoLogin}>
                 <span className="social-icon-wrap">
                   <Image src="/images/social/kakao_login.svg" alt="Kakao" width={24} height={24} />
                 </span>

@@ -1,4 +1,4 @@
-import { auth, db, kakaoProvider, naverProvider } from "@/firebase/firebase"; 
+import { auth, db, kakaoProvider, naverProvider } from "@/firebase/firebase";
 import {
   AuthState,
   type Profile,
@@ -8,7 +8,7 @@ import {
   type UserInfo,
 } from "@/types/auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore"; 
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
@@ -111,7 +111,7 @@ export const useAuthStore = create<AuthState>()(
 
             if (userDocSnap.exists()) {
               const userData = userDocSnap.data() as UserDocument;
-              
+
               if (userData.profile && userData.profile.length > 0) {
                 userData.profile = userData.profile.map(normalizeProfile);
               }
@@ -128,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
               });
             } else {
               console.warn("Firestore 유저 문서가 없어 기본 문서를 자동으로 생성합니다.");
-              
+
               const defaultProfile = normalizeProfile({
                 id: Date.now(),
                 nickname: "나",
@@ -161,31 +161,31 @@ export const useAuthStore = create<AuthState>()(
       // 2. 수동 로그인 혹은 결제 완료 직후 세팅 시 호출
       onLogin: async (firebaseUser) => {
         if (!firebaseUser) return;
-        
+
         const targetUid = firebaseUser.userId;
         if (!targetUid) return;
-        
+
         try {
           const userDocRef = doc(db, "users", targetUid);
           const userDocSnap = await getDoc(userDocRef);
-          
+
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data() as UserDocument;
             if (userData.profile) userData.profile = userData.profile.map(normalizeProfile);
-            
-            set({ 
-              user: userData, 
+
+            set({
+              user: userData,
               currentProfile: userData.profile?.[0] || null,
             });
           } else {
             const fallbackProfiles = (firebaseUser as any).profiles || (firebaseUser as any).profile || [];
-            
-            const fixedProfiles = fallbackProfiles.length > 0 
+
+            const fixedProfiles = fallbackProfiles.length > 0
               ? fallbackProfiles.map((p: any) => ({
-                  id: p.id,
-                  nickname: p.nickname || "나",
-                  imgUrl: p.imgUrl
-                }))
+                id: p.id,
+                nickname: p.nickname || "나",
+                imgUrl: p.imgUrl
+              }))
               : [{ id: 1, nickname: "나", imgUrl: FALLBACK_PROFILE_IMAGE }];
 
             const normalizedFallback = fixedProfiles.map(normalizeProfile);
@@ -231,18 +231,18 @@ export const useAuthStore = create<AuthState>()(
           // 공통 정규화 로직 적용을 위한 데이터 처리
           if (userDoc.exists()) {
             const userData = userDoc.data() as UserDocument;
-            
+
             // onLogin과 동일하게 profile 정규화
             if (userData.profile) {
               userData.profile = userData.profile.map(normalizeProfile);
             }
 
             // Zustand 상태 설정 (onLogin과 동일한 구조)
-            set({ 
-              user: userData, 
-              currentProfile: userData.profile?.[0] || null 
+            set({
+              user: userData,
+              currentProfile: userData.profile?.[0] || null
             });
-            
+            return { isNewUser: false }; // 👈 기존 유저
           } else {
             // 카카오 정보를 기반으로 기본 프로필 생성
             const newProfile = normalizeProfile({
@@ -259,17 +259,18 @@ export const useAuthStore = create<AuthState>()(
             } as UserDocument;
 
             await setDoc(userRef, newUser);
-            
+
             // Zustand 상태 설정 (onLogin과 동일)
-            set({ 
-              user: newUser, 
-              currentProfile: newProfile 
+            set({
+              user: newUser,
+              currentProfile: newProfile
             });
+            return { isNewUser: true }; // 👈 신규 유저
           }
-          return true;
+
         } catch (err) {
           console.error('카카오 로그인 중 오류:', err);
-          return false;
+          return { isNewUser: false }; // 👈 에러시 안전하게 기존 유저 취급
         }
       },
 
@@ -295,9 +296,9 @@ export const useAuthStore = create<AuthState>()(
 
           // 2. 사용자 정보 요청
           const res = await fetch('/api/naver', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token }) // 서버로 토큰을 전달
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }) // 서버로 토큰을 전달
           });
 
           const data = await res.json();
@@ -310,16 +311,19 @@ export const useAuthStore = create<AuthState>()(
 
           if (userDoc.exists()) {
             const userData = userDoc.data() as UserDocument;
-            
+
             // 프로필 정규화 적용
             if (userData.profile) {
               userData.profile = userData.profile.map(normalizeProfile);
             }
 
-            set({ 
-              user: userData, 
-              currentProfile: userData.profile?.[0] || null 
+            set({
+              user: userData,
+              currentProfile: userData.profile?.[0] || null
             });
+
+            return { isNewUser: false }; // 👈 기존 유저
+
           } else {
             // 신규 사용자: 프로필 정규화 및 기본 데이터 생성
             const newProfile = normalizeProfile({
@@ -336,17 +340,18 @@ export const useAuthStore = create<AuthState>()(
             } as UserDocument;
 
             await setDoc(userRef, newUser);
-            
-            set({ 
-              user: newUser, 
-              currentProfile: newProfile 
+
+            set({
+              user: newUser,
+              currentProfile: newProfile
             });
+
+            return { isNewUser: true }; // 👈 신규 유저
           }
 
-          return true;
         } catch (err) {
           console.error('네이버 로그인 오류:', err);
-          return false;
+          return { isNewUser: false };
         }
       },
 
@@ -365,15 +370,15 @@ export const useAuthStore = create<AuthState>()(
 
         const currentProfiles = currentUser.profile?.length ? currentUser.profile : [];
         const nextId = Math.max(0, ...currentProfiles.map((item) => item.id)) + 1;
-        
-        const formattedProfile = normalizeProfile({ 
-          ...newProfile, 
+
+        const formattedProfile = normalizeProfile({
+          ...newProfile,
           id: nextId,
           movies: { watchingVideos: [], wishlist: [], playlist: { playlistVideos: [], customPlaylists: [] }, genreStats: {}, countryStats: {} },
           community: { followers: [], following: [], reviews: [], likedfeeds: [], commentfeeds: [], reportfeeds: [] },
           badges: { equippedBadges: "", earnedBadges: [] }
         });
-        
+
         const nextProfiles = [...currentProfiles, formattedProfile];
 
         try {
@@ -394,11 +399,11 @@ export const useAuthStore = create<AuthState>()(
 
         const currentProfiles = currentUser.profile?.length ? currentUser.profile : [];
         const nextNormalizedProfile = normalizeProfile(updatedProfile);
-        
-        const nextProfiles = currentProfiles.map((item) => 
+
+        const nextProfiles = currentProfiles.map((item) =>
           item.id === updatedProfile.id ? { ...item, ...nextNormalizedProfile } : item
         );
-        
+
         const isCurrentActive = get().currentProfile?.id === updatedProfile.id;
         const nextCurrentProfile = isCurrentActive ? { ...get().currentProfile, ...nextNormalizedProfile } : get().currentProfile;
 
@@ -474,12 +479,12 @@ export const useAuthStore = create<AuthState>()(
 
         // 1. 상태 반전 (UI 즉시 반영용)
         const newStatus = !currentProfile.isCommunity;
-        
+
         // 2. Zustand 스토어 업데이트
         set((state) => ({
           user: {
             ...state.user!,
-            profile: state.user!.profile.map((p) => 
+            profile: state.user!.profile.map((p) =>
               p.id === currentProfile.id ? { ...p, isCommunity: newStatus } : p
             ),
           },
@@ -526,7 +531,7 @@ export const useAuthStore = create<AuthState>()(
           await updateDoc(userDocRef, { profile: updatedProfiles });
 
           // 데이터가 업데이트된 후 AuthStore 상태 최신화
-          get().onInitAuth(); 
+          get().onInitAuth();
         } catch (error) {
           console.error("좋아요 토글 실패:", error);
         }
@@ -633,9 +638,9 @@ export const useAuthStore = create<AuthState>()(
         if (!user || !currentProfile) return;
 
         const userDocRef = doc(db, "users", user.userId);
-        const updatedProfiles = user.profile.map((p: any) => 
-          p.id === currentProfile.id 
-            ? { ...p, badges: { ...p.badges, equippedBadges: badgeId } } 
+        const updatedProfiles = user.profile.map((p: any) =>
+          p.id === currentProfile.id
+            ? { ...p, badges: { ...p.badges, equippedBadges: badgeId } }
             : p
         );
 
@@ -645,10 +650,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "netflix-auth-storage", // 💡 로컬 스토리지에 저장될 Key 이름입니다.
-      
+
       // 💡 [중요] 전체 스토어 상태 중에서 오직 'currentProfile'만 로컬 스토리지에 저장되도록 필터링합니다.
       // 이렇게 해야 유저 정보가 꼬이거나 불필요한 대용량 데이터가 스토리지에 쌓이지 않습니다.
-      partialize: (state) => ({ currentProfile: state.currentProfile }), 
+      partialize: (state) => ({ currentProfile: state.currentProfile }),
     }
   )
 );
