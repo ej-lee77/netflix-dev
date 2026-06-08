@@ -275,7 +275,11 @@ export default function FeedDetailPage() {
                     <div className="comment-actions">
                       <button
                         type="button"
-                        className={comment.liked ? "comment-like-btn liked" : "comment-like-btn"}
+                        className={
+                          comment.liked
+                            ? "comment-like-btn liked"
+                            : "comment-like-btn"
+                        }
                         onClick={() => handleCommentLike(comment.commentId)}
                         aria-pressed={comment.liked}
                       >
@@ -310,7 +314,12 @@ export default function FeedDetailPage() {
                 </div>
               ))
             ) : (
-              <div className="comment-empty">아직 댓글이 없어요.</div>
+              <div className="comment-empty">
+                <div className="empty-img">
+                  <img src="/images/feed/empty-comment.svg" alt="." />
+                </div>
+                <div>아직 댓글이 없어요.</div>
+              </div>
             )}
           </div>
         </section>

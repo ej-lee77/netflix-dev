@@ -13,7 +13,16 @@ import {
 } from "@/lib/searchOptions";
 import "./search.scss";
 
-const recommendedSearches = ["파묘", "서울의 봄", "듄: 파트2", "웡카", "노량", "쿵푸팬더4", "패스트", "아가일"];
+const recommendedSearches = [
+  "오징어 게임",
+  "기묘한 이야기",
+  "더 글로리",
+  "흑백요리사",
+  "웬즈데이",
+  "지금 우리 학교는",
+  "마스크걸",
+  "스위트홈",
+];
 const creators = ["송강호", "전도연", "이병헌", "박찬욱", "봉준호", "놀란", "스필버그", "타란티노"];
 
 export default function SearchPage() {
