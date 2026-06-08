@@ -16,6 +16,7 @@ import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "./scss/rankingSection.scss";
 import SectionTitle from "../common/SectionTitle";
+import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 
 export interface RankingItem {
   id: number;
@@ -25,6 +26,7 @@ export interface RankingItem {
   vote_average: number;
   overview: string;
   media_type?: "movie" | "tv";
+  genre_ids?: number[];
 }
 
 const IMG_BASE = "https://image.tmdb.org/t/p/";
@@ -46,6 +48,7 @@ interface RankingSectionProps {
 export default function RankingSection({ title, items: externalItems }: RankingSectionProps = {}) {
   const t = useT();
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
+  const excludedGenres = useExcludedGenres();
 
   const [activeId, setActiveId] = useState<number | null>(null);
 
@@ -61,12 +64,14 @@ export default function RankingSection({ title, items: externalItems }: RankingS
   }, [externalItems, onFetchKoreanMovies, koreanMovies.length]);
 
   const rankingItems: RankingItem[] = useMemo(() => {
-    if (externalItems) return externalItems.slice(0, 10);
-    return koreanMovies
-      .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
-      .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }))
-      .slice(0, 10);
-  }, [externalItems, koreanMovies]);
+    const source = externalItems
+      ? externalItems
+      : koreanMovies
+          .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
+          .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }));
+    // 제외 장르 작품 숨김 후 상위 10개
+    return filterByExcludedGenres(source, excludedGenres).slice(0, 10);
+  }, [externalItems, koreanMovies, excludedGenres]);
 
   useEffect(() => {
     if (!activeId && rankingItems[0]) {
