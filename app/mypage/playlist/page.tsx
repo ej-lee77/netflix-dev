@@ -102,6 +102,8 @@ function ActivityContent() {
   const [wishFilter, setWishFilter] = useState<WishFilterType>("all");
   const [wishSort, setWishSort] = useState<WishSortType>("recent");
   const [wishSortOpen, setWishSortOpen] = useState(false);
+  const [playlistSort, setPlaylistSort] = useState<WishSortType>("recent");
+  const [playlistSortOpen, setPlaylistSortOpen] = useState(false);
   const [wishLoading, setWishLoading] = useState(true);
   const [playlistTitle, setPlaylistTitle] = useState("");
   const [playlistDescription, setPlaylistDescription] = useState("");
@@ -307,6 +309,7 @@ function ActivityContent() {
   });
 
   const currentWishSortLabel = wishSortOptions.find((o) => o.key === wishSort)?.label;
+  const currentPlaylistSortLabel = wishSortOptions.find((o) => o.key === playlistSort)?.label;
 
   const handleRemoveWish = async (e: React.MouseEvent, item: WishItem) => {
     e.preventDefault();
@@ -824,10 +827,41 @@ function ActivityContent() {
     <section className="activity-section">
       <div className="section-head">
         <h2>{hideMode ? "시청기록 숨기기" : "시청기록"}</h2>
-        <select className="sort-select" defaultValue="recent" aria-label="정렬">
-          <option value="recent">최근 시청순</option>
-          <option value="title">제목순</option>
-        </select>
+        <div className="wish-sort">
+          <button
+            type="button"
+            className="wish-sort-btn"
+            onClick={() => setPlaylistSortOpen((v) => !v)}
+          >
+            {currentPlaylistSortLabel}
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className={`wish-sort-arrow${playlistSortOpen ? " is-open" : ""}`}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          
+          {playlistSortOpen && (
+            <ul className="wish-sort-menu">
+              {wishSortOptions.map((opt) => (
+                <li key={opt.key}>
+                  <button
+                    type="button"
+                    className={`wish-sort-option${playlistSort === opt.key ? " is-selected" : ""}`}
+                    onClick={() => {
+                      setPlaylistSort(opt.key);
+                      setPlaylistSortOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       <div className="filter-row">
@@ -860,8 +894,8 @@ function ActivityContent() {
                 <div className="mini-poster__image">
                   {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt={item.title} />}
                 </div>
-                <h3>{item.title}</h3>
-                <p>{formatDate(item.playTime)}</p>
+                {/* <h3>{item.title}</h3> */}
+                {/* <p>{formatDate(item.playTime)}</p> */}
               </Link>
             </article>
           ))}
@@ -1073,25 +1107,42 @@ function ActivityContent() {
           ))}
         </div>
 
-        {/* // 정렬 메뉴 영역 */}
-        {wishSortOpen && (
-          <ul className="wish-sort-menu">
-            {wishSortOptions.map((opt) => (
-              <li key={opt.key}>
-                <button
-                  type="button"
-                  className={`wish-sort-option${wishSort === opt.key ? " is-selected" : ""}`}
-                  onClick={() => {
-                    setWishSort(opt.key);
-                    setWishSortOpen(false);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="wish-sort">
+          <button
+            type="button"
+            className="wish-sort-btn"
+            onClick={() => setWishSortOpen((v) => !v)}
+          >
+            {currentWishSortLabel}
+            <svg
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className={`wish-sort-arrow${wishSortOpen ? " is-open" : ""}`}
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        
+          {/* // 정렬 메뉴 영역 */}
+          {wishSortOpen && (
+            <ul className="wish-sort-menu">
+              {wishSortOptions.map((opt) => (
+                <li key={opt.key}>
+                  <button
+                    type="button"
+                    className={`wish-sort-option${wishSort === opt.key ? " is-selected" : ""}`}
+                    onClick={() => {
+                      setWishSort(opt.key);
+                      setWishSortOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* 리스트 본문 */}

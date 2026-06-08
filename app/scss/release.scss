@@ -200,7 +200,9 @@
   }
 
   .release-card {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     cursor: pointer;
     transition: transform 0.2s;
 
@@ -236,22 +238,11 @@
     }
 
     .info {
-      h3 {
-        font-size: g.$text-14;
-        font-weight: 600;
-        margin-bottom: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .date {
-        font-size: g.$text-12;
-        color: g.$g-color;
-        margin-bottom: 8px;
-      }
+      display: flex;
+      flex-direction: column;
 
       .notify-btn {
+        height: 34px;
         width: 100%;
         padding: 7px 12px;
         background: transparent;
