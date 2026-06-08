@@ -598,6 +598,29 @@ export default function FeedPage() {
 
   const selectedCommentReview =
     feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
+  const profileReviewCount = feeds.filter(
+    (review) =>
+      review.author === currentProfile?.nickname ||
+      (currentUserId && review.userId === currentUserId),
+  ).length;
+  const profileCommentCount = feeds.reduce(
+    (total, review) => total + review.comments,
+    0,
+  );
+  const averageRating =
+    profileReviewCount > 0
+      ? feeds
+          .filter(
+            (review) =>
+              review.author === currentProfile?.nickname ||
+              (currentUserId && review.userId === currentUserId),
+          )
+          .reduce((total, review) => total + review.rating, 0) /
+        profileReviewCount
+      : 0;
+  const profileName =
+    currentProfile?.nickname || user?.email?.split("@")[0] || "Netflixer";
+  const profileImage = currentProfile?.imgUrl;
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
@@ -1098,7 +1121,7 @@ export default function FeedPage() {
           <div className="feed-modal-head">
             <div>
               <h3 id="feed-comment-title">댓글</h3>
-              <p>" {selectedCommentReview.mediaTitle} " 게시물에 남긴 의견</p>
+              <p>&quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴 의견</p>
             </div>
             <button
               type="button"
@@ -1223,24 +1246,69 @@ export default function FeedPage() {
           </button>
         </div>
 
-        <div className="filter-chips">
-          <button
-            className={activeTab === "all" ? "chip active" : "chip"}
-            onClick={() => setActiveTab("all")}
-          >
-            전체
-          </button>
-          <button
-            className={activeTab === "following" ? "chip active" : "chip"}
-            onClick={() => setActiveTab("following")}
-          >
-            팔로워 게시물
-          </button>
-        </div>
-
         <div className="feed-layout">
+          <aside className="feed-profile-panel" aria-label="프로필 정보">
+            <div className="feed-profile-card">
+              <div className="feed-profile-card__eyebrow">프로필 정보</div>
+              <div className="feed-profile-card__avatar">
+                {profileImage ? (
+                  <img src={profileImage} alt="" />
+                ) : (
+                  getInitial(profileName)
+                )}
+              </div>
+              <strong>{profileName}</strong>
+              <span className="feed-profile-level">Lv.0 베이비</span>
+              <div className="feed-profile-stats">
+                <div>
+                  <b>{averageRating.toFixed(1)}</b>
+                  <span>평균 별점</span>
+                </div>
+                <div>
+                  <b>{profileReviewCount}</b>
+                  <span>리뷰</span>
+                </div>
+                <div>
+                  <b>{profileCommentCount}</b>
+                  <span>댓글</span>
+                </div>
+              </div>
+              <div className="feed-profile-nav">
+                <Link href="/mypage/playlist?tab=history">시청이력</Link>
+                <Link href="/mypage/playlist?tab=playlists">보관함</Link>
+                <Link href="/settings?tab=profile">프로필 관리</Link>
+              </div>
+            </div>
+          </aside>
           <div className="feed-main">
-            {filteredReviews.map((review) => {
+            <div
+              className="feed-tabs"
+              role="tablist"
+              aria-label="피드 게시물 필터"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "all"}
+                className={activeTab === "all" ? "active" : ""}
+                onClick={() => setActiveTab("all")}
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "following"}
+                className={activeTab === "following" ? "active" : ""}
+                onClick={() => setActiveTab("following")}
+              >
+                팔로워 게시물
+              </button>
+            </div>
+            {filteredReviews.length === 0 ? (
+              <div className="feed-empty-state">게시물이 없습니다</div>
+            ) : (
+              filteredReviews.map((review) => {
               const isReported = reportedReviewIds.includes(review.feedId);
               const shouldBlurSpoiler =
                 review.isSpoiler &&
@@ -1430,7 +1498,8 @@ export default function FeedPage() {
                   </div>
                 </article>
               );
-            })}
+              })
+            )}
           </div>
         </div>
       </div>
