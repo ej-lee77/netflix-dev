@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { deleteUser } from "firebase/auth";
 import { auth, db } from "@/firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc } from "firebase/firestore";
 import type { PayInfo, UserProfile } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/settings.scss";
@@ -107,7 +107,7 @@ function SettingsContent() {
       : "account",
   );
 
-  const { user, onAddProfile } = useAuthStore();
+  const { user, onAddProfile, onLogout } = useAuthStore();
 
   // Firestore에서 플랜/결제 정보 불러오기
   const [planType, setPlanType] = useState<string>("");
@@ -245,7 +245,8 @@ function SettingsContent() {
 
   const handleDeleteAccount = async () => {
     const currentUser = auth.currentUser;
-    if (!currentUser) {
+    const uid = currentUser?.uid ?? user?.userId; // 👈 카카오/네이버 uid도 포함
+    if (!uid) {
       setDeleteError("로그인 정보를 확인할 수 없습니다. 다시 로그인해 주세요.");
       return;
     }
@@ -259,10 +260,19 @@ function SettingsContent() {
     setDeleteError("");
 
     try {
-      await deleteUser(currentUser);
-      window.localStorage.removeItem("netflix-current-profile");
-      window.localStorage.removeItem("netflix-profile-list");
+      // Firestore 문서 삭제
+      await deleteDoc(doc(db, "users", uid));
+
+      // Firebase Auth 유저면 Auth도 삭제
+      if (currentUser) {
+        await deleteUser(currentUser);
+      }
+
+      // 로컬 스토리지 정리 + 로그아웃
+      window.localStorage.removeItem("netflix-auth-storage");
+      await onLogout();
       router.replace("/login");
+
     } catch (err: unknown) {
       const errorCode =
         typeof err === "object" &&
