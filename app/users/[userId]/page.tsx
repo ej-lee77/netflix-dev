@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
 import { BADGE_LIST } from "@/data/badge";
 import { filters } from "../../category/page";
+import { dummyPlaylists } from "@/data/dummyPlaylist";
 import BackButton from "@/components/common/BackButton";
 import "../../scss/mypage.scss";
 import "./userDetail.scss";
@@ -72,6 +73,46 @@ export default function UserDetailPage() {
 
     (async () => {
       try {
+        // 더미 유저(dummy-*)는 Firestore 에 없으므로 로컬 더미 데이터로 실제 유저처럼 구성
+        if (userId.startsWith("dummy")) {
+          const idx = dummyPlaylists.findIndex((p) => p.userId === userId);
+          const d = idx >= 0 ? dummyPlaylists[idx] : null;
+          if (!d) {
+            if (!ignore) { setNotFound(true); setLoading(false); }
+            return;
+          }
+          // 무드 태그 → 무드 id + 파생 장르로 시청취향 통계 구성
+          const genreStats: Record<string, number> = {};
+          const baseGenre = d.category === "애니메이션" ? "16" : "18";
+          genreStats[baseGenre] = 6;
+          d.tags.forEach((tag, i) => {
+            const m = filters.mood.find((x) => x.label === tag);
+            if (!m) return;
+            genreStats[m.id] = (genreStats[m.id] ?? 0) + (5 - i);
+            (m.query?.with_genres ?? "")
+              .split(",")
+              .filter(Boolean)
+              .forEach((gid) => {
+                genreStats[gid] = (genreStats[gid] ?? 0) + (4 - i);
+              });
+          });
+          if (ignore) return;
+          setTarget({
+            profileId: 1000 + idx,
+            nickname: d.nickname,
+            imgUrl: d.posters[0] ?? "",
+            movies: { watchingVideos: d.videoIds, genreStats },
+            community: {
+              followers: Array.from({ length: 12 + idx * 3 }),
+              following: [],
+              reviews: d.videoIds.map((v, i) => ({ reviewId: `${userId}-r${i}`, videoId: v })),
+            },
+            badges: { equippedBadges: "", earnedBadges: [] },
+          });
+          setLoading(false);
+          return;
+        }
+
         const snap = await getDoc(doc(db, "users", userId));
         if (!snap.exists()) {
           if (!ignore) {
@@ -123,6 +164,25 @@ export default function UserDetailPage() {
 
     (async () => {
       try {
+        // 더미는 자신의 플레이리스트를 로컬 데이터에서 바로 구성
+        if (userId.startsWith("dummy")) {
+          const d = dummyPlaylists.find((p) => p.userId === userId);
+          if (!ignore) {
+            setPlaylists(
+              d
+                ? [{
+                    listId: d.listId,
+                    name: d.name,
+                    count: d.videoIds.length,
+                    isShare: d.isShare,
+                    posters: d.posters.slice(0, 4),
+                  }]
+                : [],
+            );
+          }
+          return;
+        }
+
         const snap = await getDoc(doc(db, "playlists", userId));
         if (!snap.exists()) {
           if (!ignore) setPlaylists([]);

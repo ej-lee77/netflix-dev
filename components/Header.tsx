@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -36,6 +36,18 @@ export default function Header() {
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const modeMenuRef = useRef<HTMLUListElement>(null);
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!modeMenuRef.current) return;
+    const activeLi = modeMenuRef.current.querySelector<HTMLLIElement>("li.active");
+    if (activeLi) {
+      setIndicator({ left: activeLi.offsetLeft, width: activeLi.offsetWidth });
+    } else {
+      setIndicator(null);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 80);
@@ -131,16 +143,24 @@ export default function Header() {
               </Link>
             </h1>
 
-            <ul className="mode-menu flex-item gap-4">
-              <li className={pathname === "/" ? "active" : ""}>
-                <Link href="/">{t("header.cinema")}</Link>
-              </li>
-              {canUseConnect && (
-                <li className={pathname?.startsWith("/connect") ? "active" : ""}>
-                  <Link href="/connect">{t("header.connect")}</Link>
+            {(pathname === "/" || pathname?.startsWith("/connect")) && (
+              <ul ref={modeMenuRef} className="mode-menu flex-item gap-4">
+                <li className={pathname === "/" ? "active" : ""}>
+                  <Link href="/">{t("header.cinema")}</Link>
                 </li>
-              )}
-            </ul>
+                {canUseConnect && (
+                  <li className={pathname?.startsWith("/connect") ? "active" : ""}>
+                    <Link href="/connect">{t("header.connect")}</Link>
+                  </li>
+                )}
+                {indicator && (
+                  <span
+                    className="mode-indicator"
+                    style={{ left: indicator.left, width: indicator.width }}
+                  />
+                )}
+              </ul>
+            )}
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
