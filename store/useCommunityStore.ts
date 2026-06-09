@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-import { collection, query, where, orderBy, getDocs, setDoc,  arrayUnion, doc, getDoc, writeBatch, updateDoc, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, arrayUnion, doc, getDoc, writeBatch, runTransaction, type Transaction } from 'firebase/firestore';
 import { db } from '@/firebase/firebase';
 import { ReviewDocument, CommunityStore } from '@/types/community';
 import { useAuthStore } from './useAuthStore';
-import { UserDocument } from '@/types/auth';
 
 export const useCommunityStore = create<CommunityStore>((set) => ({
   reviews: [],
@@ -18,10 +17,10 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const reviewList = data.reviews || [];
+        const reviewList = (data.reviews || []) as ReviewDocument[];
         
         // 최신순으로 정렬 후 상태 업데이트
-        const sortedReviews = reviewList.sort((a : any, b : any) => 
+        const sortedReviews = reviewList.sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         
@@ -34,6 +33,32 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
     }
   },
 
+  fetchAllReviews: async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "videoReviews"));
+      const reviewMap = new Map<string, ReviewDocument>();
+
+      snapshot.docs.forEach((reviewDoc) => {
+        const data = reviewDoc.data();
+        const reviewList = Array.isArray(data.reviews) ? data.reviews : [];
+
+        reviewList.forEach((review: ReviewDocument) => {
+          if (!review?.reviewId || !review?.videoId) return;
+          reviewMap.set(`${review.videoId}#${review.reviewId}`, review);
+        });
+      });
+
+      const sortedReviews = Array.from(reviewMap.values()).sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      set({ reviews: sortedReviews });
+    } catch (error) {
+      console.error("전체 리뷰 수집 에러:", error);
+      set({ reviews: [] });
+    }
+  },
+
   fetchVideoReviews: async (videoId: string) => {
     try {
       // videoId를 문서 ID로 가지는 문서를 직접 조회
@@ -42,10 +67,10 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const reviewList = data.reviews || [];
+        const reviewList = (data.reviews || []) as ReviewDocument[];
         
         // 클라이언트 측에서 최신순 정렬 (배열은 쿼리로 정렬 불가)
-        const sortedReviews = reviewList.sort((a: any, b: any) => 
+        const sortedReviews = reviewList.sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         
@@ -56,6 +81,33 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       }
     } catch (error) {
       console.error("영상 리뷰 페칭 에러:", error);
+    }
+  },
+
+  fetchUserReviewsById: async (targetUserId: string) => {
+    if (!targetUserId) return null;
+
+    try {
+      const docRef = doc(db, "userReviews", targetUserId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const reviewList = data.reviews || [];
+        
+        // 최신순으로 정렬
+        const sortedReviews = reviewList.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
+        return sortedReviews;
+      } else {
+        // 데이터가 없을 경우 빈 배열 반환
+        return [];
+      }
+    } catch (error) {
+      console.error(`${targetUserId} 유저 리뷰 페칭 에러:`, error);
+      return null;
     }
   },
 
@@ -181,7 +233,7 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       ]);
 
       // 2. 각 문서의 리뷰 배열 수정 로직
-      const updateArray = (arr: any[]) => arr.map(r => 
+      const updateArray = (arr: ReviewDocument[] = []) => arr.map((r) => 
         r.reviewId === reviewId 
           ? { ...r, reportsCount: (r.reportsCount || 0) + 1 } 
           : r
@@ -216,15 +268,15 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
     const userDocRef = doc(db, "userReviews", user?.userId);
 
     try {
-      await runTransaction(db, async (transaction : any) => {
+      await runTransaction(db, async (transaction: Transaction) => {
         // 1. 문서 가져오기
         const videoDoc = await transaction.get(videoDocRef);
         const userDoc = await transaction.get(userDocRef);
 
         if (!videoDoc.exists()) throw "Video review document does not exist!";
         
-        const currentReviews = [...(videoDoc.data().reviews || [])];
-        const rIndex = currentReviews.findIndex((r: any) => r.reviewId === reviewId);
+        const currentReviews = [...((videoDoc.data().reviews || []) as ReviewDocument[])];
+        const rIndex = currentReviews.findIndex((r) => r.reviewId === reviewId);
         if (rIndex === -1) throw "Review not found!";
 
         // 2. 좋아요 수 계산 (최솟값 0 보장)
@@ -236,8 +288,8 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
 
         // 4. userReviews 데이터 업데이트 (작성자의 문서도 동일하게 반영)
         if (userDoc.exists()) {
-          const userReviews = [...(userDoc.data().reviews || [])];
-          const urIndex = userReviews.findIndex((r: any) => r.reviewId === reviewId);
+          const userReviews = [...((userDoc.data().reviews || []) as ReviewDocument[])];
+          const urIndex = userReviews.findIndex((r) => r.reviewId === reviewId);
           
           if (urIndex !== -1) {
             userReviews[urIndex] = { ...userReviews[urIndex], likesCount: newLikesCount };
