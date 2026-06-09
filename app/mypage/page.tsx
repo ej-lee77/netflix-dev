@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import AppIcon from "@/components/common/AppIcon";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -318,12 +319,12 @@ export default function MyPage() {
 
         {/* 상단 모드 컨트롤러 바 */}
         <div className="mypage-mode-controller">
-          <p>🎬 피드/리뷰 기능을 숨길 수 있습니다.</p>
+          <p><AppIcon name="clapper" size={16} /> 피드/리뷰 기능을 숨길 수 있습니다.</p>
           <button
             className={`toggle-mode-btn ${hideCommunity ? "active" : ""}`}
             onClick={toggleCommunity} // 스토어 액션 직접 연결
           >
-            <span>{hideCommunity ? "🔒 커뮤니티 숨김 모드" : "🔓 커뮤니티 표시 모드"}</span>
+            <span>{hideCommunity ? <><AppIcon name="lock" size={15} /> 커뮤니티 숨김 모드</> : <><AppIcon name="unlock" size={15} /> 커뮤니티 표시 모드</>}</span>
             <div className="switch-track">
               <div className="switch-thumb"></div>
             </div>
@@ -399,7 +400,7 @@ export default function MyPage() {
                 {item.icon.endsWith(".svg") || item.icon.endsWith(".png") ? (
                   <Image src={item.icon} alt="" width={24} height={24} />
                 ) : (
-                  <span>⚙️</span>
+                  <span><AppIcon name="gear" size={18} /></span>
                 )}
               </div>
               <h3>{item.title}</h3>
@@ -502,7 +503,7 @@ export default function MyPage() {
                   <div className="mood-summary-box">
                     {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
                       <p>
-                        💡 주로 
+                        <AppIcon name="bulb" size={15} /> 주로 
                         {genreMoodStats.topGenre?.name !== "없음" && (
                           <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
                         )}
@@ -579,7 +580,7 @@ export default function MyPage() {
                         <div className="review-body">
                           <div className="review-head">
                             <h3>{movie?.title || movie?.name || '로딩 중...'}</h3>
-                            <span className="stars">👍 {review.likesCount}</span>
+                            <span className="stars"><AppIcon name="like" size={14} /> {review.likesCount}</span>
                           </div>
                           <p className="text">
                             {review.isSpoiler && <span className="spoiler-badge">[스포일러]</span>}

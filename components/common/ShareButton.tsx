@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { createPortal } from "react-dom";
+import { showToast } from "@/store/useToastStore";
 import "./shareButton.scss";
 
 interface ShareButtonProps {
@@ -12,40 +11,32 @@ interface ShareButtonProps {
 }
 
 export default function ShareButton({ mediaType, id, className, stopPropagation }: ShareButtonProps) {
-  const [visible, setVisible] = useState(false);
-  const [hiding, setHiding] = useState(false);
-
   const handleClick = (e: React.MouseEvent) => {
     if (stopPropagation) e.stopPropagation();
     e.preventDefault();
 
+    // 버튼 위치를 비동기(clipboard) 전에 미리 확보
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const anchor = { x: rect.left + rect.width / 2, y: rect.top };
+
     const url = `${window.location.origin}/detail/${mediaType}/${id}`;
     navigator.clipboard.writeText(url).then(() => {
-      setVisible(true);
-      setHiding(false);
-      setTimeout(() => setHiding(true), 1750);
-      setTimeout(() => setVisible(false), 2000);
+      showToast("링크가 복사되었습니다.", {
+        icon: "/images/icon/link.svg",
+        anchor,
+      });
     });
   };
 
   return (
-    <>
-      <button
-        type="button"
-        className={`share-btn ${className ?? ""}`}
-        onClick={handleClick}
-        title="공유하기"
-        aria-label="공유하기"
-      >
-        <img src="/images/header/menu/share.svg" alt="공유" width={18} height={18} />
-      </button>
-      {visible && createPortal(
-        <div className={`share-toast${hiding ? " share-toast--hiding" : ""}`}>
-          <img src="/images/icon/link.svg" alt="" width={18} height={18} />
-          링크가 복사되었습니다.
-        </div>,
-        document.body
-      )}
-    </>
+    <button
+      type="button"
+      className={`share-btn ${className ?? ""}`}
+      onClick={handleClick}
+      title="공유하기"
+      aria-label="공유하기"
+    >
+      <img src="/images/header/menu/share.svg" alt="공유" width={18} height={18} />
+    </button>
   );
 }
