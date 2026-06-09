@@ -56,19 +56,19 @@ $section-gap: 40px;
 
 * {
   &::-webkit-scrollbar {
-    width: 8px;              // 세로 스크롤 너비
-    height: 8px;             // 가로 스크롤 높이
+    width: 8px; // 세로 스크롤 너비
+    height: 8px; // 가로 스크롤 높이
     background-color: $d-color; // 전체 배경을 검은색으로
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: #333;  // 스크롤 막대 색상
+    background-color: #333; // 스크롤 막대 색상
     border-radius: $radius-md; // 8px (둥근 모서리)
     border: 2px solid $d-color; // 막대 주변에 여백을 준 듯한 효과
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background-color: #555;  // 마우스 올렸을 때 조금 밝게
+    background-color: #555; // 마우스 올렸을 때 조금 밝게
   }
 
   &::-webkit-scrollbar-track {
@@ -99,6 +99,7 @@ $section-gap: 40px;
     margin-top: 18px;
     font-size: $text-20;
     font-weight: 800;
+    text-align: center;
   }
 
   p {
@@ -106,6 +107,7 @@ $section-gap: 40px;
     color: $main-menu-color;
     font-size: $text-14;
     line-height: 1.5;
+    text-align: center;
   }
 
   .profile-pin-gate-submit {
@@ -154,6 +156,7 @@ $section-gap: 40px;
   display: flex;
   gap: 8px;
   margin-top: 22px;
+  justify-content: center;
 
   input {
     width: 48px;
@@ -330,27 +333,21 @@ main {
       width: min(1920px, calc(100vw - #{$main-menu-width}));
       margin-left: $main-menu-width;
       margin-right: 0;
-      padding-left: clamp(
-        24px,
+      padding-left: clamp(24px,
         calc((100vw - #{$main-menu-width} - 1920px) / 2),
-        80px
-      );
-      padding-right: clamp(
-        24px,
+        80px);
+      padding-right: clamp(24px,
         calc((100vw - #{$main-menu-width} - 1920px) / 2),
-        80px
-      );
+        80px);
     }
 
     .section-title-outer {
       width: calc(100vw - #{$main-menu-width});
       margin-left: $main-menu-width;
       padding-left: 0;
-      padding-right: clamp(
-        24px,
+      padding-right: clamp(24px,
         calc((100vw - #{$main-menu-width} - 1920px) / 2),
-        80px
-      );
+        80px);
     }
   }
 }
