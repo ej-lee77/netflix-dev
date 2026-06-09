@@ -4,6 +4,8 @@ import "../scss/review.scss"; // SCSS 파일 임포트
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
 import { useMovieStore } from '@/store/useMovieStore';
+import { showToast } from "@/store/useToastStore";
+import { relative } from 'path';
 
 const REVIEW_PAGE_SIZE = 10;
 
@@ -31,8 +33,16 @@ const sortOptions: { key: SortType; label: string }[] = [
   { key: "comments", label: "댓글 많은순" },
 ];
 
+const REPORT_REASONS = [
+  "내용이 부적절해요",
+  "스포일러가 포함되어 있어요",
+  "욕설 또는 혐오 표현이에요",
+  "도배성 리뷰예요",
+  "기타",
+];
+
 export default function Review() {
-  const { reviews, fetchUserReviews, deleteReview, updateReview, updateReviewLikeCount, fetchUserReviewsById } = useCommunityStore();
+  const { reviews, fetchUserReviews, reportReview, deleteReview, updateReview, updateReviewLikeCount, fetchUserReviewsById } = useCommunityStore();
   const { currentProfile, updateUserLike } = useAuthStore();
   const { fetchMediaDetail } = useMovieStore(); 
   const [reviewPage, setReviewPage] = useState(1);
@@ -50,6 +60,11 @@ export default function Review() {
     string[]
   >([]);
   const [counts, setCounts] = useState({ mine: 0, liked: 0, following: 0 });
+  const [reportedReviewIds, setReportedReviewIds] = useState<string[]>([]);
+  const [reportTargetReviewId, setReportTargetReviewId] = useState<
+    string | null
+  >(null);
+  const [selectedReportReason, setSelectedReportReason] = useState("");
 
   // 2. 영화 상세 정보 보완
   const [enrichedReviews, setEnrichedReviews] = useState<any[]>([]);
@@ -60,19 +75,32 @@ export default function Review() {
     const processAll = async () => {
       // 1. 데이터 수집 (기존 + 팔로잉)
       const followingReviews = await loadFollowingReviews() || [];
-      const combined = [...reviews, ...followingReviews];
-      const unique = Array.from(new Map(combined.map((r) => [r.reviewId, r])).values());
+     // 2. 전체 리뷰에서 중복 없이 ID 기준으로 하나만 남기기
+      // Map을 사용하면 가장 효율적으로 reviewId 중복을 제거할 수 있습니다.
+      const reviewMap = new Map();
+
+      // 내 리뷰 추가
+      reviews.forEach(r => reviewMap.set(r.reviewId, r));
+
+      // 팔로잉 리뷰 추가 (이미 존재하면 덮어쓰거나 무시, 여기서는 덮어쓰지 않음)
+      followingReviews.forEach(r => {
+        if (!reviewMap.has(r.reviewId)) {
+          reviewMap.set(r.reviewId, r);
+        }
+      });
+
+      const unique = Array.from(reviewMap.values());
 
       // 필터링 적용 전, 각 카테고리별로 몇 개인지 미리 계산합니다.
       const newCounts = {
         mine: unique.filter(r => r.profileId === currentProfile?.id).length,
         liked: unique.filter(r => currentProfile?.community?.reviews.includes(`${r.videoId}#${r.reviewId}`)).length,
-        following: unique.filter(r => currentProfile?.community?.following.includes(String(r.profileId))).length
+        following: followingReviews.length
       };
       setCounts(newCounts);
 
       // 2. 필터링 및 정렬
-      const filteredAndSorted = applyFilterAndSort(unique, scopeFilter, sortType);
+      const filteredAndSorted = applyFilterAndSort(unique, scopeFilter, sortType, followingReviews);
 
       // 3. 페이지네이션 계산
       // processedReviews가 아닌 filteredAndSorted를 기준으로 계산합니다.
@@ -125,9 +153,11 @@ export default function Review() {
     }
   };
 
-  const applyFilterAndSort = (data: any[], scope: string, sort: string) => {
+  const applyFilterAndSort = (data: any[], scope: string, sort: string, followingReviews: any[]) => {
     // 1. 신고 수 필터링
     let result = data.filter((r) => (r.reportsCount ?? 0) <= 5);
+
+    const followingReviewIds = new Set(followingReviews.map(r => r.reviewId));
 
     // 2. Scope 필터링
     result = result.filter((r) => {
@@ -140,8 +170,8 @@ export default function Review() {
       }
       
       if (scope === "following") {
-        const followingList = currentProfile?.community?.following || [];
-        return followingList.includes(String(r.profileId));
+        // const followingList = currentProfile?.community?.following || [];
+        return followingReviewIds.has(r.reviewId);;
       }
       
       return true;
@@ -163,6 +193,36 @@ export default function Review() {
     (reviewPage - 1) * REVIEW_PAGE_SIZE,
     reviewPage * REVIEW_PAGE_SIZE
   );
+
+  const handleOpenReportReview = (reviewId: string) => {
+    setReportTargetReviewId((currentId) =>
+      currentId === reviewId ? null : reviewId,
+    );
+    setSelectedReportReason("");
+  };
+
+  const handleSubmitReportReview = async () => {
+    if (!reportTargetReviewId || !selectedReportReason) return;
+
+    try {
+      // 1. 스토어의 신고 액션 호출
+      // 현재 보고 있는 리뷰 객체에서 videoId를 함께 전달해야 합니다.
+      const targetReview = reviews.find(
+        (r) => r.reviewId === reportTargetReviewId,
+      );
+      if (!targetReview) return;
+
+      await reportReview(reportTargetReviewId, targetReview.videoId);
+
+      // 2. 성공 시 UI 업데이트
+      setReportedReviewIds((prev) => [...prev, reportTargetReviewId]);
+      setReportTargetReviewId(null);
+      setSelectedReportReason("");
+      showToast("신고되었습니다.");
+    } catch (error) {
+      showToast("신고 처리에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   const updatetoggleReviewLike = async (reviewId: string) => {
     const { user, currentProfile } = useAuthStore.getState();
@@ -306,6 +366,7 @@ export default function Review() {
             const userLikedReviews = currentProfile?.community?.reviews || [];
             const reviewKey = `${review.videoId}#${review.reviewId}`;
             const isLiked = userLikedReviews.includes(reviewKey);
+            const isReported = reportedReviewIds.includes(review.reviewId);
             const [linkType, linkId] = review.videoId.split('-');
             const isEditingReview = editingReviewId === review.reviewId;
             const isMyReview = Boolean(
@@ -350,6 +411,143 @@ export default function Review() {
                       <span style={{ marginLeft: 8, padding: "2px 7px", borderRadius: 4, border: "1px solid rgba(229,9,20,0.45)", color: "#e50914", fontSize: 11 }}>
                         스포일러
                       </span>
+                    )}
+
+                    {!isMyReview && (
+                      <button
+                        type="button"
+                        className={`detail-outline-hover${isReported ? " detail-report-active" : ""}`}
+                        onClick={() => handleOpenReportReview(review.reviewId)}
+                        aria-pressed={isReported}
+                        style={{
+                          border: `1px solid ${isReported ? "rgba(229,9,20,0.7)" : "#3a3a48"}`,
+                          borderRadius: 4,
+                          background: isReported
+                            ? "rgba(229,9,20,0.16)"
+                            : "transparent",
+                          color: isReported ? "#e50914" : "#888",
+                          height: 30,
+                          padding: "0 10px",
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontWeight: isReported ? 700 : 400,
+                          position: "absolute",
+                          top: "0",
+                          right: "0"
+                        }}
+                      >
+                        신고
+                      </button>
+                    )}
+
+                    {/* 신고 타겟 ID가 이 리뷰인 경우 신고 UI 표시 */}
+                    {!isMyReview && reportTargetReviewId === review.reviewId && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 36,
+                          right: 0,
+                          zIndex: 20,
+                          width: 260,
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 8,
+                          background: "#191919",
+                          padding: 12,
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.42)",
+                        }}
+                      >
+                        <p
+                          style={{
+                            margin: "0 0 10px",
+                            color: "#d8d8d8",
+                            fontSize: 13,
+                            fontWeight: 800,
+                          }}
+                        >
+                          신고 사유
+                        </p>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 6,
+                          }}
+                        >
+                          {REPORT_REASONS.map((reason) => (
+                            <button
+                              type="button"
+                              key={reason}
+                              onClick={() => setSelectedReportReason(reason)}
+                              style={{
+                                minHeight: 34,
+                                padding: "0 10px",
+                                border: `1px solid ${selectedReportReason === reason ? "rgba(229,9,20,0.7)" : "#333"}`,
+                                borderRadius: 6,
+                                background:
+                                  selectedReportReason === reason
+                                    ? "rgba(229,9,20,0.14)"
+                                    : "rgba(255,255,255,0.03)",
+                                color:
+                                  selectedReportReason === reason
+                                    ? "#fff"
+                                    : "#aaa",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: 12,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {reason}
+                            </button>
+                          ))}
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 6,
+                            marginTop: 10,
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setReportTargetReviewId(null)}
+                            style={{
+                              height: 30,
+                              padding: "0 10px",
+                              border: "1px solid #333",
+                              borderRadius: 5,
+                              background: "transparent",
+                              color: "#888",
+                              cursor: "pointer",
+                              fontSize: 12,
+                            }}
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSubmitReportReview}
+                            disabled={!selectedReportReason}
+                            style={{
+                              height: 30,
+                              padding: "0 10px",
+                              border: "none",
+                              borderRadius: 5,
+                              background: "#e50914",
+                              color: "#fff",
+                              cursor: selectedReportReason
+                                ? "pointer"
+                                : "default",
+                              opacity: selectedReportReason ? 1 : 0.45,
+                              fontSize: 12,
+                              fontWeight: 800,
+                            }}
+                          >
+                            신고
+                          </button>
+                        </div>
+                      </div>
                     )}
 
                     {isEditingReview ? (
@@ -574,7 +772,6 @@ export default function Review() {
                   <div
                     style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
-                    {" "}
                     {/*  오른쪽 버튼들을 묶어주는 div 추가 */}
                     {isEditingReview ? (
                       <>
