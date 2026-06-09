@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { showToast } from "@/store/useToastStore";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
@@ -208,6 +208,7 @@ const renderStars = (rating: number) => {
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
   const searchParams = useSearchParams();
+  const router = useRouter();
   const shouldAutoPlay = searchParams.get("play") === "1";
   const itemKey = `${type}-${mediaId}`;
 
@@ -260,7 +261,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const { user, currentProfile, updateUserLike, onInitAuth, onUpdateProfile } =
     useAuthStore();
 
-  const [showPopup, setShowPopup] = useState(false);
+  const [showPopup, setShowPopup] = useState<boolean>(shouldAutoPlay);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
   const [selectSeason, setSelectSeason] = useState(1);
   const [selectEpisodeId, setSelectEpisodeId] = useState<number | null>(null);
@@ -600,8 +601,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (!mediaItem) return;
     if (isTv) await onFetchTvVideos(mediaId);
     else await onFetchVideo(mediaId);
-    setPopupVideoKey(key ?? trailer?.key ?? null);
-    setShowPopup(true);
+    const resolvedKey = key ?? trailer?.key ?? null;
+    setPopupVideoKey(resolvedKey);
+    if (resolvedKey) {
+      setShowPopup(true);
+    } else {
+      // 재생할 영상이 없으면 오버레이를 닫고 상세페이지를 노출
+      setShowPopup(false);
+      if (shouldAutoPlay) router.replace(`/detail/${type}/${mediaId}`, { scroll: false });
+    }
   };
 
   const handlePlay = async () => {
@@ -797,6 +805,23 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     hasAutoPlayed.current = true;
     handlePlay();
   }, [isUpcoming, shouldAutoPlay, mediaItem, videos]);
+
+  // 플레이어 뒤로가기/닫기: 오버레이를 닫고, 메인에서 ?play=1 로 바로 진입한 경우엔
+  // play 파라미터를 제거해 (이미 로드된) 상세페이지가 드러나도록 한다.
+  const handleClosePlayer = () => {
+    setShowPopup(false);
+    if (shouldAutoPlay) {
+      router.replace(`/detail/${type}/${mediaId}`, { scroll: false });
+    }
+  };
+
+  // 공개 예정작을 ?play=1 로 진입한 경우: 재생 오버레이 대신 상세페이지를 보여준다
+  useEffect(() => {
+    if (shouldAutoPlay && isUpcoming) {
+      setShowPopup(false);
+      router.replace(`/detail/${type}/${mediaId}`, { scroll: false });
+    }
+  }, [shouldAutoPlay, isUpcoming]);
 
   // ─── Render sections ────────────────────────────────────────────────────────
 
@@ -2543,16 +2568,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         <div style={{ height: 600 }} />
 
         {/* Info Section */}
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            gap: 24,
-            padding: "0 40px",
-            zIndex: 10,
-            paddingBottom: 40,
-          }}
-        >
+        <div style={{ position: "relative", display: "flex", gap: 24, padding: "0 40px 40px 87px", zIndex: 10 }}>
           {/* Poster */}
           <div
             style={{
@@ -2846,15 +2862,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* TabNav */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          padding: "0 40px",
-          marginTop: 24,
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "0 40px 0 87px", marginTop: 24 }}>
         {tabItems
           // 1. 리뷰 탭이면서 권한이 없는 경우 필터링 (렌더링하지 않음)
           .filter((tab) => {
@@ -2895,7 +2903,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* Tab content */}
-      <div style={{ paddingBottom: 80 }}>
+      <div style={{ paddingBottom: 80, paddingLeft: 47 }}>
         {activeTab === "episodes" && isTv && renderEpisodesTab()}
         {activeTab === "info" && !isTv && renderStills()}
         {activeTab === "info" && !isTv && renderSynopsis()}
@@ -2953,11 +2961,59 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         </div>
       )}
 
+      {showPopup && !popupVideoKey && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 299999,
+            background: "#000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleClosePlayer}
+            aria-label="뒤로"
+            style={{
+              position: "absolute",
+              top: 20,
+              left: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "rgba(0,0,0,0.5)",
+              border: "none",
+              color: "#fff",
+              fontSize: 15,
+              padding: "8px 14px",
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+          >
+            ← 뒤로
+          </button>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              border: "4px solid rgba(255,255,255,0.25)",
+              borderTopColor: "#e50914",
+              borderRadius: "50%",
+              animation: "vp-spin 0.8s linear infinite",
+            }}
+          />
+          <style>{`@keyframes vp-spin{to{transform:rotate(360deg)}}`}</style>
+        </div>
+      )}
+
       {showPopup && popupVideoKey && (
         <VideoPlayer
           videoKey={popupVideoKey}
           title={title}
-          onClose={() => setShowPopup(false)}
+          onClose={handleClosePlayer}
           onTimeUpdate={(currentTime, duration) => {
             if (duration <= 0) return;
             const progress = Math.round((currentTime / duration) * 100);
