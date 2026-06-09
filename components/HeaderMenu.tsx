@@ -164,47 +164,67 @@ export default function HeaderMenu() {
     : false;
 
   return (
-  <>
-    <nav>
-      <div className="main-menu sidebar-icons">
-        {homeMenu && (
-          <div
-            className={`sb-icon ${isMenuActive(homeMenu.path) ? "active" : ""}`}
-          >
-            <Link href={homeMenu.path}>
-              <Image
-                src={homeMenu.imgUrl}
-                alt={homeMenu.title}
-                width="24"
-                height="24"
-              />
-              <span className="sb-label">{tm(homeMenu.title)}</span>
-            </Link>
-          </div>
-        )}
+    <>
+      <nav>
+        <div className="main-menu sidebar-icons">
+          {homeMenu && (
+            <div
+              className={`sb-icon ${isMenuActive(homeMenu.path) ? "active" : ""}`}
+            >
+              <Link href={homeMenu.path}>
+                <Image
+                  src={homeMenu.imgUrl}
+                  alt={homeMenu.title}
+                  width="24"
+                  height="24"
+                />
+                <span className="sb-label">{tm(homeMenu.title)}</span>
+              </Link>
+            </div>
+          )}
 
-        <div className="sb-divider"></div>
+          <div className="sb-divider"></div>
 
-        {dynamicMenus.map((menu) => {
-          const isCategoryChild =
-            menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path);
+          {dynamicMenus.map((menu) => {
+            const isCategoryChild =
+              menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path);
 
-          const isCategoryTopLevel = [
-            "/category?tab=movie",
-            "/category?tab=tv",
-            "/category?tab=animation",
-          ].includes(menu.path);
+            const isCategoryTopLevel = [
+              "/category?tab=movie",
+              "/category?tab=tv",
+              "/category?tab=animation",
+            ].includes(menu.path);
 
-          if (isCategoryChild && !isCategoryTopLevel) {
-            return null;
-          }
+            if (isCategoryChild && !isCategoryTopLevel) {
+              return null;
+            }
 
-          if (menu.path === CATEGORY_MENU.path) {
+            if (menu.path === CATEGORY_MENU.path) {
+              return (
+                <div
+                  key={menu.path}
+                  className={`sb-icon sb-category-group ${isCategoryActive ? "active" : ""
+                    }`}
+                >
+                  <Link href={menu.path}>
+                    <Image
+                      src={menu.imgUrl}
+                      alt={menu.title}
+                      width="24"
+                      height="24"
+                    />
+                    <span className="sb-label">{tm(menu.title)}</span>
+                  </Link>
+                </div>
+              );
+            }
+
+            const isActive = isMenuActive(menu.path);
+
             return (
               <div
                 key={menu.path}
-                className={`sb-icon sb-category-group ${isCategoryActive ? "active" : ""
-                  }`}
+                className={`sb-icon ${isActive ? "active" : ""}`}
               >
                 <Link href={menu.path}>
                   <Image
@@ -217,46 +237,26 @@ export default function HeaderMenu() {
                 </Link>
               </div>
             );
-          }
+          })}
 
-          const isActive = isMenuActive(menu.path);
+          <div className="sb-divider"></div>
 
-          return (
-            <div
-              key={menu.path}
-              className={`sb-icon ${isActive ? "active" : ""}`}
-            >
-              <Link href={menu.path}>
-                <Image
-                  src={menu.imgUrl}
-                  alt={menu.title}
-                  width="24"
-                  height="24"
-                />
-                <span className="sb-label">{tm(menu.title)}</span>
-              </Link>
-            </div>
-          );
-        })}
-
-        <div className="sb-divider"></div>
-
-        <div
-          className={`sb-icon ${pathname === "/menu/custom" ? "active" : ""}`}
-        >
-          <Link href="/menu/custom">
-            <Image
-              src="/images/header/menu/custom.svg"
-              alt="설정"
-              width="24"
-              height="24"
-            />
-            <span className="sb-label">{tm("커스텀")}</span>
-          </Link>
+          <div
+            className={`sb-icon ${pathname === "/menu/custom" ? "active" : ""}`}
+          >
+            <Link href="/menu/custom">
+              <Image
+                src="/images/header/menu/custom.svg"
+                alt="설정"
+                width="24"
+                height="24"
+              />
+              <span className="sb-label">{tm("커스텀")}</span>
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <div
+        {/* <div
         className={`sb-icon sb-bottom ${pathname === "/settings" ? "active" : ""
           }`}
       >
@@ -269,32 +269,32 @@ export default function HeaderMenu() {
           />
           <span className="sb-label">{tm("설정")}</span>
         </Link>
-      </div>
-    </nav>
+      </div> */}
+      </nav>
 
-    {categoryPanelMenus.length > 0 && (
-      <div className="category-hover-panel">
-        {categoryPanelMenus.map((childMenu) => {
-          const isActive = isMenuActive(childMenu.path);
-          return (
-            <div
-              key={childMenu.path}
-              className={`category-hover-icon ${isActive ? "active" : ""}`}
-            >
-              <Link href={childMenu.path}>
-                <Image
-                  src={childMenu.imgUrl}
-                  alt={childMenu.title}
-                  width="24"
-                  height="24"
-                />
-                <span className="sb-label">{tm(childMenu.title)}</span>
-              </Link>
-            </div>
-          );
-        })}
-      </div>
-    )}
-  </>
+      {categoryPanelMenus.length > 0 && (
+        <div className="category-hover-panel">
+          {categoryPanelMenus.map((childMenu) => {
+            const isActive = isMenuActive(childMenu.path);
+            return (
+              <div
+                key={childMenu.path}
+                className={`category-hover-icon ${isActive ? "active" : ""}`}
+              >
+                <Link href={childMenu.path}>
+                  <Image
+                    src={childMenu.imgUrl}
+                    alt={childMenu.title}
+                    width="24"
+                    height="24"
+                  />
+                  <span className="sb-label">{tm(childMenu.title)}</span>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }

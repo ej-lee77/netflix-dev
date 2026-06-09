@@ -5,7 +5,7 @@
   padding: 40px 0 80px;
 
   .inner {
-    width: 1200px;
+    width: 1400px;
     max-width: 95%;
   }
 
@@ -50,15 +50,19 @@
         color: g.$w-color;
         border-bottom-color: g.$main-color;
         font-weight: 600;
+
+        .badge{
+          color: g.$main-color;
+        }
       }
 
       .badge {
-        padding: 2px 7px;
-        background: g.$main-color;
-        color: g.$w-color;
-        border-radius: 100px;
+        // padding: 2px 7px;
+        // background: g.$main-color;
+        // color: g.$w-color;
+        // border-radius: 100px;
         font-size: g.$text-12;
-        font-weight: 600;
+        // font-weight: 600;
       }
     }
   }

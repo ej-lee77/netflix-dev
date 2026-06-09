@@ -184,16 +184,22 @@ header {
         }
     }
 
-    .profile-arrow {
-        width: 0;
-        height: 0;
-        border-right: 6px solid transparent;
-        border-left: 6px solid transparent;
-        border-top: 7px solid #fff;
-        transition: transform 0.2s ease;
+    // .profile-arrow {
+    //     width: 0;
+    //     height: 0;
+    //     border-right: 6px solid transparent;
+    //     border-left: 6px solid transparent;
+    //     border-top: 7px solid #fff;
+    //     transition: transform 0.2s ease;
+    // }
+
+    .cs-arrow {
+      flex-shrink: 0;
+      color: g.$w-color;
+      transition: transform 0.2s ease;
     }
 
-    .main-profile[aria-expanded="true"] .profile-arrow {
+    .main-profile[aria-expanded="true"] .profile-arrow .cs-arrow{
         transform: rotate(180deg);
     }
 
