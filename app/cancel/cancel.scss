@@ -6,7 +6,7 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  border: 2px solid #ff6b6b;
+  border: 2px solid #f40612;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,7 +23,7 @@
 .cancel-btn {
   width: 100%;
   padding: 14px;
-  background-color: #ff6b6b;
+  background-color: #f40612;
   color: g.$w-color;
   font-size: g.$text-14;
   font-weight: 700;
@@ -36,7 +36,7 @@
   min-height: 52px;
 
   &:hover:not(:disabled) {
-    background-color: #ff4444;
+    background-color: #fa1f2a;
     transform: translateY(-1px);
   }
 
