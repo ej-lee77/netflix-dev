@@ -1,92 +1,729 @@
-"use client";
+import React, { useEffect, useState } from 'react';
+import { useCommunityStore } from '@/store/useCommunityStore';
+import "../scss/review.scss"; // SCSS 파일 임포트
+import { useAuthStore } from '@/store/useAuthStore';
+import Link from 'next/link';
+import { useMovieStore } from '@/store/useMovieStore';
 
-import Link from "next/link";
-import { type ReviewDocument } from "@/types/community";
-import "../scss/review.scss";
+const REVIEW_PAGE_SIZE = 10;
 
-interface ReviewProps {
-  reviews: ReviewDocument[];
-  sortType: "recent" | "likes" | "comments";
-  scopeFilter: "mine" | "liked" | "following";
-}
-
+// 별점을 계산해서 렌더링하는 컴포넌트 내부 함수
 const renderStars = (rating: number) => {
-  const roundedRating = Math.round(rating);
-  const fullStars = "★".repeat(roundedRating);
-  const emptyStars = "☆".repeat(5 - roundedRating);
-
+  const roundedRating = Math.round(rating); // 반올림하여 정수 별 개수 계산
+  const fullStars = '★'.repeat(roundedRating);
+  const emptyStars = '☆'.repeat(5 - roundedRating);
+  
   return fullStars + emptyStars;
 };
 
-const getEmptyMessage = (scopeFilter: ReviewProps["scopeFilter"]) => {
-  switch (scopeFilter) {
-    case "liked":
-      return "좋아요한 리뷰가 없습니다.";
-    case "following":
-      return "팔로잉한 사용자의 리뷰가 없습니다.";
-    case "mine":
-    default:
-      return "작성한 리뷰가 없습니다.";
-  }
-};
+type ScopeFilterType = "mine" | "liked" | "following";
+type SortType = "recent" | "likes" | "comments";
 
-const getDetailHref = (videoId: string) => {
-  const [linkType, linkId] = videoId.split("-");
+const scopeFilters: { key: ScopeFilterType; label: string }[] = [
+  { key: "mine", label: "내가 쓴 글" },
+  { key: "liked", label: "좋아요 한 글" },
+  { key: "following", label: "팔로워 글" },
+];
 
-  return `/detail/${linkType || "movie"}/${linkId || videoId}`;
-};
+const sortOptions: { key: SortType; label: string }[] = [
+  { key: "recent", label: "최근 작성순" },
+  { key: "likes", label: "좋아요 많은순" },
+  { key: "comments", label: "댓글 많은순" },
+];
 
-const sortReviews = (reviews: ReviewDocument[], sortType: ReviewProps["sortType"]) =>
-  [...reviews].sort((a, b) => {
-    switch (sortType) {
-      case "likes":
-        return (b.likesCount || 0) - (a.likesCount || 0);
-      case "recent":
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+export default function Review() {
+  const { reviews, fetchUserReviews, deleteReview, updateReview, updateReviewLikeCount, fetchUserReviewsById } = useCommunityStore();
+  const { currentProfile, updateUserLike } = useAuthStore();
+  const { fetchMediaDetail } = useMovieStore(); 
+  const [reviewPage, setReviewPage] = useState(1);
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilterType>("mine");
+  const [sortType, setSortType] = useState<SortType>("recent");
+  const [sortOpen, setSortOpen] = useState(false);
+  const currentSortLabel = sortOptions.find((o) => o.key === sortType)?.label;
+
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editReviewText, setEditReviewText] = useState("");
+  const [editReviewHasSpoiler, setEditReviewHasSpoiler] = useState(false);
+  const [editRatedStar, setEditRatedStar] = useState(0);
+  const [editHoverStar, setEditHoverStar] = useState(0);
+  const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<
+    string[]
+  >([]);
+  const [counts, setCounts] = useState({ mine: 0, liked: 0, following: 0 });
+
+  // 2. 영화 상세 정보 보완
+  const [enrichedReviews, setEnrichedReviews] = useState<any[]>([]);
+  // 컴포넌트 내부 최상단에 선언되어 있어야 합니다.
+  // const [processedReviews, setProcessedReviews] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const processAll = async () => {
+      // 1. 데이터 수집 (기존 + 팔로잉)
+      const followingReviews = await loadFollowingReviews() || [];
+      const combined = [...reviews, ...followingReviews];
+      const unique = Array.from(new Map(combined.map((r) => [r.reviewId, r])).values());
+
+      // 필터링 적용 전, 각 카테고리별로 몇 개인지 미리 계산합니다.
+      const newCounts = {
+        mine: unique.filter(r => r.profileId === currentProfile?.id).length,
+        liked: unique.filter(r => currentProfile?.community?.reviews.includes(`${r.videoId}#${r.reviewId}`)).length,
+        following: unique.filter(r => currentProfile?.community?.following.includes(String(r.profileId))).length
+      };
+      setCounts(newCounts);
+
+      // 2. 필터링 및 정렬
+      const filteredAndSorted = applyFilterAndSort(unique, scopeFilter, sortType);
+
+      // 3. 페이지네이션 계산
+      // processedReviews가 아닌 filteredAndSorted를 기준으로 계산합니다.
+      const paged = filteredAndSorted.slice(
+        (reviewPage - 1) * REVIEW_PAGE_SIZE,
+        reviewPage * REVIEW_PAGE_SIZE
+      );
+
+      // 4. 영화 상세 정보 보완 (Enriching)
+      const enriched = await Promise.all(
+        paged.map(async (review) => {
+          const [type, id] = review.videoId.split('-');
+          const detail = await fetchMediaDetail(id, type as 'movie' | 'tv');
+          return { ...review, mediaInfo: detail };
+        })
+      );
+
+      // 5. 최종 상태 업데이트
+      setEnrichedReviews(enriched);
+    };
+
+    if (reviews.length > 0) {
+      processAll();
     }
-  });
+  }, [reviews, currentProfile, scopeFilter, sortType, reviewPage]);
 
-export default function Review({ reviews, sortType, scopeFilter }: ReviewProps) {
-  const sortedReviews = sortReviews(reviews, sortType);
+  const loadFollowingReviews = async () => {
+    // 1. 팔로잉 리스트가 없으면 빈 배열 반환
+    if (!currentProfile?.community?.following || currentProfile.community.following.length === 0) {
+      return [];
+    }
 
-  if (sortedReviews.length === 0) {
-    return (
-      <div className="community-empty">
-        <p className="empty-text">{getEmptyMessage(scopeFilter)}</p>
-      </div>
-    );
-  }
+    try {
+      // 2. 팔로잉 유저들의 리뷰 데이터를 병렬로 모두 요청
+      const followingReviewsPromises = currentProfile.community.following.map((userId) => 
+        fetchUserReviewsById(userId)
+      );
+
+      // 3. 모든 데이터가 올 때까지 대기
+      const results = await Promise.all(followingReviewsPromises);
+
+      // 4. 결과물 정리: null/undefined 제거 및 평탄화(flat)
+      // results는 [[review1, review2], [review3], ...] 형태이므로 1차원 배열로 만듭니다.
+      const allFollowingReviews = results.flat().filter((r): r is any => r !== null && r !== undefined);
+      
+      return allFollowingReviews;
+    } catch (error) {
+      console.error("팔로잉 리뷰를 불러오는 중 에러 발생:", error);
+      return [];
+    }
+  };
+
+  const applyFilterAndSort = (data: any[], scope: string, sort: string) => {
+    // 1. 신고 수 필터링
+    let result = data.filter((r) => (r.reportsCount ?? 0) <= 5);
+
+    // 2. Scope 필터링
+    result = result.filter((r) => {
+      if (scope === "mine") return r.profileId === currentProfile?.id;
+      
+      // 수정된 부분: || [] 를 통해 배열이 없을 경우 안전하게 빈 배열을 제공합니다.
+      if (scope === "liked") {
+        const likedList = currentProfile?.community?.reviews || [];
+        return likedList.includes(`${r.videoId}#${r.reviewId}`);
+      }
+      
+      if (scope === "following") {
+        const followingList = currentProfile?.community?.following || [];
+        return followingList.includes(String(r.profileId));
+      }
+      
+      return true;
+    });
+
+    // 3. 정렬
+    return [...result].sort((a, b) => {
+      if (sort === "likes") return (b.likesCount || 0) - (a.likesCount || 0);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  };
+  
+  // 3. 페이지네이션 계산
+  // 1. 전체 페이지 수 계산
+  const totalReviewPages = Math.ceil(enrichedReviews.length / REVIEW_PAGE_SIZE);
+
+  // 2. 현재 페이지에 맞는 리뷰만 슬라이싱 (페이지는 1부터 시작한다고 가정)
+  const pagedReviews = enrichedReviews.slice(
+    (reviewPage - 1) * REVIEW_PAGE_SIZE,
+    reviewPage * REVIEW_PAGE_SIZE
+  );
+
+  const updatetoggleReviewLike = async (reviewId: string) => {
+    const { user, currentProfile } = useAuthStore.getState();
+    if (!user?.userId || !currentProfile) return;
+
+    const targetReview = reviews.find((r) => r.reviewId === reviewId);
+    if (!targetReview) return;
+
+    const reviewKey = `${targetReview.videoId}#${reviewId}`;
+    const isLiked = currentProfile.community.reviews.includes(reviewKey);
+
+    // 1. 커뮤니티 스토어에서 리뷰 테이블 카운트 변경
+    await updateReviewLikeCount(targetReview.videoId, reviewId, isLiked);
+
+    // 2. Auth 스토어에서 유저 정보(키 목록) 변경
+    await updateUserLike(reviewId, targetReview.videoId);
+  };
+
+  const handleOpenEditReview = (reviewId: string) => {
+    const targetReview = reviews.find((review) => review.reviewId === reviewId);
+    if (!targetReview) return;
+
+    setEditingReviewId(targetReview.reviewId);
+    setEditReviewText(targetReview.content);
+    setEditReviewHasSpoiler(targetReview.isSpoiler);
+    setEditRatedStar(targetReview.rating);
+    setEditHoverStar(0);
+    // setReportTargetReviewId(null);
+    // setSelectedReportReason("");
+  };
+
+  const handleCancelEditReview = () => {
+    setEditingReviewId(null);
+    setEditReviewText("");
+    setEditReviewHasSpoiler(false);
+    setEditRatedStar(0);
+    setEditHoverStar(0);
+  };
+
+  const handleSubmitEditReview = async (reviewId: string, videoId: string) => {
+    const content = editReviewText.trim();
+    if (!content) return;
+
+    await updateReview(reviewId, videoId, {
+      content,
+      isSpoiler: editReviewHasSpoiler,
+      rating: editRatedStar || 5,
+    });
+    handleCancelEditReview();
+  };
+
+  const handleDeleteReview = async (reviewId: string, videoId: string) => {
+    if (!window.confirm("리뷰를 삭제하시겠습니까?")) return;
+
+    await deleteReview(reviewId, videoId);
+    if (editingReviewId === reviewId) {
+      handleCancelEditReview();
+    }
+  };
+
+  // const handleSubmitReview = async () => {
+  //   if (!reviewText.trim()) return;
+
+  //   await addReview({
+  //     content: reviewText.trim(),
+  //     videoId: "", 
+  //     isSpoiler: reviewHasSpoiler,
+  //     videoId: "",
+  //   });
+
+  //   setReviewText("");
+  //   setReviewHasSpoiler(false);
+  // };
 
   return (
-    <div className="review-container">
-      <div className="review-list">
-        {sortedReviews.map((review) => (
-          <Link
-            key={`${review.videoId}-${review.reviewId}`}
-            href={getDetailHref(review.videoId)}
-            className="review-card-link"
+    <>
+    {/* 3. 섹션 타이틀 및 총 개수 표시 */}
+    <div className="section-title-row">
+      <h2>리뷰 관리</h2>
+      <span className="total-count">
+        {`${enrichedReviews.length}개`}
+      </span>
+    </div>
+
+    {/* 4. 스크린샷 스타일의 서브 툴바 (타원형 칩 필터 + 우측 정렬) */}
+    <div className="community-toolbar">
+      <div className="community-chips">
+        {scopeFilters.map((sf) => (
+          <button
+            type="button"
+            key={sf.key}
+            className={`chip ${scopeFilter === sf.key ? "is-active" : ""}`}
+            onClick={() => setScopeFilter(sf.key)}
           >
-            <article className="review-item">
-              <div className="review-item__head">
-                <div>
-                  <strong>{review.nickname}</strong>
-                  <span className="review-stars">{renderStars(review.rating)}</span>
-                  <span className="review-score">{review.rating.toFixed(1)} / 5.0</span>
-                </div>
-                {review.isSpoiler && <span className="spoiler-tag">스포일러</span>}
-              </div>
-
-              <p className="review-content">{review.content}</p>
-
-              <div className="review-item__foot">
-                <time>{new Date(review.createdAt).toLocaleDateString("ko-KR")}</time>
-                <span>좋아요 {review.likesCount}</span>
-              </div>
-            </article>
-          </Link>
+            {sf.label} {sf.key === "mine" ? counts.mine : sf.key === "liked" ? counts.liked : sf.key === "following" ? counts.following : 0}
+          </button>
         ))}
       </div>
+
+      <div className="community-sort">
+        <button type="button" className="sort-btn" onClick={() => setSortOpen(!sortOpen)}>
+          {currentSortLabel}
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+            className={`sort-arrow ${sortOpen ? "is-open" : ""}`}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        {sortOpen && (
+          <ul className="sort-menu">
+            {sortOptions
+              // 1. 리뷰 탭일 때 "comments" 옵션 필터링
+              .filter((opt) => !(opt.key === "comments"))
+              .map((opt) => (
+                <li key={opt.key}>
+                  <button
+                    type="button"
+                    className={`sort-option ${sortType === opt.key ? "is-selected" : ""}`}
+                    onClick={() => {
+                      setSortType(opt.key);
+                      setSortOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                </li>
+              ))}
+          </ul>
+        )}
+      </div>
     </div>
+    <div className="review-container">
+      {reviews.length > 0 ? (<>
+
+        {/* 목록 섹션 */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          { (pagedReviews || []).map((review) => {
+            // 옵셔널 체이닝으로 currentProfile이 없어도 에러가 안 나게 수정
+            const userLikedReviews = currentProfile?.community?.reviews || [];
+            const reviewKey = `${review.videoId}#${review.reviewId}`;
+            const isLiked = userLikedReviews.includes(reviewKey);
+            const [linkType, linkId] = review.videoId.split('-');
+            const isEditingReview = editingReviewId === review.reviewId;
+            const isMyReview = Boolean(
+              currentProfile &&
+              ((review.userId &&
+                review.profileId === currentProfile.id) ||
+                (!review.userId &&
+                  review.profileId === currentProfile.id &&
+                  review.nickname === currentProfile.nickname)),
+            );
+            const movie = review.mediaInfo;
+            const shouldBlurSpoiler =
+              review.isSpoiler &&
+              !visibleSpoilerReviewIds.includes(review.reviewId);
+
+            return (
+              <article
+                key={review.reviewId}
+                style={{
+                  border: "1px solid #2a2a35",
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.025)",
+                  padding: 18,
+                }}
+              >
+                
+                <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <Link href={`/detail/${linkType}/${linkId}`}>
+                    <div className="review-thumb">
+                      <img
+                        src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : 'https://image.tmdb.org/t/p/w200/evoEi8SBSvllEveM3V6nCJ6vKj8.jpg'}
+                        alt={movie?.title || movie?.name || '영화 포스터'}
+                      />
+                    </div>
+                  </Link>
+                  <div className='w-full'>
+                    <h3>{movie?.title || movie?.name || '로딩 중...'}</h3>
+                    <strong style={{ color: "#fff", fontSize: 15 }}>{review.nickname}</strong>
+                    <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>{renderStars(review.rating)}</span>
+                    <span style={{ color: "#aaa", marginLeft: 8, fontSize: 12 }}>{review.rating.toFixed(1)} / 5.0</span>
+                    {review.isSpoiler && (
+                      <span style={{ marginLeft: 8, padding: "2px 7px", borderRadius: 4, border: "1px solid rgba(229,9,20,0.45)", color: "#e50914", fontSize: 11 }}>
+                        스포일러
+                      </span>
+                    )}
+
+                    {isEditingReview ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 10,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onMouseEnter={() => setEditHoverStar(star)}
+                                onMouseLeave={() => setEditHoverStar(0)}
+                                onClick={() => setEditRatedStar(star)}
+                                style={{
+                                  border: "none",
+                                  background: "transparent",
+                                  color:
+                                    star <= (editHoverStar || editRatedStar)
+                                      ? "#e50914"
+                                      : "#4a4a4a",
+                                  cursor: "pointer",
+                                  fontSize: 20,
+                                  lineHeight: 1,
+                                  padding: "0 1px",
+                                }}
+                              >
+                                {"\u2605"}
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            className="detail-secondary-hover"
+                            onClick={() => setEditReviewHasSpoiler((prev) => !prev)}
+                            aria-pressed={editReviewHasSpoiler}
+                            style={{
+                              height: 30,
+                              padding: "0 10px",
+                              border: `1px solid ${editReviewHasSpoiler ? "rgba(229,9,20,0.7)" : "rgba(255,255,255,0.22)"}`,
+                              borderRadius: 5,
+                              background: editReviewHasSpoiler
+                                ? "rgba(229,9,20,0.14)"
+                                : "rgba(255,255,255,0.06)",
+                              color: editReviewHasSpoiler ? "#fff" : "#cfcfcf",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {/* {"\uC2A4\uD3EC\uC77C\uB7EC"} */}
+                            스포일러
+                          </button>
+                        </div>
+
+                        <textarea
+                          className="detail-review-textarea"
+                          value={editReviewText}
+                          onChange={(event) =>
+                            setEditReviewText(event.target.value)
+                          }
+                          style={{
+                            width: "100%",
+                            height: 130,
+                            resize: "none",
+                            overflowY: "auto",
+                            boxSizing: "border-box",
+                            border: "1px solid #3a3a48",
+                            borderRadius: 6,
+                            background: "#111",
+                            color: "#fff",
+                            padding: 16,
+                            fontSize: 14,
+                            lineHeight: 1.7,
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          position: "relative",
+                          overflow: "hidden",
+                          borderRadius: 6,
+                          minHeight: shouldBlurSpoiler ? 96 : "auto",
+                        }}
+                      >
+                        <div
+                          style={{
+                            minHeight: shouldBlurSpoiler ? 96 : "auto",
+                            filter: shouldBlurSpoiler ? "blur(6px)" : "none",
+                            opacity: shouldBlurSpoiler ? 0.72 : 1,
+                            userSelect: shouldBlurSpoiler ? "none" : "auto",
+                            transition: "filter 0.18s ease, opacity 0.18s ease",
+                          }}
+                        >
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "#cfcfcf",
+                              lineHeight: 1.7,
+                              fontSize: 14,
+                            }}
+                          >
+                            {review.content}
+                          </p>
+                        </div>
+                        {shouldBlurSpoiler && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background:
+                                "radial-gradient(circle at center, rgba(20,20,20,0.72) 0%, rgba(20,20,20,0.58) 46%, rgba(20,20,20,0.32) 100%)",
+                              backdropFilter: "blur(3px)",
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="detail-secondary-hover"
+                              onClick={() =>
+                                setVisibleSpoilerReviewIds((prev) => [
+                                  ...prev,
+                                  review.reviewId,
+                                ])
+                              }
+                              style={{
+                                height: 34,
+                                padding: "0 16px",
+                                border: "1px solid rgba(255,255,255,0.28)",
+                                borderRadius: 6,
+                                background: "rgba(255,255,255,0.12)",
+                                color: "#fff",
+                                cursor: "pointer",
+                                fontSize: 13,
+                                fontWeight: 800,
+                              }}
+                            >
+                              스포일러 보기
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>
+                  {new Date(review.createdAt).toLocaleDateString("ko-KR")}
+                </time>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between", //  양쪽 끝으로 정렬 추가
+                    gap: 8,
+                    flexWrap: "wrap",
+                    marginTop: 10,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="detail-secondary-hover"
+                    onClick={() => updatetoggleReviewLike(review.reviewId)}
+                    aria-pressed={isLiked}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      height: 32,
+                      padding: "0 10px",
+                      border: `1px solid ${isLiked ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.24)"}`,
+                      borderRadius: 999,
+                      background: isLiked
+                        ? "rgba(255,255,255,0.9)"
+                        : "rgba(255,255,255,0.08)",
+                      color: isLiked ? "#111" : "#d6d6d6",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontWeight: 800,
+                    }}
+                  >
+                    <img
+                      src={
+                        isLiked
+                          ? "/images/detail/review/heart-filled.svg"
+                          : "/images/detail/review/heart-lined.svg"
+                      }
+                      alt="좋아요"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        opacity: isLiked ? 1 : 0.86,
+                        filter: isLiked ? "none" : "invert(1)",
+                      }}
+                    />
+                    좋아요 {review.likesCount}
+                  </button>
+                  {isMyReview && (
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    {" "}
+                    {/*  오른쪽 버튼들을 묶어주는 div 추가 */}
+                    {isEditingReview ? (
+                      <>
+                        <button
+                          type="button"
+                          className="detail-outline-hover"
+                          onClick={() =>
+                            void handleSubmitEditReview(
+                              review.reviewId,
+                              review.videoId,
+                            )
+                          }
+                          disabled={!editReviewText.trim()}
+                          style={{
+                            border: "1px solid rgba(229,9,20,0.65)",
+                            borderRadius: 999,
+                            background: "rgba(229,9,20,0.12)",
+                            color: "#fff",
+                            height: 32,
+                            padding: "0 12px",
+                            cursor: editReviewText.trim()
+                              ? "pointer"
+                              : "default",
+                            opacity: editReviewText.trim() ? 1 : 0.45,
+                            fontSize: 12,
+                            fontWeight: 800,
+                          }}
+                        >
+                          수정완료
+                        </button>
+                        <button
+                          type="button"
+                          className="detail-outline-hover"
+                          onClick={handleCancelEditReview}
+                          style={{
+                            border: "1px solid #3a3a48",
+                            borderRadius: 999,
+                            background: "transparent",
+                            color: "#aaa",
+                            height: 32,
+                            padding: "0 12px",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          수정취소
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="detail-outline-hover"
+                          onClick={() =>
+                            handleOpenEditReview(review.reviewId)
+                          }
+                          style={{
+                            border: "1px solid #3a3a48",
+                            borderRadius: 999,
+                            background: "transparent",
+                            color: "#aaa",
+                            height: 32,
+                            padding: "0 12px",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          className="detail-outline-hover"
+                          onClick={() =>
+                            void handleDeleteReview(
+                              review.reviewId,
+                              review.videoId,
+                            )
+                          }
+                          style={{
+                            border: "1px solid rgba(229,9,20,0.55)",
+                            borderRadius: 999,
+                            background: "rgba(229,9,20,0.08)",
+                            color: "#e50914",
+                            height: 32,
+                            padding: "0 12px",
+                            cursor: "pointer",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          삭제
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        {totalReviewPages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => setReviewPage((page) => Math.max(1, page - 1))}
+              disabled={reviewPage === 1}
+              style={{ background: "none", border: "1px solid #3a3a48", color: reviewPage === 1 ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: reviewPage === 1 ? "default" : "pointer", fontSize: 14 }}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalReviewPages }, (_, index) => index + 1).map((page) => (
+              <button
+                type="button"
+                key={page}
+                onClick={() => setReviewPage(page)}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 4,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  background: page === reviewPage ? "#e50914" : "none",
+                  border: `1px solid ${page === reviewPage ? "#e50914" : "#3a3a48"}`,
+                  color: page === reviewPage ? "#fff" : "#888",
+                  fontWeight: page === reviewPage ? 700 : 400,
+                }}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setReviewPage((page) => Math.min(totalReviewPages, page + 1))}
+              disabled={reviewPage === totalReviewPages}
+              style={{ background: "none", border: "1px solid #3a3a48", color: reviewPage === totalReviewPages ? "#444" : "#888", width: 34, height: 34, borderRadius: 4, cursor: reviewPage === totalReviewPages ? "default" : "pointer", fontSize: 14 }}
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </>):
+        <div className="community-empty">
+          <p className="empty-text">작성된 리뷰가 없습니다.</p>
+        </div>
+      }
+    </div>
+    </>
   );
 }

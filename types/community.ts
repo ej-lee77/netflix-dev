@@ -1,3 +1,5 @@
+import { Movie, TV } from "./movie";
+
 // 리뷰 타입
 export interface ReviewDocument {
   reviewId: string;// 리뷰 고유 ID
@@ -12,6 +14,7 @@ export interface ReviewDocument {
   updatedAt?: string;
   profileId: number;// 리뷰 작성자 ID
   rating: number;
+  mediaInfo? : Movie | TV;
 }
 
 // 1. 댓글 인터페이스 (Sub-collection용)
@@ -45,6 +48,7 @@ export interface CommunityStore {
   fetchUserReviews: () => Promise<void>;
   fetchAllReviews: () => Promise<void>;
   fetchVideoReviews: (videoId: string) => Promise<void>;
+  fetchUserReviewsById: (targetUserId: string) => Promise<any>;
   addReview: (data: { content: string; videoId: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
   updateReview: (reviewId: string, videoId: string, data: { content: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
   deleteReview: (reviewId: string, videoId: string) => Promise<void>;

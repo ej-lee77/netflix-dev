@@ -123,6 +123,7 @@ function CommunityContent() {
 
         <div className="community-header">
           <h1>커뮤니티 관리</h1>
+          <p>내가 쓴 리뷰/피드</p>
         </div>
 
         <div className="community-tabs" aria-label="커뮤니티 메뉴">
@@ -151,20 +152,18 @@ function CommunityContent() {
           </div>
         ) : (
           <div className="tab-content-panel">
+            
+            {/* 3. 섹션 타이틀 및 총 개수 표시
             <div className="section-title-row">
               <h2>{currentTabLabel}</h2>
               <span className="total-count">{activeCount}개</span>
             </div>
 
-            <div className="community-toolbar">
-              <div className="community-chips">
-                {scopeFilters.map((scope) => {
-                  const count =
-                    activeTab === "reviews"
-                      ? reviewBuckets[scope.key].length
-                      : feedBuckets[scope.key].length;
-
-                  return (
+            {/* 4. 스크린샷 스타일의 서브 툴바 (타원형 칩 필터 + 우측 정렬) */}
+            {/* {activeTab !== "create-feed" && (
+              <div className="community-toolbar">
+                <div className="community-chips">
+                  {scopeFilters.map((sf) => (
                     <button
                       type="button"
                       key={scope.key}
@@ -176,6 +175,7 @@ function CommunityContent() {
                   );
                 })}
               </div>
+            )} */}
 
               <div className="community-sort">
                 <button type="button" className="sort-btn" onClick={() => setSortOpen((open) => !open)}>
@@ -214,11 +214,15 @@ function CommunityContent() {
                   </ul>
                 )}
               </div>
-            </div>
 
             <div className="main-content-area">
               {activeTab === "reviews" && (
-                <Review reviews={filteredReviews} sortType={sortType} scopeFilter={scopeFilter} />
+                <>
+                  <Review 
+                    // sortType={sortType} 
+                    // scopeFilter={scopeFilter || "mine"} 
+                  />
+                </>
               )}
 
               {activeTab === "my-feeds" && (
