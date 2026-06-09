@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AppIcon from "@/components/common/AppIcon";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
@@ -147,13 +148,13 @@ export default function PlaylistPage() {
             onClick={() => togglePlaylistLike(userId, listId)}
             disabled={!myUserId}
           >
-            <span aria-hidden="true">👍</span> 좋아요
+            <AppIcon name="like" size={16} /> 좋아요
           </button>
           {/* <button type="button" className="pl-action">
-            <span aria-hidden="true">💬</span> 댓글
+            <AppIcon name="comment" size={16} /> 댓글
           </button> */}
           <button type="button" className="pl-action" onClick={handleShare}>
-            <span aria-hidden="true">↗</span> 공유
+            <AppIcon name="share" size={16} /> 공유
           </button>
         </div>
 
@@ -195,7 +196,7 @@ export default function PlaylistPage() {
                   <img src={`${TMDB_IMG}${item.poster_path}`} alt={item.title} />
                 ) : (
                   <div className="pl-work-fallback" aria-hidden="true">
-                    🎞
+                    <AppIcon name="film" size={22} />
                   </div>
                 )}
               </div>

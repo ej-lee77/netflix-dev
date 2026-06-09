@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
+import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
 import Link from "next/link";
 import "../scss/faq.scss";
 
@@ -60,7 +61,7 @@ export default function FaqAllPage() {
               className={`cat-chip ${activeCat === c.id ? "active" : ""}`}
               onClick={() => setActiveCat(c.id)}
             >
-              <span className="chip-icon">{c.icon}</span>
+              <span className="chip-icon"><AppIcon name={c.icon as AppIconName} size={18} /></span>
               {c.name}
             </button>
           ))}
@@ -71,7 +72,7 @@ export default function FaqAllPage() {
             {sections.map((c) => (
               <section key={c.id} className="faq-section">
                 <div className="faq-section-head">
-                  <span className="head-icon">{c.icon}</span>
+                  <span className="head-icon"><AppIcon name={c.icon as AppIconName} size={18} /></span>
                   <h2>{c.name}</h2>
                   <span className="count">{c.items.length}개</span>
                 </div>

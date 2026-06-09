@@ -31,4 +31,7 @@ export interface ContactStore {
 
   // 내 문의 내역 조회 (userId 기준, profileId 주면 해당 프로필로 한정)
   fetchMyContacts: (userId: string, profileId?: number) => Promise<void>;
+
+  // 내 문의 삭제 (contacts/{userId}/items/{contactId})
+  deleteContact: (userId: string, contactId: string) => Promise<boolean>;
 }
