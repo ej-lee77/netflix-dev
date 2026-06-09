@@ -1923,3 +1923,14 @@
     }
   }
 }
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 (목록·상세 공통) ===== */
+@include g.respond(laptop) {
+  .feed-page { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .feed-page { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .feed-page { padding-left: 56px; padding-right: 16px; }
+}
