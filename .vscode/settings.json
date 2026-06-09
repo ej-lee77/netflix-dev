@@ -1,14 +1,21 @@
 {
+    "scss.lint.vendorPrefix": "ignore",
     "cSpell.words": [
         "Bebas",
         "disablekb",
+        "firestore",
+        "giftcard",
         "iconmonstr",
         "modestbranding",
         "Neue",
         "Noto",
+        "playhist",
         "rgba",
+        "scifi",
+        "showinfo",
         "thumbup",
         "TMDB",
-        "unstarted"
+        "unstarted",
+        "updatetoggle"
     ]
 }

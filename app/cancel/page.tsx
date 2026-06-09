@@ -62,12 +62,11 @@ export default function CancelPage() {
   return (
     <div className="signin-page">
 
-      <BackButton fallback="/settings" />
       {/* step 1 — 해지 확인 */}
       {step === 1 && (
         <div className="complete-page">
           <div className="cancel-check-circle" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f40612" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             </svg>
           </div>
@@ -79,7 +78,7 @@ export default function CancelPage() {
             <div className="receipt-body">
               <div className="receipt-row">
                 <span className="receipt-label">해지 후 변경사항</span>
-                <span className="receipt-value" style={{ color: "#ff6b6b" }}>플랜 해지</span>
+                <span className="receipt-value" style={{ color: "#f40612" }}>플랜 해지</span>
               </div>
               <div className="receipt-row">
                 <span className="receipt-label">콘텐츠 이용</span>

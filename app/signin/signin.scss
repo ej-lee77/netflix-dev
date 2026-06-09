@@ -956,17 +956,22 @@
 .plan-next-wrap {
   margin-top: 24px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 .plan-next-btn {
-  padding: 14px 72px;
+  width: 100%;
+  max-width: 260px; // payment-pay-btn과 동일한 느낌
+  padding: 16px;
   background: $main-color;
   color: $w-color;
   font-size: $text-16;
   font-weight: 700;
   border: none;
   border-radius: $radius-md;
+  margin-bottom: 10px;
   cursor: pointer;
   transition:
     background 0.15s,
