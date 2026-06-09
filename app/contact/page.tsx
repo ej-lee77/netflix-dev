@@ -80,7 +80,8 @@ export default function ContactPage() {
     setTab(targetTab);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", targetTab);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    // 탭 전환은 히스토리에 쌓지 않음 → 뒤로가기 시 탭을 거치지 않고 이전 페이지(마이페이지)로 바로 이동
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   // 현재 카테고리 + 검색어 적용된 FAQ

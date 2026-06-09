@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { auth, db } from "@/firebase/firebase";
 import { collection, doc, getDoc, getDocs, limit, query, updateDoc } from "firebase/firestore";
 import { useAuthStore } from "./useAuthStore";
+import { dummyPlaylists } from "@/data/dummyPlaylist";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
@@ -232,10 +233,38 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
     }
 
     set({ isLoadingFollowing: true });
+
+    // 더미 유저(dummy-*)는 Firestore 에 없으므로 로컬 더미 데이터로 유저화해서 합친다
+    const dummyIds = followingIds.filter((id) => id.startsWith("dummy"));
+    const realIds = followingIds.filter((id) => !id.startsWith("dummy"));
+    const findDummy = (id: string) => dummyPlaylists.find((p) => p.userId === id);
+    const dummyUsers: FollowUser[] = dummyIds.map((id) => {
+      const d = findDummy(id);
+      return { userId: id, nickname: d?.nickname ?? "유저", imgUrl: d?.posters?.[0] ?? "" };
+    });
+    const dummyPls: FollowingPlaylist[] = dummyIds
+      .map((id) => {
+        const d = findDummy(id);
+        return d ? { userId: id, nickname: d.nickname, category: d.category, posters: d.posters } : null;
+      })
+      .filter((p): p is FollowingPlaylist => p !== null);
+    const dummyCards: SimilarUser[] = dummyIds.map((id) => {
+      const d = findDummy(id);
+      return {
+        userId: id,
+        nickname: d?.nickname ?? "유저",
+        imgUrl: d?.posters?.[0] ?? "",
+        matchRate: 0,
+        followersCount: 0,
+        tags: d?.tags ?? [],
+        favoriteMovie: { title: d?.name ?? "", poster: d?.posters?.[0] ?? "", description: d?.content ?? "" },
+      };
+    });
+
     try {
-      // 1단계: 모든 유저 문서를 병렬로 fetch
+      // 1단계: 실제 유저 문서만 병렬 fetch (더미는 위에서 처리)
       const snapshots = await Promise.all(
-        followingIds.map((userId) => getDoc(doc(db, "users", userId)))
+        realIds.map((userId) => getDoc(doc(db, "users", userId)))
       );
 
       const validEntries = snapshots
@@ -243,17 +272,17 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
           if (!snap.exists()) return null;
           const firstProfile = snap.data().profile?.[0];
           if (!firstProfile) return null;
-          return { userId: followingIds[i], firstProfile };
+          return { userId: realIds[i], firstProfile };
         })
         .filter((e): e is { userId: string; firstProfile: any } => e !== null);
 
-      // 2단계: 유저 목록 먼저 표시
+      // 2단계: 더미 + 실제 유저 목록 표시
       const users: FollowUser[] = validEntries.map(({ userId, firstProfile }) => ({
         userId,
         nickname: firstProfile.nickname ?? "유저",
         imgUrl: firstProfile.imgUrl ?? "",
       }));
-      set({ followingUsers: users });
+      set({ followingUsers: [...dummyUsers, ...users] });
 
       // 3단계: 플레이리스트 포스터 + 카드용 대표 영화를 병렬로 fetch
       const [playlistResults, cardResults] = await Promise.all([
@@ -304,7 +333,10 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
       const playlists = playlistResults.filter(
         (p): p is FollowingPlaylist => p !== null
       );
-      set({ followingPlaylists: playlists, followingUserCards: cardResults });
+      set({
+        followingPlaylists: [...dummyPls, ...playlists],
+        followingUserCards: [...dummyCards, ...cardResults],
+      });
     } finally {
       set({ isLoadingFollowing: false });
     }
