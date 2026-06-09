@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
-import BackButton from "@/components/common/BackButton";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
@@ -82,7 +81,6 @@ export default function PlaylistPage() {
   if (!currentPlaylist) {
     return (
       <div className="playlist-detail-page">
-        <BackButton fallback="/" />
         <p className="pl-empty">플레이리스트를 불러오는 중이거나 찾을 수 없습니다.</p>
       </div>
     );
@@ -106,7 +104,6 @@ export default function PlaylistPage() {
 
   return (
     <div className="playlist-detail-page">
-      <BackButton fallback="/" />
       {/* 히어로 배너 */}
       <div className="pl-hero">
         <div className="pl-hero-bg">
