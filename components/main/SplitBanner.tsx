@@ -50,7 +50,7 @@ const BANNERS: Record<string, BannerConfig> = {
       "/images/banner/15/still-06.jpg",
       "/images/banner/15/still-07.jpg",
     ],
-    detailHref: "/detail/tv/0", // TODO: 실제 작품 상세 경로로 교체
+    detailHref: "/detail/tv/195670", // XO, Kitty
   },
   "12+": {
     image: "/images/banner/12/main.png",
@@ -65,7 +65,7 @@ const BANNERS: Record<string, BannerConfig> = {
       "/images/banner/12/still-06.jpg",
       "/images/banner/12/still-07.jpg",
     ],
-    detailHref: "/detail/tv/0", // TODO: 실제 작품 상세 경로로 교체
+    detailHref: "/detail/tv/219246",
   },
   "전체관람가": {
     image: "/images/banner/all/main.png",
@@ -80,7 +80,7 @@ const BANNERS: Record<string, BannerConfig> = {
       "/images/banner/all/still-06.jpg",
       "/images/banner/all/still-07.jpg",
     ],
-    detailHref: "/detail/tv/0", // TODO: 실제 작품 상세 경로로 교체
+    detailHref: "/detail/movie/508965", // Klaus
   },
 };
 

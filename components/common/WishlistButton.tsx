@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { auth } from "@/firebase/firebase";
 import { getItemKey, getMediaType, usePlayListStore } from "@/store/usePlayListStore";
+import { showToast } from "@/store/useToastStore";
 import "./wishlistButton.scss";
 
 // 위시리스트가 한 페이지 세션에서 한 번만 로드되도록 하는 가드
@@ -47,8 +47,6 @@ export default function WishlistButton({
     usePlayListStore();
   const { user } = useAuthStore();
   const router = useRouter();
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastHiding, setToastHiding] = useState(false);
 
   // 홈 등에서는 위시리스트를 따로 로드하지 않으므로, 최초 1회 로드해 하트 상태를 맞춤
   useEffect(() => {
@@ -66,6 +64,9 @@ export default function WishlistButton({
     if (stopPropagation) e.stopPropagation();
     e.preventDefault();
 
+    // 버튼 위치를 await 전에 미리 확보 (이후 currentTarget 이 null 이 될 수 있음)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+
     // 로그인 전이면 찜 대신 로그인 페이지로 이동
     const uid = user?.userId ?? auth.currentUser?.uid ?? null;
     if (!uid) {
@@ -78,15 +79,14 @@ export default function WishlistButton({
       await onRemoveMyList(item.id, effectiveType);
     } else {
       await onAddMyList(normalized);
-      setToastVisible(true);
-      setToastHiding(false);
-      setTimeout(() => setToastHiding(true), 1750);
-      setTimeout(() => setToastVisible(false), 2000);
+      showToast("위시리스트에 추가되었습니다.", {
+        icon: "/images/header/menu/wishlist.svg",
+        anchor: { x: rect.left + rect.width / 2, y: rect.top },
+      });
     }
   };
 
   return (
-    <>
     <button
       type="button"
       className={`wishlist-heart-btn ${wished ? "is-wished" : ""} ${className ?? ""}`}
@@ -112,13 +112,5 @@ export default function WishlistButton({
         />
       </svg>
     </button>
-    {toastVisible && createPortal(
-      <div className={`wish-toast${toastHiding ? " wish-toast--hiding" : ""}`}>
-        <img src="/images/header/menu/wishlist.svg" alt="" width={18} height={18} />
-        위시리스트에 추가되었습니다.
-      </div>,
-      document.body
-    )}
-    </>
   );
 }

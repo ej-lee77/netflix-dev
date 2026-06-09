@@ -29,46 +29,47 @@
   // 이미지 스타일 1:1 구현: 메인 상단 탭메뉴 가로 드롭라인 레이아웃
   .community-tabs {
     display: flex;
-    gap: 28px;
-    border-bottom: 1px solid rgba(#fff, 0.1);
-    margin-bottom: 40px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;
+    gap: 4px;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
 
-    @media (max-width: 600px) {
-      gap: 16px;
-      overflow-x: auto;
-      scrollbar-width: none; // 파이어폭스용 노출 방지
-      &::-webkit-scrollbar { display: none; }
+    &::-webkit-scrollbar {
+      display: none;
     }
 
     .tab-btn {
-      background: none;
-      border: none;
-      padding: 0 0 14px;
-      color: g.$main-menu-color; // 비활성 글자색 (#b3b3b3 등)
-      font-size: g.$text-16;
-      font-weight: 600;
-      cursor: pointer;
       position: relative;
+      min-width: 0;
+      padding: 12px 18px;
+      margin-bottom: -1px;
+      background: transparent;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      color: g.$g-color;
+      font-size: g.$text-14;
+      font-weight: 500;
+      cursor: pointer;
       white-space: nowrap;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: rgba(#fff, 0.85);
-      }
+      transition: all 0.2s;
 
       &.is-active {
-        color: #fff;
-        font-weight: 700;
+        color: g.$w-color;
+        border-bottom-color: g.$main-color;
+        font-weight: 600;
+      }
 
-        &::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          bottom: -1px; // 하단 border-bottom 라인 위에 정확히 매칭되도록 지정
-          width: 100%;
-          height: 2px;
-          background-color: g.$main-color; // 넷플릭스 전용 레드 컬러 수렴
-        }
+      &:hover:not(.is-active) {
+        color: g.$w-color;
       }
     }
   }

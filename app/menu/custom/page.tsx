@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { showToast } from "@/store/useToastStore";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import type { DragEvent } from "react";
 import { mainMenus, customMenus } from "@/data/mainMenu";
@@ -113,7 +114,7 @@ export default function MenuCustomPage() {
   const handleToggleMenu = async (path: string) => {
     const hasCategoryItems = selectedMenuPaths.some(isCountableCategoryChild);
     if (path === CATEGORY_MENU.path && !hasCategoryItems) {
-      alert("카테고리 메뉴는 장르 또는 무드를 하나 이상 선택해야 활성화됩니다.");
+      showToast("카테고리 메뉴는 장르 또는 무드를 하나 이상 선택해야 활성화됩니다.");
       return;
     }
 
@@ -127,7 +128,7 @@ export default function MenuCustomPage() {
       ).length;
 
       if (isCountableCategoryChild(path) && selectedCategoryCount >= 10) {
-        alert("카테고리 메뉴는 최대 10개까지만 선택할 수 있습니다.");
+        showToast("카테고리 메뉴는 최대 10개까지만 선택할 수 있습니다.");
         return;
       }
 
