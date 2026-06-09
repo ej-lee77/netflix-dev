@@ -9,7 +9,7 @@ import {
   type UserInfo,
 } from "@/types/auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
@@ -247,16 +247,50 @@ export const useAuthStore = create<AuthState>()(
           } else {
             // 카카오 정보를 기반으로 기본 프로필 생성
             const newProfile = normalizeProfile({
-              id: 1,
+              id: Date.now(),
               nickname: res.kakao_account.profile?.nickname || '카카오사용자',
-              imgUrl: res.kakao_account.profile?.profile_image_url || FALLBACK_PROFILE_IMAGE
+              imgUrl: res.kakao_account.profile?.profile_image_url || FALLBACK_PROFILE_IMAGE,
+              viewAge: "19",
+              movies: {
+                watchingVideos: [],
+                wishlist: [],
+                playlist: {
+                  playlistVideos: [],
+                  customPlaylists: [],
+                },
+                genreStats: {},
+                countryStats: {},
+              },
+              community: {
+                followers: [],
+                following: [],
+                reviews: [],
+                likedfeeds: [],
+                commentfeeds: [],
+                reportfeeds: [],
+              },
+              headerMenus: [],
+              badges: {
+                earnedBadges: [],
+                equippedBadges: "",
+              },
+              alarm: [],
+              isCommunity: true,
             });
 
             const newUser = {
               userId: uid,
               email: res.kakao_account?.email || '',
               profile: [newProfile], // 정규화된 프로필 배열
-              // ...기타 필드
+              planType: "",
+              payment: {
+                pay: "",
+                bank: "",
+                num: "",
+                payDate: "",
+                nextDate: "",
+              },
+              createdAt: serverTimestamp(),
             } as UserDocument;
 
             await setDoc(userRef, newUser);
@@ -328,16 +362,50 @@ export const useAuthStore = create<AuthState>()(
           } else {
             // 신규 사용자: 프로필 정규화 및 기본 데이터 생성
             const newProfile = normalizeProfile({
-              id: 1,
+              id: Date.now(),
               nickname: userInfo.name || '네이버사용자',
-              imgUrl: userInfo.profile_image || FALLBACK_PROFILE_IMAGE
+              imgUrl: userInfo.profile_image || FALLBACK_PROFILE_IMAGE,
+              viewAge: "19",
+              movies: {
+                watchingVideos: [],
+                wishlist: [],
+                playlist: {
+                  playlistVideos: [],
+                  customPlaylists: [],
+                },
+                genreStats: {},
+                countryStats: {},
+              },
+              community: {
+                followers: [],
+                following: [],
+                reviews: [],
+                likedfeeds: [],
+                commentfeeds: [],
+                reportfeeds: [],
+              },
+              headerMenus: [],
+              badges: {
+                earnedBadges: [],
+                equippedBadges: "",
+              },
+              alarm: [],
+              isCommunity: true,
             });
 
             const newUser = {
               userId: uid,
               email: userInfo.email,
               profile: [newProfile],
-              // ...기타 필드 초기화
+              planType: "",
+              payment: {
+                pay: "",
+                bank: "",
+                num: "",
+                payDate: "",
+                nextDate: "",
+              },
+              createdAt: serverTimestamp(),
             } as UserDocument;
 
             await setDoc(userRef, newUser);

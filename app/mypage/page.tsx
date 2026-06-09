@@ -37,11 +37,17 @@ const getGenreColor = (genreName: string) => {
 export default function MyPage() {
   const { user, currentProfile, onLogout, toggleCommunity } = useAuthStore();
   const { playHist, onLoadPlayList } = usePlayListStore();
-  const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail } = useMovieStore();
+  const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail, upcomings, onFetchUpcoming } = useMovieStore();
 
   const userId = user?.userId;
   const { reviews, fetchUserReviews } = useCommunityStore();
   const [historyItems, setHistoryItems] = useState<PlayListItem[]>([]);
+
+  useEffect(() => {
+    if (upcomings.length === 0) onFetchUpcoming();
+    if (popMovies.length === 0) onFetchPopular();
+    if (tvs.length === 0) onFetchTvs();
+  }, []);
 
   // 1. 리뷰 로드 호출
   useEffect(() => {
@@ -123,13 +129,58 @@ export default function MyPage() {
     return hideCommunity ? allItems.filter(item => !item.isCommunity) : allItems;
   }, [hideCommunity, menuIcons]); // 의존성 배열에 hideCommunity 유지
 
-  const filteredActivities = useMemo(() => {
-    const alarms = activeProfile?.alarm || [];
+  // const filteredActivities = useMemo(() => {
+  //   const alarms = activeProfile?.alarm || [];
 
-    return alarms
-      .filter((alarm) => alarm.category === 'review' || alarm.category === 'feed')
-      .slice(0, 5); // 최근 활동 5개만 표시
-  }, [activeProfile]);
+  //   return alarms
+  //     .filter((alarm) => alarm.category === 'review' || alarm.category === 'feed')
+  //     .slice(0, 5); // 최근 활동 5개만 표시
+  // }, [activeProfile]);
+
+  const filteredActivities = useMemo(() => {
+    // 샘플 데이터를 상수로 정의하고 사용
+    const sampleNotifs = [
+      {
+        id: 2,
+        type: "reaction",
+        title: "리뷰에 반응이 도착했어요",
+        description: "외 3명이 회원님의 리뷰에 좋아요를 눌렀어요",
+        thumb: popMovies[0]?.poster_path,
+        time: "1시간 전",
+        unread: true,
+      },
+      {
+        id: 3,
+        type: "friend",
+        title: "팔로잉 유저의 새 활동",
+        description: `팔로잉 유저가 ${popMovies[1]?.title}에 ★★★★★ 평가를 남겼어요`,
+        mediaId: popMovies[1]?.id,
+        mediaType: "movie",
+        thumb: popMovies[1]?.poster_path,
+        time: "2시간 전",
+        unread: true,
+      },
+      {
+        id: 6,
+        type: "friend",
+        title: "새 팔로워",
+        description: "회원님을 팔로우하기 시작했어요",
+        time: "2일 전",
+        unread: false,
+      },
+      {
+        id: 7,
+        type: "reaction",
+        title: "댓글 알림",
+        description: "회원님의 리뷰에 댓글을 남겼어요",
+        thumb: popMovies[2]?.poster_path,
+        time: "3일 전",
+        unread: false,
+      },
+    ];
+
+    return sampleNotifs.slice(0, 3); // 상위 5개만 반환
+  }, [tvs, popMovies, upcomings]);
 
   const profileData = useMemo(() => {
     if (!activeProfile) {
@@ -312,6 +363,13 @@ export default function MyPage() {
     if (planType === "premium") return "프리미엄";
     return null; // planType 없으면 뱃지 자체를 숨김
   })();
+
+  const iconMap : any = {
+    episode: "▶",
+    friend: "👥",
+    upcoming: "📅",
+    reaction: "♥",
+  };
 
   return (
     <div className="mypage">
@@ -537,19 +595,25 @@ export default function MyPage() {
               {filteredActivities.length > 0 ? (
                 <div className="activity-list">
                   {filteredActivities.map((item, index) => (
-                    <div key={index} className="activity-item">
+                    <div key={item.id || index} className="activity-item">
                       <div className="friend-avatar">
-                        {/* 알림 제공자 썸네일 혹은 기본 이미지 */}
+                        {iconMap[item.type]}
+                        {/* 친구 활동 알림인 경우 기본 프로필 이미지 등을 표시 */}
+                        {/* <div className="avatar-placeholder" /> */}
                       </div>
+                      
                       <div className="activity-body">
                         <p>
-                          <strong>{item.title}</strong> 님이 {item.category === 'review' ? '리뷰를' : '새 피드를'} 작성했습니다.
+                          {/* sampleNotifs 구조에 맞춰 필드 출력 */}
+                          <strong>{item.title}</strong>
                         </p>
-                        <p className="content-preview">{item.content}</p>
-                        <span className="time">방금 전</span>
+                        <p className="content-preview">{item.description}</p>
+                        <span className="time">{item.time}</span>
                       </div>
+
                       <div className="activity-thumb">
-                        <img src={item.link} alt="썸네일" /> {/* link를 이미지 URL로 활용 */}
+                        {/* thumb가 있는 경우에만 이미지 표시 */}
+                        {item.thumb && <img src={`https://image.tmdb.org/t/p/w200${item.thumb}`} alt="썸네일" />}
                       </div>
                     </div>
                   ))}

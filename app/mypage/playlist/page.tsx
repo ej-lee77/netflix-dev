@@ -94,6 +94,7 @@ function ActivityContent() {
     onLoadMyList,
     onRemovePlayList,
     onRemoveMyList,
+    onRemovePlayHist,
     createMyCustomPlaylist,
     fetchMyCustomPlaylists,
     updateCustomPlaylist,
@@ -270,7 +271,8 @@ function ActivityContent() {
 
 
   const watchItems = playList;
-  const watchingItems = watchItems.slice(0, 6);
+  // const watchingItems = watchItems.slice(0, 6);
+  const watchingItems = watchItems;
   // 키에서 mediaType 추출하는 헬퍼 (예: "movie-123" -> "movie")
   const getMediaTypeFromKey = (key: string) => key.split("-")[0];
 
@@ -527,6 +529,10 @@ function ActivityContent() {
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
     await onRemovePlayList(item.id, item.mediaType);
+  };
+
+  const handleDeleteHistItem = async (item: PlayListItem) => {
+    await onRemovePlayHist(item.id, item.mediaType);
   };
 
   const handleHideHistoryItem = async (item: PlayListItem) => {
@@ -933,7 +939,7 @@ function ActivityContent() {
               <button
                 type="button"
                 className="mini-delete-btn"
-                onClick={() => hideMode ? handleHideHistoryItem(item) : handleDeleteWatchingItem(item)}
+                onClick={() => hideMode ? handleDeleteHistItem(item) : handleDeleteHistItem(item)}
                 aria-label={`${item.title} ${hideMode ? "시청기록 숨기기" : "시청기록 삭제"}`}
               >
                 {hideMode ? "숨기기" : "-"}
@@ -1220,6 +1226,29 @@ function ActivityContent() {
                   <article key={key} className={isSelected ? "select-card selected" : "select-card"}>
                     <button className="select-card-main" onClick={() => toggleSelected(key)}>
                       <span className="select-check">{isSelected ? "✓" : "+"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="wish-delete-btn"
+                      onClick={() => handleDeleteMyListItem(item)}
+                      aria-label={`${item.title} 찜 해제`}
+                    >
+                      <svg
+                        className="wishlist-icon"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 30 30"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M5.60549 7.60371C6.63378 6.61891 8.02827 6.06567 9.48229 6.06567C10.9363 6.06567 12.3308 6.61891 13.3591 7.60371L14.9657 9.14157L16.5724 7.60371C17.0782 7.10199 17.6833 6.70179 18.3523 6.42648C19.0213 6.15117 19.7408 6.00625 20.4689 6.0002C21.197 5.99414 21.9191 6.12705 22.593 6.39117C23.2669 6.65531 23.8791 7.04537 24.3939 7.5386C24.9088 8.03183 25.316 8.61835 25.5917 9.26394C25.8674 9.90953 26.0062 10.6013 25.9998 11.2988C25.9935 11.9963 25.8423 12.6855 25.5548 13.3265C25.2674 13.9674 24.8497 14.547 24.326 15.0316L14.9657 24L5.60549 15.0316C4.5775 14.0465 4 12.7106 4 11.3177C4 9.92473 4.5775 8.58882 5.60549 7.60371Z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </button>
                     <Link href={`/detail/${item.mediaType}/${item.id}`} className="mini-poster">
                       {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
