@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { showToast } from "@/store/useToastStore";
-import { createPortal } from "react-dom";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { type FeedView, useFeedStore } from "@/store/useFeedStore";
+import { showToast } from "@/store/useToastStore";
 import {
   FeedMediaOption,
   FeedReview,
@@ -368,26 +367,28 @@ export default function FeedPage() {
   const [newReviewText, setNewReviewText] = useState("");
   const [newHasSpoiler, setNewHasSpoiler] = useState(false);
   const [newIsPublic, setNewIsPublic] = useState(true);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastHiding, setToastHiding] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const toastTimers = useRef<number[]>([]);
   const currentUserId =
     user?.userId ||
     (user as { uid?: string } | null)?.uid ||
     auth.currentUser?.uid;
+  const isReviewOwner = (
+    review: Pick<FeedView, "author" | "isMine" | "profileId" | "userId">,
+  ) => {
+    if (review.isMine) return true;
 
-  const showToast = useCallback((message: string) => {
-    toastTimers.current.forEach((timerId) => window.clearTimeout(timerId));
-    toastTimers.current = [];
-    setToastMessage(message);
-    setToastVisible(true);
-    setToastHiding(false);
-    toastTimers.current = [
-      window.setTimeout(() => setToastHiding(true), 1750),
-      window.setTimeout(() => setToastVisible(false), 2000),
-    ];
-  }, []);
+    const profileMatches =
+      currentProfile?.id == null ||
+      review.profileId == null ||
+      String(review.profileId) === String(currentProfile.id);
+    const userIdMatches = Boolean(
+      currentUserId && review.userId === currentUserId,
+    );
+    const nicknameMatches = Boolean(
+      currentProfile?.nickname && review.author === currentProfile.nickname,
+    );
+
+    return profileMatches && (userIdMatches || nicknameMatches);
+  };
 
   const closeWriteModal = useCallback(() => {
     setWriteModalOpen(false);
@@ -413,12 +414,6 @@ export default function FeedPage() {
   useEffect(() => {
     void onHydrateFeeds();
   }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
-
-  useEffect(() => {
-    return () => {
-      toastTimers.current.forEach((timerId) => window.clearTimeout(timerId));
-    };
-  }, []);
 
   // useEffect(() => {
   //   const reportedFeedIds = (currentProfile?.community?.reportfeeds || [])
@@ -650,12 +645,7 @@ export default function FeedPage() {
   const selectedCommentReview =
     feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
   const myProfileReviews = feeds.filter(
-    (review) =>
-      review.isMine ||
-      (currentUserId &&
-        currentProfile &&
-        review.userId === currentUserId &&
-        review.profileId === currentProfile.id),
+    (review) => isReviewOwner(review),
   );
   const profileReviewCount = myProfileReviews.length;
   const averageRating =
@@ -670,9 +660,11 @@ export default function FeedPage() {
   const followingCount = currentProfile?.community?.following?.length ?? 0;
   const equippedBadge =
     BADGE_LIST.find(
-    (badge) => badge.id === currentProfile?.badges?.equippedBadges,
+      (badge) => badge.id === currentProfile?.badges?.equippedBadges,
     ) ?? BADGE_LIST.find((badge) => badge.id === "first_streaming");
-  const completedBadgeCount = 1;
+  const completedBadgeCount =
+    currentProfile?.badges?.earnedBadges?.filter((badge) => badge.isComplete)
+      .length ?? 0;
   const tasteTags = Object.entries(currentProfile?.movies?.genreStats ?? {})
     .sort(([, firstCount], [, secondCount]) => secondCount - firstCount)
     .slice(0, 2)
@@ -680,12 +672,12 @@ export default function FeedPage() {
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
-      showToast("로그인이 필요합니다.");
+      window.alert("로그인이 필요합니다.");
       router.push("/login");
       return false;
     }
     if (!currentProfile) {
-      showToast("프로필을 선택해 주세요.");
+      window.alert("프로필을 선택해 주세요.");
       return false;
     }
 
@@ -707,7 +699,7 @@ export default function FeedPage() {
 
   const handleOpenReportReview = async (review: FeedView) => {
     if (!requireFeedAuth()) return;
-    if (review.isMine) return;
+    if (isReviewOwner(review)) return;
 
     if (reportedReviewIds.includes(review.feedId)) {
       await onReportFeed(review.feedId, false);
@@ -718,7 +710,7 @@ export default function FeedPage() {
         setReportTargetReviewId(null);
       }
       setSelectedReportReason("");
-      showToast("신고가 취소되었습니다.");
+      showToast("신고가 취소되었습니다");
       return;
     }
 
@@ -740,7 +732,7 @@ export default function FeedPage() {
     );
     setReportTargetReviewId(null);
     setSelectedReportReason("");
-    showToast("신고되었습니다.");
+    showToast("신고되었습니다");
   };
 
   const handleCopyShareLink = (reviewId: string) => {
@@ -749,6 +741,25 @@ export default function FeedPage() {
     setCopiedReviewId(reviewId);
     window.setTimeout(() => setCopiedReviewId(null), 1600);
     void navigator.clipboard.writeText(shareUrl);
+  };
+
+  const handleCopyProfileLink = () => {
+    if (!currentUserId) {
+      showToast("로그인이 필요합니다.");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (currentProfile?.id != null) {
+      params.set("profileId", String(currentProfile.id));
+    }
+
+    const profileUrl = `${window.location.origin}/users/${currentUserId}${
+      params.toString() ? `?${params.toString()}` : ""
+    }`;
+
+    void navigator.clipboard?.writeText(profileUrl);
+    showToast("프로필 링크가 복사되었습니다");
   };
 
   const handleOpenEditReview = (review: FeedView) => {
@@ -1304,6 +1315,13 @@ export default function FeedPage() {
             <h1>피드</h1>
             <p>커뮤니티 게시물과 팔로우한 유저의 감상을 둘러보세요.</p>
           </div>
+          {/* <button
+            type="button"
+            className="feed-write-btn"
+            onClick={() => setWriteModalOpen(true)}
+          >
+            게시물 작성
+          </button> */}
         </div>
 
         <div className="feed-layout">
@@ -1319,7 +1337,9 @@ export default function FeedPage() {
               </div>
               <strong>{profileName}</strong>
               <Link href="/goods" className="feed-profile-badge">
-                {equippedBadge?.imgUrl && <img src={equippedBadge.imgUrl} alt="" />}
+                {equippedBadge?.imgUrl && (
+                  <img src={equippedBadge.imgUrl} alt="" />
+                )}
                 <span>{equippedBadge?.name ?? "위대한 첫걸음"}</span>
               </Link>
               <div className="profile-meta-info">
@@ -1330,6 +1350,25 @@ export default function FeedPage() {
                 <p className="following-info">
                   팔로잉 <span>{followingCount}</span>
                 </p>
+                {/* <Link
+                  href="/friends"
+                  className="follow-more-btn"
+                  aria-label="팔로워 및 팔로잉 관리로 이동"
+                  title="팔로워 및 팔로잉 관리"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M19.5 2c.5 0 .9.4.9.9v2.7h2.7a.9.9 0 0 1 0 1.8h-2.7v2.7a.9.9 0 0 1-1.8 0V7.4h-2.7a.9.9 0 1 1 0-1.8h2.7V2.9c0-.5.4-.9.9-.9M9.5 13c5.04 0 9.17 3.7 9.5 8.4.02.33-.26.6-.6.6H.6c-.34 0-.62-.27-.6-.6.33-4.7 4.46-8.4 9.5-8.4m0-9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"
+                    ></path>
+                  </svg>
+                </Link> */}
               </div>
 
               <div className="feed-profile-stats">
@@ -1354,14 +1393,13 @@ export default function FeedPage() {
                 )}
               </div>
               <div className="feed-profile-nav">
+                <Link href="/mypage/playlist?tab=history">시청이력</Link>
+                <Link href="/mypage/playlist?tab=playlists">보관함</Link>
                 <div className="edit-profile-area">
                   <Link href="/settings?tab=profile">프로필 관리</Link>
                   <button
                     type="button"
-                    onClick={() => {
-                      void navigator.clipboard?.writeText(window.location.href);
-                      showToast("프로필 링크가 복사되었습니다");
-                    }}
+                    onClick={handleCopyProfileLink}
                   >
                     프로필 공유
                   </button>
@@ -1385,14 +1423,14 @@ export default function FeedPage() {
                     </svg>
                   </Link>
                 </div>
+                <button
+                  type="button"
+                  className="feed-write-btn"
+                  onClick={() => setWriteModalOpen(true)}
+                >
+                  게시물 작성
+                </button>
               </div>
-              <button
-                type="button"
-                className="feed-profile-write-btn"
-                onClick={() => setWriteModalOpen(true)}
-              >
-                게시물 작성
-              </button>
             </div>
           </aside>
           <div className="feed-main">
@@ -1425,6 +1463,7 @@ export default function FeedPage() {
             ) : (
               filteredReviews.map((review) => {
                 const isReported = reportedReviewIds.includes(review.feedId);
+                const isOwnReview = isReviewOwner(review);
                 const shouldBlurSpoiler =
                   review.isSpoiler &&
                   !visibleSpoilerReviewIds.includes(review.feedId);
@@ -1432,7 +1471,7 @@ export default function FeedPage() {
                 return (
                   <article
                     key={review.feedId}
-                    className={`feed-post feed-page-post ${reportTargetReviewId === review.feedId ? "report-open" : ""}`}
+                    className={`feed-post ${reportTargetReviewId === review.feedId ? "report-open" : ""}`}
                   >
                     <Link
                       href={`/feed/${review.feedId}`}
@@ -1462,7 +1501,7 @@ export default function FeedPage() {
                         {review.isSpoiler && (
                           <span className="spoiler-tag">스포일러</span>
                         )}
-                        {!review.isMine && (
+                        {!isOwnReview && (
                           <div className="report-menu">
                             <button
                               type="button"
@@ -1596,7 +1635,7 @@ export default function FeedPage() {
                       >
                         {copiedReviewId === review.feedId ? "복사됨" : "공유"}
                       </button>
-                      {review.isMine && (
+                      {isOwnReview && (
                         <div className="review-owner-actions">
                           <button
                             type="button"
@@ -1626,15 +1665,6 @@ export default function FeedPage() {
       </div>
       {renderWriteModal()}
       {renderCommentModal()}
-      {toastVisible &&
-        createPortal(
-          <div
-            className={`wish-toast${toastHiding ? " wish-toast--hiding" : ""}`}
-          >
-            {toastMessage}
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }
