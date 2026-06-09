@@ -1,6 +1,7 @@
 // 리뷰 타입
 export interface ReviewDocument {
   reviewId: string;// 리뷰 고유 ID
+  userId?: string;
   content: string;// 리뷰 내용
   videoId: string;// 영상 아이디
   likesCount: number;// 좋아요 수
@@ -8,6 +9,7 @@ export interface ReviewDocument {
   reportsCount: number;// 신고 횟수
   nickname: string;
   createdAt: string;
+  updatedAt?: string;
   profileId: number;// 리뷰 작성자 ID
   rating: number;
 }
@@ -43,6 +45,8 @@ export interface CommunityStore {
   fetchUserReviews: () => Promise<void>;
   fetchVideoReviews: (videoId: string) => Promise<void>;
   addReview: (data: { content: string; videoId: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
+  updateReview: (reviewId: string, videoId: string, data: { content: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
+  deleteReview: (reviewId: string, videoId: string) => Promise<void>;
   reportReview: (reviewId: string, videoId: string) => Promise<void>;
   updateReviewLikeCount: (videoId: string, reviewId: string, isLiked: boolean) => Promise<void>;
 }
