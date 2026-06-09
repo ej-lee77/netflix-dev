@@ -43,6 +43,7 @@ export interface CommunityStore {
   reviews: ReviewDocument[];
   // 스토어 내부에서 DB 로직을 수행
   fetchUserReviews: () => Promise<void>;
+  fetchAllReviews: () => Promise<void>;
   fetchVideoReviews: (videoId: string) => Promise<void>;
   addReview: (data: { content: string; videoId: string; isSpoiler: boolean; rating: number; }) => Promise<void>;
   updateReview: (reviewId: string, videoId: string, data: { content: string; isSpoiler: boolean; rating: number; }) => Promise<void>;

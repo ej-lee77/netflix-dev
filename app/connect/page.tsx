@@ -13,6 +13,7 @@ import ThemeRow, { type ThemeItem } from "@/components/main/ThemeRow";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import { useMovieStore } from "@/store/useMovieStore";
 import type { Movie } from "@/types/movie";
+import TopButton from "@/components/common/TopButton";
 
 const hasKorean = (text: string) => /[가-힣]/.test(text);
 
@@ -106,6 +107,7 @@ export default function ConnectPage() {
       ) : (
         <ThemeRowSkeleton />
       )}
+      <TopButton />
     </div>
   );
 }
