@@ -35,16 +35,12 @@ export default function RisingReviewCard({ user }: Props) {
     };
 
     return (
-        <div className="review-card">
+        <div className="review-card" onClick={() => router.push(`/users/${user.userId}`)}>
             <div className="review-card__glow" />
 
             <div className="review-card__content">
                 <div className="review-card__user-row">
-                    <div
-                        className="review-card__profile"
-                        style={{ cursor: "pointer" }}
-                        onClick={() => router.push(`/users/${user.userId}`)}
-                    >
+                    <div className="review-card__profile">
                         {user.imgUrl ? (
                             <img
                                 src={user.imgUrl}
@@ -71,7 +67,7 @@ export default function RisingReviewCard({ user }: Props) {
                     <button
                         className={`review-card__follow${isFollowing ? " review-card__follow--active" : ""}`}
                         type="button"
-                        onClick={handleFollowToggle}
+                        onClick={(e) => { e.stopPropagation(); handleFollowToggle(); }}
                         disabled={loading}
                     >
                         {loading ? "···" : isFollowing ? "팔로잉" : "팔로우"}
