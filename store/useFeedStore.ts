@@ -659,19 +659,20 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
   },
 
-  onAddComment: async (feedId: string, content: any) => {
+  onAddComment: async (feedId: string, comment: FeedComment) => {
     const { userId, currentProfile } = getAuthContext();
     if (!userId || !currentProfile) return;
 
     const newComment: FeedComment = {
-      commentId: Date.now().toString(),
-      userId: userId,
-      content: content,
+      ...comment,
+      commentId: comment.commentId || Date.now().toString(),
+      userId,
+      profileId: currentProfile.id,
       reportsCount: 0,
       likesCount: 0,
-      profileId: currentProfile.id,
-      createdAt: new Date().toISOString(),
-      likedUserIds: [],
+      content: comment.content,
+      createdAt: comment.createdAt || new Date().toISOString(),
+      likedUserIds: comment.likedUserIds || [],
     };
 
     const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);

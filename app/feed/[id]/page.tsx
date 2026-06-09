@@ -29,6 +29,20 @@ const renderRatingStars = (rating: number) => (
   </span>
 );
 
+const getCommentContent = (content: unknown) => {
+  if (typeof content === "string") return content;
+  if (
+    typeof content === "object" &&
+    content !== null &&
+    "content" in content &&
+    typeof (content as { content?: unknown }).content === "string"
+  ) {
+    return (content as { content: string }).content;
+  }
+
+  return "";
+};
+
 export default function FeedDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -272,7 +286,7 @@ export default function FeedDetailPage() {
                         )}
                       </span>
                     </div>
-                    <p>{comment.content}</p>
+                    <p>{getCommentContent(comment.content)}</p>
                     <div className="comment-actions">
                       <button
                         type="button"
@@ -293,7 +307,7 @@ export default function FeedDetailPage() {
                             onClick={() =>
                               handleOpenEditComment(
                                 comment.commentId,
-                                comment.content,
+                                getCommentContent(comment.content),
                               )
                             }
                           >
