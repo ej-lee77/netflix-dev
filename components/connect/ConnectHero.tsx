@@ -81,9 +81,9 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
       const [detailRes, videoRes] = await Promise.all([
         fetch(
           `https://api.themoviedb.org/3/${mt}/${item.id}` +
-            `?api_key=${KEY}&language=ko-KR` +
-            `&append_to_response=images,${certParam},credits` +
-            `&include_image_language=ko,en,null`
+          `?api_key=${KEY}&language=ko-KR` +
+          `&append_to_response=images,${certParam},credits` +
+          `&include_image_language=ko,en,null`
         ),
         fetch(
           `https://api.themoviedb.org/3/${mt}/${item.id}/videos?api_key=${KEY}&language=en-US`
@@ -161,38 +161,26 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
 export default function ConnectHero() {
   const router = useRouter();
   const swiperRef = useRef<SwiperType | null>(null);
-  const [realIndex, setRealIndex] = useState(0);
   const [items, setItems] = useState<HeroItem[]>([]);
+  const [realIndex, setRealIndex] = useState(0);      // 실제 콘텐츠 인덱스 (0~TOTAL-1)
+  const [swiperIdx, setSwiperIdx] = useState(0);      // Swiper 절대 인덱스 (loopItems 기준)
   const [showVideo, setShowVideo] = useState(false);
   const [failedLogos, setFailedLogos] = useState<Set<number>>(new Set());
-  const [swiperKey, setSwiperKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetchHeroItems().then(setItems).catch(console.error);
   }, []);
 
-  useEffect(() => {
-    if (items.length === 0) return;
-    // 시네마→커넥트 전환 시 flex 레이아웃 확정 후 Swiper 재마운트
-    // setTimeout으로 브라우저 레이아웃 패스가 완료될 때까지 대기
-    const id = setTimeout(() => setSwiperKey((k) => k + 1), 300);
-    return () => clearTimeout(id);
-  }, [items.length]);
-
   // 슬라이드 변경 시 영상 리셋 → 2초 후 재생
   useEffect(() => {
     setShowVideo(false);
     if (timerRef.current) clearTimeout(timerRef.current);
-
     const item = items[realIndex];
     if (item?.videoKey) {
       timerRef.current = setTimeout(() => setShowVideo(true), 2000);
     }
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [realIndex, items]);
 
   const TOTAL = items.length;
@@ -201,49 +189,67 @@ export default function ConnectHero() {
     return <section className="connect-hero connect-hero--loading" aria-label="커넥트 컬렉션" />;
   }
 
+  // ─────────────────────────────────────────────────────────
+  // Swiper 내장 loop 대신 아이템 3배 복제로 직접 무한 루프 구현
+  // → initialSlide를 중간 셋 시작점으로 명시 → 타이밍 무관하게 항상 1번 슬라이드 시작
+  // ─────────────────────────────────────────────────────────
+  const loopItems = [...items, ...items, ...items];  // 총 TOTAL*3 슬라이드
+  const LOOP_CENTER = TOTAL;                          // 중간 셋의 첫 번째 슬라이드 인덱스
+
   return (
     <section className="connect-hero" aria-label="커넥트 컬렉션">
-      {items.map((item, i) => (
-        <div
-          key={item.id}
-          className="connect-hero__section-bg"
-          style={{
-            backgroundImage: `url(${IMG}/w1280${item.backdropPath})`,
-            opacity: i === realIndex ? 1 : 0,
-          }}
-        />
-      ))}
+      {/* 배경 블러: overflow:hidden 래퍼 안에서 클리핑 */}
+      <div className="connect-hero__bg-layer">
+        {items.map((item, i) => (
+          <div
+            key={item.id}
+            className="connect-hero__section-bg"
+            style={{
+              backgroundImage: `url(${IMG}/w1280${item.backdropPath})`,
+              opacity: i === realIndex ? 1 : 0,
+            }}
+          />
+        ))}
+      </div>
 
       <Swiper
-        key={swiperKey}
         className="connect-hero__swiper"
         centeredSlides
         slidesPerView="auto"
         spaceBetween={14}
-        loop
-        loopAdditionalSlides={1}
+        initialSlide={LOOP_CENTER}   // 중간 셋 첫 슬라이드 → 타이밍과 무관하게 항상 1번 시작
+        speed={520}
         modules={[Navigation]}
         navigation
-        speed={520}
         onSwiper={(s) => {
           swiperRef.current = s;
-          // 레이아웃 확정 후 크기 재계산 + 0번 슬라이드 강제 이동
-          requestAnimationFrame(() => {
-            s.update();
-            s.slideToLoop(0, 0);
-          });
+          setSwiperIdx(s.activeIndex); // Swiper 마운트 시 초기 인덱스 동기화
         }}
-        onSlideChange={(s) => { setRealIndex(s.realIndex); }}
+        onSlideChange={(s) => {
+          const ai = s.activeIndex;
+          setSwiperIdx(ai);
+          setRealIndex(ai % TOTAL);  // 실제 콘텐츠 인덱스 (0~TOTAL-1)
+        }}
+        onTransitionEnd={(s) => {
+          // 첫 번째 셋(0~TOTAL-1) 또는 세 번째 셋(TOTAL*2~)에 도달하면
+          // 중간 셋의 동일 위치로 조용히 점프 → 무한 루프 효과
+          const ai = s.activeIndex;
+          if (ai < TOTAL) {
+            s.slideTo(ai + TOTAL, 0, false);
+          } else if (ai >= TOTAL * 2) {
+            s.slideTo(ai - TOTAL, 0, false);
+          }
+        }}
       >
-        {items.map((item, i) => (
-          <SwiperSlide key={item.id} className="connect-hero__slide">
+        {loopItems.map((item, i) => (
+          <SwiperSlide key={`loop-${i}`} className="connect-hero__slide">
             <div
               className="connect-hero__bg"
               style={{ backgroundImage: `url(${IMG}/original${item.backdropPath})` }}
             />
 
-            {/* 2초 후 영상 — 마운트 시 CSS 애니메이션으로 fade-in */}
-            {i === realIndex && showVideo && item.videoKey && (
+            {/* 현재 활성 슬라이드에만 영상 마운트 (2초 후 fade-in) */}
+            {i === swiperIdx && showVideo && item.videoKey && (
               <div className="connect-hero__video">
                 <iframe
                   src={
@@ -321,8 +327,9 @@ export default function ConnectHero() {
               </div>
             </div>
 
+            {/* 카운터: 루프 인덱스를 실제 번호로 변환 (i % TOTAL + 1) */}
             <div className="connect-hero__counter">
-              {i + 1} <span>|</span> {TOTAL}
+              {(i % TOTAL) + 1} <span>|</span> {TOTAL}
             </div>
           </SwiperSlide>
         ))}
