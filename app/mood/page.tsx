@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import AppIcon from "@/components/common/AppIcon";
 import Link from "next/link";
 import Image from "next/image";
 import { customMenus } from "@/data/mainMenu";
@@ -66,14 +67,14 @@ export default function MoodMainPage() {
         {/* 안내 섹션 */}
         <section className="mood-info">
           <div className="info-card">
-            <h3>🎯 무드 큐레이션이란?</h3>
+            <h3><AppIcon name="target" size={18} /> 무드 큐레이션이란?</h3>
             <p>
               영화·시리즈를 단순 장르가 아닌 <strong>분위기</strong>로 분류한 큐레이션이에요.
               비 오는 날 잔잔한 영화, 우울할 때 유쾌한 작품처럼 그때그때 기분에 맞는 작품을 추천받을 수 있어요.
             </p>
           </div>
           <div className="info-card">
-            <h3>⚙️ 더 정확한 추천을 받고 싶다면?</h3>
+            <h3><AppIcon name="gear" size={18} /> 더 정확한 추천을 받고 싶다면?</h3>
             <p>
               <Link href="/mypage/genre">장르 관리</Link>에서 선호 무드와 제외 무드를 설정하세요. 추천 알고리즘이
               여러분의 취향을 더 잘 학습해드려요.

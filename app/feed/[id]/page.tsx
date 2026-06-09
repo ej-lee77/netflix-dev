@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { showToast } from "@/store/useToastStore";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "@/firebase/firebase";
@@ -62,12 +63,12 @@ export default function FeedDetailPage() {
     event.preventDefault();
     if (!review || !commentText.trim()) return;
     if (!currentUserId) {
-      window.alert("로그인이 필요합니다.");
+      showToast("로그인이 필요합니다.");
       router.push("/login");
       return;
     }
     if (!currentProfile) {
-      window.alert("프로필을 선택해 주세요.");
+      showToast("프로필을 선택해 주세요.");
       return;
     }
 
@@ -122,12 +123,12 @@ export default function FeedDetailPage() {
   };
   const requireFeedAuth = () => {
     if (!currentUserId) {
-      window.alert("로그인이 필요합니다.");
+      showToast("로그인이 필요합니다.");
       router.push("/login");
       return false;
     }
     if (!currentProfile) {
-      window.alert("프로필을 선택해 주세요.");
+      showToast("프로필을 선택해 주세요.");
       return false;
     }
 
