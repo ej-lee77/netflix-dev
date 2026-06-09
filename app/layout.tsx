@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import LoginBanner from "@/components/LoginBanner";
 import AuthProvider from "@/components/AuthProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import ConnectAIButton from "@/components/connect/ConnectAIButton";
 
 const netflixSans = localFont({
   src: [
@@ -38,6 +39,7 @@ export default function RootLayout({
           <ConditionalLayout>
             {children}
           </ConditionalLayout>
+          <ConnectAIButton />
         </AuthProvider>
         <Script 
           src="https://developers.kakao.com/sdk/js/kakao.js" 
