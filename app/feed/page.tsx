@@ -316,6 +316,20 @@ const getNextStarRating = (currentRating: number, star: number) => {
   return currentRating === halfRating ? star : halfRating;
 };
 
+const getCommentContent = (content: unknown) => {
+  if (typeof content === "string") return content;
+  if (
+    typeof content === "object" &&
+    content !== null &&
+    "content" in content &&
+    typeof (content as { content?: unknown }).content === "string"
+  ) {
+    return (content as { content: string }).content;
+  }
+
+  return "";
+};
+
 export default function FeedPage() {
   const router = useRouter();
   const { user, currentProfile, updateUserLikeFeeds, updateUserCommentFeed } =
@@ -644,9 +658,7 @@ export default function FeedPage() {
 
   const selectedCommentReview =
     feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
-  const myProfileReviews = feeds.filter(
-    (review) => isReviewOwner(review),
-  );
+  const myProfileReviews = feeds.filter((review) => isReviewOwner(review));
   const profileReviewCount = myProfileReviews.length;
   const averageRating =
     profileReviewCount > 0
@@ -684,6 +696,20 @@ export default function FeedPage() {
     return true;
   };
 
+  const requireFeedAuthToast = () => {
+    if (!currentUserId) {
+      showToast("로그인이 필요합니다.");
+      router.push("/login");
+      return false;
+    }
+    if (!currentProfile) {
+      showToast("프로필을 선택해 주세요.");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleLike = (feedId: string) => {
     if (!requireFeedAuth()) return;
 
@@ -692,7 +718,7 @@ export default function FeedPage() {
   };
 
   const handleOpenCommentModal = (reviewId: string) => {
-    if (!requireFeedAuth()) return;
+    if (!requireFeedAuthToast()) return;
 
     setCommentTargetReviewId(reviewId);
   };
@@ -1177,6 +1203,10 @@ export default function FeedPage() {
   const renderCommentModal = () => {
     if (!selectedCommentReview) return null;
 
+    const commentsList = Array.isArray(selectedCommentReview.commentsList)
+      ? selectedCommentReview.commentsList
+      : [];
+
     return (
       <div
         className="feed-modal-backdrop"
@@ -1212,8 +1242,8 @@ export default function FeedPage() {
           </div>
 
           <div className="comment-list">
-            {selectedCommentReview.commentsList.length > 0 ? (
-              selectedCommentReview.commentsList.map((comment) => (
+            {commentsList.length > 0 ? (
+              commentsList.map((comment) => (
                 <div className="comment-item" key={comment.commentId}>
                   <div className="comment-avatar">
                     {comment.authorImage ? (
@@ -1231,7 +1261,7 @@ export default function FeedPage() {
                         )}
                       </span>
                     </div>
-                    <p>{comment.content}</p>
+                    <p>{getCommentContent(comment.content)}</p>
                     <div className="comment-actions">
                       <button
                         type="button"
@@ -1257,7 +1287,7 @@ export default function FeedPage() {
                             onClick={() =>
                               handleOpenEditComment(
                                 comment.commentId,
-                                comment.content,
+                                getCommentContent(comment.content),
                               )
                             }
                           >
@@ -1326,31 +1356,58 @@ export default function FeedPage() {
 
         <div className="feed-layout">
           <aside className="feed-profile-panel" aria-label="프로필 정보">
-            <div className="feed-profile-card">
-              <div className="feed-profile-card__eyebrow">프로필 정보</div>
-              <div className="feed-profile-card__avatar">
-                {profileImage ? (
-                  <img src={profileImage} alt="" />
-                ) : (
-                  getInitial(profileName)
-                )}
+            {!currentUserId ? (
+              <div className="feed-profile-card feed-profile-card--guest">
+                <div className="feed-profile-card__eyebrow">커뮤니티 피드</div>
+                <div
+                  className="feed-profile-card__guest-icon"
+                  aria-hidden="true"
+                >
+                  N
+                </div>
+                <strong>
+                  로그인하고 <br />
+                  피드를 시작해 보세요
+                </strong>
+                <p className="feed-profile-card__guest-copy">
+                  내 취향 리뷰를 남기고, 다른 이용자의 감상에 댓글로 참여할 수
+                  있어요.
+                </p>
+                <div className="feed-profile-guest-actions">
+                  <Link href="/login" className="feed-profile-login-btn">
+                    로그인하러 가기
+                  </Link>
+                  <Link href="/signin" className="feed-profile-signup-btn">
+                    회원가입
+                  </Link>
+                </div>
               </div>
-              <strong>{profileName}</strong>
-              <Link href="/goods" className="feed-profile-badge">
-                {equippedBadge?.imgUrl && (
-                  <img src={equippedBadge.imgUrl} alt="" />
-                )}
-                <span>{equippedBadge?.name ?? "위대한 첫걸음"}</span>
-              </Link>
-              <div className="profile-meta-info">
-                {/* <span className="feed-profile-level">Lv.0 베이비</span> */}
-                <p className="follower-info">
-                  팔로워 <span>{followerCount}</span>
-                </p>
-                <p className="following-info">
-                  팔로잉 <span>{followingCount}</span>
-                </p>
-                {/* <Link
+            ) : (
+              <div className="feed-profile-card">
+                <div className="feed-profile-card__eyebrow">프로필 정보</div>
+                <div className="feed-profile-card__avatar">
+                  {profileImage ? (
+                    <img src={profileImage} alt="" />
+                  ) : (
+                    getInitial(profileName)
+                  )}
+                </div>
+                <strong>{profileName}</strong>
+                <Link href="/goods" className="feed-profile-badge">
+                  {equippedBadge?.imgUrl && (
+                    <img src={equippedBadge.imgUrl} alt="" />
+                  )}
+                  <span>{equippedBadge?.name ?? "위대한 첫걸음"}</span>
+                </Link>
+                <div className="profile-meta-info">
+                  {/* <span className="feed-profile-level">Lv.0 베이비</span> */}
+                  <p className="follower-info">
+                    팔로워 <span>{followerCount}</span>
+                  </p>
+                  <p className="following-info">
+                    팔로잉 <span>{followingCount}</span>
+                  </p>
+                  {/* <Link
                   href="/friends"
                   className="follow-more-btn"
                   aria-label="팔로워 및 팔로잉 관리로 이동"
@@ -1369,69 +1426,67 @@ export default function FeedPage() {
                     ></path>
                   </svg>
                 </Link> */}
-              </div>
-
-              <div className="feed-profile-stats">
-                <div>
-                  <b>{averageRating.toFixed(1)}</b>
-                  <span>평균 별점</span>
                 </div>
-                <Link href="/mypage/community?tab=my-feeds">
-                  <b>{profileReviewCount}</b>
-                  <span>리뷰</span>
-                </Link>
-                <Link href="/goods">
-                  <b>{completedBadgeCount}</b>
-                  <span>뱃지</span>
-                </Link>
-              </div>
-              <div className="feed-profile-taste-tags">
-                {tasteTags.length > 0 ? (
-                  tasteTags.map((tag) => <span key={tag}>#{tag} 취향</span>)
-                ) : (
-                  <span>#취향 수집중</span>
-                )}
-              </div>
-              <div className="feed-profile-nav">
-                <Link href="/mypage/playlist?tab=history">시청이력</Link>
-                <Link href="/mypage/playlist?tab=playlists">보관함</Link>
-                <div className="edit-profile-area">
-                  <Link href="/settings?tab=profile">프로필 관리</Link>
-                  <button
-                    type="button"
-                    onClick={handleCopyProfileLink}
-                  >
-                    프로필 공유
-                  </button>
-                  <Link
-                    href="/friends"
-                    className="follow-more-btn"
-                    aria-label="팔로워 및 팔로잉 관리로 이동"
-                    title="팔로워 및 팔로잉 관리"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M19.5 2c.5 0 .9.4.9.9v2.7h2.7a.9.9 0 0 1 0 1.8h-2.7v2.7a.9.9 0 0 1-1.8 0V7.4h-2.7a.9.9 0 1 1 0-1.8h2.7V2.9c0-.5.4-.9.9-.9M9.5 13c5.04 0 9.17 3.7 9.5 8.4.02.33-.26.6-.6.6H.6c-.34 0-.62-.27-.6-.6.33-4.7 4.46-8.4 9.5-8.4m0-9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"
-                      ></path>
-                    </svg>
+
+                <div className="feed-profile-stats">
+                  <div>
+                    <b>{averageRating.toFixed(1)}</b>
+                    <span>평균 별점</span>
+                  </div>
+                  <Link href="/mypage/community?tab=my-feeds">
+                    <b>{profileReviewCount}</b>
+                    <span>리뷰</span>
+                  </Link>
+                  <Link href="/goods">
+                    <b>{completedBadgeCount}</b>
+                    <span>뱃지</span>
                   </Link>
                 </div>
-                <button
-                  type="button"
-                  className="feed-write-btn"
-                  onClick={() => setWriteModalOpen(true)}
-                >
-                  게시물 작성
-                </button>
+                <div className="feed-profile-taste-tags">
+                  {tasteTags.length > 0 ? (
+                    tasteTags.map((tag) => <span key={tag}>#{tag} 취향</span>)
+                  ) : (
+                    <span>#취향 수집중</span>
+                  )}
+                </div>
+                <div className="feed-profile-nav">
+                  <Link href="/mypage/playlist?tab=history">시청이력</Link>
+                  <Link href="/mypage/playlist?tab=playlists">보관함</Link>
+                  <div className="edit-profile-area">
+                    <Link href="/settings?tab=profile">프로필 관리</Link>
+                    <button type="button" onClick={handleCopyProfileLink}>
+                      프로필 공유
+                    </button>
+                    <Link
+                      href="/friends"
+                      className="follow-more-btn"
+                      aria-label="팔로워 및 팔로잉 관리로 이동"
+                      title="팔로워 및 팔로잉 관리"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M19.5 2c.5 0 .9.4.9.9v2.7h2.7a.9.9 0 0 1 0 1.8h-2.7v2.7a.9.9 0 0 1-1.8 0V7.4h-2.7a.9.9 0 1 1 0-1.8h2.7V2.9c0-.5.4-.9.9-.9M9.5 13c5.04 0 9.17 3.7 9.5 8.4.02.33-.26.6-.6.6H.6c-.34 0-.62-.27-.6-.6.33-4.7 4.46-8.4 9.5-8.4m0-9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"
+                        ></path>
+                      </svg>
+                    </Link>
+                  </div>
+                  <button
+                    type="button"
+                    className="feed-write-btn"
+                    onClick={() => setWriteModalOpen(true)}
+                  >
+                    게시물 작성
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </aside>
           <div className="feed-main">
             <div
