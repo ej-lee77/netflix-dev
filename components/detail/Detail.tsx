@@ -209,6 +209,18 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isTv = type === "tv";
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // 반응형: 뷰포트 폭에 따라 인라인 레이아웃 분기
+  const [vw, setVw] = useState(1920);
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const isMobile = vw <= 600;
+  const isTablet = vw <= 1024;
+  const hPad = isMobile ? 16 : isTablet ? 24 : 40;
   const shouldAutoPlay = searchParams.get("play") === "1";
   const itemKey = `${type}-${mediaId}`;
 
@@ -859,7 +871,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           display: "flex",
           flexDirection: "column",
           gap: 16,
-          padding: "48px 40px 0",
+          padding: `48px ${hPad}px 0`,
         }}
       >
         {isTv && renderSynopsis({ compact: true })}
@@ -925,7 +937,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         </div>
 
         {/* Episode grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
           {paged.map((ep, idx) => {
             const isActive = ep.id === activeEpisodeId;
             const stillUrl =
@@ -1275,7 +1287,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        padding: "56px 40px 0",
+        padding: `56px ${hPad}px 0`,
       }}
     >
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
@@ -1366,7 +1378,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         display: "flex",
         flexDirection: "column",
         gap: 24,
-        padding: "56px 40px 0",
+        padding: `56px ${hPad}px 0`,
       }}
     >
       <section
@@ -2129,7 +2141,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        padding: "56px 40px 0",
+        padding: `56px ${hPad}px 0`,
       }}
     >
       <div
@@ -2305,7 +2317,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        padding: "56px 40px 0",
+        padding: `56px ${hPad}px 0`,
       }}
     >
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
@@ -2417,7 +2429,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          padding: "56px 40px 0",
+          padding: `56px ${hPad}px 0`,
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
@@ -2475,7 +2487,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const renderDirector = () => (
-    <div style={{ padding: "56px 40px 0" }}>
+    <div style={{ padding: `56px ${hPad}px 0` }}>
       <div
         style={{
           borderRadius: 12,
@@ -2568,13 +2580,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         <div style={{ height: 600 }} />
 
         {/* Info Section */}
-        <div style={{ position: "relative", display: "flex", gap: 24, padding: "0 40px 40px 87px", zIndex: 10 }}>
+        <div style={{ position: "relative", display: "flex", gap: 24, padding: `0 ${hPad}px 40px ${isMobile ? 16 : 87}px`, zIndex: 10 }}>
           {/* Poster */}
           <div
             style={{
               flexShrink: 0,
-              width: 180,
-              height: 260,
+              width: isMobile ? 110 : 180,
+              height: isMobile ? 160 : 260,
               borderRadius: 8,
               overflow: "hidden",
               border: "1.5px solid rgba(255,255,255,0.12)",
@@ -2625,7 +2637,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             <h1
               style={{
                 fontWeight: 900,
-                fontSize: 40,
+                fontSize: isMobile ? 24 : isTablet ? 32 : 40,
                 color: "#fff",
                 lineHeight: 1.15,
                 letterSpacing: -0.8,
@@ -2862,7 +2874,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* TabNav */}
-      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "0 40px 0 87px", marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: `0 ${hPad}px 0 ${isMobile ? 16 : 87}px`, marginTop: 24 }}>
         {tabItems
           // 1. 리뷰 탭이면서 권한이 없는 경우 필터링 (렌더링하지 않음)
           .filter((tab) => {
