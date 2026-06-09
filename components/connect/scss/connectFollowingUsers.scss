@@ -7,7 +7,7 @@
     width: 100%;
     padding: 8px 0 10px;
     overflow: visible !important;
-    cursor: default;
+    cursor: pointer;
 
     &::-webkit-scrollbar {
       display: none;
@@ -28,7 +28,7 @@
     color: rgba(255, 255, 255, 0.72);
     text-align: center;
     background: transparent;
-    cursor: default;
+    cursor: pointer;
 
     strong {
       display: block;
