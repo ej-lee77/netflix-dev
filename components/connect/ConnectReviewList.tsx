@@ -25,7 +25,7 @@ const DUMMY_USERS: SimilarUser[] = dummyPlaylists.map((d, i) => ({
     followersCount: 0,
     tags: d.tags,
     favoriteMovie: {
-        title: d.name,
+        title: d.featuredMovieTitle,
         poster: d.posters[0] ?? "",
         description: d.content,
     },

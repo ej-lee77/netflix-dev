@@ -12,6 +12,7 @@ export interface DummyPlaylist {
   category: "영화" | "시리즈" | "애니메이션";
   name: string;
   content: string;
+  featuredMovieTitle: string;
   tags: string[];
   isShare: boolean;
   posters: string[];
@@ -26,6 +27,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "영화",
     name: "햅번공주님의 추천작품",
     content: "여운이 오래 남는 인생 영화 모음.",
+    featuredMovieTitle: "기생충",
     tags: ["감성적인", "심오한"],
     isShare: true,
     posters: [
@@ -43,6 +45,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "시리즈",
     name: "시네마중독님의 추천작품",
     content: "정주행 각 나오는 시리즈만 모았어요.",
+    featuredMovieTitle: "기묘한 이야기",
     tags: ["어두운", "신나는"],
     isShare: true,
     posters: [
@@ -60,6 +63,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "애니메이션",
     name: "새벽두시님의 추천작품",
     content: "잠 안 오는 밤에 보는 애니메이션.",
+    featuredMovieTitle: "아케인",
     tags: ["감성적인", "잔잔한"],
     isShare: true,
     posters: [
@@ -77,6 +81,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "영화",
     name: "필름고양이님의 추천작품",
     content: "한 번쯤은 꼭 봐야 할 명작들.",
+    featuredMovieTitle: "조커",
     tags: ["어두운", "심오한"],
     isShare: true,
     posters: [
@@ -94,6 +99,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "시리즈",
     name: "무비테라스님의 추천작품",
     content: "몰입감 최고의 화제작 시리즈.",
+    featuredMovieTitle: "브레이킹 배드",
     tags: ["어두운", "신나는"],
     isShare: true,
     posters: [
@@ -111,6 +117,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "애니메이션",
     name: "엔딩크레딧님의 추천작품",
     content: "엔딩까지 완벽한 애니메이션.",
+    featuredMovieTitle: "너의 이름은.",
     tags: ["신나는", "감성적인"],
     isShare: true,
     posters: [
@@ -128,6 +135,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "영화",
     name: "포스터수집가님의 추천작품",
     content: "감독의 색깔이 진한 작품들.",
+    featuredMovieTitle: "위플래쉬",
     tags: ["감성적인", "심오한"],
     isShare: true,
     posters: [
@@ -145,6 +153,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "시리즈",
     name: "심야상영님의 추천작품",
     content: "밤새 정주행하게 되는 시리즈.",
+    featuredMovieTitle: "미스터 로봇",
     tags: ["어두운", "무서운"],
     isShare: true,
     posters: [
@@ -162,6 +171,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "애니메이션",
     name: "씨네필님의 추천작품",
     content: "지브리 감성 가득한 명작 모음.",
+    featuredMovieTitle: "센과 치히로의 행방불명",
     tags: ["잔잔한", "감성적인"],
     isShare: true,
     posters: [
@@ -179,6 +189,7 @@ export const dummyPlaylists: DummyPlaylist[] = [
     category: "영화",
     name: "무드등님의 추천작품",
     content: "분위기 잡고 싶을 때 보는 영화.",
+    featuredMovieTitle: "인터스텔라",
     tags: ["심오한", "어두운"],
     isShare: true,
     posters: [
