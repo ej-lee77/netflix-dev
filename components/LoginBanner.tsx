@@ -60,9 +60,9 @@ export default function LoginBanner() {
 
         {/* 좌측 안내 텍스트 */}
         <div className="banner-text">
-          <h3 className="banner-title">매주 500편 이상 신작 업데이트!</h3>
+          <h3 className="banner-title">12,000편 이상의 콘텐츠, 취향대로 발견하세요.</h3>
           <p className="banner-desc">
-            지금 구독을 시작하고 다양한 콘텐츠를 무제한 감상해 보세요
+            취향에 맞는 작품 추천부터 평점과 리뷰까지, 새로운 인생작을 더 쉽고 빠르게 만나보세요.
           </p>
         </div>
 
