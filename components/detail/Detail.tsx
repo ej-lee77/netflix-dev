@@ -2543,16 +2543,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         <div style={{ height: 600 }} />
 
         {/* Info Section */}
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            gap: 24,
-            padding: "0 40px",
-            zIndex: 10,
-            paddingBottom: 40,
-          }}
-        >
+        <div style={{ position: "relative", display: "flex", gap: 24, padding: "0 40px 40px 87px", zIndex: 10 }}>
           {/* Poster */}
           <div
             style={{
@@ -2846,15 +2837,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* TabNav */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          padding: "0 40px",
-          marginTop: 24,
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "0 40px 0 87px", marginTop: 24 }}>
         {tabItems
           // 1. 리뷰 탭이면서 권한이 없는 경우 필터링 (렌더링하지 않음)
           .filter((tab) => {
@@ -2895,7 +2878,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* Tab content */}
-      <div style={{ paddingBottom: 80 }}>
+      <div style={{ paddingBottom: 80, paddingLeft: 47 }}>
         {activeTab === "episodes" && isTv && renderEpisodesTab()}
         {activeTab === "info" && !isTv && renderStills()}
         {activeTab === "info" && !isTv && renderSynopsis()}
