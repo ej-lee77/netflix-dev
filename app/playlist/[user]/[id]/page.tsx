@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useFollowStore } from "@/store/useFollowStore";
+import BackButton from "@/components/common/BackButton";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
@@ -34,6 +36,16 @@ export default function PlaylistPage() {
 
   const { currentPlaylist, fetchPlaylist, togglePlaylistLike } = usePlayListStore();
   const myUserId = useAuthStore((s) => s.user?.userId) ?? "";
+  const currentProfile = useAuthStore((s) => s.currentProfile);
+  const { follow, unfollow } = useFollowStore();
+
+  // 제작자 팔로우 상태
+  const isFollowing = (currentProfile?.community?.following ?? []).includes(userId);
+  const isSelf = !!myUserId && userId === myUserId;
+  const toggleFollow = () => {
+    if (isFollowing) unfollow(userId);
+    else follow(userId);
+  };
 
   const [view, setView] = useState<"grid" | "list">("grid");
   const [owner, setOwner] = useState<{ name: string; img: string }>({ name: "", img: "" });
@@ -70,6 +82,7 @@ export default function PlaylistPage() {
   if (!currentPlaylist) {
     return (
       <div className="playlist-detail-page">
+        <BackButton fallback="/" />
         <p className="pl-empty">플레이리스트를 불러오는 중이거나 찾을 수 없습니다.</p>
       </div>
     );
@@ -93,6 +106,7 @@ export default function PlaylistPage() {
 
   return (
     <div className="playlist-detail-page">
+      <BackButton fallback="/" />
       {/* 히어로 배너 */}
       <div className="pl-hero">
         <div className="pl-hero-bg">
@@ -106,6 +120,15 @@ export default function PlaylistPage() {
             {owner.img ? <img src={owner.img} alt={owner.name} /> : ownerInitial}
           </span>
           <span className="pl-creator-name">{owner.name}</span>
+          {!isSelf && myUserId && (
+            <button
+              type="button"
+              className={`pl-follow-btn ${isFollowing ? "following" : ""}`}
+              onClick={toggleFollow}
+            >
+              {isFollowing ? "팔로잉" : "+ 팔로우"}
+            </button>
+          )}
         </div>
       </div>
 

@@ -48,6 +48,27 @@
       gap: 10px;
       z-index: 2;
 
+      .pl-follow-btn {
+        padding: 6px 14px;
+        border-radius: 6px;
+        border: 0;
+        background: #e50914;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s ease, filter 0.15s ease;
+
+        &:hover {
+          filter: brightness(1.08);
+        }
+
+        &.following {
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+      }
+
       .pl-creator-avatar {
         width: 40px;
         height: 40px;
