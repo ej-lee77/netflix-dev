@@ -5,8 +5,8 @@
   padding: 40px 0 80px;
 
   .inner {
-    width: 1200px;
-    max-width: 95%;
+    width: 1400px;
+    max-width: 100%;
   }
 
   /* Hero */
@@ -152,7 +152,7 @@
   /* 뱃지 그리드 */
   .badge-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
 
     @media (max-width: 900px) {
@@ -506,4 +506,15 @@
   }
 
   
+}
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .goods-page { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .goods-page { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .goods-page { padding-left: 56px; padding-right: 16px; }
 }

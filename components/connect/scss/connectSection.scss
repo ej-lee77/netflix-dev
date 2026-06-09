@@ -25,3 +25,19 @@
   padding-left: 0;
   padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
 }
+
+/* ===== 반응형: 사이드메뉴 오프셋 보정 ===== */
+@include g.respond(tablet) {
+  .connect-section__inner {
+    width: min(1920px, calc(100vw - 64px));
+    margin-left: 64px;
+    padding-right: 16px;
+  }
+}
+@include g.respond(mobile) {
+  .connect-section__inner {
+    width: min(1920px, calc(100vw - 56px));
+    margin-left: 56px;
+    padding-right: 12px;
+  }
+}

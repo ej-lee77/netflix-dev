@@ -631,3 +631,89 @@
     }
   }
 }
+/* ===== 반응형: 히어로 높이 축소 ===== */
+@include g.respond(laptop) {
+  .hero { height: calc(72vh + g.$header-height); min-height: calc(440px + g.$header-height); }
+}
+@include g.respond(tablet) {
+  .hero { height: calc(58vh + g.$header-height); min-height: calc(360px + g.$header-height); }
+}
+@include g.respond(mobile) {
+  .hero { height: calc(56vh + g.$header-height); min-height: calc(300px + g.$header-height); }
+}
+
+/* ===== 반응형: 히어로 버튼 + 포스터 스와이퍼 ===== */
+@include g.respond(laptop) {
+  .hero .hero-posters { right: 32px; width: min(52vw, 620px); height: clamp(190px, 26vh, 280px); }
+}
+@include g.respond(tablet) {
+  .hero {
+    .hero-btns { gap: 8px; }
+    .btn-play, .btn-info { height: 40px; font-size: 14px; }
+    .btn-play { padding: 0 16px; }
+    .btn-info { padding: 0 14px; }
+    .btn-play svg { width: 13px; height: 13px; }
+    .btn-info svg { width: 14px; height: 14px; }
+    .hero-nav-btn { width: 36px; height: 36px; }
+    .hero-posters { right: 20px; width: min(48vw, 440px); height: clamp(150px, 22vh, 220px); }
+    .hero-poster { width: clamp(96px, 16vw, 140px); height: clamp(140px, 23vh, 200px); }
+    .hero-poster.before-2, .hero-poster.after-2 { width: clamp(82px, 13vw, 120px); height: clamp(120px, 20vh, 172px); }
+  }
+}
+@include g.respond(mobile) {
+  .hero {
+    .hero-btns { gap: 6px; }
+    .btn-play, .btn-info { height: 36px; font-size: 13px; border-radius: 4px; }
+    .btn-play { padding: 0 14px; gap: 6px; }
+    .btn-info { padding: 0 12px; gap: 5px; }
+    .btn-play svg { width: 12px; height: 12px; }
+    .btn-info svg { width: 13px; height: 13px; }
+    .hero-nav-btn { width: 30px; height: 30px; }
+    /* 폰에서는 포스터 스와이퍼 숨김(히어로 콘텐츠 공간 확보) */
+    .hero-posters { display: none; }
+  }
+}
+
+/* ===== 반응형(정밀): 히어로 로고/콘텐츠 축소 ===== */
+@include g.respond(laptop) {
+  .hero .hero-logo-img { max-width: 320px; max-height: 120px; }
+}
+@include g.respond(tablet) {
+  .hero {
+    .hero-content { max-width: 64vw; bottom: 22px; }
+    .hero-logo-img { max-width: 240px; max-height: 84px; margin-bottom: 12px; }
+    .hero-logo-text { font-size: 28px; }
+    .hero-desc { font-size: 13px; -webkit-line-clamp: 2; line-clamp: 2; margin-bottom: 14px; }
+  }
+}
+@include g.respond(mobile) {
+  .hero {
+    .hero-content { max-width: calc(100vw - 56px - 28px); bottom: 16px; }
+    .hero-logo-img { max-width: 150px; max-height: 56px; margin-bottom: 8px; }
+    .hero-logo-text { font-size: 21px; margin-bottom: 8px; }
+    .hero-desc { font-size: 12px; -webkit-line-clamp: 2; line-clamp: 2; margin-bottom: 12px; max-width: 100%; }
+  }
+}
+
+/* ===== 반응형(정밀): 히어로 로고 이미지 축소 + 모바일 콘텐츠 정리 ===== */
+@include g.respond(laptop) {
+  .hero .hero-logo-img { max-width: 320px; max-height: 112px; }
+}
+@include g.respond(tablet) {
+  .hero {
+    .hero-logo-img { max-width: 240px; max-height: 88px; margin-bottom: 12px; }
+    .hero-logo-text { font-size: 30px; }
+  }
+}
+@include g.respond(mobile) {
+  .hero {
+    height: calc(56vh + g.$header-height) !important;
+    min-height: 320px !important;
+    .hero-content { bottom: 18px; max-width: 100%; }
+    .hero-badge { margin-bottom: 8px; }
+    .hero-logo-img { max-width: 170px; max-height: 62px; margin-bottom: 10px; }
+    .hero-logo-text { font-size: 24px; margin-bottom: 8px; }
+    .hero-meta { margin-bottom: 8px; }
+    .hero-desc { -webkit-line-clamp: 2; font-size: 12px; }
+  }
+}

@@ -5,8 +5,8 @@
   padding: 40px 0 80px;
 
   .inner {
-    width: 1200px;
-    max-width: 95%;
+    width: 1400px;
+    max-width: 100%;
   }
 
   .page-head {
@@ -66,7 +66,7 @@
       padding: 12px 18px;
       background: transparent;
       border: none;
-      border-bottom: 2px solid transparent;
+      border-bottom: 1px solid transparent;
       margin-bottom: -1px;
       color: g.$g-color;
       font-size: g.$text-14;
@@ -333,4 +333,15 @@
       }
     }
   }
+}
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .friends-page { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .friends-page { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .friends-page { padding-left: 56px; padding-right: 16px; }
 }

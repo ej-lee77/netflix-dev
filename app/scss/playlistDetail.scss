@@ -302,3 +302,16 @@
     }
   }
 }
+
+/* ===== 반응형: 사이드메뉴(nav) 회피 (배경은 풀블리드 유지) ===== */
+@include g.respond(laptop) {
+  .playlist-detail-page .pl-hero-creator { left: 80px; }
+}
+@include g.respond(tablet) {
+  .playlist-detail-page .pl-hero-creator { left: 64px; }
+  .playlist-detail-page .pl-body { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .playlist-detail-page .pl-hero-creator { left: 56px; }
+  .playlist-detail-page .pl-body { padding-left: 56px; padding-right: 16px; }
+}
