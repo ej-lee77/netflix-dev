@@ -291,4 +291,20 @@
       text-decoration: none;
     }
   }
+
+  .main-content-area {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tab-content-panel {
+    width: 100%;
+  }
+
+  .mypage-feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+  }
 }

@@ -16,7 +16,7 @@
     width: 100%;
     padding: 0 0 12px;
     overflow: visible !important;
-    cursor: default;
+    cursor: pointer;
 
     &::-webkit-scrollbar {
       display: none;
@@ -86,7 +86,7 @@
     //   linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 42%),
     //   #111;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
-    cursor: default;
+    cursor: pointer;
     transition:
       border-color 0.2s ease,
       box-shadow 0.2s ease;

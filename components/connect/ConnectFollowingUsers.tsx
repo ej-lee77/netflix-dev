@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
+import FollowFriendsModal from "./FollowFriendsModal";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -21,6 +22,7 @@ export default function ConnectFollowingUsers() {
   const swiperRef = useRef<SwiperType | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
   const [swiperKey, setSwiperKey] = useState(0);
+  const [showFollowModal, setShowFollowModal] = useState(false);
 
   const followingIds = currentProfile?.community?.following ?? [];
 
@@ -58,6 +60,7 @@ export default function ConnectFollowingUsers() {
 
 
   return (
+    <>
     <section
       className="connect-section connect-following-users"
       aria-label="팔로우하는 유저"
@@ -94,7 +97,14 @@ export default function ConnectFollowingUsers() {
                     <span>{currentProfile.nickname.slice(0, 2).toUpperCase()}</span>
                   )}
                 </span>
-                <span className="connect-following-users__avatar-add" aria-hidden="true">+</span>
+                <span
+                  className="connect-following-users__avatar-add"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="친구 찾기"
+                  onClick={(e) => { e.stopPropagation(); setShowFollowModal(true); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); setShowFollowModal(true); } }}
+                >+</span>
               </span>
               <strong>{currentProfile.nickname}</strong>
             </button>
@@ -131,5 +141,10 @@ export default function ConnectFollowingUsers() {
         </Swiper>
       </div>
     </section>
+
+    {showFollowModal && (
+      <FollowFriendsModal onClose={() => setShowFollowModal(false)} />
+    )}
+    </>
   );
 }
