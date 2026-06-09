@@ -66,6 +66,7 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
     const newReview = {
       reviewId: crypto.randomUUID(),
       ...newReviewData,
+      userId: user.userId,
       profileId: currentProfile.id,
       nickname: currentProfile.nickname,
       createdAt: new Date().toISOString(),
@@ -94,6 +95,73 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
       }));
     } catch (error) {
       console.error("동시 저장 실패:", error);
+    }
+  },
+  updateReview: async (reviewId, videoId, data) => {
+    const { user } = useAuthStore.getState();
+    if (!user?.userId) return;
+
+    const userDocRef = doc(db, "userReviews", user.userId);
+    const videoDocRef = doc(db, "videoReviews", videoId);
+    const updatedAt = new Date().toISOString();
+
+    try {
+      const [userDoc, videoDoc] = await Promise.all([
+        getDoc(userDocRef),
+        getDoc(videoDocRef),
+      ]);
+
+      const updateArray = (arr: ReviewDocument[] = []) =>
+        arr.map((review) =>
+          review.reviewId === reviewId
+            ? { ...review, ...data, updatedAt }
+            : review,
+        );
+
+      const batch = writeBatch(db);
+      if (userDoc.exists()) {
+        batch.update(userDocRef, { reviews: updateArray(userDoc.data().reviews) });
+      }
+      if (videoDoc.exists()) {
+        batch.update(videoDocRef, { reviews: updateArray(videoDoc.data().reviews) });
+      }
+
+      await batch.commit();
+      set((state) => ({ reviews: updateArray(state.reviews) }));
+    } catch (error) {
+      console.error("리뷰 수정 실패:", error);
+      throw error;
+    }
+  },
+  deleteReview: async (reviewId, videoId) => {
+    const { user } = useAuthStore.getState();
+    if (!user?.userId) return;
+
+    const userDocRef = doc(db, "userReviews", user.userId);
+    const videoDocRef = doc(db, "videoReviews", videoId);
+
+    try {
+      const [userDoc, videoDoc] = await Promise.all([
+        getDoc(userDocRef),
+        getDoc(videoDocRef),
+      ]);
+
+      const removeFromArray = (arr: ReviewDocument[] = []) =>
+        arr.filter((review) => review.reviewId !== reviewId);
+
+      const batch = writeBatch(db);
+      if (userDoc.exists()) {
+        batch.update(userDocRef, { reviews: removeFromArray(userDoc.data().reviews) });
+      }
+      if (videoDoc.exists()) {
+        batch.update(videoDocRef, { reviews: removeFromArray(videoDoc.data().reviews) });
+      }
+
+      await batch.commit();
+      set((state) => ({ reviews: removeFromArray(state.reviews) }));
+    } catch (error) {
+      console.error("리뷰 삭제 실패:", error);
+      throw error;
     }
   },
   reportReview: async (reviewId: string, videoId: string) => {
