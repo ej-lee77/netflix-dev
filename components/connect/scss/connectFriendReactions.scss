@@ -71,6 +71,28 @@
     width: 420px;
   }
 
+  &__card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+
+    &:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.6);
+      outline-offset: 2px;
+    }
+  }
+
+  &__avatar--initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    background: #444;
+  }
+
   &__card {
     position: relative;
     display: grid;
