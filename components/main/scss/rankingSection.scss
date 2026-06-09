@@ -499,3 +499,72 @@
     }
   }
 }
+
+/* ===== 반응형(정밀): 활성 카드 detail/버튼 ===== */
+@include g.respond(tablet) {
+  .ranking-section {
+    .ranking-card-detail { padding: 18px 18px 18px 22px; }
+    .ranking-detail-title { font-size: 1.2rem; max-width: 100%; }
+    .ranking-card-detail .ranking-btn-play,
+    .ranking-card-detail .ranking-btn-info { height: 36px; padding: 0 14px; font-size: 13px; }
+  }
+}
+@include g.respond(mobile) {
+  .ranking-section {
+    /* 활성 카드를 넓혀 제목·설명·버튼이 안 잘리게 */
+    .ranking-slide.expanded { width: min(82vw, 360px); }
+    .ranking-card.active {
+      height: 210px;
+      grid-template-columns: 100px minmax(0, 1fr);
+    }
+    .ranking-card-detail { padding: 12px 12px 12px 14px; gap: 6px; }
+    .ranking-detail-title { font-size: 1rem; max-width: 100%; line-height: 1.15; }
+    .ranking-detail-overview {
+      font-size: 11px;
+      line-height: 1.4;
+      max-width: 100%;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+    .ranking-card-detail .ranking-btn-play,
+    .ranking-card-detail .ranking-btn-info {
+      height: 30px;
+      padding: 0 10px;
+      font-size: 11px;
+      gap: 5px;
+    }
+    .ranking-card-detail .ranking-btn-play svg,
+    .ranking-card-detail .ranking-btn-info svg { width: 11px; height: 11px; }
+  }
+}
+
+/* ===== 반응형(정밀): 랭킹 확장 디테일 맞춤 + 모바일 확장 해제 ===== */
+@include g.respond(laptop) {
+  .ranking-section .ranking-card-detail {
+    padding: 20px 22px;
+    .ranking-detail-title { max-width: 100%; margin-bottom: 8px; font-size: 1.25rem; }
+    .ranking-detail-score { margin-bottom: 6px; }
+    .ranking-detail-overview { -webkit-line-clamp: 2; margin: 4px 0 10px; font-size: 12px; line-height: 1.4; }
+    .ranking-detail-actions { gap: 8px; }
+    .ranking-btn-play, .ranking-btn-info { height: 36px; padding: 0 14px; font-size: 13px; }
+  }
+}
+@include g.respond(tablet) {
+  .ranking-section .ranking-card-detail {
+    padding: 14px 16px;
+    .ranking-detail-rank { margin-bottom: 6px; }
+    .ranking-detail-title { margin-bottom: 6px; font-size: 1.05rem; }
+    .ranking-detail-score { margin-bottom: 6px; }
+    .ranking-detail-overview { -webkit-line-clamp: 2; margin: 4px 0 8px; font-size: 11.5px; line-height: 1.35; }
+    .ranking-detail-actions { gap: 6px; }
+    .ranking-btn-play, .ranking-btn-info { height: 32px; padding: 0 12px; font-size: 12px; }
+  }
+}
+@include g.respond(mobile) {
+  .ranking-section {
+    /* 모바일: 확장 비활성화 → 순위 포스터+번호만 (제목/버튼 잘림 방지) */
+    .ranking-slide.expanded { width: 132px !important; }
+    .ranking-card.active { grid-template-columns: 132px 0 !important; }
+    .ranking-card-detail { display: none !important; }
+  }
+}
