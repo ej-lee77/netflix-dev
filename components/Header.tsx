@@ -250,7 +250,21 @@ export default function Header() {
                     width={40}
                     height={40}
                   />
-                  <span className="profile-arrow" aria-hidden="true" />
+                  <span className="profile-arrow" aria-hidden="true">
+                    <svg
+                      className="cs-arrow"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </span>
                 </button>
 
                 {(

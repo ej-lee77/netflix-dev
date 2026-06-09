@@ -24,7 +24,7 @@ type SortType = "recent" | "likes" | "comments";
 const scopeFilters: { key: ScopeFilterType; label: string }[] = [
   { key: "mine", label: "내가 쓴 글" },
   { key: "liked", label: "좋아요 한 글" },
-  { key: "following", label: "팔로워 글" },
+  { key: "following", label: "팔로우 글" },
 ];
 
 const sortOptions: { key: SortType; label: string }[] = [

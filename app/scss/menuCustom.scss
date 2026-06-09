@@ -153,6 +153,9 @@
     color: #fff;
     font-size: 1.1rem;
     font-weight: 900;
+    display: flex;
+    gap: 4px;
+    align-items: center;
   }
 
   .category-summary {
@@ -178,6 +181,9 @@
         font-size: 1.05rem;
         font-weight: 800;
         color: #fff;
+        display: flex;
+        gap: 4px;
+        align-items: center;
       }
       span {
         font-size: 0.85rem;

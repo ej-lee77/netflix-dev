@@ -722,6 +722,39 @@
       opacity: 1;
     }
 
+    .wish-delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.72);
+      color: g.$w-color;
+      font-size: g.$text-18;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 1;
+      transition: opacity 0.2s, background 0.2s, border-color 0.2s, transform 0.2s;
+
+      &:hover {
+        // background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.42);
+        transform: scale(1.04);
+      }
+
+      path{
+        fill: currentColor;
+      }
+    }
+
     .review-stack {
       display: flex;
       flex-direction: column;
@@ -1101,6 +1134,17 @@
       color: inherit;
       text-align: left;
       cursor: pointer;
+      position: absolute;
+      top: 0;
+      right: 32px;
+
+      .select-check{
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        &:hover{
+          border-color: rgba(255, 255, 255, 0.42);
+          // transform: scale(1.04);
+        }
+      }
     }
 
     .select-card-title-row {
