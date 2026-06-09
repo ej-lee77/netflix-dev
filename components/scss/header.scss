@@ -647,3 +647,27 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
         cursor: pointer;
     }
 }
+/* ===== 반응형: 헤더 + 사이드메뉴(nav) ===== */
+@include g.respond(tablet) {
+  header > .flex-item { padding: 8px 8px 0 0; }
+  header .mode-menu { gap: 10px; }
+  header .gnb-menu { padding-right: 8px; }
+  /* 사이드메뉴 폭 축소 (80 → 64) + 로고/카테고리 패널 오프셋 동기화 */
+  header h1 { width: 64px; }
+  nav { width: 64px; }
+  .category-hover-panel { left: 64px; }
+}
+@include g.respond(mobile) {
+  header > .flex-item { padding: 6px 6px 0 0; }
+  header .mode-menu {
+    gap: 8px;
+    font-size: g.$text-14;
+    > li { padding-bottom: 4px; }
+  }
+  header .gnb-menu { padding-right: 4px; gap: 2px; }
+  /* 사이드메뉴 폭 축소 (64 → 56) */
+  header h1 { width: 56px; }
+  nav { width: 56px; }
+  .category-hover-panel { left: 56px; }
+  nav .main-menu > li { margin-top: 14px; }
+}

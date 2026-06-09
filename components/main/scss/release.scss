@@ -81,3 +81,30 @@
   }
 
 }
+
+/* ===== 반응형: 공개예정 미리보기 ===== */
+@include g.respond(tablet) {
+  .release-section {
+    .section-title-outer { padding-left: 64px; }
+    .release-masonry { padding-left: 64px; }
+  }
+}
+@include g.respond(mobile) {
+  .release-section {
+    .section-title-outer { padding-left: 56px; }
+    /* 모바일: 1컬럼(거대 카드) 대신 2컬럼 그리드형으로 — 모바일 최적화 */
+    .release-masonry {
+      padding-left: 56px;
+      padding-right: 12px;
+      column-count: 2;
+      column-gap: 8px;
+    }
+    .release-card { margin-bottom: 8px; border-radius: 8px; }
+    .card-info { padding: 12px 10px 10px; }
+    .card-title { font-size: 0.85rem; line-height: 1.25; }
+    /* 세로 편차 줄여 모바일 그리드가 과하게 길어지지 않게 */
+    .card-tall .card-image { aspect-ratio: 3 / 4; }
+    .card-medium .card-image { aspect-ratio: 3 / 4; }
+    .card-short .card-image { aspect-ratio: 4 / 5; }
+  }
+}

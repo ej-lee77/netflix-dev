@@ -422,3 +422,80 @@
     }
   }
 }
+/* ===== 반응형: 랭킹 카드 축소 ===== */
+@include g.respond(laptop) {
+  .ranking-section {
+    .ranking-slide {
+      width: 240px;
+      &.expanded { width: 640px; }
+    }
+    .ranking-card {
+      height: 380px;
+      grid-template-columns: 240px 0;
+      &.active { grid-template-columns: 270px minmax(0, 1fr); }
+    }
+  }
+}
+@include g.respond(tablet) {
+  .ranking-section {
+    .ranking-swiper-wrap { padding-left: 64px; }
+    .ranking-slide {
+      width: 200px;
+      &.expanded { width: 520px; }
+    }
+    .ranking-card {
+      height: 320px;
+      grid-template-columns: 200px 0;
+      &.active { grid-template-columns: 220px minmax(0, 1fr); }
+    }
+    .ranking-nav-btn { width: 38px; height: 38px; }
+  }
+}
+@include g.respond(mobile) {
+  .ranking-section {
+    .ranking-swiper-wrap { padding-left: 56px; }
+    .ranking-slide {
+      width: 150px;
+      &.expanded { width: 330px; }
+    }
+    .ranking-card {
+      height: 240px;
+      grid-template-columns: 150px 0;
+      &.active { grid-template-columns: 160px minmax(0, 1fr); }
+    }
+    .ranking-nav-btn { width: 34px; height: 34px; }
+  }
+}
+
+/* ===== 반응형(정밀): 랭킹 카드 추가 축소 ===== */
+@include g.respond(laptop) {
+  .ranking-section {
+    .ranking-slide { width: 200px; &.expanded { width: 540px; } }
+    .ranking-card {
+      height: 320px;
+      grid-template-columns: 200px 0;
+      &.active { grid-template-columns: 230px minmax(0, 1fr); }
+    }
+  }
+}
+@include g.respond(tablet) {
+  .ranking-section {
+    .ranking-slide { width: 168px; &.expanded { width: 430px; } }
+    .ranking-card {
+      height: 270px;
+      grid-template-columns: 168px 0;
+      &.active { grid-template-columns: 190px minmax(0, 1fr); }
+    }
+  }
+}
+@include g.respond(mobile) {
+  .ranking-section {
+    /* 모바일: 너무 작지 않게 유지(랭킹 번호+포스터 가독) + 다음 카드 살짝 보이게 */
+    .ranking-slide { width: 132px; &.expanded { width: 290px; } }
+    .ranking-card {
+      height: 198px;
+      grid-template-columns: 132px 0;
+      &.active { grid-template-columns: 132px minmax(0, 1fr); }
+    }
+  }
+}
