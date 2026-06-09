@@ -96,6 +96,7 @@ function CommunityContent() {
         {/* 1. 타이틀 헤더 */}
         <div className="community-header">
           <h1>커뮤니티 관리</h1>
+          <p>내가 쓴 리뷰/피드</p>
         </div>
 
         {/* 2. 상단 메인 탭메뉴 (하단 라인 스타일) */}
@@ -126,7 +127,7 @@ function CommunityContent() {
         ) : (
           <div className="tab-content-panel">
             
-            {/* 3. 섹션 타이틀 및 총 개수 표시 */}
+            {/* 3. 섹션 타이틀 및 총 개수 표시
             <div className="section-title-row">
               <h2>{currentTabLabel}</h2>
               <span className="total-count">
@@ -135,7 +136,7 @@ function CommunityContent() {
             </div>
 
             {/* 4. 스크린샷 스타일의 서브 툴바 (타원형 칩 필터 + 우측 정렬) */}
-            {activeTab !== "create-feed" && (
+            {/* {activeTab !== "create-feed" && (
               <div className="community-toolbar">
                 <div className="community-chips">
                   {scopeFilters.map((sf) => (
@@ -184,13 +185,16 @@ function CommunityContent() {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* ── 탭별 본문 콘텐츠 렌더링 영역 ── */}
             <div className="main-content-area">
               {activeTab === "reviews" && (
                 <>
-                  <Review sortType={sortType} scopeFilter={scopeFilter} />
+                  <Review 
+                    // sortType={sortType} 
+                    // scopeFilter={scopeFilter || "mine"} 
+                  />
                 </>
               )}
 
