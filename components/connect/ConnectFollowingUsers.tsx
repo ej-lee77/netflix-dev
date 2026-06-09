@@ -107,7 +107,11 @@ export default function ConnectFollowingUsers() {
                 className="connect-following-users__slide"
                 key={user.userId}
               >
-                <button className="connect-following-users__item" type="button">
+                <button
+                  className="connect-following-users__item"
+                  type="button"
+                  onClick={() => router.push(`/users/${user.userId}`)}
+                >
                   <span className="connect-following-users__avatar">
                     {user.imgUrl ? (
                       <img

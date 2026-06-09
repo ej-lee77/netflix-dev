@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SimilarUser, useFollowStore } from "@/store/useFollowStore";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -13,6 +14,7 @@ export default function RisingReviewCard({ user }: Props) {
     const [loading, setLoading] = useState(false);
     const { currentProfile } = useAuthStore();
     const { follow, unfollow } = useFollowStore();
+    const router = useRouter();
 
     const isFollowing = currentProfile?.community?.following?.includes(user.userId) ?? false;
 
@@ -38,7 +40,11 @@ export default function RisingReviewCard({ user }: Props) {
 
             <div className="review-card__content">
                 <div className="review-card__user-row">
-                    <div className="review-card__profile">
+                    <div
+                        className="review-card__profile"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => router.push(`/users/${user.userId}`)}
+                    >
                         {user.imgUrl ? (
                             <img
                                 src={user.imgUrl}
