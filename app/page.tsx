@@ -18,6 +18,7 @@ import Hero from "@/components/main/Hero";
 import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
 import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
+import TopButton from "@/components/common/TopButton";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const SPLIT_BANNER_AFTER = 3; // 일본 애니(2) 다음, 미국 TV(3) 앞
@@ -362,6 +363,7 @@ export default function Home() {
       {koreanMovieRanking.length > 0 && (
         <RankingSection title={t("home.koreanVariety")} items={koreanMovieRanking} />
       )}
+      <TopButton />
     </div>
   );
 }
