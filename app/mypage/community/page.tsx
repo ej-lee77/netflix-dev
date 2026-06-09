@@ -62,10 +62,10 @@ function CommunityContent() {
   const { reviews, fetchAllReviews } = useCommunityStore();
   const { feeds, onDeleteFeed, onHydrateFeeds } = useFeedStore();
 
-  const currentUserId = getUserId(user);
-  const likedReviewKeys = currentProfile?.community?.reviews ?? [];
-  const likedFeedIds = currentProfile?.community?.likedfeeds ?? [];
-  const followingIds = currentProfile?.community?.following ?? [];
+  // const currentUserId = getUserId(user);
+  // const likedReviewKeys = currentProfile?.community?.reviews ?? [];
+  // const likedFeedIds = currentProfile?.community?.likedfeeds ?? [];
+  // const followingIds = currentProfile?.community?.following ?? [];
 
   useEffect(() => {
     if (!user) return;
@@ -74,37 +74,37 @@ function CommunityContent() {
     void onHydrateFeeds();
   }, [fetchAllReviews, onHydrateFeeds, user]);
 
-  const visibleReviews = reviews.filter((review) => (review.reportsCount ?? 0) <= 5);
-  const reviewBuckets = {
-    mine: visibleReviews.filter(
-      (review) =>
-        review.userId === currentUserId &&
-        (!currentProfile?.id || review.profileId === currentProfile.id),
-    ),
-    liked: visibleReviews.filter((review) => likedReviewKeys.includes(getReviewKey(review))),
-    following: visibleReviews.filter((review) => Boolean(review.userId && followingIds.includes(review.userId))),
-  };
+  // const visibleReviews = reviews.filter((review) => (review.reportsCount ?? 0) <= 5);
+  // const reviewBuckets = {
+  //   mine: visibleReviews.filter(
+  //     (review) =>
+  //       review.userId === currentUserId &&
+  //       (!currentProfile?.id || review.profileId === currentProfile.id),
+  //   ),
+  //   liked: visibleReviews.filter((review) => likedReviewKeys.includes(getReviewKey(review))),
+  //   following: visibleReviews.filter((review) => Boolean(review.userId && followingIds.includes(review.userId))),
+  // };
 
-  const feedBuckets = {
-    mine: feeds.filter(
-      (feed) =>
-        feed.userId === currentUserId &&
-        (!currentProfile?.id || feed.profileId === currentProfile.id),
-    ),
-    liked: feeds.filter(
-      (feed) =>
-        likedFeedIds.includes(feed.feedId) ||
-        feed.liked ||
-        feed.likedUserIds.includes(`${currentUserId}:${currentProfile?.id}`),
-    ),
-    following: feeds.filter((feed) => Boolean(feed.userId && followingIds.includes(feed.userId))),
-  };
+  // const feedBuckets = {
+  //   mine: feeds.filter(
+  //     (feed) =>
+  //       feed.userId === currentUserId &&
+  //       (!currentProfile?.id || feed.profileId === currentProfile.id),
+  //   ),
+  //   liked: feeds.filter(
+  //     (feed) =>
+  //       likedFeedIds.includes(feed.feedId) ||
+  //       feed.liked ||
+  //       feed.likedUserIds.includes(`${currentUserId}:${currentProfile?.id}`),
+  //   ),
+  //   following: feeds.filter((feed) => Boolean(feed.userId && followingIds.includes(feed.userId))),
+  // };
 
-  const filteredReviews = reviewBuckets[scopeFilter];
-  const filteredFeeds = feedBuckets[scopeFilter];
-  const currentTabLabel = tabs.find((tab) => tab.id === activeTab)?.label || "커뮤니티 관리";
-  const currentSortLabel = sortOptions.find((option) => option.key === sortType)?.label;
-  const activeCount = activeTab === "reviews" ? filteredReviews.length : filteredFeeds.length;
+  // const filteredReviews = reviewBuckets[scopeFilter];
+  // const filteredFeeds = feedBuckets[scopeFilter];
+  // const currentTabLabel = tabs.find((tab) => tab.id === activeTab)?.label || "커뮤니티 관리";
+  // const currentSortLabel = sortOptions.find((option) => option.key === sortType)?.label;
+  // const activeCount = activeTab === "reviews" ? filteredReviews.length : filteredFeeds.length;
 
   const handleEdit = (review: FeedView) => {
     console.log("수정할 피드:", review);
@@ -177,7 +177,7 @@ function CommunityContent() {
               </div>
             )} */}
 
-              <div className="community-sort">
+              {/* <div className="community-sort">
                 <button type="button" className="sort-btn" onClick={() => setSortOpen((open) => !open)}>
                   {currentSortLabel}
                   <svg
@@ -213,7 +213,7 @@ function CommunityContent() {
                       ))}
                   </ul>
                 )}
-              </div>
+              </div> */}
 
             <div className="main-content-area">
               {activeTab === "reviews" && (
@@ -227,7 +227,7 @@ function CommunityContent() {
 
               {activeTab === "my-feeds" && (
                 <Feed
-                  feeds={filteredFeeds}
+                  feeds={feeds}
                   sortType={sortType}
                   scopeFilter={scopeFilter}
                   onDeleteFeed={handleDelete}

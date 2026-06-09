@@ -1672,3 +1672,21 @@
   padding: 4px 14px;
   border-radius: 20px;
 }
+/* ===== 반응형: nav가 표시되는 페이지(plan/cancel/payment)에서는
+   화면 정중앙 대신 "nav 오른쪽 영역의 정중앙"에 카드를 배치해 가림 방지.
+   /signin은 레이아웃(nav)을 숨기므로 has-nav가 없어 기존 풀스크린 중앙정렬 유지 ===== */
+.has-nav .signin-page {
+  margin-left: 0;
+  width: 100%;
+  padding-left: calc(#{$main-menu-width} + 24px);
+  padding-right: 24px;
+}
+@include respond(tablet) {
+  .has-nav .signin-page { padding-left: calc(64px + 24px); }
+}
+@include respond(mobile) {
+  .has-nav .signin-page {
+    padding-left: calc(56px + 16px);
+    padding-right: 16px;
+  }
+}
