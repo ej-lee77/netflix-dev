@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -31,6 +31,7 @@ function updatedLabel(createdAt?: string): string {
 
 export default function PlaylistPage() {
   const params = useParams();
+  const router = useRouter();
   const userId = params.user as string;
   const listId = params.id as string;
 
@@ -114,10 +115,20 @@ export default function PlaylistPage() {
           <div className="pl-hero-gradient" />
         </div>
         <div className="pl-hero-creator">
-          <span className="pl-creator-avatar">
+          <span
+            className="pl-creator-avatar"
+            style={{ cursor: "pointer" }}
+            onClick={() => router.push(`/users/${userId}`)}
+          >
             {owner.img ? <img src={owner.img} alt={owner.name} /> : ownerInitial}
           </span>
-          <span className="pl-creator-name">{owner.name}</span>
+          <span
+            className="pl-creator-name"
+            style={{ cursor: "pointer" }}
+            onClick={() => router.push(`/users/${userId}`)}
+          >
+            {owner.name}
+          </span>
           {!isSelf && myUserId && (
             <button
               type="button"
