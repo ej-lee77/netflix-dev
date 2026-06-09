@@ -78,17 +78,27 @@ export default function PlanPage() {
 
   return (
     <div className="signin-page">
-      <BackButton fallback="/settings" />
+
       {currentStep === 1 && (
-        <StepPlan
-          currentPlanType={planType ?? ""}
-          currentBilling={currentBilling}
-          submitLabel="변경하기"
-          onNext={(plan) => {
-            setSelectedPlan(plan);
-            setCurrentStep(2);
-          }}
-        />
+        <>
+          <StepPlan
+            currentPlanType={planType ?? ""}
+            currentBilling={currentBilling}
+            submitLabel="변경하기"
+            onNext={(plan) => {
+              setSelectedPlan(plan);
+              setCurrentStep(2);
+            }}
+          />
+          <button
+            type="button"
+            className="payment-back-btn"
+            style={{ maxWidth: "260px" }}
+            onClick={() => router.push("/settings?tab=membership")}
+          >
+            이전으로
+          </button>
+        </>
       )}
       {currentStep === 2 && (
         <StepPlanComplete
