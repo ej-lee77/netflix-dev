@@ -45,6 +45,7 @@
     overflow: visible;
     padding: 20px clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px) 40px;
     padding-left: g.$main-menu-width;
+    position: relative;
   }
 
   /* 페이징 버튼 — 카테고리 섹션과 동일 */
@@ -56,6 +57,7 @@
     z-index: 10;
     opacity: 0;
     transition: opacity 0.2s ease;
+    position: absolute;
 
     &::after {
       font-size: 20px;
@@ -66,6 +68,10 @@
       opacity: 0 !important;
       pointer-events: none;
     }
+  }
+
+  .swiper-button-prev{
+    left: g.$main-menu-width;
   }
 
   &:hover {
@@ -346,5 +352,28 @@
 
   to {
     opacity: 0.3;
+  }
+}
+/* ===== 반응형: 넷플릭스 추천작 ===== */
+@include g.respond(tablet) {
+  .recommend-section {
+    padding: 40px 0 56px;
+    .section-title-outer { padding-left: 64px; }
+    .recommend-slide { max-height: clamp(320px, 42vw, 420px); }
+    .btn-play, .btn-info { height: 40px; font-size: 14px; }
+    .btn-play { padding: 0 16px; }
+    .btn-info { padding: 0 14px; }
+  }
+}
+@include g.respond(mobile) {
+  .recommend-section {
+    padding: 26px 0 36px;
+    .section-title-outer { padding-left: 56px; }
+    .recommend-slide { max-height: clamp(230px, 62vw, 320px); }
+    .slide-info { padding: 10px 14px; }
+    .btn-play, .btn-info { height: 34px; font-size: 13px; }
+    .btn-play { padding: 0 13px; gap: 6px; }
+    .btn-info { padding: 0 11px; gap: 5px; }
+    .btn-play svg, .btn-info svg { width: 12px; height: 12px; }
   }
 }

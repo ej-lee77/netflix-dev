@@ -268,6 +268,39 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             return false;
         }
     },
+    onRemovePlayHist: async (id, type) => {
+        try {
+            const itemKey = `${type}-${id}`;
+            const authState = useAuthStore.getState();
+            const userId = authState.user?.userId;
+            const currentProfile = authState.currentProfile;
+            if (!userId || !currentProfile) return false;
+
+            const userDocRef = doc(db, "users", userId);
+            const userDocSnap = await getDoc(userDocRef);
+            if (!userDocSnap.exists()) return false;
+
+            const profiles = userDocSnap.data().profile;
+            const profileIndex = profiles.findIndex((p: any) => p.id === currentProfile.id);
+            
+            const updatedProfiles = [...profiles];
+            const targetProfile = { ...updatedProfiles[profileIndex] };
+            
+            // ID가 일치하지 않는 것들만 필터링
+            const nextList = (targetProfile.movies?.watchingVideos || []).filter((p: any) => p.id !== id);
+            const newHistMovies = (targetProfile.movies.histMovies || []).filter((k: any) => k !== itemKey).slice(0, 50);
+
+            targetProfile.movies = { ...targetProfile.movies, watchingVideos: nextList, histMovies: newHistMovies };
+            updatedProfiles[profileIndex] = targetProfile;
+
+            await updateDoc(userDocRef, { profile: updatedProfiles });
+            set({ playList: nextList, playHist: newHistMovies });
+            return true;
+        } catch (err) {
+            console.error("삭제 실패:", err);
+            return false;
+        }
+    },
     onLoadPlayList: async () => {
         const authState = useAuthStore.getState();
         const userId = authState.user?.userId;

@@ -20,7 +20,7 @@ export default function ConditionalLayout({
   return (
     <>
       {!hideLayout && <Header />}
-      <main>{children}</main>
+      <main className={hideLayout ? undefined : "has-nav"}>{children}</main>
       <Footer />
       {!hideLayout && <LoginBanner />}
       <Toaster />

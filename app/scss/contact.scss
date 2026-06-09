@@ -5,8 +5,8 @@
   padding: 40px 0 80px;
 
   .inner {
-    width: 1000px;
-    max-width: 95%;
+    width: 1400px;
+    max-width: 100%;
   }
 
   .page-head {
@@ -284,19 +284,25 @@
   }
 
   .status-chip {
-    padding: 6px 14px;
+    padding: 8px 18px;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #3a3a3a;
     color: g.$g-color;
     border-radius: 100px;
-    font-size: g.$text-12;
+    font-size: g.$text-13;
     cursor: pointer;
+    transition: all 0.2s;
 
     &.active {
-      background: rgba(229, 9, 20, 0.15);
+      background: g.$main-color;
       border-color: g.$main-color;
-      color: g.$main-color;
+      color: g.$w-color;
       font-weight: 600;
+    }
+
+    &:hover:not(.active) {
+      border-color: g.$w-color;
+      color: g.$w-color;
     }
   }
 
@@ -502,4 +508,15 @@
       background: rgba(229, 9, 20, 0.12);
     }
   }
+}
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .contact-page { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .contact-page { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .contact-page { padding-left: 56px; padding-right: 16px; }
 }

@@ -81,3 +81,77 @@
   }
 
 }
+
+/* ===== 반응형: 공개예정 미리보기 ===== */
+@include g.respond(tablet) {
+  .release-section {
+    .section-title-outer { padding-left: 64px; }
+    .release-masonry { padding-left: 64px; }
+  }
+}
+@include g.respond(mobile) {
+  .release-section {
+    .section-title-outer { padding-left: 56px; }
+    /* 모바일: 다른 행처럼 가로 스크롤 포스터 카드행으로 통일 */
+    .release-masonry {
+      column-count: unset;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      overflow-x: auto;
+      padding-left: 56px;
+      padding-right: 12px;
+      padding-bottom: 8px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      &::-webkit-scrollbar { display: none; }
+    }
+    .release-card {
+      flex: 0 0 auto;
+      width: 38vw;
+      max-width: 150px;
+      margin-bottom: 0;
+      border-radius: 8px;
+    }
+    /* 포스터 비율 통일(다른 행 카드와 동일한 느낌) */
+    .card-image,
+    .card-tall .card-image,
+    .card-medium .card-image,
+    .card-short .card-image { aspect-ratio: 2 / 3; }
+    .card-info { padding: 10px 8px 8px; }
+    .card-title { font-size: 0.8rem; line-height: 1.25; }
+  }
+}
+
+/* ===== 반응형(정밀): 모바일 공개예정 = 가로 카드 행(다른 행과 동일 형식) ===== */
+@include g.respond(mobile) {
+  .release-section {
+    .release-masonry {
+      column-count: unset !important;
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 8px;
+      padding-left: 56px;
+      padding-right: 12px;
+      scroll-snap-type: x mandatory;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .release-masonry::-webkit-scrollbar { display: none; }
+    .release-card {
+      flex: 0 0 38%;
+      max-width: 38%;
+      margin-bottom: 0;
+      border-radius: 6px;
+      scroll-snap-align: start;
+    }
+    /* 다른 행 포스터와 동일한 2/3 비율로 통일 */
+    .card-image,
+    .card-tall .card-image,
+    .card-medium .card-image,
+    .card-short .card-image { aspect-ratio: 2 / 3; }
+    .card-info { padding: 10px 8px 8px; }
+    .card-title { font-size: 0.8rem; line-height: 1.25; }
+  }
+}

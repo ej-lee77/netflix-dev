@@ -261,3 +261,14 @@
     border-radius: 8px;
   }
 }
+/* ===== 반응형 ===== */
+@include g.respond(tablet) {
+  .connect-following-playlists__inner { width: calc(100vw - 64px); }
+  .connect-following-playlists__slide,
+  .connect-following-playlists__card { width: 240px; }
+}
+@include g.respond(mobile) {
+  .connect-following-playlists__inner { width: calc(100vw - 56px); }
+  .connect-following-playlists__slide,
+  .connect-following-playlists__card { width: 190px; }
+}

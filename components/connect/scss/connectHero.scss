@@ -455,3 +455,15 @@ $hero-h: clamp(420px, 40vw, 900px);
     bottom: 52px;
   }
 }
+/* ===== 반응형: 히어로 버튼 축소 ===== */
+@include g.respond(tablet) {
+  .connect-hero__btn-play, .connect-hero__btn-info { height: 40px; font-size: 14px; }
+  .connect-hero__btn-play { padding: 0 16px; }
+  .connect-hero__btn-info { padding: 0 14px; }
+}
+@include g.respond(mobile) {
+  .connect-hero__btns { gap: 6px; }
+  .connect-hero__btn-play, .connect-hero__btn-info { height: 36px; font-size: 13px; }
+  .connect-hero__btn-play { padding: 0 13px; }
+  .connect-hero__btn-info { padding: 0 11px; }
+}

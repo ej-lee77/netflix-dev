@@ -519,3 +519,10 @@
     transform: rotate(360deg);
   }
 }
+/* ===== 반응형: ≤768에서 포스터가 숨겨져 폼이 풀폭이 될 때 nav 가림 방지 ===== */
+@media (max-width: 768px) {
+  .login-page { padding-left: 64px; }
+}
+@media (max-width: 600px) {
+  .login-page { padding-left: 56px; }
+}

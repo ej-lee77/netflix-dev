@@ -230,3 +230,12 @@
     height: 82px;
   }
 }
+/* ===== 반응형: 아바타 크기 축소 ===== */
+@include g.respond(tablet) {
+  .connect-following-users__slide,
+  .connect-following-users__item { width: 86px; }
+}
+@include g.respond(mobile) {
+  .connect-following-users__slide,
+  .connect-following-users__item { width: 72px; }
+}
