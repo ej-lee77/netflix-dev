@@ -17,12 +17,12 @@ $hero-h: clamp(420px, 40vw, 900px);
   width: 100%;
   height: calc(#{$hero-h} + #{g.$header-height});
   margin-top: calc(-#{g.$header-height} + 30px) !important;
-  overflow: hidden;
-  background: #0a0a0a;
-  // flex 제거: Swiper를 absolute positioning으로 처리
-  // → flex 레이아웃 계산 타이밍과 Swiper 너비 읽기 간 race condition 제거
+  // overflow:hidden 제거 → Swiper peek 슬라이드를 클리핑하지 않도록
+  // 배경 블러(inset:-40px)는 자체 z-index(0)와 section-bg 레이어로 처리
+  overflow: visible;
+  background: transparent;
 
-  // 상단/하단 페이드아웃
+  // 섹션 전체 배경색을 before 로 처리 (overflow:visible 이어도 배경은 유지)
   &::before,
   &::after {
     content: "";
@@ -34,11 +34,13 @@ $hero-h: clamp(420px, 40vw, 900px);
     pointer-events: none;
   }
 
+  // 상단 페이드아웃
   &::before {
     top: 0;
     background: linear-gradient(to bottom, #141414 0%, transparent 100%);
   }
 
+  // 하단 페이드아웃
   &::after {
     bottom: 0;
     background: linear-gradient(to top, #141414 0%, transparent 100%);
@@ -46,6 +48,16 @@ $hero-h: clamp(420px, 40vw, 900px);
 }
 
 // ── 섹션 블러 배경 ────────────────────────────────────────
+// overflow:visible 된 hero 안에서 배경 블러가 사방으로 번지지 않도록
+// 별도 래퍼로 clip 처리
+.connect-hero__bg-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;          // 블러만 이 레이어 안에서 클리핑
+  z-index: 0;
+  background: #0a0a0a;       // 섹션 기본 배경색
+}
+
 .connect-hero__section-bg {
   position: absolute;
   inset: -40px;
@@ -53,21 +65,24 @@ $hero-h: clamp(420px, 40vw, 900px);
   background-position: center;
   filter: blur(32px) brightness(0.22) saturate(0.7);
   transition: opacity 0.6s ease;
-  z-index: 0;
 }
 
 // ── Swiper ──────────────────────────────────────────────
 .connect-hero__swiper {
-  // absolute positioning으로 flex 의존성 제거
-  // left:0/right:0이 width를 명시적으로 결정하므로 flex 계산 불필요
   position: absolute;
   left: 0;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  // transform 대신 명시적 top 계산: 위아래 여백 = (header-height + 16px) / 2
+  top: calc((#{g.$header-height} + 16px) / 2);
   height: calc(#{$hero-h} - 16px);
+  // Swiper 기본 overflow:hidden 을 덮어씌워 좌우 peek 슬라이드가 잘리지 않도록
   overflow: visible !important;
   z-index: 1;
+
+  // Swiper 내부 wrapper 도 clip 하지 않도록 명시
+  .swiper-wrapper {
+    overflow: visible;
+  }
 }
 
 // Swiper에 width를 CSS로 지정 (slidesPerView: "auto" 필수)
@@ -416,6 +431,7 @@ $hero-h: clamp(420px, 40vw, 900px);
 
   .connect-hero__swiper {
     height: calc(#{$hero-h} + #{g.$header-height} - 48px);
+    top: 24px; // (section - swiper) / 2 = 48px / 2
   }
 
   .connect-hero__swiper .swiper-slide {
