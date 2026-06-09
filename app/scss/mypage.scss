@@ -24,6 +24,9 @@
     p {
       font-size: 0.92rem;
       color: rgba(255, 255, 255, 0.6);
+      display: flex;
+      gap: 4px;
+      align-items: center;
     }
 
     .toggle-mode-btn {
@@ -40,6 +43,9 @@
         font-weight: 700;
         color: rgba(255, 255, 255, 0.54);
         transition: color 0.2s ease;
+        display: flex;
+        gap: 4px;
+        align-items: center;
       }
 
       // 토글 스위치 트랙
@@ -399,6 +405,7 @@
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
     border-radius: g.$radius-md;
+    height: 96px;
 
     .friend-avatar {
       width: 40px;
@@ -407,6 +414,9 @@
       background: #1a1a1a;
       border: 1px solid #2a2a2a;
       flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .activity-body {
@@ -416,7 +426,7 @@
       p {
         font-size: g.$text-13;
         line-height: 1.5;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
 
         strong {
           font-weight: 700;
@@ -429,6 +439,9 @@
             text-decoration: underline;
           }
         }
+      }
+      .content-preview{
+        font-size: g.$text-12
       }
 
       .time {
@@ -465,12 +478,14 @@
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
     border-radius: g.$radius-md;
+    height: 96px;
 
     .review-thumb {
       width: 42px;
       flex-shrink: 0;
       border-radius: 4px;
       overflow: hidden;
+      margin: auto;
 
       img {
         width: 100%;
@@ -497,6 +512,8 @@
         .stars {
           color: g.$main-color;
           font-size: g.$text-12;
+          display: flex;
+          gap: 4px;
         }
       }
 
@@ -802,6 +819,12 @@
         font-size: 13px;
         color: #999;
         line-height: 1.6;
+
+        p{
+          display: flex;
+          gap: 4px;
+          align-items: center;
+        }
 
         strong {
           color: #fff;

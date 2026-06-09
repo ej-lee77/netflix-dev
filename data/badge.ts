@@ -27,14 +27,14 @@ export const BADGE_LIST: Badge[] = [
     content: "작품의 한 시즌을 끊김 없이 완전히 완주한 회원에게 주어지는 뱃지입니다.",
     total: 1
   },
-  {
-    id: "monthly_top_viewer",
-    imgUrl: "/images/badge/monthly_top_viewer.png",
-    name: "이번 달 최다 시청",
-    title: "명예의 전당 등극",
-    content: "이번 달 서비스 내에서 가장 많은 콘텐츠를 시청한 상위 회원에게 주어지는 뱃지입니다.",
-    total: 1
-  },
+  // {
+  //   id: "monthly_top_viewer",
+  //   imgUrl: "/images/badge/monthly_top_viewer.png",
+  //   name: "이번 달 최다 시청",
+  //   title: "명예의 전당 등극",
+  //   content: "이번 달 서비스 내에서 가장 많은 콘텐츠를 시청한 상위 회원에게 주어지는 뱃지입니다.",
+  //   total: 1
+  // },
 
   // 3. 꾸준함 계열
   {
