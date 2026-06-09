@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import { showToast } from "@/store/useToastStore";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import "../scss/contact.scss";
@@ -93,12 +94,12 @@ export default function ContactPage() {
   // 문의 등록
   const handleSubmit = async () => {
     if (!uid) {
-      alert("문의 작성은 로그인 후 이용할 수 있어요.");
+      showToast("문의 작성은 로그인 후 이용할 수 있어요.");
       router.push("/login");
       return;
     }
     if (!inquiryType || !inquiryTitle.trim() || !inquiryContent.trim()) {
-      alert("필수 항목을 모두 입력해주세요.");
+      showToast("필수 항목을 모두 입력해주세요.");
       return;
     }
 
@@ -112,14 +113,14 @@ export default function ContactPage() {
     });
 
     if (ok) {
-      alert("문의가 등록되었습니다. 영업일 기준 24시간 내 답변드릴게요.");
+      showToast("문의가 등록되었습니다. 영업일 기준 24시간 내 답변드릴게요.");
       setInquiryType("");
       setInquiryTitle("");
       setInquiryContent("");
       setHistoryFilter("all");
       handleTabChange("history");
     } else {
-      alert("문의 등록 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      showToast("문의 등록 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
     }
   };
 

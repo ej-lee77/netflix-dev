@@ -1,4 +1,5 @@
 import { auth, db, kakaoProvider, naverProvider } from "@/firebase/firebase";
+import { showToast } from "@/store/useToastStore";
 import {
   AuthState,
   type Profile,
@@ -429,14 +430,14 @@ export const useAuthStore = create<AuthState>()(
 
         const currentProfiles = currentUser.profile?.length ? currentUser.profile : [];
         if (currentProfiles.length <= 1) {
-          alert("최소 하나의 프로필은 유지해야 합니다.");
+          showToast("최소 하나의 프로필은 유지해야 합니다.");
           return;
         }
 
         const targetProfileId = String(profileId);
 
         if (String(currentProfiles[0]?.id) === targetProfileId) {
-          alert("기본 프로필은 삭제할 수 없습니다.");
+          showToast("기본 프로필은 삭제할 수 없습니다.");
           return;
         }
 
