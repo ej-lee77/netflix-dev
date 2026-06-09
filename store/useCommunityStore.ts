@@ -84,6 +84,33 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
     }
   },
 
+  fetchUserReviewsById: async (targetUserId: string) => {
+    if (!targetUserId) return null;
+
+    try {
+      const docRef = doc(db, "userReviews", targetUserId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const reviewList = data.reviews || [];
+        
+        // 최신순으로 정렬
+        const sortedReviews = reviewList.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
+        return sortedReviews;
+      } else {
+        // 데이터가 없을 경우 빈 배열 반환
+        return [];
+      }
+    } catch (error) {
+      console.error(`${targetUserId} 유저 리뷰 페칭 에러:`, error);
+      return null;
+    }
+  },
+
   addReview: async (newReviewData) => {
     const { user, currentProfile } = useAuthStore.getState();
     if (!user?.userId || !currentProfile) return;
