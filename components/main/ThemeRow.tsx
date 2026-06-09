@@ -3,10 +3,12 @@ import React, { useState, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -63,7 +65,7 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 현재 보이는 슬라이드의 좌/우 끝 인덱스 갱신 (오른쪽 끝 카드가 컨테이너 밖으로 안 나가게)
-  const updateEdges = (swiper: { activeIndex: number; params: { slidesPerView: number | string } }) => {
+  const updateEdges = (swiper: SwiperType) => {
     const spv = typeof swiper.params.slidesPerView === "number" ? swiper.params.slidesPerView : 1;
     setLeftEdgeIndex(swiper.activeIndex);
     setRightEdgeIndex(swiper.activeIndex + Math.floor(spv) - 1);
@@ -125,10 +127,12 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                   onClick={() => router.push(`/detail/${item.mediaType}/${item.id}`)}
                 >
                   <div className="img-box">
-                    <img
+                    <Image
                       className="poster-img"
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
+                      fill
+                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
                     />
                   </div>
 
@@ -142,10 +146,12 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                             allow="autoplay"
                           />
                         ) : (
-                          <img
+                          <Image
                             src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`}
                             alt={item.title}
                             className="fallback-img"
+                            fill
+                            sizes="(max-width: 640px) 100vw, 40vw"
                           />
                         )}
                       </div>

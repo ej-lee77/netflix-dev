@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
+import AppIcon from "@/components/common/AppIcon";
 import Link from "next/link";
 import "./scss/error.scss";
 
@@ -22,7 +23,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
     <div className="error-page">
       <div className="inner">
         <div className="error-container">
-          <div className="error-graphic network">⚡</div>
+          <div className="error-graphic network"><AppIcon name="mood-exciting" size={44} color="#e50914" /></div>
           <div className="error-code">{isNetworkError ? "CONNECTION ERROR" : "SOMETHING WENT WRONG"}</div>
           <h1>
             {isNetworkError ? (
