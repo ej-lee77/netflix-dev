@@ -44,6 +44,7 @@
     flex-direction: column;
     gap: 20px;
     isolation: isolate;
+    min-width: 0;
     width: 100%;
     max-width: none;
   }
@@ -109,6 +110,8 @@
 
   .feed-profile-panel {
     position: sticky;
+    min-width: 0;
+    width: 100%;
     top: 84px;
   }
 
@@ -167,6 +170,118 @@
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .feed-profile-card--guest {
+    display: flex;
+    min-height: 360px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      linear-gradient(180deg, rgba(229, 9, 20, 0.08), transparent 42%),
+      rgba(255, 255, 255, 0.025);
+    text-align: center;
+
+    .feed-profile-card__eyebrow {
+      align-self: flex-start;
+      margin-bottom: 28px;
+    }
+
+    > strong {
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: g.$text-20;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+      word-break: keep-all;
+      white-space: normal;
+    }
+  }
+
+  .feed-profile-card__guest-icon {
+    display: grid;
+    width: 86px;
+    height: 86px;
+    place-items: center;
+    margin-bottom: 20px;
+    border: 1px solid rgba(229, 9, 20, 0.45);
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle at 35% 25%,
+        rgba(255, 255, 255, 0.2),
+        transparent 32%
+      ),
+      linear-gradient(135deg, #e50914, #7b1118);
+    color: #fff;
+    font-size: g.$text-32;
+    font-weight: 900;
+  }
+
+  .feed-profile-card__guest-copy {
+    max-width: 230px;
+    margin: 0 auto 24px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: g.$text-13;
+    font-weight: 700;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+  }
+
+  .feed-profile-guest-actions {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+
+    a {
+      display: flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: g.$text-13;
+      font-weight: 900;
+      text-decoration: none;
+      transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+
+      &:hover,
+      &:focus-visible {
+        outline: none;
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  .feed-profile-login-btn {
+    border: 1px solid rgba(229, 9, 20, 0.95);
+    background: #e50914;
+    color: #fff;
+
+    &:hover,
+    &:focus-visible {
+      border-color: #f6121d;
+      background: #f6121d;
+    }
+  }
+
+  .feed-profile-signup-btn {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.82);
+
+    &:hover,
+    &:focus-visible {
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
   }
 
   .feed-profile-badge {
@@ -238,7 +353,6 @@
       display: block;
       //text-align: center;
     }
-
   }
 
   .feed-profile-taste-tags {
@@ -345,6 +459,37 @@
         transform: translateY(-1px);
       }
     }
+    .feed-write-btn {
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 4px;
+      border: 1px solid rgba(229, 9, 20, 0.95);
+      border-radius: 6px;
+      background: #e50914;
+      color: #fff;
+      font-size: g.$text-13;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(229, 9, 20, 0.18);
+      transition:
+        border-color 0.18s ease,
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+
+      &:hover,
+      &:focus-visible {
+        border-color: #f6121d;
+        background: #f6121d;
+        color: #fff;
+        outline: none;
+        box-shadow: 0 12px 28px rgba(229, 9, 20, 0.28);
+        transform: translateY(-1px);
+      }
+    }
 
     .edit-profile-area {
       display: grid;
@@ -352,6 +497,7 @@
       gap: 8px;
 
       a,
+      p,
       button {
         min-width: 0;
         min-height: 42px;
@@ -400,6 +546,9 @@
   .feed-post {
     position: relative;
     z-index: 0;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
     border-radius: g.$radius-lg;

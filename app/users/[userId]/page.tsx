@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -52,7 +52,9 @@ async function fetchPosterByKey(key: string): Promise<string> {
 
 export default function UserDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const userId = (params?.userId as string) ?? "";
+  const profileIdParam = searchParams.get("profileId");
 
   const { currentProfile } = useAuthStore();
   const { follow, unfollow } = useFollowStore();
@@ -119,7 +121,12 @@ export default function UserDetailPage() {
           }
           return;
         }
-        const p = snap.data().profile?.[0];
+        const profiles = snap.data().profile ?? [];
+        const p =
+          profiles.find(
+            (profile: { id?: number | string }) =>
+              String(profile.id) === profileIdParam,
+          ) ?? profiles[0];
         if (!p) {
           if (!ignore) {
             setNotFound(true);
@@ -148,7 +155,7 @@ export default function UserDetailPage() {
     return () => {
       ignore = true;
     };
-  }, [userId]);
+  }, [profileIdParam, userId]);
 
   // 대상 유저의 커스텀 플레이리스트(playlists/{userId}) 로드 + 각 카드용 포스터
   useEffect(() => {
