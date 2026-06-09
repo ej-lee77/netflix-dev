@@ -350,7 +350,7 @@ export default function Hero() {
           );
           if (ignore) return;
           const certs = useMovieStore.getState().certifications;
-          nextItems = nextItems.filter((it) => {
+          const allowed = nextItems.filter((it) => {
             let level = certToLevel(certs[`${it.media_type}-${it.id}`]);
             if (level < 0) {
               const gl = genreLevel((it as { genre_ids?: number[] }).genre_ids);
@@ -358,6 +358,17 @@ export default function Hero() {
             }
             return level <= ceiling;
           });
+          // 등급 필터로 후보가 모두 사라지면(히어로가 비는 것 방지)
+          // 명시적 등급 초과만 제외하고, 그래도 비면 원본을 사용
+          if (allowed.length) {
+            nextItems = allowed;
+          } else {
+            const certOnly = nextItems.filter((it) => {
+              const level = certToLevel(certs[`${it.media_type}-${it.id}`]);
+              return level < 0 || level <= ceiling;
+            });
+            nextItems = certOnly.length ? certOnly : nextItems;
+          }
         }
 
         const randomIndex = Math.floor(Math.random() * nextItems.length);

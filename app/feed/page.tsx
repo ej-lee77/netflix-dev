@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { showToast } from "@/store/useToastStore";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/firebase/firebase";
@@ -15,9 +17,36 @@ import {
   getRelativeTime,
   getPosterUrl,
 } from "@/types/feedData";
+import { BADGE_LIST } from "@/data/badge";
+import "@/components/common/wishlistButton.scss";
 import "../scss/feed.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+const GENRE_LABELS: Record<string, string> = {
+  "12": "모험",
+  "14": "판타지",
+  "16": "애니",
+  "18": "드라마",
+  "27": "호러",
+  "28": "액션",
+  "35": "코미디",
+  "36": "역사",
+  "53": "스릴러",
+  "80": "범죄",
+  "99": "다큐",
+  "878": "SF",
+  "9648": "미스터리",
+  "10402": "음악",
+  "10749": "로맨스",
+  "10751": "가족",
+  "10752": "전쟁",
+  "10759": "액션",
+  "10762": "키즈",
+  "10764": "리얼리티",
+  "10765": "SF",
+  "10766": "연속극",
+  "10768": "전쟁",
+};
 
 type ReviewFinderOption = {
   label: string;
@@ -339,10 +368,26 @@ export default function FeedPage() {
   const [newReviewText, setNewReviewText] = useState("");
   const [newHasSpoiler, setNewHasSpoiler] = useState(false);
   const [newIsPublic, setNewIsPublic] = useState(true);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastHiding, setToastHiding] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const toastTimers = useRef<number[]>([]);
   const currentUserId =
     user?.userId ||
     (user as { uid?: string } | null)?.uid ||
     auth.currentUser?.uid;
+
+  const showToast = useCallback((message: string) => {
+    toastTimers.current.forEach((timerId) => window.clearTimeout(timerId));
+    toastTimers.current = [];
+    setToastMessage(message);
+    setToastVisible(true);
+    setToastHiding(false);
+    toastTimers.current = [
+      window.setTimeout(() => setToastHiding(true), 1750),
+      window.setTimeout(() => setToastVisible(false), 2000),
+    ];
+  }, []);
 
   const closeWriteModal = useCallback(() => {
     setWriteModalOpen(false);
@@ -368,6 +413,12 @@ export default function FeedPage() {
   useEffect(() => {
     void onHydrateFeeds();
   }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
+
+  useEffect(() => {
+    return () => {
+      toastTimers.current.forEach((timerId) => window.clearTimeout(timerId));
+    };
+  }, []);
 
   // useEffect(() => {
   //   const reportedFeedIds = (currentProfile?.community?.reportfeeds || [])
@@ -598,38 +649,43 @@ export default function FeedPage() {
 
   const selectedCommentReview =
     feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
-  const profileReviewCount = feeds.filter(
+  const myProfileReviews = feeds.filter(
     (review) =>
-      review.author === currentProfile?.nickname ||
-      (currentUserId && review.userId === currentUserId),
-  ).length;
-  const profileCommentCount = feeds.reduce(
-    (total, review) => total + review.comments,
-    0,
+      review.isMine ||
+      (currentUserId &&
+        currentProfile &&
+        review.userId === currentUserId &&
+        review.profileId === currentProfile.id),
   );
+  const profileReviewCount = myProfileReviews.length;
   const averageRating =
     profileReviewCount > 0
-      ? feeds
-          .filter(
-            (review) =>
-              review.author === currentProfile?.nickname ||
-              (currentUserId && review.userId === currentUserId),
-          )
-          .reduce((total, review) => total + review.rating, 0) /
+      ? myProfileReviews.reduce((total, review) => total + review.rating, 0) /
         profileReviewCount
       : 0;
   const profileName =
     currentProfile?.nickname || user?.email?.split("@")[0] || "Netflixer";
   const profileImage = currentProfile?.imgUrl;
+  const followerCount = currentProfile?.community?.followers?.length ?? 0;
+  const followingCount = currentProfile?.community?.following?.length ?? 0;
+  const equippedBadge =
+    BADGE_LIST.find(
+    (badge) => badge.id === currentProfile?.badges?.equippedBadges,
+    ) ?? BADGE_LIST.find((badge) => badge.id === "first_streaming");
+  const completedBadgeCount = 1;
+  const tasteTags = Object.entries(currentProfile?.movies?.genreStats ?? {})
+    .sort(([, firstCount], [, secondCount]) => secondCount - firstCount)
+    .slice(0, 2)
+    .map(([genreId]) => GENRE_LABELS[genreId] ?? "취향");
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
-      window.alert("로그인이 필요합니다.");
+      showToast("로그인이 필요합니다.");
       router.push("/login");
       return false;
     }
     if (!currentProfile) {
-      window.alert("프로필을 선택해 주세요.");
+      showToast("프로필을 선택해 주세요.");
       return false;
     }
 
@@ -662,7 +718,7 @@ export default function FeedPage() {
         setReportTargetReviewId(null);
       }
       setSelectedReportReason("");
-      window.alert("신고가 취소되었습니다.");
+      showToast("신고가 취소되었습니다.");
       return;
     }
 
@@ -684,7 +740,7 @@ export default function FeedPage() {
     );
     setReportTargetReviewId(null);
     setSelectedReportReason("");
-    window.alert("신고되었습니다.");
+    showToast("신고되었습니다.");
   };
 
   const handleCopyShareLink = (reviewId: string) => {
@@ -761,6 +817,11 @@ export default function FeedPage() {
     }
   };
 
+  const handleDeleteReview = async (reviewId: string) => {
+    await onDeleteFeed(reviewId);
+    showToast("리뷰가 삭제되었습니다");
+  };
+
   const handleToggleCommentLike = (reviewId: string, commentId: string) => {
     if (!requireFeedAuth()) return;
 
@@ -789,7 +850,9 @@ export default function FeedPage() {
         isSpoiler: newHasSpoiler,
         isPublic: newIsPublic,
       });
+      await onHydrateFeeds();
       closeWriteModal();
+      showToast("리뷰가 수정되었습니다");
       return;
     }
 
@@ -810,6 +873,7 @@ export default function FeedPage() {
 
     await onAddFeed(nextReview);
     closeWriteModal();
+    showToast("리뷰가 등록되었습니다");
   };
 
   const renderWriteModal = () => {
@@ -1121,7 +1185,10 @@ export default function FeedPage() {
           <div className="feed-modal-head">
             <div>
               <h3 id="feed-comment-title">댓글</h3>
-              <p>&quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴 의견</p>
+              <p>
+                &quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴
+                의견
+              </p>
             </div>
             <button
               type="button"
@@ -1188,12 +1255,12 @@ export default function FeedPage() {
                           <button
                             type="button"
                             className="comment-delete-btn"
-                            onClick={() =>
+                            onClick={() => {
                               handleDeleteComment(
                                 selectedCommentReview.feedId,
                                 comment.commentId,
-                              )
-                            }
+                              );
+                            }}
                           >
                             삭제
                           </button>
@@ -1237,13 +1304,6 @@ export default function FeedPage() {
             <h1>피드</h1>
             <p>커뮤니티 게시물과 팔로우한 유저의 감상을 둘러보세요.</p>
           </div>
-          <button
-            type="button"
-            className="feed-write-btn"
-            onClick={() => setWriteModalOpen(true)}
-          >
-            게시물 작성
-          </button>
         </div>
 
         <div className="feed-layout">
@@ -1258,26 +1318,81 @@ export default function FeedPage() {
                 )}
               </div>
               <strong>{profileName}</strong>
-              <span className="feed-profile-level">Lv.0 베이비</span>
+              <Link href="/goods" className="feed-profile-badge">
+                {equippedBadge?.imgUrl && <img src={equippedBadge.imgUrl} alt="" />}
+                <span>{equippedBadge?.name ?? "위대한 첫걸음"}</span>
+              </Link>
+              <div className="profile-meta-info">
+                {/* <span className="feed-profile-level">Lv.0 베이비</span> */}
+                <p className="follower-info">
+                  팔로워 <span>{followerCount}</span>
+                </p>
+                <p className="following-info">
+                  팔로잉 <span>{followingCount}</span>
+                </p>
+              </div>
+
               <div className="feed-profile-stats">
                 <div>
                   <b>{averageRating.toFixed(1)}</b>
                   <span>평균 별점</span>
                 </div>
-                <div>
+                <Link href="/mypage/community?tab=my-feeds">
                   <b>{profileReviewCount}</b>
                   <span>리뷰</span>
-                </div>
-                <div>
-                  <b>{profileCommentCount}</b>
-                  <span>댓글</span>
-                </div>
+                </Link>
+                <Link href="/goods">
+                  <b>{completedBadgeCount}</b>
+                  <span>뱃지</span>
+                </Link>
+              </div>
+              <div className="feed-profile-taste-tags">
+                {tasteTags.length > 0 ? (
+                  tasteTags.map((tag) => <span key={tag}>#{tag} 취향</span>)
+                ) : (
+                  <span>#취향 수집중</span>
+                )}
               </div>
               <div className="feed-profile-nav">
-                <Link href="/mypage/playlist?tab=history">시청이력</Link>
-                <Link href="/mypage/playlist?tab=playlists">보관함</Link>
-                <Link href="/settings?tab=profile">프로필 관리</Link>
+                <div className="edit-profile-area">
+                  <Link href="/settings?tab=profile">프로필 관리</Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(window.location.href);
+                      showToast("프로필 링크가 복사되었습니다");
+                    }}
+                  >
+                    프로필 공유
+                  </button>
+                  <Link
+                    href="/friends"
+                    className="follow-more-btn"
+                    aria-label="팔로워 및 팔로잉 관리로 이동"
+                    title="팔로워 및 팔로잉 관리"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M19.5 2c.5 0 .9.4.9.9v2.7h2.7a.9.9 0 0 1 0 1.8h-2.7v2.7a.9.9 0 0 1-1.8 0V7.4h-2.7a.9.9 0 1 1 0-1.8h2.7V2.9c0-.5.4-.9.9-.9M9.5 13c5.04 0 9.17 3.7 9.5 8.4.02.33-.26.6-.6.6H.6c-.34 0-.62-.27-.6-.6.33-4.7 4.46-8.4 9.5-8.4m0-9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"
+                      ></path>
+                    </svg>
+                  </Link>
+                </div>
               </div>
+              <button
+                type="button"
+                className="feed-profile-write-btn"
+                onClick={() => setWriteModalOpen(true)}
+              >
+                게시물 작성
+              </button>
             </div>
           </aside>
           <div className="feed-main">
@@ -1309,195 +1424,201 @@ export default function FeedPage() {
               <div className="feed-empty-state">게시물이 없습니다</div>
             ) : (
               filteredReviews.map((review) => {
-              const isReported = reportedReviewIds.includes(review.feedId);
-              const shouldBlurSpoiler =
-                review.isSpoiler &&
-                !visibleSpoilerReviewIds.includes(review.feedId);
+                const isReported = reportedReviewIds.includes(review.feedId);
+                const shouldBlurSpoiler =
+                  review.isSpoiler &&
+                  !visibleSpoilerReviewIds.includes(review.feedId);
 
-              return (
-                <article
-                  key={review.feedId}
-                  className={`feed-post ${reportTargetReviewId === review.feedId ? "report-open" : ""}`}
-                >
-                  <Link
-                    href={`/feed/${review.feedId}`}
-                    className="feed-card-link"
-                    aria-label={`${review.mediaTitle} 피드 상세 보기`}
-                  />
-                  <div className="post-head">
-                    <div className="post-avatar">
-                      {review.authorImage ? (
-                        <img src={review.authorImage} alt="" />
-                      ) : (
-                        getInitial(review.author)
-                      )}
-                    </div>
-                    <div className="post-meta">
-                      <h3>{review.author}</h3>
-                      <div className="post-info">
-                        <span className="time">
-                          {getRelativeTime(review.createdAt)}
-                        </span>
-                        {!review.isPublic && (
-                          <span className="private-tag">비공개</span>
+                return (
+                  <article
+                    key={review.feedId}
+                    className={`feed-post feed-page-post ${reportTargetReviewId === review.feedId ? "report-open" : ""}`}
+                  >
+                    <Link
+                      href={`/feed/${review.feedId}`}
+                      className="feed-card-link"
+                      aria-label={`${review.mediaTitle} 피드 상세 보기`}
+                    />
+                    <div className="post-head">
+                      <div className="post-avatar">
+                        {review.authorImage ? (
+                          <img src={review.authorImage} alt="" />
+                        ) : (
+                          getInitial(review.author)
                         )}
                       </div>
-                    </div>
-                    <div className="review-tags">
-                      {review.isSpoiler && (
-                        <span className="spoiler-tag">스포일러</span>
-                      )}
-                      {!review.isMine && (
-                        <div className="report-menu">
-                          <button
-                            type="button"
-                            className={
-                              isReported ? "report-btn active" : "report-btn"
-                            }
-                            onClick={() => void handleOpenReportReview(review)}
-                            aria-pressed={isReported}
-                          >
-                            {isReported ? "신고됨" : "신고"}
-                          </button>
-                          {reportTargetReviewId === review.feedId && (
-                            <div className="feed-report-panel">
-                              <p>신고 사유</p>
-                              <div className="report-reasons">
-                                {REPORT_REASONS.map((reason) => (
-                                  <button
-                                    type="button"
-                                    key={reason}
-                                    className={
-                                      selectedReportReason === reason
-                                        ? "selected"
-                                        : ""
-                                    }
-                                    onClick={() =>
-                                      setSelectedReportReason(reason)
-                                    }
-                                  >
-                                    {reason}
-                                  </button>
-                                ))}
-                              </div>
-                              <div className="report-actions">
-                                <button
-                                  type="button"
-                                  onClick={() => setReportTargetReviewId(null)}
-                                >
-                                  취소
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    void handleSubmitReportReview()
-                                  }
-                                  disabled={!selectedReportReason}
-                                >
-                                  신고
-                                </button>
-                              </div>
-                            </div>
+                      <div className="post-meta">
+                        <h3>{review.author}</h3>
+                        <div className="post-info">
+                          <span className="time">
+                            {getRelativeTime(review.createdAt)}
+                          </span>
+                          {!review.isPublic && (
+                            <span className="private-tag">비공개</span>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="post-body review-body">
-                    <Link
-                      href={`/detail/${review.mediaType}/${review.mediaId}`}
-                      className="thumb feed-card-layer"
-                    >
-                      {review.mediaPoster && (
-                        <img
-                          src={getPosterUrl(review.mediaPoster)}
-                          alt={review.mediaTitle}
-                        />
-                      )}
-                    </Link>
-                    <div className="review-info">
-                      <div className="feed-detail-link">
-                        <h4>{review.mediaTitle}</h4>
-                        <p className="meta">{review.mediaMeta}</p>
-                        <div className="stars">
-                          {renderRatingStars(review.rating)}
-                          <em>{review.rating.toFixed(1)} / 5.0</em>
-                        </div>
                       </div>
-                      <div
-                        className={
-                          shouldBlurSpoiler
-                            ? "review-text-wrap spoiler-blurred"
-                            : "review-text-wrap"
-                        }
-                      >
-                        <p className="review-text">{review.content}</p>
-                        {shouldBlurSpoiler && (
-                          <button
-                            type="button"
-                            className="spoiler-reveal-btn"
-                            onClick={() =>
-                              setVisibleSpoilerReviewIds((prev) => [
-                                ...prev,
-                                review.feedId,
-                              ])
-                            }
-                          >
-                            스포일러 보기
-                          </button>
+                      <div className="review-tags">
+                        {review.isSpoiler && (
+                          <span className="spoiler-tag">스포일러</span>
+                        )}
+                        {!review.isMine && (
+                          <div className="report-menu">
+                            <button
+                              type="button"
+                              className={
+                                isReported ? "report-btn active" : "report-btn"
+                              }
+                              onClick={() =>
+                                void handleOpenReportReview(review)
+                              }
+                              aria-pressed={isReported}
+                            >
+                              {isReported ? "신고됨" : "신고"}
+                            </button>
+                            {reportTargetReviewId === review.feedId && (
+                              <div className="feed-report-panel">
+                                <p>신고 사유</p>
+                                <div className="report-reasons">
+                                  {REPORT_REASONS.map((reason) => (
+                                    <button
+                                      type="button"
+                                      key={reason}
+                                      className={
+                                        selectedReportReason === reason
+                                          ? "selected"
+                                          : ""
+                                      }
+                                      onClick={() =>
+                                        setSelectedReportReason(reason)
+                                      }
+                                    >
+                                      {reason}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div className="report-actions">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setReportTargetReviewId(null)
+                                    }
+                                  >
+                                    취소
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void handleSubmitReportReview()
+                                    }
+                                    disabled={!selectedReportReason}
+                                  >
+                                    신고
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="post-actions feed-card-layer">
-                    <button
-                      type="button"
-                      className={`action ${review.liked ? "liked" : ""}`}
-                      onClick={() => handleLike(review.feedId)}
-                    >
-                      {review.liked ? "♥" : "♡"} {review.likesCount}
-                    </button>
-                    <button
-                      type="button"
-                      className="action"
-                      onClick={() => handleOpenCommentModal(review.feedId)}
-                    >
-                      댓글 {review.comments}
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        copiedReviewId === review.feedId
-                          ? "action copied"
-                          : "action"
-                      }
-                      onClick={() => handleCopyShareLink(review.feedId)}
-                    >
-                      {copiedReviewId === review.feedId ? "복사됨" : "공유"}
-                    </button>
-                    {review.isMine && (
-                      <div className="review-owner-actions">
-                        <button
-                          type="button"
-                          className="action"
-                          onClick={() => handleOpenEditReview(review)}
+                    <div className="post-body review-body">
+                      <Link
+                        href={`/detail/${review.mediaType}/${review.mediaId}`}
+                        className="thumb feed-card-layer"
+                      >
+                        {review.mediaPoster && (
+                          <img
+                            src={getPosterUrl(review.mediaPoster)}
+                            alt={review.mediaTitle}
+                          />
+                        )}
+                      </Link>
+                      <div className="review-info">
+                        <div className="feed-detail-link">
+                          <h4>{review.mediaTitle}</h4>
+                          <p className="meta">{review.mediaMeta}</p>
+                          <div className="stars">
+                            {renderRatingStars(review.rating)}
+                            <em>{review.rating.toFixed(1)} / 5.0</em>
+                          </div>
+                        </div>
+                        <div
+                          className={
+                            shouldBlurSpoiler
+                              ? "review-text-wrap spoiler-blurred"
+                              : "review-text-wrap"
+                          }
                         >
-                          수정
-                        </button>
-                        <button
-                          type="button"
-                          className="action delete-review-btn"
-                          onClick={() => void onDeleteFeed(review.feedId)}
-                        >
-                          삭제
-                        </button>
+                          <p className="review-text">{review.content}</p>
+                          {shouldBlurSpoiler && (
+                            <button
+                              type="button"
+                              className="spoiler-reveal-btn"
+                              onClick={() =>
+                                setVisibleSpoilerReviewIds((prev) => [
+                                  ...prev,
+                                  review.feedId,
+                                ])
+                              }
+                            >
+                              스포일러 보기
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </article>
-              );
+                    </div>
+
+                    <div className="post-actions feed-card-layer">
+                      <button
+                        type="button"
+                        className={`action ${review.liked ? "liked" : ""}`}
+                        onClick={() => handleLike(review.feedId)}
+                      >
+                        {review.liked ? "♥" : "♡"} {review.likesCount}
+                      </button>
+                      <button
+                        type="button"
+                        className="action"
+                        onClick={() => handleOpenCommentModal(review.feedId)}
+                      >
+                        댓글 {review.comments}
+                      </button>
+                      <button
+                        type="button"
+                        className={
+                          copiedReviewId === review.feedId
+                            ? "action copied"
+                            : "action"
+                        }
+                        onClick={() => handleCopyShareLink(review.feedId)}
+                      >
+                        {copiedReviewId === review.feedId ? "복사됨" : "공유"}
+                      </button>
+                      {review.isMine && (
+                        <div className="review-owner-actions">
+                          <button
+                            type="button"
+                            className="action"
+                            onClick={() => handleOpenEditReview(review)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="action delete-review-btn"
+                            onClick={() =>
+                              void handleDeleteReview(review.feedId)
+                            }
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
               })
             )}
           </div>
@@ -1505,6 +1626,15 @@ export default function FeedPage() {
       </div>
       {renderWriteModal()}
       {renderCommentModal()}
+      {toastVisible &&
+        createPortal(
+          <div
+            className={`wish-toast${toastHiding ? " wish-toast--hiding" : ""}`}
+          >
+            {toastMessage}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

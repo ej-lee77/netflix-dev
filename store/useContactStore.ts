@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { addDoc, collection, doc, getDocs, setDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import { ContactDocument, ContactStore } from "@/types/contact";
 
@@ -84,6 +84,24 @@ export const useContactStore = create<ContactStore>((set, get) => ({
     } catch (error) {
       console.error("문의 내역 조회 실패:", error);
       set({ loading: false });
+    }
+  },
+
+  // 3. 내 문의 삭제 — contacts/{userId}/items/{contactId} 문서 제거
+  deleteContact: async (userId, contactId) => {
+    if (!userId || !contactId) return false;
+    try {
+      await deleteDoc(
+        doc(db, CONTACTS_COLLECTION, userId, ITEMS_SUBCOLLECTION, contactId),
+      );
+      // 낙관적 갱신: 목록에서 즉시 제거
+      set((state) => ({
+        myContacts: state.myContacts.filter((c) => c.id !== contactId),
+      }));
+      return true;
+    } catch (error) {
+      console.error("문의 삭제 실패:", error);
+      return false;
     }
   },
 }));
