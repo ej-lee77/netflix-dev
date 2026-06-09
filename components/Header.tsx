@@ -34,6 +34,7 @@ export default function Header() {
     "enter" | "exit"
   >("enter");
   const profileMenuRef = useRef<HTMLLIElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const modeMenuRef = useRef<HTMLUListElement>(null);
@@ -100,6 +101,15 @@ export default function Header() {
     void runProfileSwitch(selectedProfile);
   };
 
+  const handleProfileMenuEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setIsProfileMenuOpen(true);
+  };
+
+  const handleProfileMenuLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => setIsProfileMenuOpen(false), 200);
+  };
+
   const handleLogout = async () => {
     setIsProfileMenuOpen(false);
     await onLogout();
@@ -120,7 +130,10 @@ export default function Header() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
   }, []);
 
   return (
@@ -212,7 +225,12 @@ export default function Header() {
                 </Link>
               </li>
             ) : (
-              <li className="profile-menu-wrap" ref={profileMenuRef}>
+              <li
+                className="profile-menu-wrap"
+                ref={profileMenuRef}
+                onMouseEnter={handleProfileMenuEnter}
+                onMouseLeave={handleProfileMenuLeave}
+              >
                 <button
                   className="main-profile"
                   type="button"
@@ -235,8 +253,8 @@ export default function Header() {
                   <span className="profile-arrow" aria-hidden="true" />
                 </button>
 
-                {isProfileMenuOpen && (
-                  <div className="profile-dropdown">
+                {(
+                  <div className={`profile-dropdown${isProfileMenuOpen ? " open" : ""}`}>
                     <ul className="profile-switch-list">
                       {/* 🌟 이제 profiles가 빈 배열 또는 온전한 프로필 리스트이므로 에러가 나지 않습니다. */}
                       {profiles.map((profile) => (
@@ -300,6 +318,7 @@ export default function Header() {
                   </div>
                 )}
               </li>
+
             )}
           </ul>
         </div>
