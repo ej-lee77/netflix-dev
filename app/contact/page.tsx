@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
 import { showToast } from "@/store/useToastStore";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -35,7 +36,7 @@ export default function ContactPage() {
   const searchParams = useSearchParams();
 
   const { user, currentProfile } = useAuthStore();
-  const { myContacts, loading, submitting, submitContact, fetchMyContacts } =
+  const { myContacts, loading, submitting, submitContact, fetchMyContacts, deleteContact } =
     useContactStore();
 
   // 로그인 식별자: 스토어 user 우선, 없으면 Firebase 현재 유저로 보강
@@ -128,6 +129,13 @@ export default function ContactPage() {
     historyFilter === "all" ? true : h.status === historyFilter,
   );
 
+  // 내 문의 삭제
+  const handleDeleteContact = async (contactId: string) => {
+    if (!uid) return;
+    const ok = await deleteContact(uid, contactId);
+    showToast(ok ? "문의가 삭제되었습니다." : "문의 삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
+  };
+
   return (
     <div className="contact-page">
       <div className="inner">
@@ -177,7 +185,7 @@ export default function ContactPage() {
                     setFaqKeyword("");
                   }}
                 >
-                  <div className="cat-icon">{c.icon}</div>
+                  <div className="cat-icon"><AppIcon name={c.icon as AppIconName} size={22} /></div>
                   <h3>{c.name}</h3>
                   <p>{c.items.length}개</p>
                 </button>
@@ -323,6 +331,15 @@ export default function ContactPage() {
                         </div>
                         <h3>{h.title}</h3>
                         <p>{h.content}</p>
+                        <div className="history-actions">
+                          <button
+                            type="button"
+                            className="history-delete-btn"
+                            onClick={() => handleDeleteContact(h.id)}
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>

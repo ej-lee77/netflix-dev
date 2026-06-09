@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import AppIcon from "@/components/common/AppIcon";
 import { useEffect, useState } from "react";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/selectGenre.scss";
@@ -105,7 +106,7 @@ export default function SelectGenre() {
         {/* 장르 설정 섹션 */}
         <section className="custom-panel">
           <div className="custom-panel__header">
-            <h2>🎭 장르 설정</h2>
+            <h2><AppIcon name="masks" size={20} /> 장르 설정</h2>
             <p>
               선호 장르는 홈 상단에서 우선 추천되고, 제외 장르는 모든 목록에서 숨겨져요
             </p>

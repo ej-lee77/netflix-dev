@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import AppIcon from "@/components/common/AppIcon";
 import { showToast } from "@/store/useToastStore";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import type { DragEvent } from "react";
@@ -393,7 +394,7 @@ export default function MenuCustomPage() {
 
         <section className="menu-flow-panel">
           <div className="menu-flow-panel__header">
-            <h3>👀 사이드바 메뉴 나열 순서 프리뷰</h3>
+            <h3><AppIcon name="eye" size={18} /> 사이드바 메뉴 나열 순서 프리뷰</h3>
             <span>
               홈과 설정은 고정, 추가된 메뉴는 홀드해서 순서를 변경할 수
               있습니다.
@@ -472,7 +473,7 @@ export default function MenuCustomPage() {
           <div className="category-columns">
             <div className="category-box">
               <div className="category-box__header">
-                <h3>🎭 장르</h3>
+                <h3><AppIcon name="masks" size={18} /> 장르</h3>
               </div>
               <p className="category-summary">
                 선택된 장르:{" "}
@@ -487,7 +488,7 @@ export default function MenuCustomPage() {
 
             <div className="category-box">
               <div className="category-box__header">
-                <h3>🍿 무드</h3>
+                <h3><AppIcon name="popcorn" size={18} /> 무드</h3>
               </div>
               <p className="category-summary">
                 선택된 무드:{" "}
