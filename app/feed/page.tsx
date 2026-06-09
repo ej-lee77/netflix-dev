@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { showToast } from "@/store/useToastStore";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -679,12 +680,12 @@ export default function FeedPage() {
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
-      window.alert("로그인이 필요합니다.");
+      showToast("로그인이 필요합니다.");
       router.push("/login");
       return false;
     }
     if (!currentProfile) {
-      window.alert("프로필을 선택해 주세요.");
+      showToast("프로필을 선택해 주세요.");
       return false;
     }
 
@@ -717,7 +718,7 @@ export default function FeedPage() {
         setReportTargetReviewId(null);
       }
       setSelectedReportReason("");
-      showToast("신고가 취소되었습니다");
+      showToast("신고가 취소되었습니다.");
       return;
     }
 
@@ -739,7 +740,7 @@ export default function FeedPage() {
     );
     setReportTargetReviewId(null);
     setSelectedReportReason("");
-    showToast("신고되었습니다");
+    showToast("신고되었습니다.");
   };
 
   const handleCopyShareLink = (reviewId: string) => {

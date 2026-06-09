@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
+import { showToast } from "@/store/useToastStore";
 import { useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
@@ -760,9 +761,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       setReportedReviewIds((prev) => [...prev, reportTargetReviewId]);
       setReportTargetReviewId(null);
       setSelectedReportReason("");
-      window.alert("신고되었습니다.");
+      showToast("신고되었습니다.");
     } catch (error) {
-      window.alert("신고 처리에 실패했습니다. 다시 시도해주세요.");
+      showToast("신고 처리에 실패했습니다. 다시 시도해주세요.");
     }
   };
 

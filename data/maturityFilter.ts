@@ -44,14 +44,11 @@ export function useMaturityCeiling(): number {
 }
 
 // 등급 데이터가 없을 때 장르로 연령을 보수적으로 추정 (TMDB genre id 기준)
+// 등급 데이터가 없을 때만 쓰는 장르 추정(최소 세트).
+// 장르 범위를 넓히면 한국 인기작(스릴러·범죄 多)이 과도하게 사라지므로 공포만 둠.
+// 더 엄격히/느슨히 하려면 여기서 조정 (예: 53 스릴러:15, 80 범죄:15 추가).
 const RESTRICTED_GENRES: Record<number, number> = {
-  27: 19,    // 공포(Horror)
-  53: 15,    // 스릴러(Thriller)
-  80: 15,    // 범죄(Crime)
-  10752: 15, // 전쟁(War)
-  9648: 15,  // 미스터리(Mystery)
-  37: 12,    // 서부(Western)
-  10768: 15, // War & Politics (TV)
+  27: 19, // 공포(Horror)
 };
 
 export function genreLevel(genreIds?: number[]): number {

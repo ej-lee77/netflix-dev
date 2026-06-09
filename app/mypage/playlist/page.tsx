@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { showToast } from "@/store/useToastStore";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
@@ -406,7 +407,7 @@ function ActivityContent() {
     
     // 입력값 유효성 검사
     if (!title || selectedKeys.length === 0) {
-        alert("제목과 최소 하나 이상의 영상을 선택해주세요.");
+        showToast("제목과 최소 하나 이상의 영상을 선택해주세요.");
         return;
     }
 
@@ -432,7 +433,7 @@ function ActivityContent() {
         console.log("플레이리스트가 성공적으로 생성되었습니다.");
     } catch (error) {
         console.error("생성 중 에러 발생:", error);
-        alert("플레이리스트 저장에 실패했습니다. 다시 시도해주세요.");
+        showToast("플레이리스트 저장에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
