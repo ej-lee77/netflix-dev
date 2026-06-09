@@ -231,3 +231,16 @@
     }
   }
 }
+/* ===== 반응형 ===== */
+@include g.respond(tablet) {
+  .connect-friend-reactions__inner { width: calc(100vw - 64px); }
+  .connect-friend-reactions__slide,
+  .connect-friend-reactions__card { width: 330px; }
+  .connect-friend-reactions .section-header { padding-right: 16px; }
+}
+@include g.respond(mobile) {
+  .connect-friend-reactions__inner { width: calc(100vw - 56px); }
+  .connect-friend-reactions__slide,
+  .connect-friend-reactions__card { width: 80vw; max-width: 300px; }
+  .connect-friend-reactions .section-header { padding-right: 12px; }
+}

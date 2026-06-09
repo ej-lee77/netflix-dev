@@ -359,3 +359,17 @@
         width: min(82vw, 340px);
     }
 }
+/* ===== 반응형: 사이드메뉴 오프셋 보정 ===== */
+@include g.respond(tablet) {
+  .connect-review-list__inner {
+    width: calc(100vw - 64px);
+    margin-left: 64px;
+  }
+  .connect-review-list .section-header { padding-right: 16px; }
+}
+@include g.respond(mobile) {
+  .connect-review-list__inner {
+    width: calc(100vw - 56px);
+    margin-left: 56px;
+  }
+}

@@ -58,3 +58,8 @@
     }
   }
 }
+
+/* 태블릿(≤1024px)부터 "넷플릭스 화제작"(스플릿배너) 숨김 */
+@media (max-width: 1024px) {
+  .split-banner { display: none !important; }
+}

@@ -179,3 +179,14 @@
     color: g.$g-color;
   }
 }
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .faq-page { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .faq-page { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .faq-page { padding-left: 56px; padding-right: 16px; }
+}
