@@ -8,7 +8,7 @@ $hero-h: clamp(420px, 40vw, 900px);
 
 .connect-hero--loading {
   height: calc(#{$hero-h} + #{g.$header-height});
-  margin-top: calc(-#{g.$header-height} + 30px) !important;
+  margin-top: calc(-#{g.$header-height} + 47px) !important;
   background: #0a0a0a;
 }
 
@@ -16,7 +16,7 @@ $hero-h: clamp(420px, 40vw, 900px);
   position: relative;
   width: 100%;
   height: calc(#{$hero-h} + #{g.$header-height});
-  margin-top: calc(-#{g.$header-height} + 30px) !important;
+  margin-top: calc(-#{g.$header-height} + 47px) !important;
   // overflow:hidden 제거 → Swiper peek 슬라이드를 클리핑하지 않도록
   // 배경 블러(inset:-40px)는 자체 z-index(0)와 section-bg 레이어로 처리
   overflow: visible;
@@ -53,9 +53,9 @@ $hero-h: clamp(420px, 40vw, 900px);
 .connect-hero__bg-layer {
   position: absolute;
   inset: 0;
-  overflow: hidden;          // 블러만 이 레이어 안에서 클리핑
+  overflow: hidden; // 블러만 이 레이어 안에서 클리핑
   z-index: 0;
-  background: #0a0a0a;       // 섹션 기본 배경색
+  background: #0a0a0a; // 섹션 기본 배경색
 }
 
 .connect-hero__section-bg {
