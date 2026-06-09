@@ -5,13 +5,13 @@
   padding: 40px 0 80px;
 
   .inner {
-    width: min(1180px, 92vw);
+    width: min(1280px, 92vw);
     max-width: 92%;
     margin: 0 auto;
   }
 
   .page-head {
-    margin-bottom: 50px;
+    margin-bottom: 40px;
 
     h1 {
       font-size: g.$text-32;
@@ -32,33 +32,11 @@
     gap: 16px;
   }
 
-  .feed-write-btn {
-    height: 46px;
-    padding: 0 22px;
-    border: 0;
-    border-radius: 4px;
-    background: g.$main-color;
-    color: g.$w-color;
-    font-size: g.$text-16;
-    font-weight: 700;
-    cursor: pointer;
-    transition:
-      background 0.15s ease,
-      transform 0.15s ease;
-
-    &:hover,
-    &:focus-visible {
-      background: #b00710;
-      outline: none;
-      transform: scale(1.02);
-    }
-  }
-
   .feed-layout {
     display: grid;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    grid-template-columns: minmax(270px, 310px) minmax(0, 1fr);
     align-items: start;
-    gap: 24px;
+    gap: 22px;
   }
 
   .feed-main {
@@ -66,6 +44,8 @@
     flex-direction: column;
     gap: 20px;
     isolation: isolate;
+    width: 100%;
+    max-width: none;
   }
 
   .feed-tabs {
@@ -189,23 +169,126 @@
     white-space: nowrap;
   }
 
-  .feed-profile-level {
-    display: block;
+  .feed-profile-badge {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin: 0 auto 12px;
+    padding: 5px 10px;
+    border: 1px solid rgba(229, 9, 20, 0.36);
+    border-radius: 999px;
+    background: rgba(229, 9, 20, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: g.$text-12;
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+      border-color 0.16s ease,
+      background 0.16s ease,
+      transform 0.16s ease;
+
+    img {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: rgba(229, 9, 20, 0.72);
+      background: rgba(229, 9, 20, 0.18);
+      outline: none;
+      transform: translateY(-1px);
+    }
+  }
+
+  .profile-meta-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
     color: rgba(255, 255, 255, 0.66);
-    font-size: g.$text-14;
+    font-size: g.$text-12;
     font-weight: 700;
-    text-align: center;
+
+    p {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0;
+
+      span {
+        color: g.$w-color;
+        font-weight: 900;
+      }
+    }
+
+    .feed-profile-level {
+      display: block;
+      //text-align: center;
+    }
+
+  }
+
+  .feed-profile-taste-tags {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 0 22px;
+    flex-wrap: wrap;
+
+    span {
+      max-width: 120px;
+      overflow: hidden;
+      padding: 5px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.045);
+      color: rgba(255, 255, 255, 0.72);
+      font-size: g.$text-12;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .feed-profile-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
-    margin: 28px 0;
+    margin: 28px 0 18px;
 
-    div {
+    div,
+    a {
       min-width: 0;
       text-align: center;
+    }
+
+    a {
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      transition:
+        background 0.16s ease,
+        transform 0.16s ease;
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(255, 255, 255, 0.045);
+        outline: none;
+        transform: translateY(-1px);
+      }
     }
 
     b,
@@ -233,7 +316,8 @@
     flex-direction: column;
     gap: 8px;
 
-    a {
+    a,
+    button {
       display: flex;
       min-height: 46px;
       align-items: center;
@@ -245,10 +329,12 @@
       font-size: g.$text-13;
       font-weight: 800;
       text-decoration: none;
+      cursor: pointer;
       transition:
         border-color 0.18s ease,
         background 0.18s ease,
-        color 0.18s ease;
+        color 0.18s ease,
+        transform 0.18s ease;
 
       &:hover,
       &:focus-visible {
@@ -256,7 +342,58 @@
         background: rgba(229, 9, 20, 0.12);
         color: #fff;
         outline: none;
+        transform: translateY(-1px);
       }
+    }
+
+    .edit-profile-area {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) 44px;
+      gap: 8px;
+
+      a,
+      button {
+        min-width: 0;
+        min-height: 42px;
+        padding: 0 10px;
+        white-space: nowrap;
+      }
+
+      .follow-more-btn {
+        width: 44px;
+        padding: 0;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+
+  .feed-profile-write-btn {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 14px;
+    border: 0;
+    border-radius: 6px;
+    background: g.$main-color;
+    color: g.$w-color;
+    font-size: g.$text-14;
+    font-weight: 900;
+    cursor: pointer;
+    transition:
+      background 0.16s ease,
+      transform 0.16s ease;
+
+    &:hover,
+    &:focus-visible {
+      background: #b00710;
+      outline: none;
+      transform: translateY(-1px);
     }
   }
 
@@ -267,6 +404,8 @@
     border: 1px solid #2a2a2a;
     border-radius: g.$radius-lg;
     overflow: visible;
+    padding: 0;
+    transition: none;
 
     &.report-open {
       z-index: 50;
@@ -291,7 +430,9 @@
     padding: 16px 20px;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 12px;
+    margin-bottom: 0;
 
     .post-avatar {
       display: flex;
@@ -496,6 +637,7 @@
 
     .thumb {
       width: 90px;
+      height: auto;
       flex-shrink: 0;
 
       img {
@@ -611,6 +753,7 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    margin-top: 0;
 
     .action {
       display: inline-flex;
@@ -670,6 +813,37 @@
         color: #ff4d55;
         outline: none;
       }
+    }
+  }
+
+  .feed-layout > .feed-main {
+    width: 100%;
+    max-width: none;
+  }
+
+  .feed-main > .feed-page-post {
+    padding: 0;
+    transition: none;
+
+    .post-head {
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 0;
+      padding: 16px 20px;
+    }
+
+    .review-body {
+      gap: 14px;
+
+      .thumb {
+        width: 90px;
+        height: auto;
+      }
+    }
+
+    .post-actions {
+      margin-top: 0;
+      padding: 10px 20px;
     }
   }
 
@@ -1461,10 +1635,6 @@
     .feed-profile-card__avatar {
       width: 92px;
       height: 92px;
-    }
-
-    .feed-write-btn {
-      width: 100%;
     }
 
     .post-head {

@@ -9,41 +9,11 @@ import "../../scss/communityPage.scss";
 import Review from "@/components/mypage/Review";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import Feed from "@/components/mypage/Feed";
-import { useFeedStore } from "@/store/useFeedStore";
-import MyPageFeed from "@/components/mypage/Feed";
+import { type FeedView, useFeedStore } from "@/store/useFeedStore";
 
 type CommunityTab = "reviews" | "my-feeds" | "create-feed" | "create-review";
 type ScopeFilterType = "mine" | "liked" | "following";
-type FeedFilterType = "all" | "movie" | "tv" | "general";
 type SortType = "recent" | "likes" | "comments";
-
-interface UserFeed {
-  id: string;
-  title: string;
-  content: string;
-  mediaType: "movie" | "tv" | "general";
-  mediaTitle?: string;
-  isLikedByUser: boolean;
-  isFollowingAuthor: boolean;
-  likes: number;
-  commentsCount: number;
-  createdAt: string;
-  isPublic: boolean;
-}
-
-interface UserReview {
-  id: string;
-  mediaId: number;
-  mediaType: "movie" | "tv";
-  mediaTitle: string;
-  posterPath?: string;
-  rating: number;
-  content: string;
-  spoiler: boolean;
-  isLikedByUser: boolean;
-  isFollowingAuthor: boolean;
-  createdAt: string;
-}
 
 const tabs: { id: CommunityTab; label: string }[] = [
   { id: "reviews", label: "리뷰 관리" },
@@ -73,26 +43,25 @@ export default function CommunityPage() {
 function CommunityContent() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
 
-  const [activeTab, setActiveTab] = useState<CommunityTab>("reviews");
+  const [activeTab, setActiveTab] = useState<CommunityTab>(
+    initialTab === "my-feeds" || initialTab === "reviews"
+      ? initialTab
+      : "reviews",
+  );
   const [scopeFilter, setScopeFilter] = useState<ScopeFilterType>("mine");
-  const [feedFilter, setFeedFilter] = useState<FeedFilterType>("all");
   const [sortType, setSortType] = useState<SortType>("recent");
   const [sortOpen, setSortOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = false;
 
   // 작성 폼 상태
   const [feedTitle, setFeedTitle] = useState("");
   const [feedContent, setFeedContent] = useState("");
-  const [feedMediaType, setFeedMediaType] = useState<"movie" | "tv" | "general">("general");
 
   const { currentProfile } = useAuthStore();
   const { reviews, fetchUserReviews } = useCommunityStore();
   const { feeds, onDeleteFeed, onHydrateFeeds } = useFeedStore();
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, []);
 
   useEffect(() => {
     fetchUserReviews(); 
@@ -108,7 +77,7 @@ function CommunityContent() {
   );
 
   // 2. 수정 핸들러 (수정 모달을 띄우는 로직 연결)
-  const handleEdit = (review: any) => {
+  const handleEdit = (review: FeedView) => {
     // page.tsx에 있던 handleOpenEditReview와 같은 역할을 수행
     console.log("수정할 피드:", review);
   };
