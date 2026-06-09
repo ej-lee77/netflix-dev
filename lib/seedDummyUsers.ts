@@ -15,7 +15,7 @@ export async function seedDummyUsers(): Promise<{ ok: number; failed: number; er
   for (let i = 0; i < dummyPlaylists.length; i++) {
     const d = dummyPlaylists[i];
     const profileId = 1000 + i; // 안정적인 프로필 ID
-    const avatar = `/images/profile/image/default_icons/${(i % 23) + 1}.png`;
+    const avatar = d.posters[0] ?? `/images/profile/image/default_icons/${(i % 23) + 1}.png`;
 
     const profile = {
       id: profileId,

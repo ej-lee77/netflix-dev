@@ -13,16 +13,22 @@ import RisingReviewCard from "./RisingReviewCard";
 import SectionTitle from "../common/SectionTitle";
 import { SimilarUser, useFollowStore } from "@/store/useFollowStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { connectUsers } from "@/data/connectUser";
+import { dummyPlaylists } from "@/data/dummyPlaylist";
 
-const DUMMY_USERS: SimilarUser[] = connectUsers.map((u) => ({
-    userId: String(u.id),
-    nickname: u.nickname,
-    imgUrl: u.profileImage,
-    matchRate: u.matchRate,
+// "나와 취향이 비슷한 유저" = "추천 플레이리스트" 제작자(dummy-*)와 동일 유저로 통일.
+// → 카드의 팔로우 버튼이 곧 그 플레이리스트 주인을 팔로우하게 되고, 팔로잉 목록에도 반영됨.
+const DUMMY_USERS: SimilarUser[] = dummyPlaylists.map((d, i) => ({
+    userId: d.userId,
+    nickname: d.nickname,
+    imgUrl: d.posters[0] ?? "",
+    matchRate: Math.max(78, 96 - i * 2),
     followersCount: 0,
-    tags: u.tags,
-    favoriteMovie: u.favoriteMovie,
+    tags: d.tags,
+    favoriteMovie: {
+        title: d.name,
+        poster: d.posters[0] ?? "",
+        description: d.content,
+    },
 }));
 
 export default function ConnectReviewList() {
