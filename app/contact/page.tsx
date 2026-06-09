@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
 import { showToast } from "@/store/useToastStore";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -184,7 +185,7 @@ export default function ContactPage() {
                     setFaqKeyword("");
                   }}
                 >
-                  <div className="cat-icon">{c.icon}</div>
+                  <div className="cat-icon"><AppIcon name={c.icon as AppIconName} size={22} /></div>
                   <h3>{c.name}</h3>
                   <p>{c.items.length}개</p>
                 </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import AppIcon from "@/components/common/AppIcon";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
@@ -385,7 +386,7 @@ export default function UserDetailPage() {
                   </div>
 
                   <div className="mood-summary-box">
-                    💡 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와{" "}
+                    <AppIcon name="bulb" size={15} /> 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와{" "}
                     <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠를 즐기는 편이에요!
                   </div>
                 </div>
