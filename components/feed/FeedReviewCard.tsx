@@ -1,0 +1,118 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { type FeedView } from "@/store/useFeedStore";
+import { getInitial, getPosterUrl, getRelativeTime } from "@/types/feedData";
+
+interface FeedReviewCardProps {
+  review: FeedView;
+  showOwnerActions?: boolean;
+  onEdit?: (review: FeedView) => void;
+  onDelete?: (feedId: string) => void;
+}
+
+const renderRatingStars = (rating: number) => (
+  <span className="rating-stars" aria-label={`${rating.toFixed(1)}점`}>
+    {[1, 2, 3, 4, 5].map((star) => {
+      const fillPercent = Math.max(0, Math.min(1, rating - (star - 1))) * 100;
+
+      return (
+        <span
+          className="rating-star"
+          key={star}
+          style={{ "--fill": `${fillPercent}%` } as React.CSSProperties}
+          aria-hidden="true"
+        >
+          ★
+        </span>
+      );
+    })}
+  </span>
+);
+
+export default function FeedReviewCard({
+  review,
+  showOwnerActions = false,
+  onEdit,
+  onDelete,
+}: FeedReviewCardProps) {
+  return (
+    <article className="feed-post">
+      <Link
+        href={`/feed/${review.feedId}`}
+        className="feed-card-link"
+        aria-label={`${review.mediaTitle} 피드 상세 보기`}
+      />
+
+      <div className="post-head">
+        <div className="post-avatar">
+          {review.authorImage ? (
+            <img src={review.authorImage} alt="" />
+          ) : (
+            getInitial(review.author)
+          )}
+        </div>
+        <div className="post-meta">
+          <h3>{review.author}</h3>
+          <div className="post-info">
+            <span className="time">{getRelativeTime(review.createdAt)}</span>
+            {!review.isPublic && <span className="private-tag">비공개</span>}
+          </div>
+        </div>
+        <div className="review-tags">
+          {review.isSpoiler && <span className="spoiler-tag">스포일러</span>}
+        </div>
+      </div>
+
+      <div className="post-body review-body">
+        <Link
+          href={`/detail/${review.mediaType}/${review.mediaId}`}
+          className="thumb feed-card-layer"
+        >
+          {review.mediaPoster && (
+            <img src={getPosterUrl(review.mediaPoster)} alt={review.mediaTitle} />
+          )}
+        </Link>
+        <div className="review-info">
+          <div className="feed-detail-link">
+            <h4>{review.mediaTitle}</h4>
+            <p className="meta">{review.mediaMeta}</p>
+            <div className="stars">
+              {renderRatingStars(review.rating)}
+              <em>{review.rating.toFixed(1)} / 5.0</em>
+            </div>
+          </div>
+          <div className="review-text-wrap">
+            <p className="review-text">{review.content}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="post-actions feed-card-layer">
+        <span className={`action ${review.liked ? "liked" : ""}`}>
+          {review.liked ? "♥" : "♡"} {review.likesCount}
+        </span>
+        <span className="action">댓글 {review.comments}</span>
+        {showOwnerActions && (
+          <div className="review-owner-actions">
+            <button
+              type="button"
+              className="action"
+              onClick={() => onEdit?.(review)}
+            >
+              수정
+            </button>
+            <button
+              type="button"
+              className="action delete-review-btn"
+              onClick={() => onDelete?.(review.feedId)}
+            >
+              삭제
+            </button>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
