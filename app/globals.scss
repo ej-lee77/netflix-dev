@@ -369,15 +369,19 @@ main {
 }
 @include respond(mobile) {
   .main-page-wrap section .inner {
-    width: min(1920px, calc(100vw - 56px));
-    margin-left: 56px;
+    width: 100vw;
+    margin-left: 0;
     padding-left: 12px;
     padding-right: 12px;
   }
   .main-page-wrap section .section-title-outer {
-    width: calc(100vw - 56px);
-    margin-left: 56px;
+    width: 100vw;
+    margin-left: 0;
     padding-right: 12px;
+  }
+
+  main.has-nav {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
   }
 }
 

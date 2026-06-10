@@ -12,7 +12,7 @@ import WatchingList from "@/components/main/WatchingList";
 import NetflixOriginal from "@/components/main/NetflixOriginal";
 import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Hero from "@/components/main/Hero";
 import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
@@ -32,6 +32,11 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const SPLIT_BANNER_AFTER = 3; // 일본 애니(2) 다음, 미국 TV(3) 앞
 const THEME_SPLIT = 5;        // 이 인덱스 이후에 한국 시리즈 랭킹 삽입
 const RELEASE_AFTER = 9;      // 이 인덱스 이후에 공개예정 섹션 삽입
+
+const deferWork = (callback: () => void) => {
+  const id = window.setTimeout(callback, 700);
+  return () => window.clearTimeout(id);
+};
 
 const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv"; pageCount?: number; href: string }[] = [
   {
@@ -187,6 +192,7 @@ export default function Home() {
   const [themeLoading, setThemeLoading] = useState(true);
   const [koreanSeries, setKoreanSeries] = useState<RankingItem[]>([]);
   const [koreanMovieRanking, setKoreanMovieRanking] = useState<RankingItem[]>([]);
+  const netflixIdsRef = useRef<Set<number>>(new Set());
 
   // 선호 장르: 메인 상단에 "내가 선호하는 OO" 줄을 일반 테마보다 먼저 노출
   const favoriteGenres = useFavoriteGenres();
@@ -281,14 +287,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const fetchAll = async () => {
-      const [netflixIds, ...allRows] = await Promise.all([
-        getNetflixOriginalIdSet(5),
-        ...THEME_CONFIGS.map((c) => fetchThemeItems(c.apiUrl, c.mediaType, c.pageCount)),
-      ]) as [Set<number>, ...ThemeItem[][]];
+    let ignore = false;
+    let cancelDeferred = () => {};
 
+    const buildRows = (rows: ThemeItem[][], existingRows: ThemeItem[][], netflixIds: Set<number>) => {
       const usedIds = new Set<number>();
-      const deduped = allRows.map((row) => {
+      existingRows.forEach((row) => row?.forEach((item) => usedIds.add(item.id)));
+
+      return rows.map((row) => {
         const filtered = row
           .filter((item) => !usedIds.has(item.id))
           .slice(0, 18)
@@ -299,10 +305,63 @@ export default function Home() {
         filtered.forEach((item) => usedIds.add(item.id));
         return filtered;
       });
-      setThemeRows(deduped);
-      setThemeLoading(false);
     };
-    fetchAll();
+
+    const fetchThemeBatch = async (configs: typeof THEME_CONFIGS, startIndex: number, existingRows: ThemeItem[][]) => {
+      const rows = await Promise.all(
+        configs.map((c) => fetchThemeItems(c.apiUrl, c.mediaType, c.pageCount)),
+      );
+      if (ignore) return [];
+
+      const builtRows = buildRows(rows, existingRows, netflixIdsRef.current);
+      setThemeRows((prev) => {
+        const next = [...prev];
+        builtRows.forEach((row, i) => {
+          next[startIndex + i] = row;
+        });
+        return next;
+      });
+
+      return builtRows;
+    };
+
+    const fetchInitial = async () => {
+      netflixIdsRef.current = await getNetflixOriginalIdSet(5);
+      const initialRows = await fetchThemeBatch(THEME_CONFIGS.slice(0, SPLIT_BANNER_AFTER), 0, []);
+      if (ignore) return;
+      setThemeLoading(false);
+
+      cancelDeferred = deferWork(() => {
+        void (async () => {
+          const middleRows = await fetchThemeBatch(
+            THEME_CONFIGS.slice(SPLIT_BANNER_AFTER, THEME_SPLIT),
+            SPLIT_BANNER_AFTER,
+            initialRows,
+          );
+          if (ignore) return;
+
+          const laterRows = await fetchThemeBatch(
+            THEME_CONFIGS.slice(THEME_SPLIT, RELEASE_AFTER),
+            THEME_SPLIT,
+            [...initialRows, ...middleRows],
+          );
+          if (ignore) return;
+
+          await fetchThemeBatch(
+            THEME_CONFIGS.slice(RELEASE_AFTER),
+            RELEASE_AFTER,
+            [...initialRows, ...middleRows, ...laterRows],
+          );
+        })();
+      });
+    };
+
+    fetchInitial();
+
+    return () => {
+      ignore = true;
+      cancelDeferred();
+    };
   }, []);
 
   return (
