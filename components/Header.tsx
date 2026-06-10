@@ -207,31 +207,33 @@ export default function Header() {
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
-            <li>
-              <button
-                type="button"
-                className="header-search-toggle"
-                onClick={toggleSearch}
-                aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
-                aria-expanded={isSearchOpen}
-              >
-                {isSearchOpen ? (
-                  <span
-                    className="header-search-toggle__close"
-                    aria-hidden="true"
-                  >
-                    <img src="/images/header/header-search-close.svg" alt="." />
-                  </span>
-                ) : (
-                  <Image
-                    src="/images/header/search.svg"
-                    alt=""
-                    width={24}
-                    height={24}
-                  />
-                )}
-              </button>
-            </li>
+            {!isUnsubscribed && (
+              <li>
+                <button
+                  type="button"
+                  className="header-search-toggle"
+                  onClick={toggleSearch}
+                  aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
+                  aria-expanded={isSearchOpen}
+                >
+                  {isSearchOpen ? (
+                    <span
+                      className="header-search-toggle__close"
+                      aria-hidden="true"
+                    >
+                      <img src="/images/header/header-search-close.svg" alt="." />
+                    </span>
+                  ) : (
+                    <Image
+                      src="/images/header/search.svg"
+                      alt=""
+                      width={24}
+                      height={24}
+                    />
+                  )}
+                </button>
+              </li>
+            )}
             {!isUnsubscribed && (
               <li className="gnb-alarm">
                 <Link href="/alarm">
