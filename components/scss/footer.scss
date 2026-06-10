@@ -151,8 +151,20 @@ footer {
           color: #ccc;
         }
 
-        .lang-globe { font-size: 14px; }
-        .lang-arrow { font-size: 10px; }
+        .lang-globe {
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .lang-arrow {
+          display: inline-flex;
+          align-items: center;
+          transition: transform 0.2s ease;
+
+          &.open {
+            transform: rotate(180deg);
+          }
+        }
       }
     }
   }
