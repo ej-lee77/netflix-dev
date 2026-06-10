@@ -17,6 +17,7 @@ import VideoPlayer from "@/components/common/VideoPlayer";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import "./detail.module.scss";
+import { isHidden } from "@/data/hiddenContent";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -220,6 +221,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isMobile = vw <= 600;
   const isTablet = vw <= 1024;
   const hPad = isMobile ? 16 : isTablet ? 24 : 40;
+
+  // 차단된 작품에 직접 접근하면 홈으로 돌려보낸다
+  const blocked = isHidden(mediaId, type);
+  useEffect(() => {
+    if (blocked) router.replace("/");
+  }, [blocked, router]);
   const shouldAutoPlay = searchParams.get("play") === "1";
   const itemKey = `${type}-${mediaId}`;
 

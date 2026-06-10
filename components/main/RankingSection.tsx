@@ -19,6 +19,7 @@ import "./scss/rankingSection.scss";
 import SectionTitle from "../common/SectionTitle";
 import ThemeRow, { type ThemeItem } from "./ThemeRow";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterHidden } from "@/data/hiddenContent";
 import { useMaturityFiltered } from "@/data/maturityFilter";
 
 export interface RankingItem {
@@ -85,8 +86,8 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
       : koreanMovies
           .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
           .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }));
-    // 제외 장르 작품 숨김
-    return filterByExcludedGenres(source, excludedGenres);
+    // 차단 작품 + 제외 장르 작품 숨김
+    return filterHidden(filterByExcludedGenres(source, excludedGenres));
   }, [externalItems, koreanMovies, excludedGenres]);
 
   // 관람등급 필터 후 상위 10개

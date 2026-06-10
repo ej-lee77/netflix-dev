@@ -10,6 +10,7 @@ import { useLangStore } from "@/store/useLangStore";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { ratingCeiling, certToLevel, genreLevel } from "@/data/maturityFilter";
 import { useMovieStore } from "@/store/useMovieStore";
+import { isHidden } from "@/data/hiddenContent";
 import "./scss/hero.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -197,7 +198,11 @@ async function fetchHeroItems() {
   const blockedIds = new Set([297640]);
 
   const validItem = (item: HeroItem) =>
-    !blockedIds.has(item.id) && item.overview && item.backdrop_path && item.poster_path;
+    !blockedIds.has(item.id) &&
+    !isHidden(item.id, item.media_type) &&
+    item.overview &&
+    item.backdrop_path &&
+    item.poster_path;
 
   const movies = (movieData.results ?? [])
     .filter(validItem)
