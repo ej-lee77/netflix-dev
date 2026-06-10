@@ -98,6 +98,13 @@ const countStats = (currentStats: Record<string, number>, ids: string[]) => {
   return newStats;
 };
 
+const COUNTRY_CODE_TO_BADGE_ID: Record<string, string> = {
+  KR: "culture_k_drama",
+  UK: "culture_uk_drama", // 데이터에 따라 UK 혹은 GB로 맞춰주세요
+  JP: "culture_jp_drama",
+  CN: "culture_cn_drama",
+};
+
 // 장르 ID(숫자) -> badgeId 매핑 생성
 export const GENRE_ID_TO_BADGE_ID: Record<string, string> = {};
 
@@ -112,50 +119,89 @@ filters.genre.forEach((g) => {
     GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
   });
 });
-console.log(GENRE_ID_TO_BADGE_ID)
+// console.log(GENRE_ID_TO_BADGE_ID)
 
 export const getNewlyEarnedBadges = (
   currentBadges: BadgeList,
-  genreStats: Record<string, number>
+  genreStats: Record<string, number>,
+  countryStats: Record<string, number> // 추가
 ): BadgeList => {
   const updatedEarnedBadges = [...currentBadges.earnedBadges];
   let newEquipped = currentBadges.equippedBadges;
 
-  // 1. 모든 장르 뱃지에 대해 업데이트 수행
-  BADGE_LIST.forEach((badge) => {
-    if (!badge.id.startsWith("genre_")) return;
-
-    const genreId = Object.keys(GENRE_ID_TO_BADGE_ID).find(
-      (key) => GENRE_ID_TO_BADGE_ID[key] === badge.id
-    );
-    const count = genreId ? (genreStats[genreId] || 0) : 0;
-
-    // 2. 이미 존재하는 뱃지인지 확인
-    const existingBadgeIndex = updatedEarnedBadges.findIndex((b) => b.id === badge.id);
-
+  const processBadge = (badgeId: string, count: number, total: number) => {
+    const existingBadgeIndex = updatedEarnedBadges.findIndex((b) => b.id === badgeId);
     if (existingBadgeIndex !== -1) {
-      // 이미 획득했으면 진행도 업데이트
       updatedEarnedBadges[existingBadgeIndex].progress = count;
-      updatedEarnedBadges[existingBadgeIndex].isComplete = count >= badge.total;
-    } else if (count > 0) {
-      // 새로 진행 중인 뱃지 추가
-      const isComplete = count >= badge.total;
-      updatedEarnedBadges.push({
-        id: badge.id,
-        progress: count,
-        isComplete: isComplete,
-      });
+      updatedEarnedBadges[existingBadgeIndex].isComplete = count >= total;
+    } else if (count >= total) {
+      updatedEarnedBadges.push({ id: badgeId, progress: count, isComplete: true });
+      if (!newEquipped) newEquipped = badgeId;
+    }
+  };
 
-      // 3. 첫 획득(완료) 시 자동 장착
-      if (isComplete && !newEquipped) {
-        newEquipped = badge.id;
-      }
+  const uniqueCountriesCount = Object.keys(countryStats).length;
+    if (uniqueCountriesCount >= 3) { // 예: 3개국 이상 시청 시
+        processBadge("culture_global", uniqueCountriesCount, 3);
+    }
+
+  // 1. 일반 뱃지 처리 (첫 스트리밍)
+  if (!updatedEarnedBadges.some(b => b.id === "first_streaming")) {
+    processBadge("first_streaming", 1, 1);
+  }
+
+  // 2. 장르 & 국가 뱃지 처리
+  BADGE_LIST.forEach((badge) => {
+    // 장르 뱃지 로직
+    if (badge.id.startsWith("genre_")) {
+      const genreId = Object.keys(GENRE_ID_TO_BADGE_ID).find(
+        (key) => GENRE_ID_TO_BADGE_ID[key] === badge.id
+      );
+      if (genreId) processBadge(badge.id, genreStats[genreId] || 0, badge.total);
+    } 
+    // 국가 뱃지 로직
+    else if (badge.id.startsWith("culture_") && badge.id !== "culture_global") {
+      const countryCode = Object.keys(COUNTRY_CODE_TO_BADGE_ID).find(
+        (key) => COUNTRY_CODE_TO_BADGE_ID[key] === badge.id
+      );
+      if (countryCode) processBadge(badge.id, countryStats[countryCode] || 0, badge.total);
     }
   });
 
+  return { earnedBadges: updatedEarnedBadges, equippedBadges: newEquipped };
+};
+
+export const getPlaylistCreatedBadge = (
+  currentBadges: BadgeList, 
+  isShare: boolean
+): BadgeList => {
+  const updatedEarnedBadges = [...currentBadges.earnedBadges];
+  let newEquipped = currentBadges.equippedBadges;
+
+  // 1. 플레이리스트 제작자 뱃지 (공유 여부 상관없음)
+  if (!updatedEarnedBadges.some(b => b.id === "social_playlist_creator")) {
+    updatedEarnedBadges.push({
+      id: "social_playlist_creator",
+      progress: 1,
+      isComplete: true
+    });
+    if (!newEquipped) newEquipped = "social_playlist_creator";
+  }
+
+  // 2. 취향 공유러 뱃지 (공유 시에만)
+  if (isShare && !updatedEarnedBadges.some(b => b.id === "social_taste_sharer")) {
+    updatedEarnedBadges.push({
+      id: "social_taste_sharer",
+      progress: 1,
+      isComplete: true
+    });
+    // 이미 제작자 뱃지가 장착되었다면 유지하고, 아니면 공유러 뱃지로 설정
+    if (!newEquipped) newEquipped = "social_taste_sharer";
+  }
+
   return {
     earnedBadges: updatedEarnedBadges,
-    equippedBadges: newEquipped,
+    equippedBadges: newEquipped
   };
 };
 
@@ -203,7 +249,8 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
 
             const updatedBadgeList = getNewlyEarnedBadges(
                 targetProfile.badges || { earnedBadges: [], equippedBadges: "" }, 
-                newGenreStats
+                newGenreStats,
+                newCountryStats
             );
 
             // 업데이트된 뱃지 리스트 반영
@@ -351,22 +398,51 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
         if (!user?.userId || !currentProfile) return;
 
         try {
-            const playlistDocRef = doc(db, "playlists", user.userId);
+            const userDocRef = doc(db, "users", user.userId);
+            const userDocSnap = await getDoc(userDocRef);
+            if (!userDocSnap.exists()) return;
+
+            const userData = userDocSnap.data();
+            const profiles = userData.profile || [];
+            const profileIndex = profiles.findIndex((p:any) => p.id === currentProfile.id);
+            if (profileIndex === -1) return;
+
+            // 1. 프로필 복사본 생성
+            const updatedProfiles = [...profiles];
+            const targetProfile = { ...updatedProfiles[profileIndex] };
+
+            // 2. 플레이리스트 생성 데이터
             const newPlaylist = {
                 ...data,
                 listId: crypto.randomUUID(),
-                profileId: currentProfile.id, // 데이터 안에 프로필 ID를 박아둡니다.
+                profileId: currentProfile.id,
                 createdAt: new Date().toISOString(),
             };
 
-            // 배열에 직접 추가
-            await setDoc(playlistDocRef, {
-                playlists: arrayUnion(newPlaylist)
-            }, { merge: true });
+            // 3. 뱃지 업데이트 적용
+            const updatedBadgeList = getPlaylistCreatedBadge(
+                targetProfile.badges || { earnedBadges: [], equippedBadges: "" },
+                data.isShare === true
+            );
+            targetProfile.badges = updatedBadgeList;
 
+            // 4. Firebase 업데이트 (프로필 정보 전체 저장)
+            updatedProfiles[profileIndex] = targetProfile;
+            
+            // 플레이리스트를 따로 저장하는 로직 + 프로필 뱃지 업데이트를 동시에 진행
+            await updateDoc(userDocRef, { profile: updatedProfiles });
+
+            // 기존처럼 playlists 컬렉션에도 추가
+            const playlistDocRef = doc(db, "playlists", user.userId);
+            await setDoc(playlistDocRef, { playlists: arrayUnion(newPlaylist) }, { merge: true });
+
+            // 5. 로컬 상태 업데이트
             set((state) => ({ 
                 customPlaylists: [newPlaylist, ...state.customPlaylists] 
             }));
+
+            useAuthStore.getState().onInitAuth();
+
         } catch (error) {
             console.error("생성 실패:", error);
         }

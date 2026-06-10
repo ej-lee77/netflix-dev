@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFollowStore } from "@/store/useFollowStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import "./scss/followFriendsModal.scss";
+import { BADGE_MAP } from "@/data/badge";
 
 interface Props {
   onClose: () => void;
@@ -115,7 +116,10 @@ export default function FollowFriendsModal({ onClose }: Props) {
                       )}
                     </div>
                     <div className="follow-friends-modal__info">
-                      <strong>{user.nickname}</strong>
+                      <div className="name-box">
+                        <strong>{user.nickname}</strong>
+                        {BADGE_MAP[user.badge] && (<span>{BADGE_MAP[user.badge]}</span>)}
+                      </div>
                       {user.matchRate > 0 && (
                         <span className="follow-friends-modal__match">
                           취향 일치 {user.matchRate}%

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import type { PersonCredit } from "@/types/movie";
+import AppIcon from "../common/AppIcon";
 
 interface PersonDetailProps {
   personId: number;
@@ -160,7 +161,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
                       color: "#444",
                     }}
                   >
-                    👤
+                    <AppIcon name="faq-account" size={30} />
                   </div>
                 )}
               </div>
@@ -418,7 +419,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
                               color: "#333",
                             }}
                           >
-                            🎬
+                            <AppIcon name="clapper" size={16} />
                           </div>
                         )}
 
