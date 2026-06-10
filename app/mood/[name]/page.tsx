@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, notFound } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import PosterCard from "@/components/common/PosterCard";
+import PosterGridSkeleton from "@/components/common/PosterGridSkeleton";
 import CustomSelect from "@/components/common/CustomSelect";
 import { filterHidden } from "@/data/hiddenContent";
 import {
@@ -280,7 +281,7 @@ export default function MoodPage() {
           </div>
 
           {loading ? (
-            <div className="state-text">작품을 불러오는 중...</div>
+            <PosterGridSkeleton />
           ) : sortedOtherItems.length > 0 ? (
             <div className="poster-grid">
               {sortedOtherItems.map((item) => (

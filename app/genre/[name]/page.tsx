@@ -6,6 +6,7 @@ import { useParams, notFound } from "next/navigation";
 import { customMenus } from "@/data/mainMenu";
 import "../../scss/category.scss";
 import PosterCard from "@/components/common/PosterCard";
+import PosterGridSkeleton from "@/components/common/PosterGridSkeleton";
 import CustomSelect from "@/components/common/CustomSelect";
 import { filterHidden } from "@/data/hiddenContent";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
@@ -188,7 +189,7 @@ export default function GenrePage() {
           </div>
 
           {loading ? (
-            <div className="state-text">작품을 불러오는 중...</div>
+            <PosterGridSkeleton />
           ) : otherItems.length > 0 ? (
             <div className="poster-grid">
               {otherItems.map((item) => (
