@@ -110,7 +110,7 @@ export default function RecommendList() {
       <div className="recommend-bg-overlay" />
 
       <div className="section-title-outer">
-        <SectionTitle title='넷플릭스 추천작' href="/category" />
+        <SectionTitle title='넷플릭스 추천작' href="/category" showMore={false} />
       </div>
       <Swiper
         modules={[Navigation, Autoplay]}

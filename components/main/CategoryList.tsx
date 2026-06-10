@@ -141,7 +141,7 @@ export default function CategoryList({ category }: MediaListProps) {
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" />
+        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" showMore={false} />
       </div>
 
       <div className="swiper-outer">
