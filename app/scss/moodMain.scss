@@ -33,6 +33,9 @@
     .inner {
       position: relative;
       z-index: 1;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .hero-eyebrow {
@@ -49,6 +52,8 @@
       letter-spacing: 0;
       line-height: 1.2;
       margin-bottom: 16px;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
 
       .accent {
         background: linear-gradient(135deg, #a78bfa, #f472b6);
@@ -63,6 +68,8 @@
       color: g.$g-color;
       max-width: 600px;
       line-height: 1.6;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
     }
   }
 
@@ -224,7 +231,7 @@
       margin-bottom: 36px;
 
       h1 {
-        font-size: 40px;
+        font-size: 36px;
       }
     }
 
@@ -242,11 +249,18 @@
     }
 
     .mood-hero {
-      padding: 48px 0 36px;
+      padding: 40px 0 32px;
       margin-bottom: 28px;
 
+      .hero-eyebrow {
+        margin-bottom: 12px;
+        font-size: 11px;
+      }
+
       h1 {
-        font-size: g.$text-32;
+        max-width: 10em;
+        font-size: 28px;
+        line-height: 1.25;
 
         br {
           display: none;
@@ -254,7 +268,9 @@
       }
 
       p {
+        max-width: 22em;
         font-size: g.$text-14;
+        line-height: 1.55;
       }
     }
 
@@ -300,14 +316,20 @@
     }
 
     .mood-hero {
-      padding: 40px 0 30px;
+      padding: 34px 0 28px;
 
       .hero-eyebrow {
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
 
       h1 {
-        font-size: g.$text-32;
+        max-width: 9.5em;
+        font-size: 24px;
+      }
+
+      p {
+        max-width: 20em;
+        font-size: g.$text-13;
       }
     }
 
