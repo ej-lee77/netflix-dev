@@ -9,18 +9,35 @@ const ConnectAIPanel = dynamic(() => import("./ConnectAIPanel"), { ssr: false })
 
 export default function ConnectAIButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 280);
+  };
+
+  const handleToggle = () => {
+    if (isOpen) {
+      handleClose();
+    } else {
+      setIsOpen(true);
+    }
+  };
 
   return (
     <>
       <button
         className={`connect-ai-btn${isOpen ? " connect-ai-btn--open" : ""}`}
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={handleToggle}
         aria-label="Netflix AI 열기"
       >
-        <Image src="/images/icon/NetflixAi.png" alt="Netflix AI" width={44} height={44} />
+        <Image src="/images/icon/NetflixAi2.png" alt="Netflix AI" width={44} height={44} />
       </button>
 
-      {isOpen && <ConnectAIPanel onClose={() => setIsOpen(false)} />}
+      {isOpen && <ConnectAIPanel onClose={handleClose} isClosing={isClosing} />}
     </>
   );
 }

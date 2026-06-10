@@ -179,6 +179,19 @@ export default function CategoryList({ category }: MediaListProps) {
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
                     />
+                    {category === "netflix" && (
+                      <>
+                        <div className="netflix-corner-logo">
+                          <div className="logo-box">
+                            <img src="/images/logo-icon.svg" alt="Netflix" />
+                          </div>
+                        </div>
+                        <div className="netflix-original-badge">
+                          <img src="/images/logo-icon.svg" alt="Netflix" className="badge-logo" />
+                          <span className="badge-text">ORIGINAL</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* 호버 팝업 카드 */}

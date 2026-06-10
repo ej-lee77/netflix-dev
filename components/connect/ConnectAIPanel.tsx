@@ -10,7 +10,7 @@ type Message = {
   content: string;
 };
 
-type ResolvedTitle = { id: number; type: string } | null;
+type ResolvedTitle = { id: number; type: string; poster: string | null } | null;
 
 const SUGGESTIONS = [
   "오늘 뭐 볼까?",
@@ -25,9 +25,10 @@ const TITLE_REGEX = /\[\[([^\]]+)\]\]/g;
 
 type Props = {
   onClose: () => void;
+  isClosing?: boolean;
 };
 
-export default function ConnectAIPanel({ onClose }: Props) {
+export default function ConnectAIPanel({ onClose, isClosing = false }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -66,7 +67,7 @@ export default function ConnectAIPanel({ onClose }: Props) {
           const found = data.results?.find(
             (r: { media_type: string }) => r.media_type === "movie" || r.media_type === "tv"
           );
-          return [title, found ? { id: found.id, type: found.media_type } : null];
+          return [title, found ? { id: found.id, type: found.media_type, poster: found.poster_path ?? null } : null];
         } catch {
           return [title, null];
         }
@@ -97,6 +98,28 @@ export default function ConnectAIPanel({ onClose }: Props) {
       }
       return <span key={i}>{part}</span>;
     });
+  };
+
+  const getPosterCards = (content: string) => {
+    const titles = [...new Set([...content.matchAll(TITLE_REGEX)].map((m) => m[1]))];
+    const cards = titles.map((title) => ({ title, info: resolvedTitles[title] })).filter(({ info }) => info?.poster);
+    if (!cards.length) return null;
+    return (
+      <div className="connect-ai-posters">
+        {cards.map(({ title, info }) => (
+          <Link key={title} href={`/detail/${info!.type}/${info!.id}`} className="connect-ai-poster-card">
+            <Image
+              src={`https://image.tmdb.org/t/p/w185${info!.poster}`}
+              alt={title}
+              width={80}
+              height={120}
+              className="connect-ai-poster-img"
+            />
+            <span className="connect-ai-poster-title">{title}</span>
+          </Link>
+        ))}
+      </div>
+    );
   };
 
   const sendMessage = async (content: string) => {
@@ -162,12 +185,12 @@ export default function ConnectAIPanel({ onClose }: Props) {
 
   return (
     <>
-      <div className="connect-ai-overlay" onClick={onClose} />
+      <div className={`connect-ai-overlay${isClosing ? " connect-ai-overlay--closing" : ""}`} onClick={onClose} />
 
-      <aside className="connect-ai-panel">
+      <aside className={`connect-ai-panel${isClosing ? " connect-ai-panel--closing" : ""}`}>
         <div className="connect-ai-panel__header">
           <div className="connect-ai-panel__header-icon">
-            <Image src="/images/icon/NetflixAi.png" alt="" width={20} height={20} />
+            <Image src="/images/icon/NetflixAi2.png" alt="" width={20} height={20} />
           </div>
           <div className="connect-ai-panel__header-text">
             <span className="connect-ai-panel__header-title">Netflix AI</span>
@@ -206,11 +229,14 @@ export default function ConnectAIPanel({ onClose }: Props) {
                       <span /><span /><span />
                     </div>
                   ) : (
-                    <div className="connect-ai-message__bubble">
-                      {msg.role === "assistant"
-                        ? renderContent(msg.content, isStreaming)
-                        : msg.content}
-                    </div>
+                    <>
+                      <div className="connect-ai-message__bubble">
+                        {msg.role === "assistant"
+                          ? renderContent(msg.content, isStreaming)
+                          : msg.content}
+                      </div>
+                      {msg.role === "assistant" && !isStreaming && getPosterCards(msg.content)}
+                    </>
                   )}
                 </div>
               );

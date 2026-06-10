@@ -37,6 +37,7 @@ export interface ThemeItem {
   release_date?: string;
   genre_ids: number[];
   mediaType: "movie" | "tv";
+  isNetflixOriginal?: boolean;
 }
 
 interface ThemeRowProps {
@@ -134,6 +135,19 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                       fill
                       sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
                     />
+                    {item.isNetflixOriginal && (
+                      <>
+                        <div className="netflix-corner-logo">
+                          <div className="logo-box">
+                            <img src="/images/logo-icon.svg" alt="Netflix" />
+                          </div>
+                        </div>
+                        <div className="netflix-original-badge">
+                          <img src="/images/logo-icon.svg" alt="Netflix" className="badge-logo" />
+                          <span className="badge-text">ORIGINAL</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {hover === item.id && (
