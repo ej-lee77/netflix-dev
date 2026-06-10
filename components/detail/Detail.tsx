@@ -2171,13 +2171,22 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         }}
       >
         {relatedItems.map((item) => {
-          const isHovered = hoveredRelatedId === item.id;
+          // 모바일/태블릿에서는 정보 오버레이 없이 탭하면 바로 상세로 이동
+          const isHovered = !isMobile && !isTablet && hoveredRelatedId === item.id;
           return (
             <a
               key={`${item.media_type}-${item.id}`}
               href={`/detail/${item.media_type}/${item.id}`}
-              onMouseEnter={() => setHoveredRelatedId(item.id)}
-              onMouseLeave={() => setHoveredRelatedId(null)}
+              onMouseEnter={
+                isMobile || isTablet
+                  ? undefined
+                  : () => setHoveredRelatedId(item.id)
+              }
+              onMouseLeave={
+                isMobile || isTablet
+                  ? undefined
+                  : () => setHoveredRelatedId(null)
+              }
               style={{
                 position: "relative",
                 display: "block",
