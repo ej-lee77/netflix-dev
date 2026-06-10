@@ -34,7 +34,7 @@ export default function ConnectAIButton() {
         onClick={handleToggle}
         aria-label="Netflix AI 열기"
       >
-        <Image src="/images/icon/NetflixAi.png" alt="Netflix AI" width={44} height={44} quality={70} />
+        <Image src="/images/icon/NetflixAi2.png" alt="Netflix AI" width={44} height={44} quality={70} />
       </button>
 
       {isOpen && <ConnectAIPanel onClose={handleClose} isClosing={isClosing} />}

@@ -18,13 +18,13 @@ export default function StepPlanComplete({ plan, onGoSettings }: Props) {
   const [payInfo, setPayInfo] = useState<PayInfo | null>(null);
 
   useEffect(() => {
-    const uid = user?.uid ?? auth.currentUser?.uid;
+    const uid = user?.userId ?? auth.currentUser?.uid;
     if (!uid) return;
     getDoc(doc(db, "users", uid)).then((snap) => {
       if (!snap.exists()) return;
       setPayInfo(snap.data().payment ?? null);
     });
-  }, [user?.uid]);
+  }, [user?.userId]);
 
   const payLabel = (() => {
     if (!payInfo?.pay) return "-";

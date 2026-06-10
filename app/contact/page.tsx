@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { Suspense, useState, useEffect, useMemo } from "react";
 import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
 import { showToast } from "@/store/useToastStore";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
@@ -30,7 +30,7 @@ const STATUS_MAP: Record<ContactStatus, { label: string; className: string }> = 
   pending: { label: "답변 대기", className: "pending" },
 };
 
-export default function ContactPage() {
+function ContactPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -371,5 +371,13 @@ export default function ContactPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={<div className="contact-page" />}>
+      <ContactPageContent />
+    </Suspense>
   );
 }
