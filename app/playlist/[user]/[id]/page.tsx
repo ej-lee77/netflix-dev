@@ -147,8 +147,7 @@ export default function PlaylistPage() {
         {currentPlaylist.content && <p className="pl-desc">{currentPlaylist.content}</p>}
 
         <div className="pl-stat-line">
-          좋아요 {likeCount} <span className="dot">·</span> 댓글{" "}
-          {(currentPlaylist as any).commentsCount ?? 0} <span className="dot">·</span>{" "}
+          좋아요 {likeCount} <span className="dot">·</span>{" "}
           {updatedLabel(currentPlaylist.createdAt)}
         </div>
 

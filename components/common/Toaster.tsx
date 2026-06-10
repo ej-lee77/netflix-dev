@@ -3,9 +3,16 @@
 import { createPortal } from "react-dom";
 import { useToastStore } from "@/store/useToastStore";
 import "./toaster.scss";
+import { useIsMounted } from '@/hooks/useIsMounted';
 
 export default function Toaster() {
+  const isMounted = useIsMounted();
+
   const toasts = useToastStore((s) => s.toasts);
+
+  // 아직 마운트되지 않았다면 (서버이거나 클라이언트 초기화 전)
+  // 에러를 유발하는 UI를 렌더링하지 않거나, 빈 상태를 반환합니다.
+  if (!isMounted) return null;
 
   if (typeof document === "undefined") return null;
 

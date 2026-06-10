@@ -49,6 +49,7 @@
   gap: 48px;
   z-index: 1;
   width: 100%;
+  justify-content: center;
 
   @media (max-width: 768px) {
     flex-direction: column;

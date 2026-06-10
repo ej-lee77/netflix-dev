@@ -1077,7 +1077,7 @@ function ActivityContent() {
         >
           -
         </button>
-        {selectedKeys.length > 0 && (
+        {selectedKeys.length > 0 ? (
           hasNewItems ? (
             <button type="button" className="playlist-add-btn" 
             onClick={() => {
@@ -1088,7 +1088,7 @@ function ActivityContent() {
           ) : (
             <span className="playlist-already-added">이미 추가됨</span>
           )
-        )}
+        ) : (null)}
         <Link href={`/playlist/${user?.userId}/${playlist.listId}`} className="mini-poster">
           <div className="playlist-mosaic">
             {previewItems.map((item) => (

@@ -26,6 +26,7 @@ import {
   isUpcomingNotificationSet,
   removeUpcomingAlarm,
 } from "@/lib/upcomingNotifications";
+import AppIcon from "../common/AppIcon";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -2421,7 +2422,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 color: "#444",
               }}
             >
-              👤
+              <AppIcon name="faq-account" size={20} />
             </div>
           )}
         </div>

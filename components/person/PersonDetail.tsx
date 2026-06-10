@@ -161,7 +161,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
                       color: "#444",
                     }}
                   >
-                    <AppIcon name="faq-account" size={16} />
+                    <AppIcon name="faq-account" size={30} />
                   </div>
                 )}
               </div>
