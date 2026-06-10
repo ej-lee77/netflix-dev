@@ -66,6 +66,9 @@ export interface FeedView extends FeedReview {
   commentsList: FeedCommentView[];
 }
 
+type StoredFeedReview = FeedReview & {
+  commentsList?: FeedComment[];
+};
 type FirestoreRecord = Record<string, unknown>;
 type UserProfileRecord = {
   id?: number;
@@ -490,17 +493,22 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
       // 2. 문서 내의 feeds 배열 데이터 추출
       const data = userFeedsDoc.data();
-      const allMyFeeds = data.feeds || [];
+      const allMyFeeds = (
+        Array.isArray(data.feeds) ? data.feeds : []
+      ) as StoredFeedReview[];
 
       // 3. profileId가 현재 프로필 ID와 일치하는 피드만 필터링
       const filteredFeeds = allMyFeeds.filter(
-        (feed: any) => feed.profileId === currentProfile.id
+        (feed) => feed.profileId === currentProfile.id
       );
 
       // 4. 필터링된 데이터를 FeedView 형식으로 변환 (정규화)
-      const myReviews = filteredFeeds.map((feedData: any) => {
+      const myReviews = await Promise.all(filteredFeeds.map((feedData) => {
         
-        const normalized = normalizeFeed(feedData.feedId, feedData);
+        const normalized = normalizeFeed(
+          feedData.feedId || "",
+          feedData as unknown as FirestoreRecord,
+        );
         
         return buildFeedView(
           normalized, 
@@ -508,10 +516,10 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           userId, 
           followingIds // 본인 피드이므로 팔로잉 목록은 필요 없음
         );
-      });
+      }));
       
       // 5. 생성 시간 기준 정렬 및 상태 저장
-      const sortedReviews = myReviews.sort((a:any, b:any) => 
+      const sortedReviews = myReviews.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       console.log(sortedReviews)
@@ -577,12 +585,12 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
   onUpdateFeed: async (review) => {
     if (!review.feedId) return;
-    const { userId, currentProfile } = getAuthContext();
+    const { userId } = getAuthContext();
     if (!userId) return;
 
     const updatedAt = new Date().toISOString();
     const feedDocRef = doc(db, FEEDS_COLLECTION, review.feedId);
-    const authorUserFeedsRef = doc(db, "userFeeds", userId);
+    const authorUserFeedsRef = doc(db, "userFeeds", review.userId || userId);
     
     const updatedFields = {
       videoId: review.videoId,
@@ -663,6 +671,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const { userId, currentProfile } = getAuthContext();
     if (!userId || !currentProfile) return;
 
+    const targetReview = get().feeds.find((review) => review.feedId === feedId);
+    if (!targetReview) return;
+
     const newComment: FeedComment = {
       ...comment,
       commentId: comment.commentId || Date.now().toString(),
@@ -676,7 +687,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     };
 
     const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
-    const authorUserFeedsRef = doc(db, "userFeeds", userId);
+    const authorUserFeedsRef = doc(db, "userFeeds", targetReview.userId);
 
     await runTransaction(db, async (transaction) => {
       // [수정] 읽기 작업 우선 수행
@@ -697,10 +708,14 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       }
     });
 
+    const newCommentView = await buildCommentView(newComment, userId, currentProfile.id);
+
     set((state) => ({
-      feeds: state.feeds.map((r) => 
-        r.feedId === feedId ? { ...r, commentsList: [...r.commentsList, newComment] } : r
-      )
+      feeds: state.feeds.map((r) => {
+        if (r.feedId !== feedId) return r;
+        const commentsList = [...r.commentsList, newCommentView];
+        return { ...r, commentsList, comments: commentsList.length };
+      }),
     }));
   },
 
@@ -757,10 +772,39 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
   onUpdateComment: async (feedId, commentId, content) => {
     const updatedAt = new Date().toISOString();
+    const targetReview = get().feeds.find((review) => review.feedId === feedId);
+    if (!targetReview) return;
 
-    await updateDoc(doc(db, FEEDS_COLLECTION, feedId, COMMENTS_COLLECTION, commentId), {
-      content,
-      updatedAt,
+    const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
+    const authorUserFeedsRef = doc(db, "userFeeds", targetReview.userId);
+
+    await runTransaction(db, async (transaction) => {
+      const feedDoc = await transaction.get(feedDocRef);
+      const authorDoc = await transaction.get(authorUserFeedsRef);
+      if (!feedDoc.exists()) throw new Error("Feed not found");
+
+      const updatedComments = (feedDoc.data()?.commentsList || []).map(
+        (comment: FeedComment) =>
+          comment.commentId === commentId
+            ? { ...comment, content, updatedAt }
+            : comment,
+      );
+      transaction.update(feedDocRef, { commentsList: updatedComments });
+
+      if (authorDoc.exists()) {
+        const feeds = [...(authorDoc.data().feeds || [])];
+        const feedIndex = feeds.findIndex((feed) => feed.feedId === feedId);
+        if (feedIndex !== -1) {
+          feeds[feedIndex].commentsList = (
+            feeds[feedIndex].commentsList || []
+          ).map((comment: FeedComment) =>
+            comment.commentId === commentId
+              ? { ...comment, content, updatedAt }
+              : comment,
+          );
+          transaction.update(authorUserFeedsRef, { feeds });
+        }
+      }
     });
 
     set((state) => ({
@@ -780,22 +824,23 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   onDeleteComment: async (feedId: string, commentId: string) => {
-    const { userId } = getAuthContext();
-    if (!userId) return;
+    const targetReview = get().feeds.find((review) => review.feedId === feedId);
+    if (!targetReview) return;
 
     const feedDocRef = doc(db, FEEDS_COLLECTION, feedId);
-    const authorUserFeedsRef = doc(db, "userFeeds", userId);
+    const authorUserFeedsRef = doc(db, "userFeeds", targetReview.userId);
 
     await runTransaction(db, async (transaction) => {
       // 1. 피드 문서에서 삭제
       const feedDoc = await transaction.get(feedDocRef);
+      const authorDoc = await transaction.get(authorUserFeedsRef);
+      if (!feedDoc.exists()) throw new Error("Feed not found");
       const updatedComments = (feedDoc.data()?.commentsList || []).filter(
         (c: FeedComment) => c.commentId !== commentId
       );
       transaction.update(feedDocRef, { commentsList: updatedComments });
 
       // 2. 작성자 개인 피드 문서에서 삭제
-      const authorDoc = await transaction.get(authorUserFeedsRef);
       if (authorDoc.exists()) {
         const feeds = [...(authorDoc.data().feeds || [])];
         const fIndex = feeds.findIndex((f) => f.feedId === feedId);
@@ -812,7 +857,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       feeds: state.feeds.map((r) => {
         if (r.feedId !== feedId) return r;
         const filtered = r.commentsList.filter((c) => c.commentId !== commentId);
-        return { ...r, commentsList: filtered };
+        return { ...r, commentsList: filtered, comments: filtered.length };
       }),
     }));
   },
@@ -829,10 +874,10 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (!feedDoc.exists()) return;
 
       const data = feedDoc.data();
-      const comments = data.commentsList || [];
+      const comments = (data.commentsList || []) as FeedComment[];
       
       // 해당 댓글 찾기
-      const targetIndex = comments.findIndex((c: any) => c.commentId === commentId);
+      const targetIndex = comments.findIndex((c) => c.commentId === commentId);
       if (targetIndex === -1) return;
 
       const targetComment = comments[targetIndex];
