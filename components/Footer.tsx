@@ -112,7 +112,7 @@ export default function Footer() {
               onClick={() => setLangOpen((o) => !o)}
               aria-expanded={langOpen}
             >
-              <span className="lang-globe">🌐</span>
+              <Image src="/images/icon/globe.svg" alt="globe" width={16} height={16} className="lang-globe" />
               <span>{LANG_LABELS[lang]}</span>
               <span className="lang-arrow">{langOpen ? "▲" : "▼"}</span>
             </button>
