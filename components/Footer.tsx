@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useLangStore, LANG_LABELS, labelToLang } from '@/store/useLangStore'
 import { useT, type TKey } from '@/lib/i18n'
+import AppIcon from '@/components/common/AppIcon'
 import "./scss/footer.scss"
 
 // 링크는 번역 키로 관리
@@ -15,6 +16,15 @@ const LINK_COLS: { titleKey: TKey; links: TKey[] }[] = [
   { titleKey: "footer.service", links: ["footer.giftcard", "footer.terms", "footer.company"] },
   { titleKey: "footer.media", links: ["footer.mediaCenter", "footer.privacy", "footer.contact"] },
 ];
+
+// 각 푸터 링크의 목적지. 전용 페이지가 있는 항목만 매핑하고,
+// 나머지는 모두 FAQ(/faq)로 연결한다. (footer.contact 는 로그인 여부에 따라 별도 처리)
+const FOOTER_LINK_HREF: Partial<Record<TKey, string>> = {
+  "footer.center": "/faq",       // 고객 센터 → FAQ
+  "footer.jobs": "/faq",         // 입사 정보 → FAQ
+  "footer.giftcard": "/plan",    // 기프트카드 → 플랜
+};
+const FOOTER_LINK_FALLBACK = "/faq"; // 전용 페이지가 없는 나머지 항목
 
 const BUSINESS_INFO = [
   "넷플릭스서비스코리아 유한회사  통신판매업신고번호: 제2018-서울종로-0426호  전화번호: 00-308-321-0161 (수신자 부담)  대표: 레지널드 숀 톰프슨",
@@ -70,7 +80,12 @@ export default function Footer() {
               {key === "footer.contact" ? (
                 <Link href={contactHref} className="footer-link">{t(key)}</Link>
               ) : (
-                <a href="#" className="footer-link">{t(key)}</a>
+                <Link
+                  href={FOOTER_LINK_HREF[key] ?? FOOTER_LINK_FALLBACK}
+                  className="footer-link"
+                >
+                  {t(key)}
+                </Link>
               )}
             </li>
           ))}
@@ -112,9 +127,13 @@ export default function Footer() {
               onClick={() => setLangOpen((o) => !o)}
               aria-expanded={langOpen}
             >
-              <span className="lang-globe">🌐</span>
+              <span className="lang-globe">
+                <AppIcon name="globe" size={16} color="currentColor" />
+              </span>
               <span>{LANG_LABELS[lang]}</span>
-              <span className="lang-arrow">{langOpen ? "▲" : "▼"}</span>
+              <span className={`lang-arrow${langOpen ? " open" : ""}`}>
+                <AppIcon name="chevron" size={14} color="currentColor" />
+              </span>
             </button>
           </div>
         </div>

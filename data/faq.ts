@@ -10,7 +10,7 @@ import { FaqCategory, FaqItem } from "@/types/faq";
 export const FAQ_CATEGORIES: FaqCategory[] = [
   {
     id: "account",
-    icon: "👤",
+    icon: "faq-account",
     name: "계정 / 회원",
     items: [
       {
@@ -37,7 +37,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
   },
   {
     id: "payment",
-    icon: "💳",
+    icon: "faq-payment",
     name: "결제 / 환불",
     items: [
       {
@@ -56,7 +56,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
   },
   {
     id: "plan",
-    icon: "📦",
+    icon: "faq-plan",
     name: "구독 / 플랜",
     items: [
       {
@@ -79,7 +79,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
   },
   {
     id: "watch",
-    icon: "📺",
+    icon: "faq-watch",
     name: "시청 / 재생",
     items: [
       {
@@ -94,7 +94,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
   },
   {
     id: "device",
-    icon: "📱",
+    icon: "faq-device",
     name: "기기 / 앱",
     items: [
       {
@@ -109,7 +109,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
   },
   {
     id: "connect",
-    icon: "🔗",
+    icon: "faq-link",
     name: "커넥트 모드",
     items: [
       {
