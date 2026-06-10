@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 // 사이트 톤 듀오톤 라인 아이콘 세트 (윈도우 기본 이모지 대체).
 // 색은 단일 `color` 값으로 제어(라인 stroke + 은은한 면 fill 모두 currentColor).
-export type AppIconName = "like" | "comment" | "share" | "film" | "clapper" | "lock" | "unlock" | "gear" | "bulb" | "eye" | "masks" | "popcorn" | "target" | "globe" | "bell" | "clip" | "mood-chill" | "mood-exciting" | "mood-emotional" | "mood-scary" | "mood-funny" | "mood-thoughtful" | "mood-romantic" | "mood-dark" | "sparkle" | "faq-account" | "faq-payment" | "faq-plan" | "faq-watch" | "faq-device" | "faq-link";
+export type AppIconName = "like" | "comment" | "share" | "film" | "clapper" | "lock" | "unlock" | "gear" | "bulb" | "eye" | "masks" | "popcorn" | "target" | "globe" | "bell" | "clip" | "mood-chill" | "mood-exciting" | "mood-emotional" | "mood-scary" | "mood-funny" | "mood-thoughtful" | "mood-romantic" | "mood-dark" | "sparkle" | "faq-account" | "faq-payment" | "faq-plan" | "faq-watch" | "faq-device" | "faq-link" | "chevron";
 
 const COLORS: Record<AppIconName, string> = {
   "like": "#e50914",
@@ -38,6 +38,7 @@ const COLORS: Record<AppIconName, string> = {
   "faq-watch": "#e50914",
   "faq-device": "#22c4b8",
   "faq-link": "#a78bfa",
+  "chevron": "#9aa0a6",
 };
 
 const PATHS: Record<AppIconName, ReactNode> = {
@@ -72,6 +73,7 @@ const PATHS: Record<AppIconName, ReactNode> = {
   "faq-watch": (<><rect x="3" y="7" width="18" height="13" rx="2" fill="currentColor" fillOpacity="0.14"/><path d="m8 3 4 4 4-4"/></>),
   "faq-device": (<><rect x="6" y="3" width="12" height="18" rx="2" fill="currentColor" fillOpacity="0.14"/><path d="M11 18h2"/></>),
   "faq-link": (<><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></>),
+  "chevron": (<><path d="m6 9 6 6 6-6"/></>),
 };
 
 interface AppIconProps {
