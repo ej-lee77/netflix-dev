@@ -45,7 +45,7 @@ export default function CategoryList({ category }: MediaListProps) {
     const left = swiper.activeIndex;
     setLeftEdgeIndex(left);
     const spv = swiper.params.slidesPerView;
-    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    const numVisible = typeof spv === "number" ? Math.ceil(spv) : 6;
     setRightEdgeIndex(left + numVisible);
   };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
