@@ -49,7 +49,7 @@ export default function Header() {
     mql.addEventListener?.("change", update);
     return () => mql.removeEventListener?.("change", update);
   }, []);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const modeMenuRef = useRef<HTMLUListElement>(null);
