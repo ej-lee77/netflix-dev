@@ -55,6 +55,20 @@ type TmdbListItem = {
   genre_ids?: number[];
 };
 
+const sortMediaItems = (items: MediaItem[], sort: SortType) => {
+  if (sort === "popularity.desc") return items;
+
+  return [...items].sort((a, b) => {
+    if (sort === "vote_average.desc") {
+      return b.vote_average - a.vote_average;
+    }
+
+    const aDate = a.release_date || a.first_air_date || "";
+    const bDate = b.release_date || b.first_air_date || "";
+    return bDate.localeCompare(aDate);
+  });
+};
+
 type SelectedFilterOption = FilterOption & {
   group: FilterTab;
 };
@@ -295,7 +309,6 @@ export default function CategoryPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextPage, setNextPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalResults, setTotalResults] = useState(0);
 
   const mediaType: "movie" | "tv" = mainTab === "tv" ? "tv" : "movie";
   const currentOptions = filterTab === "genreMood" ? [] : filters[filterTab];
@@ -371,11 +384,11 @@ export default function CategoryPage() {
       api_key: TMDB_KEY ?? "",
       language: "ko-KR",
       page: String(page),
-      sort_by: sort,
       include_adult: "false",
       // 넷플릭스 제공 콘텐츠만 노출
       with_watch_providers: "8",
       watch_region: "KR",
+      sort_by: "popularity.desc",
     });
 
     if (mainTab === "animation") {
@@ -632,7 +645,6 @@ export default function CategoryPage() {
 
       setItems(Array.from(merged.values()));
       setTotalPages(response.totalPages);
-      setTotalResults(response.totalResults);
       setNextPage(response.nextPage);
     } catch (error) {
       if (!signal.aborted && reset) setItems([]);
@@ -649,17 +661,20 @@ export default function CategoryPage() {
     setItems([]);
     setNextPage(1);
     setTotalPages(1);
-    setTotalResults(0);
 
     fetchCategoryBatch(1, controller.signal, true);
     return () => controller.abort();
-  }, [mainTab, mediaType, selectedOptions, sort, excludedGenres, source]);
+  }, [mainTab, mediaType, selectedOptions, excludedGenres, source]);
 
   const handleLoadMore = () => {
     const controller = new AbortController();
     fetchCategoryBatch(nextPage, controller.signal);
   };
   const visibleItems = resultLimit ? items.slice(0, resultLimit) : items;
+  const sortedVisibleItems = useMemo(
+    () => sortMediaItems(visibleItems, sort),
+    [sort, visibleItems],
+  );
 
   return (
     <div className="category-catalog-page">
@@ -775,7 +790,7 @@ export default function CategoryPage() {
             <div className="section-head result-head">
               <h2>전체 작품</h2>
               <div className="result-tools">
-                <span>{totalResults.toLocaleString()}편</span>
+                <span>{sortedVisibleItems.length.toLocaleString()}편</span>
                 <div style={{ width: 140 }}>
                   <CustomSelect
                     options={[
@@ -792,10 +807,10 @@ export default function CategoryPage() {
 
             {loading ? (
               <div className="state-text">작품을 불러오는 중...</div>
-            ) : visibleItems.length > 0 ? (
+            ) : sortedVisibleItems.length > 0 ? (
               <>
                 <div className="poster-grid">
-                  {visibleItems.map((item) => (
+                  {sortedVisibleItems.map((item) => (
                     <PosterCard
                       key={item.id}
                       id={item.id}
