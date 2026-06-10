@@ -45,7 +45,7 @@ export default function CategoryList({ category }: MediaListProps) {
     const left = swiper.activeIndex;
     setLeftEdgeIndex(left);
     const spv = swiper.params.slidesPerView;
-    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    const numVisible = typeof spv === "number" ? Math.ceil(spv) : 6;
     setRightEdgeIndex(left + numVisible);
   };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
@@ -144,7 +144,7 @@ export default function CategoryList({ category }: MediaListProps) {
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" />
+        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" showMore={false} />
       </div>
 
       <div className="swiper-outer">

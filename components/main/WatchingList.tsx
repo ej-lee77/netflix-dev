@@ -27,7 +27,7 @@ export default function WatchingList() {
     return (
         <section className="watching-section">
             <div className="section-title-outer">
-                <SectionTitle title="시청중" href="/mypage" />
+                <SectionTitle title="시청중" href="/mypage/playlist" />
             </div>
 
             <div className="watching-swiper-wrap">
