@@ -43,6 +43,16 @@ const getCommentContent = (content: unknown) => {
   return "";
 };
 
+const getUserProfileHref = (userId?: string, profileId?: number) => {
+  if (!userId) return "";
+
+  const params = new URLSearchParams();
+  if (profileId != null) params.set("profileId", String(profileId));
+
+  const query = params.toString();
+  return `/users/${userId}${query ? `?${query}` : ""}`;
+};
+
 export default function FeedDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -184,13 +194,17 @@ export default function FeedDetailPage() {
 
         <article className="feed-post feed-detail-card">
           <div className="post-head">
-            <div className="post-avatar">
+            <Link
+              href={getUserProfileHref(review.userId, review.profileId)}
+              className="post-avatar profile-avatar-link"
+              aria-label={`${review.author} 프로필 보기`}
+            >
               {review.authorImage ? (
                 <img src={review.authorImage} alt="" />
               ) : (
                 getInitial(review.author)
               )}
-            </div>
+            </Link>
             <div className="post-meta">
               <h3>{review.author}</h3>
               <div className="post-info">
@@ -270,13 +284,17 @@ export default function FeedDetailPage() {
             {review.commentsList.length > 0 ? (
               review.commentsList.map((comment) => (
                 <div className="comment-item" key={comment.commentId}>
-                  <div className="comment-avatar">
+                  <Link
+                    href={getUserProfileHref(comment.userId, comment.profileId)}
+                    className="comment-avatar profile-avatar-link"
+                    aria-label={`${comment.author} 프로필 보기`}
+                  >
                     {comment.authorImage ? (
                       <img src={comment.authorImage} alt="" />
                     ) : (
                       getInitial(comment.author)
                     )}
-                  </div>
+                  </Link>
                   <div className="comment-content">
                     <div className="comment-meta">
                       <strong>{comment.author}</strong>

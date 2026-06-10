@@ -245,7 +245,7 @@ const makeSearchMediaOption = (
   const typeLabel = mediaType === "movie" ? "영화" : "시리즈";
   const rating =
     typeof item.vote_average === "number" && item.vote_average > 0
-      ? ` · 평균 ${item.vote_average.toFixed(1)}`
+      ? ` · 평균 ${(item.vote_average / 2).toFixed(1)}`
       : "";
 
   return {
@@ -328,6 +328,16 @@ const getCommentContent = (content: unknown) => {
   }
 
   return "";
+};
+
+const getUserProfileHref = (userId?: string, profileId?: number) => {
+  if (!userId) return "";
+
+  const params = new URLSearchParams();
+  if (profileId != null) params.set("profileId", String(profileId));
+
+  const query = params.toString();
+  return `/users/${userId}${query ? `?${query}` : ""}`;
 };
 
 export default function FeedPage() {
@@ -570,7 +580,7 @@ export default function FeedPage() {
             new Map(
               nextOptions.map((item) => [`${item.mediaType}-${item.id}`, item]),
             ).values(),
-          ).slice(0, 6);
+          );
 
           setSearchMediaOptions(uniqueOptions);
           setMediaSearchError("");
@@ -1245,13 +1255,17 @@ export default function FeedPage() {
             {commentsList.length > 0 ? (
               commentsList.map((comment) => (
                 <div className="comment-item" key={comment.commentId}>
-                  <div className="comment-avatar">
+                  <Link
+                    href={getUserProfileHref(comment.userId, comment.profileId)}
+                    className="comment-avatar profile-avatar-link"
+                    aria-label={`${comment.author} 프로필 보기`}
+                  >
                     {comment.authorImage ? (
                       <img src={comment.authorImage} alt="" />
                     ) : (
                       getInitial(comment.author)
                     )}
-                  </div>
+                  </Link>
                   <div className="comment-content">
                     <div className="comment-meta">
                       <strong>{comment.author}</strong>
@@ -1407,25 +1421,6 @@ export default function FeedPage() {
                   <p className="following-info">
                     팔로잉 <span>{followingCount}</span>
                   </p>
-                  {/* <Link
-                  href="/friends"
-                  className="follow-more-btn"
-                  aria-label="팔로워 및 팔로잉 관리로 이동"
-                  title="팔로워 및 팔로잉 관리"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M19.5 2c.5 0 .9.4.9.9v2.7h2.7a.9.9 0 0 1 0 1.8h-2.7v2.7a.9.9 0 0 1-1.8 0V7.4h-2.7a.9.9 0 1 1 0-1.8h2.7V2.9c0-.5.4-.9.9-.9M9.5 13c5.04 0 9.17 3.7 9.5 8.4.02.33-.26.6-.6.6H.6c-.34 0-.62-.27-.6-.6.33-4.7 4.46-8.4 9.5-8.4m0-9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"
-                    ></path>
-                  </svg>
-                </Link> */}
                 </div>
 
                 <div className="feed-profile-stats">
@@ -1451,7 +1446,9 @@ export default function FeedPage() {
                 </div>
                 <div className="feed-profile-nav">
                   <Link href="/mypage/playlist?tab=history">시청이력</Link>
-                  <Link href="/mypage/playlist?tab=playlists">보관함</Link>
+                  <Link href="/mypage/community?tab=my-feeds">
+                    내가 쓴 피드
+                  </Link>
                   <div className="edit-profile-area">
                     <Link href="/settings?tab=profile">프로필 관리</Link>
                     <button type="button" onClick={handleCopyProfileLink}>
@@ -1534,13 +1531,17 @@ export default function FeedPage() {
                       aria-label={`${review.mediaTitle} 피드 상세 보기`}
                     />
                     <div className="post-head">
-                      <div className="post-avatar">
+                      <Link
+                        href={getUserProfileHref(review.userId, review.profileId)}
+                        className="post-avatar profile-avatar-link feed-card-layer"
+                        aria-label={`${review.author} 프로필 보기`}
+                      >
                         {review.authorImage ? (
                           <img src={review.authorImage} alt="" />
                         ) : (
                           getInitial(review.author)
                         )}
-                      </div>
+                      </Link>
                       <div className="post-meta">
                         <h3>{review.author}</h3>
                         <div className="post-info">
