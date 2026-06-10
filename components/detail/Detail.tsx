@@ -16,6 +16,7 @@ import type {
 import VideoPlayer from "@/components/common/VideoPlayer";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
+import { useConfirmModal } from "@/components/common/ConfirmModal";
 import "./detail.module.scss";
 import { isHidden } from "@/data/hiddenContent";
 import { useCommunityStore } from "@/store/useCommunityStore";
@@ -206,6 +207,7 @@ const renderStars = (rating: number) => {
 };
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
+  const { confirm, modal: confirmModal } = useConfirmModal();
   const isTv = type === "tv";
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -778,7 +780,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const handleDeleteReview = async (reviewId: string, videoId: string) => {
-    if (!window.confirm("리뷰를 삭제하시겠습니까?")) return;
+    const confirmed = await confirm({
+      title: "리뷰 삭제",
+      message: "리뷰를 삭제하시겠습니까?",
+      confirmLabel: "삭제",
+    });
+    if (!confirmed) return;
 
     await deleteReview(reviewId, videoId);
     if (editingReviewId === reviewId) {
@@ -2590,6 +2597,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   return (
     <div style={{ background: "#141414", minHeight: "100vh", marginTop: -56 }}>
+      {confirmModal}
       {/* Hero + Info Section (shared background) */}
       <div style={{ position: "relative" }}>
         {detailBackdrop && (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateEmail, updateProfile } from "firebase/auth";
 import { auth } from "@/firebase/firebase";
+import { useConfirmModal } from "@/components/common/ConfirmModal";
 import ProfilePinGate from "@/components/ProfilePinGate";
 import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import type {
@@ -316,6 +317,7 @@ function SettingsRow({
 function ProfileSettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { confirm, modal: confirmModal } = useConfirmModal();
   const profileId = Number(searchParams.get("profileId"));
   const { user, onUpdateProfile, onDeleteProfile } = useAuthStore();
 
@@ -335,9 +337,14 @@ function ProfileSettingsContent() {
   const profileSetting = normalizeProfileSetting(profile.settings);
   const [activeModal, setActiveModal] = useState<ModalKey>(null);
 
-  const handleDeleteProfile = () => {
+  const handleDeleteProfile = async () => {
     if (isDefaultProfile) return;
-    if (!confirm("정말 이 프로필을 삭제하시겠습니까? 삭제된 프로필은 복구할 수 없습니다.")) {
+    const confirmed = await confirm({
+      title: "프로필 삭제",
+      message: "정말 이 프로필을 삭제하시겠습니까? 삭제된 프로필은 복구할 수 없습니다.",
+      confirmLabel: "삭제",
+    });
+    if (!confirmed) {
       return;
     }
     onDeleteProfile(profile.id);
@@ -833,6 +840,7 @@ function ProfileSettingsContent() {
 
   return (
     <div className="profile-settings-page">
+      {confirmModal}
       <ProfilePinGate key={profile.id} profile={profile} />
       <div className="profile-settings-container">
         <Link

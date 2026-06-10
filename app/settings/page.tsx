@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { deleteUser } from "firebase/auth";
 import { auth, db } from "@/firebase/firebase";
 import { deleteDoc, doc, getDoc } from "firebase/firestore";
+import { useConfirmModal } from "@/components/common/ConfirmModal";
 import type { PayInfo, UserProfile } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import "../scss/settings.scss";
@@ -99,6 +100,7 @@ function Row({
 function SettingsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { confirm, modal: confirmModal } = useConfirmModal();
   const initialTab = searchParams.get("tab");
 
   const [active, setActive] = useState<TabKey>(
@@ -251,9 +253,11 @@ function SettingsContent() {
       return;
     }
 
-    const confirmed = window.confirm(
-      "회원 탈퇴 시 계정과 저장된 프로필 정보가 삭제됩니다. 계속할까요?",
-    );
+    const confirmed = await confirm({
+      title: "회원 탈퇴",
+      message: "회원 탈퇴 시 계정과 저장된 프로필 정보가 삭제됩니다. 계속할까요?",
+      confirmLabel: "탈퇴",
+    });
     if (!confirmed) return;
 
     setIsDeletingAccount(true);
@@ -296,6 +300,7 @@ function SettingsContent() {
 
   return (
     <div className="acset-page">
+      {confirmModal}
       <div className="acset-container">
         <div className="acset-top">
           <h1 className="acset-title">설정</h1>
