@@ -48,3 +48,8 @@
   font-weight: 700;
   color: g.$w-color;
 }
+
+/* ===== 반응형 ===== */
+@include g.respond(mobile) {
+  .pay-change-page { padding-left: 16px; padding-right: 16px; }
+}

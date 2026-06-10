@@ -97,3 +97,20 @@
         }
     }
 }
+
+/* ===== 반응형: 3D 카드 슬라이더 크기 축소 ===== */
+@include g.respond(laptop) {
+  .new-movie-section .movie-list-viewport { height: 460px; }
+}
+@include g.respond(tablet) {
+  .new-movie-section {
+    .movie-list-viewport { height: 400px; width: calc(100vw - 64px); }
+    .new-movie-list .movie-card-item { width: 190px; height: 290px; }
+  }
+}
+@include g.respond(mobile) {
+  .new-movie-section {
+    .movie-list-viewport { height: 320px; width: calc(100vw - 56px); }
+    .new-movie-list .movie-card-item { width: 150px; height: 230px; }
+  }
+}

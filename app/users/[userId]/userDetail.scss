@@ -84,3 +84,15 @@
     }
   }
 }
+
+/* ===== 반응형 ===== */
+@media (max-width: 1024px) {
+  .user-detail-page .udp-playlist-card { width: 200px; }
+}
+@media (max-width: 600px) {
+  .user-detail-page {
+    .udp-playlist-row { gap: 10px; }
+    // 고정 220px → 화면 절반씩 2열
+    .udp-playlist-card { width: calc(50% - 5px); }
+  }
+}
