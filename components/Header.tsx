@@ -139,7 +139,7 @@ export default function Header() {
   return (
     <>
       <header
-        className={`${isScrolled || isSearchOpen ? "scrolled" : ""}${
+        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${
           isSearchOpen ? " search-open" : ""
         }`}
       >

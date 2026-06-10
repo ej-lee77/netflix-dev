@@ -5,6 +5,7 @@ import { getTmdbLang } from "@/lib/i18n";
 import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import ThemeRow, { type ThemeItem } from "@/components/main/ThemeRow";
+import { getNetflixOriginalIdSet } from "@/lib/netflix";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import RankingSection, { type RankingItem } from "@/components/main/RankingSection";
 import SplitBanner from "@/components/main/SplitBanner";
@@ -273,16 +274,28 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    Promise.all(THEME_CONFIGS.map((c) => fetchThemeItems(c.apiUrl, c.mediaType, c.pageCount))).then((allRows) => {
+    const fetchAll = async () => {
+      const [netflixIds, ...allRows] = await Promise.all([
+        getNetflixOriginalIdSet(5),
+        ...THEME_CONFIGS.map((c) => fetchThemeItems(c.apiUrl, c.mediaType, c.pageCount)),
+      ]) as [Set<number>, ...ThemeItem[][]];
+
       const usedIds = new Set<number>();
       const deduped = allRows.map((row) => {
-        const filtered = row.filter((item) => !usedIds.has(item.id)).slice(0, 18);
+        const filtered = row
+          .filter((item) => !usedIds.has(item.id))
+          .slice(0, 18)
+          .map((item) => ({
+            ...item,
+            isNetflixOriginal: item.mediaType === "tv" && netflixIds.has(item.id),
+          }));
         filtered.forEach((item) => usedIds.add(item.id));
         return filtered;
       });
       setThemeRows(deduped);
       setThemeLoading(false);
-    });
+    };
+    fetchAll();
   }, []);
 
   return (
