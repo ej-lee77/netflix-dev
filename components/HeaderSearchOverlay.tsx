@@ -50,6 +50,14 @@ export default function HeaderSearchOverlay({
   const [previewItems, setPreviewItems] = useState<TrendingMediaItem[]>([]);
 
   const [isAnimate, setIsAnimate] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const canSearch =
     keyword.trim().length > 0 ||
@@ -89,25 +97,26 @@ export default function HeaderSearchOverlay({
     const trimmedKeyword = keyword.trim();
     const hasTags = activeGenres.length > 0 || activeMoods.length > 0;
 
+    const limit = isMobile ? 6 : 5;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       const previewRequest = (() => {
         if (trimmedKeyword && hasTags) {
           return Promise.all([
-            fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, 12),
+            fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, limit * 3),
             fetchTaggedPreviewMedia(
               activeGenres,
               activeMoods,
               controller.signal,
-              24,
+              limit * 5,
             ),
           ]).then(([keywordItems, taggedItems]) =>
-            intersectTrendingItems(keywordItems, taggedItems).slice(0, 5),
+            intersectTrendingItems(keywordItems, taggedItems).slice(0, limit),
           );
         }
 
         if (trimmedKeyword) {
-          return fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, 5);
+          return fetchKeywordPreviewMedia(trimmedKeyword, controller.signal, limit);
         }
 
         if (hasTags) {
@@ -115,11 +124,11 @@ export default function HeaderSearchOverlay({
             activeGenres,
             activeMoods,
             controller.signal,
-            5,
+            limit,
           );
         }
 
-        return fetchNetflixSeriesRecommendations(controller.signal, 5);
+        return fetchNetflixSeriesRecommendations(controller.signal, limit);
       })();
 
       previewRequest
@@ -133,7 +142,7 @@ export default function HeaderSearchOverlay({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [activeGenres, activeMoods, isOpen, keyword]);
+  }, [activeGenres, activeMoods, isOpen, isMobile, keyword]);
 
   if (!isOpen) return null;
 
@@ -392,6 +401,7 @@ export default function HeaderSearchOverlay({
             title={previewSectionTitle}
             variant="overlay"
             onSelect={onClose}
+            disableVideo={isMobile}
           />
         </div>
       </div>
