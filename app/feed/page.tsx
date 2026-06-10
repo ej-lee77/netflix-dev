@@ -1428,7 +1428,7 @@ export default function FeedPage() {
                     <b>{averageRating.toFixed(1)}</b>
                     <span>평균 별점</span>
                   </div>
-                  <Link href="/mypage/community?tab=my-feeds">
+                  <Link href="/mypage/community?tab=reviews">
                     <b>{profileReviewCount}</b>
                     <span>리뷰</span>
                   </Link>
@@ -1532,7 +1532,10 @@ export default function FeedPage() {
                     />
                     <div className="post-head">
                       <Link
-                        href={getUserProfileHref(review.userId, review.profileId)}
+                        href={getUserProfileHref(
+                          review.userId,
+                          review.profileId,
+                        )}
                         className="post-avatar profile-avatar-link feed-card-layer"
                         aria-label={`${review.author} 프로필 보기`}
                       >

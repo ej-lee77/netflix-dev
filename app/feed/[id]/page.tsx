@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "@/store/useToastStore";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import BackButton from "@/components/common/BackButton";
 import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
@@ -178,7 +179,7 @@ export default function FeedDetailPage() {
         <div className="inner">
           <div className="feed-detail-empty">
             <h1>피드를 찾을 수 없어요.</h1>
-            <Link href="/feed">피드로 돌아가기</Link>
+            <BackButton fallback="/feed" />
           </div>
         </div>
       </main>
@@ -188,9 +189,7 @@ export default function FeedDetailPage() {
   return (
     <main className="feed-page feed-detail-page">
       <div className="inner">
-        <Link href="/feed" className="feed-back-link">
-          피드로 돌아가기
-        </Link>
+        <BackButton fallback="/feed" className="feed-back-link" />
 
         <article className="feed-post feed-detail-card">
           <div className="post-head">
