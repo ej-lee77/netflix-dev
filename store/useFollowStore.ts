@@ -3,6 +3,7 @@ import { auth, db } from "@/firebase/firebase";
 import { collection, doc, getDoc, getDocs, limit, query, updateDoc } from "firebase/firestore";
 import { useAuthStore } from "./useAuthStore";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
+import { BadgeList } from "@/types/auth";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
@@ -23,6 +24,7 @@ export interface FollowingPlaylist {
 export interface SimilarUser {
   userId: string;
   nickname: string;
+  badge: string;
   imgUrl: string;
   matchRate: number;
   followersCount: number;
@@ -120,6 +122,26 @@ async function fetchPostersForIds(mediaIds: string[]): Promise<string[]> {
   return results.filter(Boolean).slice(0, 4);
 }
 
+export const getFollowBadge = (currentBadges: BadgeList): BadgeList => {
+  const updatedEarnedBadges = [...currentBadges.earnedBadges];
+  let newEquipped = currentBadges.equippedBadges;
+
+  // 첫 팔로우 뱃지 체크
+  if (!updatedEarnedBadges.some(b => b.id === "social_first_follower")) {
+    updatedEarnedBadges.push({
+      id: "social_first_follower",
+      progress: 1,
+      isComplete: true
+    });
+    if (!newEquipped) newEquipped = "social_first_follower";
+  }
+
+  return {
+    earnedBadges: updatedEarnedBadges,
+    equippedBadges: newEquipped
+  };
+};
+
 export const useFollowStore = create<FollowState>()((set, get) => ({
   followingUsers: [],
   followingPlaylists: [],
@@ -201,6 +223,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
 
           return {
             userId,
+            badge: profile.badges?.equippedBadges ?? "",
             nickname: profile.nickname ?? "유저",
             imgUrl: profile.imgUrl ?? "",
             matchRate,
@@ -254,6 +277,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
       return {
         userId: id,
         nickname: d?.nickname ?? "유저",
+        badge: d?.badge ?? "",
         imgUrl: d?.posters?.[0] ?? "",
         matchRate: 0,
         followersCount: 0,
@@ -344,46 +368,56 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
   },
 
   follow: async (targetUserId: string) => {
-    const { user, currentProfile } = useAuthStore.getState();
-    if (!user || !currentProfile) return;
+      const { user, currentProfile } = useAuthStore.getState();
+      if (!user || !currentProfile) return;
 
-    const myUserId = auth.currentUser?.uid ?? user.userId;
-    if (!myUserId) return;
-    const myFollowing: string[] = currentProfile.community?.following ?? [];
-    if (myFollowing.includes(targetUserId)) return;
+      const myUserId = auth.currentUser?.uid ?? user.userId;
+      if (!myUserId) return;
+      const myFollowing: string[] = currentProfile.community?.following ?? [];
+      if (myFollowing.includes(targetUserId)) return;
 
-    const newFollowing = [...myFollowing, targetUserId];
-    const updatedProfiles = user.profile.map((p) =>
-      p.id === currentProfile.id
-        ? { ...p, community: { ...p.community, following: newFollowing } }
-        : p
-    );
+      // 1. 팔로우 및 뱃지 데이터 업데이트
+      const newFollowing = [...myFollowing, targetUserId];
+      const updatedProfiles = user.profile.map((p) => {
+          if (p.id === currentProfile.id) {
+              // 뱃지 업데이트 적용
+              const updatedBadges = getFollowBadge(p.badges || { earnedBadges: [], equippedBadges: "" });
+              return { 
+                  ...p, 
+                  community: { ...p.community, following: newFollowing },
+                  badges: updatedBadges 
+              };
+          }
+          return p;
+      });
 
-    await updateDoc(doc(db, "users", myUserId), { profile: updatedProfiles });
+      // 2. DB 업데이트 (팔로잉 정보 + 뱃지 정보 한 번에)
+      await updateDoc(doc(db, "users", myUserId), { profile: updatedProfiles });
 
-    useAuthStore.setState((state) => ({
-      user: state.user ? { ...state.user, profile: updatedProfiles } : null,
-      currentProfile: state.currentProfile
-        ? { ...state.currentProfile, community: { ...state.currentProfile.community, following: newFollowing } }
-        : null,
-    }));
+      // 3. 스토어 상태 갱신
+      const updatedProfile = updatedProfiles.find(p => p.id === currentProfile.id);
+      useAuthStore.setState((state) => ({
+        user: state.user ? { ...state.user, profile: updatedProfiles } : null,
+        currentProfile: updatedProfile ?? null
+      }));
 
-    try {
-      const targetSnap = await getDoc(doc(db, "users", targetUserId));
-      if (targetSnap.exists()) {
-        const targetData = targetSnap.data();
-        const targetProfiles = targetData.profile.map((p: any, idx: number) =>
-          idx === 0
-            ? { ...p, community: { ...p.community, followers: [...(p.community?.followers ?? []), myUserId] } }
-            : p
-        );
-        await updateDoc(doc(db, "users", targetUserId), { profile: targetProfiles });
+      // 4. 상대방 팔로워 추가 로직 (기존과 동일)
+      try {
+        const targetSnap = await getDoc(doc(db, "users", targetUserId));
+        if (targetSnap.exists()) {
+          const targetData = targetSnap.data();
+          const targetProfiles = targetData.profile.map((p: any, idx: number) =>
+            idx === 0
+              ? { ...p, community: { ...p.community, followers: [...(p.community?.followers ?? []), myUserId] } }
+              : p
+          );
+          await updateDoc(doc(db, "users", targetUserId), { profile: targetProfiles });
+        }
+      } catch (e) {
+        console.error("상대방 팔로워 추가 실패:", e);
       }
-    } catch {
-      // 상대방 업데이트 실패해도 내 팔로잉은 유지
-    }
 
-    await get().fetchFollowingUsers();
+      await get().fetchFollowingUsers();
   },
 
   unfollow: async (targetUserId: string) => {

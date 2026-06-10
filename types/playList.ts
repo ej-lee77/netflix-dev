@@ -39,7 +39,7 @@ export interface PlayListState{
     customPlaylists: PlaylistDocument[],
     currentPlaylist: PlaylistDocument | null,
     onAddPlayList: (item: DetailMedia)=>Promise<boolean>,
-    onRemovePlayList: (id: number, mediaType?: "movie" | "tv")=>Promise<boolean>,
+    onRemovePlayList: (id: number)=>Promise<boolean>,
     onRemovePlayHist: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadPlayList: ()=>Promise<void>,
     onAddMyList: (item: Movie | TV, mediaType?: "movie" | "tv")=>Promise<boolean>,

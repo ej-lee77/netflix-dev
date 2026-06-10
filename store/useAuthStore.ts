@@ -154,7 +154,7 @@ const normalizeProfile = <T extends Partial<UserProfile>>(
     viewAge: profile.viewAge ?? "15",
     movies: {
       watchingVideos: profile.movies?.watchingVideos ?? [],
-      histVideos: profile.movies?.histVideos ?? [],
+      histMovies: profile.movies?.histMovies ?? [],
       wishlist: profile.movies?.wishlist ?? [],
       playlist: {
         playlistVideos: profile.movies?.playlist?.playlistVideos ?? [],

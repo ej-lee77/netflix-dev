@@ -854,14 +854,14 @@ export default function FeedPage() {
 
   const handleDeleteReview = async (reviewId: string) => {
     const confirmed = await confirm({
-      title: "리뷰 삭제",
+      title: "게시물 삭제",
       message: "정말 삭제하시겠습니까?",
       confirmLabel: "삭제",
     });
     if (!confirmed) return;
 
     await onDeleteFeed(reviewId);
-    showToast("리뷰가 삭제되었습니다");
+    showToast("게시물이 삭제되었습니다");
   };
 
   const handleToggleCommentLike = (reviewId: string, commentId: string) => {
@@ -894,7 +894,7 @@ export default function FeedPage() {
       });
       await onHydrateFeeds();
       closeWriteModal();
-      showToast("리뷰가 수정되었습니다");
+      showToast("게시물이 수정되었습니다");
       return;
     }
 
@@ -915,7 +915,7 @@ export default function FeedPage() {
 
     await onAddFeed(nextReview);
     closeWriteModal();
-    showToast("리뷰가 등록되었습니다");
+    showToast("게시물이 등록되었습니다");
   };
 
   const renderWriteModal = () => {
@@ -1503,7 +1503,7 @@ export default function FeedPage() {
                 className={activeTab === "following" ? "active" : ""}
                 onClick={() => setActiveTab("following")}
               >
-                팔로워 게시물
+                팔로우 게시물
               </button>
             </div>
             {filteredReviews.length === 0 ? (

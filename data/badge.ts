@@ -256,3 +256,11 @@ export const BADGE_LIST: Badge[] = [
     total: 10
   }
 ];
+
+type BadgeMap = { [key: string]: string };
+
+// 2. 변환 로직
+export const BADGE_MAP: BadgeMap = BADGE_LIST.reduce((acc, badge) => {
+  acc[badge.id] = badge.name;
+  return acc;
+}, {} as BadgeMap);

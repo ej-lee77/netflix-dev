@@ -7,12 +7,15 @@ import { collection, getDocs } from "firebase/firestore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
 import BackButton from "@/components/common/BackButton";
+import { BADGE_MAP } from "@/data/badge";
+import Link from "next/link";
 
 type TabType = "all" | "following" | "followers";
 
 interface UserCard {
   userId: string;
   nickname: string;
+  badge: string;
   imgUrl: string;
   watchedCount: number;
 }
@@ -50,6 +53,7 @@ export default function FriendsPage() {
         list.push({
           userId: docSnap.id,
           nickname: firstProfile.nickname ?? "유저",
+          badge: firstProfile.badges?.equippedBadges ?? "",
           imgUrl: firstProfile.imgUrl ?? "",
           watchedCount: firstProfile.movies?.watchingVideos?.length ?? 0,
         });
@@ -141,9 +145,10 @@ export default function FriendsPage() {
                 <li
                   key={u.userId}
                   className="follow-item"
-                  onClick={() => router.push(`/users/${u.userId}`)}
+                  // onClick={() => router.push(`/users/${u.userId}`)}
                   style={{ cursor: "pointer" }}
                 >
+                  <Link href={`/users/${u.userId}`}>
                   <div className="avatar">
                     {u.imgUrl ? (
                       <img
@@ -156,13 +161,17 @@ export default function FriendsPage() {
                     )}
                   </div>
                   <div className="info">
-                    <h3>{u.nickname}</h3>
+                    <div>
+                      <h3>{u.nickname}</h3>
+                      {BADGE_MAP[u.badge] && (<span>{BADGE_MAP[u.badge]}</span>)}
+                    </div>
                     <p>시청 {u.watchedCount}편</p>
                   </div>
+                  </Link>
                   <button
                       className="follow-btn"
                       onClick={() => handleFollowToggle(u.userId)}
-                      style={isFollowing ? { opacity: 0.6 } : {}}
+                      style={isFollowing ? { opacity: 0.6, borderColor: "#e50914", color: "#e50914"} : {}}
                     >
                       {isFollowing ? "팔로잉" : "팔로우"}
                   </button>
@@ -171,7 +180,7 @@ export default function FriendsPage() {
                 })}
                 {/* 더보기 버튼 추가 */}
                 {visibleCount < displayList.length && (
-                  <li className="follow-item" style={{ justifyContent: "center" }}>
+                  <li className="follow-item-more" style={{ justifyContent: "center" }}>
                     <button 
                       onClick={() => setVisibleCount(prev => prev + 30)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}
