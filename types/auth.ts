@@ -70,6 +70,7 @@ export interface PlaybackSettings {
 
 export interface ProfileSettings {
   maturityRating: MaturityRating;
+  verifiedAdult: boolean;
   subtitles: SubtitleSettings;
   playback: PlaybackSettings;
   hiddenWatchingVideos: string[];
@@ -145,7 +146,7 @@ export interface UserDocument {
   userId: string; // 문서 ID로 사용됨
   // 기본정보
   email: string;
-  provider?: 'email' | 'kakao' | 'naver';
+  provider?: 'email' | 'google' | 'kakao' | 'naver';
   planType: string;
   payment: PayInfo;
   profile: UserProfile[];
