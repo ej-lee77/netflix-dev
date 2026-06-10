@@ -2,7 +2,13 @@
   position: fixed;
   right: 32px;
   bottom: 110px;
-  z-index: 9999;
+
+  @media (max-width: 600px) {
+    bottom: 138px;
+    right: 16px;
+  }
+
+  z-index: 999999;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -32,5 +38,35 @@
     bottom: 84px;
     width: 40px;
     height: 40px;
+  }
+}
+
+.enter {
+  animation: toastIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.exit {
+  animation: toastOut 0.22s ease-in forwards;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px) scale(0.88);
   }
 }
