@@ -1,7 +1,9 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { usePlayListStore } from '@/store/usePlayListStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -9,20 +11,49 @@ import 'swiper/css/navigation';
 import './scss/watchingList.scss';
 import SectionTitle from '../common/SectionTitle';
 
-/**
- * 시청중(Watching) 섹션
- * - Firebase에 저장된 시청기록(playList)을 가로 스와이프 카드로 표시
- * - 각 카드 하단에 시청률(progress bar) 표시
- */
+type MenuState = { key: string; top: number; right: number } | null;
+
 export default function WatchingList() {
-    const { playList, onLoadPlayList } = usePlayListStore();
+    const { playList, onLoadPlayList, onRemovePlayList } = usePlayListStore();
+    const currentProfile = useAuthStore((s) => s.currentProfile);
+    const router = useRouter();
+    const [menuState, setMenuState] = useState<MenuState>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        onLoadPlayList();
-    }, []);
+        if (currentProfile) {
+            onLoadPlayList();
+        }
+    }, [currentProfile?.id]);
 
-    //시청기록이 비어있을 때는 섹션 자체를 노출하지 않음
+    useEffect(() => {
+        if (!menuState) return;
+        const close = (e: MouseEvent) => {
+            if (!menuRef.current?.contains(e.target as Node)) setMenuState(null);
+        };
+        const onScroll = () => setMenuState(null);
+        document.addEventListener('mousedown', close);
+        window.addEventListener('scroll', onScroll, true);
+        return () => {
+            document.removeEventListener('mousedown', close);
+            window.removeEventListener('scroll', onScroll, true);
+        };
+    }, [menuState]);
+
+    const handleMoreClick = (e: React.MouseEvent<HTMLButtonElement>, key: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (menuState?.key === key) {
+            setMenuState(null);
+            return;
+        }
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMenuState({ key, top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    };
+
     if (!playList || playList.length === 0) return null;
+
+    const openItem = menuState ? playList.find((i) => `${i.mediaType}-${i.id}` === menuState.key) : null;
 
     return (
         <section className="watching-section">
@@ -40,34 +71,74 @@ export default function WatchingList() {
                     className="watching-swiper"
                 >
                     {playList.map((item) => {
+                        const key = `${item.mediaType}-${item.id}`;
                         return (
-                            <SwiperSlide key={`${item.mediaType}-${item.id}`}>
-                                <Link href={`/detail/${item.mediaType}/${item.id}?play=1`} className="watching-card">
-                                    <div className="watching-thumb">
-                                        <img
-                                            src={item.backdrop_path
-                                                ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
-                                                : `https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                                            alt={item.title}
-                                        />
-                                        <div className="watching-play-overlay">
-                                            <div className="watching-play-btn">▶</div>
-                                        </div>
-                                        {/* 실제 시청 진행바 */}
-                                        <div className="progress-bar">
-                                            <span
-                                                className="progress-fill"
-                                                style={{ width: `${item.progress ?? 0}%` }}
+                            <SwiperSlide key={key}>
+                                <div className="watching-card-wrap">
+                                    <Link href={`/detail/${item.mediaType}/${item.id}?play=1`} className="watching-card">
+                                        <div className="watching-thumb">
+                                            <img
+                                                src={item.backdrop_path
+                                                    ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}`
+                                                    : `https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                                                alt={item.title}
                                             />
+                                            <div className="watching-play-overlay">
+                                                <div className="watching-play-btn">▶</div>
+                                            </div>
+                                            <div className="progress-bar">
+                                                <span
+                                                    className="progress-fill"
+                                                    style={{ width: `${item.progress ?? 0}%` }}
+                                                />
+                                            </div>
                                         </div>
+                                    </Link>
+                                    <div className="watching-title-row">
+                                        <h3 className="watching-title">{item.title}</h3>
+                                        <button
+                                            type="button"
+                                            className={`watching-more-btn${menuState?.key === key ? ' active' : ''}`}
+                                            aria-label="더보기"
+                                            onClick={(e) => handleMoreClick(e, key)}
+                                        >
+                                            <img src="/images/detail/review/dot-vertical-filled.svg" alt="" width={16} height={16} />
+                                        </button>
                                     </div>
-                                    <h3 className="watching-title">{item.title}</h3>
-                                </Link>
+                                </div>
                             </SwiperSlide>
                         );
                     })}
                 </Swiper>
             </div>
+
+            {menuState && openItem && (
+                <div
+                    ref={menuRef}
+                    className="watching-menu"
+                    style={{ top: menuState.top, right: menuState.right }}
+                >
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setMenuState(null);
+                            router.push(`/detail/${openItem.mediaType}/${openItem.id}`);
+                        }}
+                    >
+                        상세 정보 보기
+                    </button>
+                    <button
+                        type="button"
+                        className="watching-menu__delete"
+                        onClick={() => {
+                            setMenuState(null);
+                            onRemovePlayList(openItem.id);
+                        }}
+                    >
+                        시청중인 콘텐츠 삭제하기
+                    </button>
+                </div>
+            )}
         </section>
     );
 }

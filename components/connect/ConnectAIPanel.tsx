@@ -190,7 +190,7 @@ export default function ConnectAIPanel({ onClose, isClosing = false }: Props) {
       <aside className={`connect-ai-panel${isClosing ? " connect-ai-panel--closing" : ""}`}>
         <div className="connect-ai-panel__header">
           <div className="connect-ai-panel__header-icon">
-            <Image src="/images/icon/NetflixAi.png" alt="" width={20} height={20} quality={70} />
+            <Image src="/images/icon/NetflixAi2.png" alt="" width={20} height={20} quality={70} />
           </div>
           <div className="connect-ai-panel__header-text">
             <span className="connect-ai-panel__header-title">Netflix AI</span>

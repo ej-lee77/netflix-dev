@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -258,7 +258,7 @@ const parseParamList = (value: string | null) =>
 const isMainTab = (value: string | null): value is MainTab =>
   value === "movie" || value === "tv" || value === "animation";
 
-export default function CategoryPage() {
+function CategoryPageContent() {
   const searchParams = useSearchParams();
   const initialType = searchParams.get("type") ?? searchParams.get("tab");
   const initialGenres = searchParams.get("genres");
@@ -845,5 +845,13 @@ export default function CategoryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CategoryPage() {
+  return (
+    <Suspense fallback={<div className="category-catalog-page" />}>
+      <CategoryPageContent />
+    </Suspense>
   );
 }
