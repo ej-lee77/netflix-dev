@@ -68,7 +68,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
   return (
     <div style={{ background: "#141414", minHeight: "100vh", color: "#fff" }}>
       {/* 뒤로가기 */}
-      <div style={{ padding: "80px 40px 0", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: vw <= 600 ? "80px 16px 0 72px" : vw <= 1024 ? "80px 24px 0 88px" : vw <= 1440 ? "80px 40px 0 120px" : "80px 40px 0", maxWidth: 1200, margin: "0 auto" }}>
         <button
           onClick={() => from ? router.push(from) : router.back()}
           style={{

@@ -17,6 +17,7 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterHidden } from "@/data/hiddenContent";
 import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -55,11 +56,13 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   const currentProfile = useAuthStore((state) => state.currentProfile);
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
   const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
-  const items = filterByMaturity(
-    filterByExcludedGenres(rawItems, excludedGenres),
-    maturityCeiling,
-    certifications,
-    (it) => `${it.mediaType}-${it.id}`,
+  const items = filterHidden(
+    filterByMaturity(
+      filterByExcludedGenres(rawItems, excludedGenres),
+      maturityCeiling,
+      certifications,
+      (it) => `${it.mediaType}-${it.id}`,
+    ),
   );
 
   const [hover, setHover] = useState<number | null>(null);

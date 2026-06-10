@@ -26,8 +26,11 @@ export function isHidden(id: number, mediaType?: "movie" | "tv"): boolean {
 }
 
 // 목록에서 숨김 대상 제거 (히어로/그리드 공통)
+// media_type(스토어/검색) · mediaType(ThemeItem) 키를 모두 인식한다.
 export function filterHidden<
-  T extends { id: number; media_type?: "movie" | "tv" },
+  T extends { id: number; media_type?: "movie" | "tv"; mediaType?: "movie" | "tv" },
 >(items: T[]): T[] {
-  return items.filter((item) => !isHidden(item.id, item.media_type));
+  return items.filter(
+    (item) => !isHidden(item.id, item.media_type ?? item.mediaType),
+  );
 }
