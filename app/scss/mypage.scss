@@ -878,3 +878,131 @@
     }
   }
 }
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .mypage { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .mypage { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .mypage { padding-left: 56px; padding-right: 16px; }
+}
+
+/* ===== 반응형: 모바일 마이페이지 컴팩트 레이아웃 (넘침 방지 + 여백 축소) ===== */
+@media (max-width: 640px) {
+  .mypage {
+    overflow-x: clip; // 가로 넘침 방지 가드
+    padding-top: 24px;
+    padding-right: 16px;
+
+    .inner {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* 프로필 요약 — 여백 축소 */
+    .profile-summary {
+      padding: 20px 16px;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+    }
+
+    .profile-stats {
+      padding-top: 14px;
+
+      .stat {
+        padding: 0 4px;
+
+        .value {
+          font-size: g.$text-20;
+          margin-bottom: 2px;
+        }
+      }
+    }
+
+    /* 빠른 메뉴 — 정사각 카드 2열 대신 컴팩트한 가로형 리스트 1열 */
+    .quick-menu {
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .quick-card {
+      aspect-ratio: auto;
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-items: center;
+      column-gap: 12px;
+      row-gap: 2px;
+      padding: 12px 14px;
+      min-width: 0;
+
+      .icon {
+        grid-row: 1 / 3;
+        width: 38px;
+        height: 38px;
+      }
+
+      h3 {
+        margin-bottom: 0;
+      }
+
+      p {
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dot {
+        top: 12px;
+        right: 12px;
+      }
+    }
+
+    /* 섹션 간 여백 축소 */
+    .section-block {
+      margin-bottom: 28px;
+    }
+
+    .two-col-section {
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    /* 팔로워 활동 / 리뷰 카드 — 고정 높이(96px) 해제해 텍스트 넘침 방지 */
+    .activity-item,
+    .review-item {
+      height: auto;
+      align-items: flex-start;
+      padding: 12px;
+      gap: 10px;
+    }
+
+    .activity-item .activity-body {
+      p {
+        line-height: 1.4;
+      }
+
+      .content-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    }
+
+    .activity-item .friend-avatar,
+    .review-item .review-thumb {
+      margin-top: 2px;
+    }
+  }
+}

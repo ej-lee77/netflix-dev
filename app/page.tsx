@@ -4,12 +4,10 @@ import { useT } from "@/lib/i18n";
 import { getTmdbLang } from "@/lib/i18n";
 import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
-import ThemeRow, { type ThemeItem } from "@/components/main/ThemeRow";
+import type { ThemeItem } from "@/components/main/ThemeRow";
 import { getNetflixOriginalIdSet } from "@/lib/netflix";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import RankingSection, { type RankingItem } from "@/components/main/RankingSection";
-import SplitBanner from "@/components/main/SplitBanner";
-import Release from "@/components/main/Release";
 import WatchingList from "@/components/main/WatchingList";
 import NetflixOriginal from "@/components/main/NetflixOriginal";
 import RecommendList from "@/components/main/RecommendList";
@@ -20,6 +18,15 @@ import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
 import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
 import TopButton from "@/components/common/TopButton";
+import LazyRender from "@/components/common/LazyRender";
+import dynamic from "next/dynamic";
+
+const ThemeRow = dynamic(() => import("@/components/main/ThemeRow"), {
+  ssr: false,
+  loading: () => <ThemeRowSkeleton />,
+});
+const SplitBanner = dynamic(() => import("@/components/main/SplitBanner"), { ssr: false });
+const Release = dynamic(() => import("@/components/main/Release"), { ssr: false });
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const SPLIT_BANNER_AFTER = 3; // 일본 애니(2) 다음, 미국 TV(3) 앞
@@ -320,7 +327,9 @@ export default function Home() {
       {/* 선호 장르 우선 추천 — 일반 테마 줄보다 먼저 노출 */}
       {favoriteRows.map((row) =>
         row.items.length > 0 ? (
-          <ThemeRow key={`fav-${row.title}`} title={row.title} items={row.items} href={row.href} />
+          <LazyRender key={`fav-${row.title}`} fallback={<ThemeRowSkeleton />}>
+            <ThemeRow title={row.title} items={row.items} href={row.href} />
+          </LazyRender>
         ) : null,
       )}
       {/* <TopCast /> */}
@@ -329,52 +338,68 @@ export default function Home() {
         ? THEME_CONFIGS.slice(0, SPLIT_BANNER_AFTER).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(0, SPLIT_BANNER_AFTER).map((config, i) =>
             themeRows[i]?.length > 0 ? (
-              <ThemeRow key={config.title} title={config.title} items={themeRows[i]} href={config.href} />
+              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+                <ThemeRow title={config.title} items={themeRows[i]} href={config.href} />
+              </LazyRender>
             ) : null
           )
       }
       {/* 스플릿 배너 */}
-      <SplitBanner />
+      <LazyRender>
+        <SplitBanner />
+      </LazyRender>
       {/* 테마별 카테고리 — 앞부분 뒤 (미국 TV ~ 액션 영화) */}
       {themeLoading
         ? THEME_CONFIGS.slice(SPLIT_BANNER_AFTER, THEME_SPLIT).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(SPLIT_BANNER_AFTER, THEME_SPLIT).map((config, i) =>
             themeRows[SPLIT_BANNER_AFTER + i]?.length > 0 ? (
-              <ThemeRow key={config.title} title={config.title} items={themeRows[SPLIT_BANNER_AFTER + i]} href={config.href} />
+              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+                <ThemeRow title={config.title} items={themeRows[SPLIT_BANNER_AFTER + i]} href={config.href} />
+              </LazyRender>
             ) : null
           )
       }
       {/* 중간 랭킹: 한국 시리즈 TOP 10 */}
       {koreanSeries.length > 0 && (
-        <RankingSection
-          title={t("home.koreanSeries")}
-          items={koreanSeries}
-          href="/category?type=tv&countries=kr&source=korean-series-top10&limit=10"
-        />
+        <LazyRender>
+          <RankingSection
+            title={t("home.koreanSeries")}
+            items={koreanSeries}
+            href="/category?type=tv&countries=kr&source=korean-series-top10&limit=10"
+          />
+        </LazyRender>
       )}
       {/* 테마별 카테고리 — 뒷부분 앞 (해외 코미디까지) */}
       {themeLoading
         ? THEME_CONFIGS.slice(THEME_SPLIT, RELEASE_AFTER).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(THEME_SPLIT, RELEASE_AFTER).map((config, i) =>
             themeRows[THEME_SPLIT + i]?.length > 0 ? (
-              <ThemeRow key={config.title} title={config.title} items={themeRows[THEME_SPLIT + i]} href={config.href} />
+              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+                <ThemeRow title={config.title} items={themeRows[THEME_SPLIT + i]} href={config.href} />
+              </LazyRender>
             ) : null
           )
       }
       {/* 공개예정 */}
-      <Release />
+      <LazyRender>
+        <Release />
+      </LazyRender>
       {/* 테마별 카테고리 — 뒷부분 뒤 (판타지 영화부터) */}
       {themeLoading
         ? THEME_CONFIGS.slice(RELEASE_AFTER).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(RELEASE_AFTER).map((config, i) =>
             themeRows[RELEASE_AFTER + i]?.length > 0 ? (
-              <ThemeRow key={config.title} title={config.title} items={themeRows[RELEASE_AFTER + i]} href={config.href} />
+              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+                <ThemeRow title={config.title} items={themeRows[RELEASE_AFTER + i]} href={config.href} />
+              </LazyRender>
             ) : null
           )
       }
       {/* 오늘의 대한민국 TOP 10 영화 */}
       {koreanMovieRanking.length > 0 && (
-        <RankingSection title={t("home.koreanVariety")} items={koreanMovieRanking} />
+        <LazyRender>
+          <RankingSection title={t("home.koreanVariety")} items={koreanMovieRanking} />
+        </LazyRender>
       )}
       <TopButton />
     </div>

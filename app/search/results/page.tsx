@@ -15,6 +15,7 @@ import {
 import TrendingVideoSection from "@/components/search/TrendingVideoSection";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { useMaturityFiltered } from "@/data/maturityFilter";
+import { filterHidden } from "@/data/hiddenContent";
 import "../search.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -491,7 +492,7 @@ function SearchResultsContent() {
     }
   };
   // 관람등급 필터 (hover 전에도 적용되도록 등급 선반입)
-  const visibleItems = useMaturityFiltered(sortedItems, (it) => it.media_type);
+  const visibleItems = filterHidden(useMaturityFiltered(sortedItems, (it) => it.media_type));
 
   useEffect(() => {
     if (!hasQuery) {

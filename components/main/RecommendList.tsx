@@ -90,7 +90,7 @@ export default function RecommendList() {
       setActiveIndex(idx);
     }
   };
-
+  
   if (recommended.length === 0) return null;
 
   const sectionBg = activeBackdrop?.backdropPath
@@ -110,14 +110,14 @@ export default function RecommendList() {
       <div className="recommend-bg-overlay" />
 
       <div className="section-title-outer">
-        <SectionTitle title='넷플릭스 추천작' href="/category" />
+        <SectionTitle title='넷플릭스 추천작' href="/category" showMore={false} />
       </div>
       <Swiper
         modules={[Navigation, Autoplay]}
         grabCursor
+        centeredSlides
         loop
         slidesPerView={3}
-        slidesPerGroup={3}
         spaceBetween={16}
         observer={true}
         observeParents={true}
@@ -129,11 +129,11 @@ export default function RecommendList() {
         onSlideChange={handleSlideChange}
         className="recommend-swiper"
         breakpoints={{
-          0:    { slidesPerView: 1, slidesPerGroup: 1, spaceBetween: 10 },
-          768:  { slidesPerView: 3, slidesPerGroup: 3, spaceBetween: 10 },
-          1280: { slidesPerView: 3, slidesPerGroup: 3, spaceBetween: 4  },
-          1920: { slidesPerView: 3, slidesPerGroup: 3, spaceBetween: -3 },
-          2560: { slidesPerView: 5, slidesPerGroup: 5, spaceBetween: 1  },
+          0:    { slidesPerView: 1,  spaceBetween: 10 },
+          768:  { slidesPerView: 3,  spaceBetween: 10 },
+          1280: { slidesPerView: 3,  spaceBetween: 4  },
+          1920: { slidesPerView: 3,  spaceBetween: -3 },
+          2560: { slidesPerView: 5,  spaceBetween: 1  },
         }}
       >
         {recommended.map((item) => (
