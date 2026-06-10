@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
+import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import "./scss/splitBanner.scss";
 import SectionTitle from "@/components/common/SectionTitle";
 
@@ -89,8 +89,11 @@ export default function SplitBanner() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // 현재 프로필 관람등급에 맞는 배너 선택 (없으면 19+ 기본)
-  const rating = useAuthStore((s) => s.currentProfile?.settings?.maturityRating) ?? "19+";
-  const banner = BANNERS[rating] ?? BANNERS["19+"];
+  const rating =
+    useAuthStore((s) => s.currentProfile?.settings?.maturityRating) ??
+    DEFAULT_PROFILE_SETTINGS.maturityRating;
+  const banner =
+    BANNERS[rating] ?? BANNERS[DEFAULT_PROFILE_SETTINGS.maturityRating];
 
   return (
     <section className="split-banner">

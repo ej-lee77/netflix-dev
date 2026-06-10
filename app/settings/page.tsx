@@ -46,10 +46,10 @@ const PROFILE_ICON_SECTIONS = [
   { title: "루시퍼", icons: iconPaths("lucifer", 8) },
   { title: "종이의 집", icons: iconPaths("money_heist", 10) },
   { title: "마이 멜로디 & 쿠로미", icons: iconPaths("my_melody_kuromi", 16) },
-  { title: "원피스", icons: iconPaths("one_piece", 17) },
+  { title: "원피스", icons: iconPaths("one_piece", 18) },
   {
     title: "오렌지 이즈 더 뉴 블랙",
-    icons: iconPaths("orange_is_the_new_black", 11),
+    icons: iconPaths("orange_is_the_new_black", 10),
   },
   { title: "피키 블라인더스", icons: iconPaths("peaky_blinders", 6) },
   { title: "레트로 애니메이션", icons: iconPaths("retro_animation", 8) },

@@ -79,6 +79,8 @@ export default function SelectGenre() {
           ...currentProfile.settings,
           maturityRating:
             currentProfile.settings?.maturityRating ?? DEFAULT_PROFILE_SETTINGS.maturityRating,
+          verifiedAdult:
+            currentProfile.settings?.verifiedAdult ?? DEFAULT_PROFILE_SETTINGS.verifiedAdult,
           subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
           playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
           hiddenWatchingVideos: currentProfile.settings?.hiddenWatchingVideos ?? [],
