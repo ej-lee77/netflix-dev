@@ -67,7 +67,7 @@ export interface PlaylistDocument {
   likedBy?: string[];      // 좋아요한 유저 ID 목록 (likesCount = likedBy.length)
   createdAt: string;
   items?:  string[];
-  //isDelete: boolean;
+  isDelete?: boolean;
 
   // 파이어베이스 연동 및 관리를 위한 필수 확장 필드
   //userId: string;         // 플레이리스트 생성자 (유저 ID)
