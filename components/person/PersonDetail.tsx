@@ -59,9 +59,9 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
     setBioOverflows(el.scrollHeight > el.clientHeight + 1);
   }, [person?.biography]);
 
-  const filteredCredits = credits.filter((c) =>
-    filter === "all" ? true : c.media_type === filter
-  );
+  const filteredCredits = credits
+    .filter((c) => filter === "all" ? true : c.media_type === filter)
+    .filter((c, i, arr) => arr.findIndex((x) => x.id === c.id && x.media_type === c.media_type) === i);
 
   const isLoading = !person;
 
@@ -183,28 +183,6 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
                 })()}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
-                  {person.birthday && (
-                    <div style={{ display: "flex", gap: 12, fontSize: 14 }}>
-                      <span style={{ color: "#555", minWidth: 60 }}>생년월일</span>
-                      <span style={{ color: "#ccc" }}>
-                        {person.birthday}
-                        {!person.deathday && (() => {
-                          const birth = new Date(person.birthday!);
-                          const now = new Date();
-                          const age = now.getFullYear() - birth.getFullYear() -
-                            (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate()) ? 1 : 0);
-                          return ` (${age}세)`;
-                        })()}
-                        {person.deathday && ` — ${person.deathday}`}
-                      </span>
-                    </div>
-                  )}
-                  {person.place_of_birth && (
-                    <div style={{ display: "flex", gap: 12, fontSize: 14 }}>
-                      <span style={{ color: "#555", minWidth: 60 }}>출생지</span>
-                      <span style={{ color: "#ccc" }}>{person.place_of_birth}</span>
-                    </div>
-                  )}
                   <div style={{ display: "flex", gap: 12, fontSize: 14 }}>
                     <span style={{ color: "#555", minWidth: 60 }}>작품 수</span>
                     <span style={{ color: "#ccc" }}>{credits.length}편</span>

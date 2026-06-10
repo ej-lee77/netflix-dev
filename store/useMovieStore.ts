@@ -45,10 +45,19 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     //==============한국 영화 (2026년 이후)==============
     koreanMovies: [],
     onFetchKoreanMovies: async () => {
-        const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_original_language=ko&primary_release_date.gte=2026-01-01&sort_by=popularity.desc&page=1`);
-        const data = await res.json();
-        // console.log("한국 영화?", data.results);
-        set({ koreanMovies: filterHidden(data.results || []) });
+        // 차단 작품/제외 장르/관람등급 필터 후에도 TOP 10이 채워지도록 2페이지까지 가져온다.
+        const base = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_original_language=ko&primary_release_date.gte=2026-01-01&sort_by=popularity.desc`;
+        const [d1, d2] = await Promise.all([
+            fetch(`${base}&page=1`).then((r) => r.json()),
+            fetch(`${base}&page=2`).then((r) => r.json()),
+        ]);
+        const seen = new Set<number>();
+        const merged = [...(d1.results || []), ...(d2.results || [])].filter((m: { id: number }) => {
+            if (seen.has(m.id)) return false;
+            seen.add(m.id);
+            return true;
+        });
+        set({ koreanMovies: filterHidden(merged) });
     },
 
     //==============급상승 영화 받아오기==============
