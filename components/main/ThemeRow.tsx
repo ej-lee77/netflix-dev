@@ -49,9 +49,10 @@ interface ThemeRowProps {
   title: string;
   items: ThemeItem[];
   href?: string;
+  showRank?: boolean; // 포스터 위에 순위 숫자(1,2,3...) 표시 (랭킹 섹션용)
 }
 
-export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps) {
+export default function ThemeRow({ title, items: rawItems, href, showRank = false }: ThemeRowProps) {
   const t = useT();
   const router = useRouter();
   const excludedGenres = useExcludedGenres();
@@ -110,7 +111,8 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={title} href={href ?? "/category"} />
+        {title === "오늘 가장 많이보는 시리즈" ? <SectionTitle title={title} href={href ?? "/category"} showMore={false} /> :
+        <SectionTitle title={title} href={href ?? "/category"} />}
       </div>
 
       <div className="swiper-outer">
@@ -158,6 +160,11 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                       fill
                       sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
                     />
+                    {showRank && (
+                      <span className="theme-rank-num" aria-hidden="true">
+                        {index + 1}
+                      </span>
+                    )}
                     {item.isNetflixOriginal && (
                       <>
                         <div className="netflix-corner-logo">

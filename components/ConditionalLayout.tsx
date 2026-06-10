@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoginBanner from "@/components/LoginBanner";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import Toaster from "@/components/common/Toaster";
 import SubscribeModal from "@/components/SubscribeModal";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
@@ -26,6 +27,7 @@ export default function ConditionalLayout({
       <main className={hideLayout ? undefined : "has-nav"}>{children}</main>
       <Footer />
       {!hideLayout && <LoginBanner />}
+      {!hideLayout && <MobileBottomNav />}
       <Toaster />
       {isOpen && <SubscribeModal onClose={closeModal} />}
     </>

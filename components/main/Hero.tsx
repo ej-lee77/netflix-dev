@@ -633,6 +633,7 @@ export default function Hero() {
   }
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
+  const activeMediaType = activeItem.media_type ?? "movie";
   const hasPreviewVideo = autoplayPreview && (previousVideoKey || currentVideoKey);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
@@ -756,7 +757,7 @@ export default function Hero() {
           <button
             className="btn-play"
             type="button"
-            onClick={() => router.push(`/detail/${activeItem.media_type}/${activeItem.id}?play=1`)}
+            onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}?play=1`)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <polygon points="5 3 19 12 5 21 5 3" />
@@ -766,7 +767,7 @@ export default function Hero() {
           <button
             className="btn-info"
             type="button"
-            onClick={() => router.push(`/detail/${activeItem.media_type}/${activeItem.id}`)}
+            onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}`)}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
@@ -775,8 +776,8 @@ export default function Hero() {
             </svg>
             {t("common.detail")}
           </button>
-          <WishlistButton item={activeItem} mediaType={activeItem.media_type} className="hero-wish" />
-          <ShareButton mediaType={activeItem.media_type} id={activeItem.id} className="hero-wish" />
+          <WishlistButton item={activeItem} mediaType={activeMediaType} className="hero-wish" />
+          <ShareButton mediaType={activeMediaType} id={activeItem.id} className="hero-wish" />
         </div>
       </div>
 

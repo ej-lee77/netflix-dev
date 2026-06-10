@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -33,11 +34,25 @@ interface MediaListProps {
 export default function CategoryList({ category }: MediaListProps) {
   const t = useT();
   const router = useRouter();
-  const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos, netflixOriginals, certifications, onFetchCertification } = useMovieStore();
+  const {
+    popMovies,
+    popVideos,
+    onFetchPopular,
+    onFetchVideo,
+    tvs,
+    tvVideos,
+    onFetchTvs,
+    onFetchTvVideos,
+    netflixOriginals,
+    onFetchNetflixOriginals,
+    certifications,
+    onFetchCertification,
+  } = useMovieStore();
   const { currentProfile } = useAuthStore();
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestedCategoriesRef = useRef<Set<MediaListProps["category"]>>(new Set());
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
 
@@ -50,6 +65,33 @@ export default function CategoryList({ category }: MediaListProps) {
   };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
+
+  useEffect(() => {
+    if (requestedCategoriesRef.current.has(category)) return;
+
+    if (category === "movie" && popMovies.length === 0) {
+      requestedCategoriesRef.current.add(category);
+      onFetchPopular();
+      return;
+    }
+    if (category === "tv" && tvs.length === 0) {
+      requestedCategoriesRef.current.add(category);
+      onFetchTvs();
+      return;
+    }
+    if (category === "netflix" && netflixOriginals.length === 0) {
+      requestedCategoriesRef.current.add(category);
+      onFetchNetflixOriginals();
+    }
+  }, [
+    category,
+    popMovies.length,
+    tvs.length,
+    netflixOriginals.length,
+    onFetchPopular,
+    onFetchTvs,
+    onFetchNetflixOriginals,
+  ]);
 
   const movieSource = [
     ...popMovies.slice(profileOffset),
@@ -177,10 +219,12 @@ export default function CategoryList({ category }: MediaListProps) {
                 >
                   {/* 기본 포스터 */}
                   <div className="img-box">
-                    <img
+                    <Image
                       className="poster-img"
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
+                      fill
+                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
                     />
                     {category === "netflix" && (
                       <>
@@ -210,10 +254,12 @@ export default function CategoryList({ category }: MediaListProps) {
                             referrerPolicy="strict-origin-when-cross-origin"
                           />
                         ) : (
-                          <img
+                          <Image
                             src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`}
                             alt={item.title}
                             className="fallback-img"
+                            fill
+                            sizes="(max-width: 640px) 100vw, 40vw"
                           />
                         )}
                       </div>
