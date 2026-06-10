@@ -165,7 +165,7 @@ export default function HeaderMenu() {
 
   return (
     <>
-      <nav>
+      <nav className="sidebar-nav">
         <div className="main-menu sidebar-icons">
           {homeMenu && (
             <div

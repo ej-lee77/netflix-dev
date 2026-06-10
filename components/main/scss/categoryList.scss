@@ -108,6 +108,23 @@
       transition: transform 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
+    /* 랭킹 섹션 카드형: 포스터 좌하단 순위 숫자 (데스크탑 랭킹과 동일 톤) */
+    .theme-rank-num {
+      position: absolute;
+      left: 4px;
+      bottom: 2px;
+      z-index: 3;
+      color: #fff;
+      font-size: clamp(2.6rem, 9vw, 3.6rem);
+      font-weight: 800;
+      font-style: italic;
+      line-height: 0.9;
+      pointer-events: none;
+      text-shadow:
+        -2px 0 6px rgba(0, 0, 0, 0.65),
+        0 3px 12px rgba(0, 0, 0, 0.4);
+    }
+
     .netflix-corner-logo {
       position: absolute;
       top: 0;

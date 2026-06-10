@@ -122,6 +122,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
         title={title ?? t("home.top10")}
         items={themeItems}
         href={href ?? "/category"}
+        showRank
       />
     );
   }
