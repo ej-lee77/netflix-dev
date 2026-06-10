@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import PosterCard from "@/components/common/PosterCard";
+import PosterGridSkeleton from "@/components/common/PosterGridSkeleton";
 import CustomSelect from "@/components/common/CustomSelect";
 import { getTmdbLang } from "@/lib/i18n";
 import { isHidden } from "@/data/hiddenContent";
@@ -806,7 +807,7 @@ function CategoryPageContent() {
             </div>
 
             {loading ? (
-              <div className="state-text">작품을 불러오는 중...</div>
+              <PosterGridSkeleton />
             ) : sortedVisibleItems.length > 0 ? (
               <>
                 <div className="poster-grid">

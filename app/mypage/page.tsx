@@ -18,15 +18,19 @@ import { PlayListItem } from "@/types/playList";
 
 const GENRE_COLORS: { [key: string]: string } = {
   // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
-  "SF": "#E50914",
-  "액션": "#E50914",
-  "스릴러": "#E50914",
-  "판타지": "#E50914",
-  "드라마": "#E50914",
-  "코미디": "#E50914",
-  "로맨스": "#E50914",
-  "다큐멘터리": "#E50914",
-  "기타": "#B00710"
+  "SF": "#6366f1",       // 인디고
+  "액션": "#3b82f6",     // 블루
+  "스릴러": "#ef4444",   // 레드
+  "판타지": "#a855f7",   // 퍼플
+  "드라마": "#10b981",   // 그린
+  "공포": "#b94010",   // 그린
+  "미스터리": "#10b93a",   // 그린
+  "전쟁": "#e5f50b",   // 그린
+  "코미디": "#f59e0b",   // 앰버
+  "로맨스": "#ec4899",   // 핑크
+  "애니메이션": "#ec487f",   // 핑크
+  "다큐멘터리": "#64748b", // 슬레이트
+  "기타": "#94a3b8"      // 기본 회색
 };
 
 // 사용 시 함수 형태로 호출
@@ -37,14 +41,14 @@ const getGenreColor = (genreName: string) => {
 export default function MyPage() {
   const { user, currentProfile, onLogout, toggleCommunity } = useAuthStore();
   const { playHist, onLoadPlayList } = usePlayListStore();
-  const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail, upcomings, onFetchUpcoming } = useMovieStore();
+  const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail } = useMovieStore();
 
   const userId = user?.userId;
   const { reviews, fetchUserReviews } = useCommunityStore();
   const [historyItems, setHistoryItems] = useState<PlayListItem[]>([]);
 
-  useEffect(() => {
-    if (upcomings.length === 0) onFetchUpcoming();
+    useEffect(() => {
+    onLoadPlayList();
     if (popMovies.length === 0) onFetchPopular();
     if (tvs.length === 0) onFetchTvs();
   }, []);
@@ -61,6 +65,7 @@ export default function MyPage() {
     };
     loadHistory();
   }, [playHist]);
+  console.log(historyItems, playHist);
 
   // 2. 영화 상세 정보 보완
   const [enrichedReviews, setEnrichedReviews] = useState<any[]>([]);
@@ -94,12 +99,6 @@ export default function MyPage() {
     return currentProfile ?? user?.profile?.[0] ?? null;
   }, [currentProfile, user]);
 
-  useEffect(() => {
-    onLoadPlayList();
-    if (popMovies.length === 0) onFetchPopular();
-    if (tvs.length === 0) onFetchTvs();
-  }, []);
-
   const menuIcons = useMemo(() => {
     return {
       playlist: "/images/header/menu/playlist.svg",
@@ -118,7 +117,7 @@ export default function MyPage() {
       { href: "/mypage/playlist", icon: menuIcons.playlist, title: "콘텐츠 관리", desc: "내가 찜·시청하고 기록한 모든 작품", isCommunity: false },
       { href: "/mypage/community", icon: menuIcons.review, title: "커뮤니티 관리", desc: "내가 쓴 리뷰/피드", isCommunity: true },
       { href: "/menu/custom", icon: menuIcons.custom, title: "메뉴 커스텀", desc: "나만의 메뉴 커스텀", isCommunity: false },
-      { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", hasDot: true, isCommunity: false },
+      { href: "/alarm", icon: menuIcons.alarm, title: "알림", desc: "새로운 활동", isCommunity: false },
       { href: "/friends", icon: menuIcons.friends, title: "팔로워 • 팔로잉", desc: "팔로워 및 팔로잉 관리", isCommunity: true },
       { href: "/mypage/genre", icon: menuIcons.genre, title: "장르 관리", desc: "선호/제외 장르 선택", isCommunity: false },
       { href: "/contact?tab=history", icon: menuIcons.contact, title: "문의 관리", desc: "내가 쓴 문의", isCommunity: false },
@@ -180,7 +179,7 @@ export default function MyPage() {
     ];
 
     return sampleNotifs.slice(0, 3); // 상위 5개만 반환
-  }, [tvs, popMovies, upcomings]);
+  }, [tvs, popMovies]);
 
   const profileData = useMemo(() => {
     if (!activeProfile) {
@@ -312,7 +311,7 @@ export default function MyPage() {
           name: gInfo?.label || "기타",
           count,
           percentage: Math.round((count / totalCount) * 100),
-          color: "#6d28d9" // 필요시 별도 컬러 함수 사용
+          color: GENRE_COLORS[gInfo?.label || "기타"] // 필요시 별도 컬러 함수 사용
         };
       })
       .sort((a, b) => b.count - a.count);
@@ -463,7 +462,7 @@ export default function MyPage() {
               </div>
               <h3>{item.title}</h3>
               <p>{item.desc}</p>
-              {item.hasDot && <span className="dot"></span>}
+              {/* {item.hasDot && <span className="dot"></span>} */}
             </Link>
           ))}
         </div>
@@ -629,9 +628,25 @@ export default function MyPage() {
                 <span className="more"><Link href="/mypage/community">더보기</Link></span>
               </div>
 
-              {reviews.length > 0 ? (
+              {reviews.length > 0 && enrichedReviews.length === 0 ? (
+                <div className="review-list review-list-skeleton">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="review-item review-item-skeleton">
+                      <div className="review-thumb review-skeleton__thumb" />
+                      <div className="review-body">
+                        <div className="review-head">
+                          <div className="review-skeleton__line review-skeleton__line--title" />
+                          <div className="review-skeleton__line review-skeleton__line--score" />
+                        </div>
+                        <div className="review-skeleton__line" />
+                        <div className="review-skeleton__line review-skeleton__line--short" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : reviews.length > 0 ? (
                 <div className="review-list">
-                  {enrichedReviews.map((review) => {
+                  {enrichedReviews.slice(0, 3).map((review) => {
                     const movie = review.mediaInfo;
                     return (
                       <div key={review.reviewId} className="review-item">
@@ -643,7 +658,7 @@ export default function MyPage() {
                         </div>
                         <div className="review-body">
                           <div className="review-head">
-                            <h3>{movie?.title || movie?.name || '로딩 중...'}</h3>
+                            <h3>{movie?.title || movie?.name || '제목 없음'}</h3>
                             <span className="stars"><AppIcon name="like" size={14} /> {review.likesCount}</span>
                           </div>
                           <p className="text">

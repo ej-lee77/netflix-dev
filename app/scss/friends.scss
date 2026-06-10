@@ -282,14 +282,28 @@
       gap: 8px;
     }
 
-    .follow-item {
+    .follow-item-more{
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid #2a2a2a;
+      border-radius: g.$radius-md;
       display: flex;
       align-items: center;
       gap: 14px;
       padding: 14px 18px;
+    }
+
+    .follow-item {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid #2a2a2a;
       border-radius: g.$radius-md;
+      position: relative;
+
+      >a{
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+      }
 
       .avatar {
         width: 44px;
@@ -304,10 +318,29 @@
         flex: 1;
         min-width: 0;
 
+        >div{
+          display: flex;
+          gap: 4px;
+          align-items: center;
+          margin-bottom: 2px;
+        }
+
         h3 {
           font-size: g.$text-14;
           font-weight: 700;
           margin-bottom: 2px;
+        }
+
+        span{
+          display: inline-block;
+          padding: 2px 12px;
+          background: rgba(229, 9, 20, 0.15);
+          color: g.$main-color;
+          border: 1px solid g.$main-color;
+          border-radius: 100px;
+          font-size: g.$text-12;
+          font-weight: 600;
+          // margin-bottom: 4px;
         }
 
         p {
@@ -325,6 +358,10 @@
         font-size: g.$text-12;
         font-weight: 600;
         cursor: pointer;
+        position: absolute;
+        top: 50%;
+        right: 18px;
+        transform: translateY(-50%);
 
         &:hover {
           border-color: g.$main-color;

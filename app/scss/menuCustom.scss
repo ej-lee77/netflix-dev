@@ -8,6 +8,7 @@
   // 1. 레이아웃 컨테이너
   .menu-custom-page__inner {
     width: min(100%, 1400px);
+    max-width: 100%;
     margin: 0 auto;
   }
 
@@ -46,6 +47,7 @@
   .custom-panel {
     margin-top: 24px; // 박스 간격 식별을 위해 14px -> 24px 확장
     padding: 34px;
+    background: rgba(255, 255, 255, 0.035);
   }
 
   // 4. 판넬 헤더 스타일
@@ -95,6 +97,8 @@
     .panel-toggle {
       width: 36px;
       height: 36px;
+      flex: 0 0 36px;
+      aspect-ratio: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -291,6 +295,8 @@
     justify-content: center;
     width: 18px;
     height: 18px;
+    flex: 0 0 18px;
+    aspect-ratio: 1;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
@@ -360,10 +366,17 @@
       box-shadow 0.18s ease;
 
     img {
+      flex: 0 0 auto;
       opacity: 0.48;
       transition:
         opacity 0.18s ease,
         transform 0.18s ease;
+    }
+
+    span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     // 활성화 시 우측 동그라미 숫자 칩
@@ -378,6 +391,8 @@
       font-weight: 800;
       width: 22px;
       height: 22px;
+      flex: 0 0 22px;
+      aspect-ratio: 1;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
@@ -468,29 +483,111 @@
   }
 
   @media (max-width: 760px) {
-    padding: 28px 20px 56px;
+    padding: 24px 16px 72px;
 
     .custom-panel {
-      padding: 24px 18px;
+      margin-top: 16px;
+      padding: 18px 14px;
+    }
+
+    .menu-flow-panel {
+      margin-top: 14px;
+      padding: 16px 14px;
+    }
+
+    .flow-row {
+      grid-template-columns: 1fr;
+      gap: 7px;
+      align-items: start;
+    }
+
+    .flow-row-label {
+      font-size: 0.84rem;
+    }
+
+    .flow-row-items {
+      width: 100%;
+      min-height: 34px;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 7px;
+      overflow: visible;
+    }
+
+    .flow-summary {
+      .flow-row:nth-child(2) .flow-row-items {
+        flex-wrap: nowrap;
+        max-height: none;
+        overflow: visible;
+      }
+    }
+
+    .flow-chip {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 7px;
+      padding: 8px 10px;
+      font-size: 0.76rem;
+    }
+
+    .category-columns {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .category-box {
+      padding: 14px;
+      border-radius: 10px;
+    }
+
+    .category-summary {
+      margin-bottom: 12px;
+      font-size: 0.84rem;
     }
 
     .genre-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .genre-button {
-      min-height: 64px;
+      min-height: 52px;
       flex-direction: row; // 모바일 텍스트 일렬 유지를 위해 가로 배열 강제 유지
-      padding: 0 38px 0 12px;
+      gap: 6px;
+      padding: 0 31px 0 10px;
+      font-size: 0.82rem;
+
+      img {
+        width: 20px;
+        height: 20px;
+        flex-basis: 20px;
+      }
 
       strong {
-        right: 10px;
+        right: 8px;
+        width: 18px;
+        height: 18px;
+        flex-basis: 18px;
+        font-size: 10px;
       }
     }
 
     .reset-panel {
       align-items: stretch;
       flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+      padding: 16px 14px;
+
+      p {
+        font-size: 0.84rem;
+        line-height: 1.45;
+      }
+
+      button {
+        min-height: 38px;
+      }
     }
 
     .section-item {
@@ -509,5 +606,5 @@
   .menu-custom-page { padding-left: 64px; }
 }
 @include g.respond(mobile) {
-  .menu-custom-page { padding-left: 56px; padding-right: 16px; }
+  .menu-custom-page { padding: 24px 16px 72px; }
 }

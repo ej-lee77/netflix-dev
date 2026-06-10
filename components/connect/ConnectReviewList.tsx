@@ -20,6 +20,7 @@ import { dummyPlaylists } from "@/data/dummyPlaylist";
 const DUMMY_USERS: SimilarUser[] = dummyPlaylists.map((d, i) => ({
     userId: d.userId,
     nickname: d.nickname,
+    badge: d.badge,
     imgUrl: d.posters[0] ?? "",
     matchRate: Math.max(78, 96 - i * 2),
     followersCount: 0,
@@ -62,7 +63,7 @@ export default function ConnectReviewList() {
 
                 <SectionTitle
                     title="나와 취향이 비슷한 유저"
-                    subTitle="취향 매칭률이 높은 유저를 팔로우해보세요" />
+                    subTitle="취향 매칭률이 높은 유저를 팔로우해보세요" showMore={false}/>
 
                 {isLoadingSimilar ? (
                     <div className="connect-review-list__skeleton">
