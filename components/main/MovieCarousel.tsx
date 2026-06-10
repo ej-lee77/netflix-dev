@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { filterHidden } from "@/data/hiddenContent";
 
 interface Movie {
   id: number;
@@ -185,8 +186,10 @@ export default function MovieCarousel() {
     fetch(`${TMDB_API_BASE}/trending/movie/week?api_key=${TMDB_API_KEY}&language=ko-KR`)
       .then((r) => r.json())
       .then((d) => {
-        const filtered = (d.results ?? []).filter(
-          (m: Movie) => m.backdrop_path && m.poster_path
+        const filtered = filterHidden(
+          (d.results ?? []).filter(
+            (m: Movie) => m.backdrop_path && m.poster_path
+          )
         );
         setMovies(filtered.slice(0, 10));
         setLoading(false);

@@ -30,7 +30,13 @@
     gap: 4px;
     border-bottom: 1px solid #2a2a2a;
     margin-bottom: 24px;
-    // overflow-x: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     button {
       padding: 12px 18px;

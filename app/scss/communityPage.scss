@@ -308,3 +308,14 @@
     width: 100%;
   }
 }
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .community-page { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .community-page { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .community-page { padding-left: 56px; padding-right: 16px; }
+}

@@ -127,26 +127,29 @@
       gap: 8px;
       padding: 14px 24px;
       background: transparent;
-      border: 1px solid #3a3a3a;
-      color: g.$g-color;
+      border: 1px solid g.$w-color;
+      color: g.$w-color;
       border-radius: g.$radius-md;
       font-size: g.$text-14;
       cursor: pointer;
       backdrop-filter: blur(8px);
+      transition: all 0.2s;
 
       img {
         width: 20px;
         height: 20px;
         flex: 0 0 auto;
+        filter: brightness(0) invert(1);
       }
 
       &.active {
-        background: g.$main-color;
-        border-color: g.$main-color;
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.3);
         color: g.$w-color;
 
         img {
           filter: brightness(0) invert(1);
+          opacity: 1;
         }
       }
 
@@ -266,8 +269,8 @@
         width: 100%;
         padding: 7px 12px;
         background: transparent;
-        border: 1px solid #3a3a3a;
-        color: g.$g-color;
+        border: 1px solid g.$w-color;
+        color: g.$w-color;
         border-radius: g.$radius-md;
         font-size: g.$text-12;
         cursor: pointer;
@@ -277,15 +280,17 @@
           width: 16px;
           height: 16px;
           flex: 0 0 auto;
+          filter: brightness(0) invert(1);
         }
 
         &.active {
-          background: g.$main-color;
-          border-color: g.$main-color;
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.3);
           color: g.$w-color;
 
           img {
             filter: brightness(0) invert(1);
+            opacity: 1;
           }
         }
 
