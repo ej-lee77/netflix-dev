@@ -10,6 +10,7 @@ import AuthProvider from "@/components/AuthProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import ConnectAIButton from "@/components/connect/ConnectAIButton";
 import ScrollToTop from "@/components/common/ScrollToTop";
+import ConnectAIWrapper from "@/components/connect/ConnectAIWrapper";
 
 const netflixSans = localFont({
   src: [
@@ -35,22 +36,17 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
       <body className={netflixSans.variable}>
-        <Suspense fallback={null}>
-          <ScrollToTop />
-        </Suspense>
+        {/* ... */}
         <AuthProvider>
           <ConditionalLayout>
             {children}
           </ConditionalLayout>
-          <ConnectAIButton />
+          {/* 래퍼를 통해 안전하게 렌더링 */}
+          <ConnectAIWrapper />
         </AuthProvider>
       </body>
     </html>

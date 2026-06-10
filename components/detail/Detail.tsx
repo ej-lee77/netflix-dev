@@ -26,6 +26,7 @@ import {
   isUpcomingNotificationSet,
   removeUpcomingAlarm,
 } from "@/lib/upcomingNotifications";
+import AppIcon from "../common/AppIcon";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -282,8 +283,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const { user, currentProfile, updateUserLike, onInitAuth, onUpdateProfile } =
     useAuthStore();
 
-  const [showPopup, setShowPopup] = useState<boolean>(shouldAutoPlay);
+  const [showPopup, setShowPopup] = useState(false);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
+  const [showAdultModal, setShowAdultModal] = useState(false);
   const [selectSeason, setSelectSeason] = useState(1);
   const [selectEpisodeId, setSelectEpisodeId] = useState<number | null>(null);
   const [episodePage, setEpisodePage] = useState(1);
@@ -489,6 +491,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     if (rawCert === "19" || rawCert === "Restricted Screening") return "19+";
     return "ALL";
   })();
+  const isAdultContent = ageBadge === "19+" || mediaItem?.adult === true;
+  const canAccessAdultContent =
+    currentProfile?.settings?.maturityRating === "19+" &&
+    currentProfile?.settings?.verifiedAdult === true;
+  const isAdultBlocked = isAdultContent && !canAccessAdultContent;
   const heroMetaItems = [releaseYear, seasonOrRuntimeText, countryText].filter(
     Boolean,
   );
@@ -601,6 +608,21 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   useEffect(() => {
+    if (!isAdultBlocked) {
+      setShowAdultModal(false);
+      return;
+    }
+
+    setShowPopup(false);
+    setPopupVideoKey(null);
+    setShowAdultModal(true);
+
+    if (shouldAutoPlay) {
+      router.replace(`/detail/${type}/${mediaId}`, { scroll: false });
+    }
+  }, [isAdultBlocked, mediaId, router, shouldAutoPlay, type]);
+
+  useEffect(() => {
     if (!isUpcoming || !isTv || visibleSeasons.length === 0) return;
 
     const nextSeasonNumber = visibleSeasons[0].season_number;
@@ -631,6 +653,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const handlePlay = async () => {
+    if (isAdultBlocked) {
+      setShowAdultModal(true);
+      return;
+    }
     if (isUpcoming) {
       handleNotifyUpcoming();
       return;
@@ -818,6 +844,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   useEffect(() => {
     if (
       isUpcoming ||
+      isAdultBlocked ||
       !shouldAutoPlay ||
       hasAutoPlayed.current ||
       !mediaItem ||
@@ -827,7 +854,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
     hasAutoPlayed.current = true;
     handlePlay();
-  }, [isUpcoming, shouldAutoPlay, mediaItem, videos]);
+  }, [isUpcoming, isAdultBlocked, shouldAutoPlay, mediaItem, videos]);
 
   // 플레이어 뒤로가기/닫기: 오버레이를 닫고, 메인에서 ?play=1 로 바로 진입한 경우엔
   // play 파라미터를 제거해 (이미 로드된) 상세페이지가 드러나도록 한다.
@@ -840,11 +867,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
   // 공개 예정작을 ?play=1 로 진입한 경우: 재생 오버레이 대신 상세페이지를 보여준다
   useEffect(() => {
-    if (shouldAutoPlay && isUpcoming) {
+    if (shouldAutoPlay && (isUpcoming || isAdultBlocked)) {
       setShowPopup(false);
       router.replace(`/detail/${type}/${mediaId}`, { scroll: false });
     }
-  }, [shouldAutoPlay, isUpcoming]);
+  }, [shouldAutoPlay, isUpcoming, isAdultBlocked, mediaId, router, type]);
 
   // ─── Render sections ────────────────────────────────────────────────────────
 
@@ -969,6 +996,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               <div
                 key={ep.id}
                 onClick={async () => {
+                  if (isAdultBlocked) {
+                    setShowAdultModal(true);
+                    return;
+                  }
                   if (isUpcoming) {
                     handleNotifyUpcoming();
                     return;
@@ -2391,7 +2422,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 color: "#444",
               }}
             >
-              👤
+              <AppIcon name="faq-account" size={20} />
             </div>
           )}
         </div>
@@ -2996,6 +3027,153 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           >
             닫기
           </button>
+        </div>
+      )}
+
+      {showAdultModal && isAdultBlocked && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="adult-verification-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 400000,
+            background: "#000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              width: "min(100%, 420px)",
+              border: "1px solid rgba(255,255,255,0.16)",
+              borderRadius: 8,
+              background: "#141414",
+              padding: isMobile ? 22 : 28,
+              color: "#fff",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
+            }}
+          >
+            <h2
+              id="adult-verification-title"
+              style={{
+                margin: "0 0 10px",
+                fontSize: isMobile ? 22 : 26,
+                lineHeight: 1.2,
+              }}
+            >
+              성인 인증이 필요합니다
+            </h2>
+            <p
+              style={{
+                margin: "0 0 22px",
+                color: "rgba(255,255,255,0.72)",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              이 콘텐츠는 만 19세 이상만 시청할 수 있습니다. 생년월일
+              확인 후 현재 프로필에서 19세 콘텐츠를 볼 수 있습니다.
+            </p>
+            <label
+              htmlFor="adult-birth-date"
+              style={{
+                display: "none",
+                marginBottom: 8,
+                color: "rgba(255,255,255,0.86)",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              생년월일
+            </label>
+            <input
+              id="adult-birth-date"
+              type="date"
+              value=""
+              max={getToday()}
+              readOnly
+              required
+              style={{
+                display: "none",
+                width: "100%",
+                height: 46,
+                boxSizing: "border-box",
+                border: "1px solid rgba(255,255,255,0.28)",
+                borderRadius: 4,
+                background: "#0f0f0f",
+                color: "#fff",
+                padding: "0 12px",
+                fontSize: 15,
+                colorScheme: "dark",
+              }}
+            />
+            {false && (
+              <p
+                role="alert"
+                style={{
+                  margin: "10px 0 0",
+                  color: "#ff7b7b",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                {""}
+              </p>
+            )}
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 24,
+                flexDirection: isMobile ? "column" : "row",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    currentProfile
+                      ? `/profiles/settings?profileId=${currentProfile.id}`
+                      : "/profiles",
+                  )
+                }
+                style={{
+                  flex: 1,
+                  height: 44,
+                  border: "none",
+                  borderRadius: 4,
+                  background: "#e50914",
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                인증하고 보기
+              </button>
+              <button
+                type="button"
+                onClick={() => router.replace("/")}
+                style={{
+                  flex: 1,
+                  height: 44,
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  borderRadius: 4,
+                  background: "transparent",
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                나가기
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

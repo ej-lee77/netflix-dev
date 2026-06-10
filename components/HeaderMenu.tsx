@@ -137,9 +137,9 @@ export default function HeaderMenu() {
   const homeMenu = mainMenus.find((m) => m.path === "/");
 
   const CATEGORY_TOP_LEVEL = new Set([
-    "/category?tab=movie",
-    "/category?tab=tv",
-    "/category?tab=animation",
+    "/category?type=movie",
+    "/category?type=tv",
+    "/category?type=animation",
   ]);
 
   const categoryChildren = dynamicMenus.filter(
@@ -193,9 +193,9 @@ export default function HeaderMenu() {
               menu.path !== CATEGORY_MENU.path && isCategoryMenuPath(menu.path);
 
             const isCategoryTopLevel = [
-              "/category?tab=movie",
-              "/category?tab=tv",
-              "/category?tab=animation",
+              "/category?type=movie",
+              "/category?type=tv",
+              "/category?type=animation",
             ].includes(menu.path);
 
             if (isCategoryChild && !isCategoryTopLevel) {

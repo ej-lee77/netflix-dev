@@ -271,12 +271,16 @@ export default function MenuCustomPage() {
     if (sourceIndex === -1 || targetIndex === -1) return;
 
     const targetRect = event.currentTarget.getBoundingClientRect();
-    const targetMiddleX = targetRect.left + targetRect.width / 2;
-    const movingRight = sourceIndex < targetIndex;
-    const movingLeft = sourceIndex > targetIndex;
+    const isMobilePreview = window.matchMedia("(max-width: 760px)").matches;
+    const targetMiddle = isMobilePreview
+      ? targetRect.top + targetRect.height / 2
+      : targetRect.left + targetRect.width / 2;
+    const pointerPosition = isMobilePreview ? event.clientY : event.clientX;
+    const movingForward = sourceIndex < targetIndex;
+    const movingBackward = sourceIndex > targetIndex;
 
-    if (movingRight && event.clientX < targetMiddleX) return;
-    if (movingLeft && event.clientX > targetMiddleX) return;
+    if (movingForward && pointerPosition < targetMiddle) return;
+    if (movingBackward && pointerPosition > targetMiddle) return;
 
     const nextPaths = [...selectedMenuPaths];
     const [movedPath] = nextPaths.splice(sourceIndex, 1);

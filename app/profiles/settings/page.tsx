@@ -104,13 +104,14 @@ const normalizeMaturityRating = (rating?: string | null): MaturityRating => {
   ) {
     return rating;
   }
-  return rating === "7+" ? "12+" : "19+";
+  return rating === "7+" ? "12+" : DEFAULT_PROFILE_SETTINGS.maturityRating;
 };
 
 const normalizeProfileSetting = (
   settings?: Partial<ProfileSettings> | null,
 ): ProfileSettings => ({
   maturityRating: normalizeMaturityRating(settings?.maturityRating),
+  verifiedAdult: settings?.verifiedAdult ?? false,
   subtitles: {
     ...DEFAULT_PROFILE_SETTINGS.subtitles,
     ...(settings?.subtitles ?? {}),
@@ -137,6 +138,25 @@ const ratingFromViewAge = (viewAge?: string): MaturityRating => {
 const viewAgeFromRating = (rating: MaturityRating) =>
   rating === "전체관람가" ? "all" : rating.replace("+", "");
 
+const getToday = () => new Date().toISOString().slice(0, 10);
+
+const isAtLeast19 = (birthDate: string) => {
+  if (!birthDate) return false;
+
+  const birth = new Date(`${birthDate}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return false;
+
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() &&
+      today.getDate() >= birth.getDate());
+
+  if (!hasHadBirthdayThisYear) age -= 1;
+  return age >= 19;
+};
+
 const iconPaths = (folder: string, count: number, extension = "png") =>
   Array.from(
     { length: count },
@@ -162,10 +182,10 @@ const PROFILE_ICON_SECTIONS: ProfileIconSection[] = [
   { title: "루시퍼", icons: iconPaths("lucifer", 8) },
   { title: "종이의 집", icons: iconPaths("money_heist", 10) },
   { title: "마이 멜로디 & 쿠로미", icons: iconPaths("my_melody_kuromi", 16) },
-  { title: "원피스", icons: iconPaths("one_piece", 17) },
+  { title: "원피스", icons: iconPaths("one_piece", 18) },
   {
     title: "오렌지 이즈 더 뉴 블랙",
-    icons: iconPaths("orange_is_the_new_black", 11),
+    icons: iconPaths("orange_is_the_new_black", 10),
   },
   { title: "피키 블라인더스", icons: iconPaths("peaky_blinders", 6) },
   { title: "레트로 애니메이션", icons: iconPaths("retro_animation", 8) },
@@ -362,6 +382,14 @@ function ProfileSettingsContent() {
   const [maturityRating, setMaturityRating] = useState<MaturityRating>(
     profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
   );
+  const [adultBirthDate, setAdultBirthDate] = useState("");
+  const [adultVerifyName, setAdultVerifyName] = useState("");
+  const [adultVerifyPhone, setAdultVerifyPhone] = useState("");
+  const [adultVerifyCode, setAdultVerifyCode] = useState("");
+  const [isAdultCodeSent, setIsAdultCodeSent] = useState(false);
+  const [adultVerifyError, setAdultVerifyError] = useState("");
+  const [isAdultVerificationOpen, setIsAdultVerificationOpen] =
+    useState(false);
   const [toggles, setToggles] = useState({
     autoplayNext: profileSetting.playback.autoplayNext,
     autoplayPreview: profileSetting.playback.autoplayPreview,
@@ -371,6 +399,24 @@ function ProfileSettingsContent() {
 
   const flip = (key: keyof typeof toggles) =>
     setToggles((value) => ({ ...value, [key]: !value[key] }));
+
+  useEffect(() => {
+    if (maturityRating === "19+" && !profileSetting.verifiedAdult) {
+      setAdultVerifyError("");
+      setIsAdultVerificationOpen(true);
+      return;
+    }
+
+    if (!isAdultVerificationOpen) return;
+
+    setAdultBirthDate("");
+    setAdultVerifyName("");
+    setAdultVerifyPhone("");
+    setAdultVerifyCode("");
+    setIsAdultCodeSent(false);
+    setAdultVerifyError("");
+    setIsAdultVerificationOpen(false);
+  }, [isAdultVerificationOpen, maturityRating, profileSetting.verifiedAdult]);
 
   const profileDisplayName =
     contactOverrides.name ||
@@ -403,6 +449,35 @@ function ProfileSettingsContent() {
       setContactEdit(null);
       setContactError("");
     }
+    if (activeModal === "maturity") {
+      setMaturityRating(
+        profileSetting.maturityRating === "19+" &&
+          !profileSetting.verifiedAdult
+          ? DEFAULT_PROFILE_SETTINGS.maturityRating
+          : profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
+      );
+      setAdultBirthDate("");
+      setAdultVerifyName("");
+      setAdultVerifyPhone("");
+      setAdultVerifyCode("");
+      setIsAdultCodeSent(false);
+      setAdultVerifyError("");
+      setIsAdultVerificationOpen(false);
+    }
+    if (activeModal === "playback") {
+      setToggles((current) => ({
+        ...current,
+        autoplayNext: profileSetting.playback.autoplayNext,
+        autoplayPreview: profileSetting.playback.autoplayPreview,
+      }));
+    }
+    if (activeModal === "notifications") {
+      setToggles((current) => ({
+        ...current,
+        notiNew: true,
+        notiRecommend: false,
+      }));
+    }
     setActiveModal(null);
   };
 
@@ -422,6 +497,35 @@ function ProfileSettingsContent() {
       setIsIconPickerOpen(false);
       setContactEdit(null);
       setContactError("");
+    }
+    if (modalKey === "maturity") {
+      setMaturityRating(
+        profileSetting.maturityRating === "19+" &&
+          !profileSetting.verifiedAdult
+          ? DEFAULT_PROFILE_SETTINGS.maturityRating
+          : profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
+      );
+      setAdultBirthDate("");
+      setAdultVerifyName("");
+      setAdultVerifyPhone("");
+      setAdultVerifyCode("");
+      setIsAdultCodeSent(false);
+      setAdultVerifyError("");
+      setIsAdultVerificationOpen(false);
+    }
+    if (modalKey === "playback") {
+      setToggles((current) => ({
+        ...current,
+        autoplayNext: profileSetting.playback.autoplayNext,
+        autoplayPreview: profileSetting.playback.autoplayPreview,
+      }));
+    }
+    if (modalKey === "notifications") {
+      setToggles((current) => ({
+        ...current,
+        notiNew: true,
+        notiRecommend: false,
+      }));
     }
     setActiveModal(modalKey);
   };
@@ -485,7 +589,86 @@ function ProfileSettingsContent() {
   };
 
   const saveMaturitySettings = () => {
+    if (maturityRating === "19+" && !profileSetting.verifiedAdult) {
+      setAdultBirthDate("");
+      setAdultVerifyName("");
+      setAdultVerifyPhone("");
+      setAdultVerifyCode("");
+      setIsAdultCodeSent(false);
+      setAdultVerifyError("");
+      setIsAdultVerificationOpen(true);
+      return;
+    }
+
     updateProfileSettings({ maturityRating });
+    setActiveModal(null);
+  };
+
+  const revertMaturitySelection = () => {
+    setMaturityRating(
+      profileSetting.maturityRating === "19+" && !profileSetting.verifiedAdult
+        ? DEFAULT_PROFILE_SETTINGS.maturityRating
+        : profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
+    );
+    setAdultBirthDate("");
+    setAdultVerifyName("");
+    setAdultVerifyPhone("");
+    setAdultVerifyCode("");
+    setIsAdultCodeSent(false);
+    setAdultVerifyError("");
+    setIsAdultVerificationOpen(false);
+  };
+
+  const requestAdultVerificationCode = () => {
+    const phoneDigits = adultVerifyPhone.replace(/\D/g, "");
+
+    if (!adultVerifyName.trim()) {
+      setAdultVerifyError("이름을 입력해 주세요.");
+      return;
+    }
+    if (phoneDigits.length < 10) {
+      setAdultVerifyError("휴대폰 번호를 정확히 입력해 주세요.");
+      return;
+    }
+    if (!adultBirthDate) {
+      setAdultVerifyError("생년월일을 입력해 주세요.");
+      return;
+    }
+
+    setIsAdultCodeSent(true);
+    setAdultVerifyCode("");
+    setAdultVerifyError("데모 인증번호는 123456입니다.");
+  };
+
+  const submitAdultVerification = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!isAdultCodeSent) {
+      setAdultVerifyError("먼저 인증번호를 받아 주세요.");
+      return;
+    }
+    if (adultVerifyCode !== "123456") {
+      setAdultVerifyError("인증번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if (!isAtLeast19(adultBirthDate)) {
+      setAdultVerifyError("만 19세 이상만 19+ 등급으로 저장할 수 있습니다.");
+      revertMaturitySelection();
+      return;
+    }
+
+    updateProfileSettings({
+      maturityRating: "19+",
+      verifiedAdult: true,
+    });
+    setAdultBirthDate("");
+    setAdultVerifyName("");
+    setAdultVerifyPhone("");
+    setAdultVerifyCode("");
+    setIsAdultCodeSent(false);
+    setAdultVerifyError("");
+    setIsAdultVerificationOpen(false);
     setActiveModal(null);
   };
 
@@ -1262,7 +1445,185 @@ function ProfileSettingsContent() {
                     label="현재 관람등급"
                     desc={`${maturityRating} 이하 콘텐츠가 표시됩니다.`}
                   />
-                  <div className="profile-edit-actions">
+                  {isAdultVerificationOpen && (
+                    <form
+                      onSubmit={submitAdultVerification}
+                      style={{
+                        border: "1px solid rgba(255,255,255,0.16)",
+                        borderRadius: 8,
+                        background: "rgba(0,0,0,0.28)",
+                        padding: 18,
+                        marginTop: 18,
+                      }}
+                    >
+                      <strong
+                        style={{
+                          display: "block",
+                          color: "#fff",
+                          fontSize: 16,
+                          marginBottom: 8,
+                        }}
+                      >
+                        성인 인증
+                      </strong>
+                      <p
+                        style={{
+                          margin: "0 0 14px",
+                          color: "rgba(255,255,255,0.7)",
+                          fontSize: 13,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        19+ 등급으로 저장하려면 생년월일 확인이 필요합니다.
+                      </p>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr",
+                          gap: 10,
+                        }}
+                      >
+                        <input
+                          type="text"
+                          value={adultVerifyName}
+                          onChange={(event) => {
+                            setAdultVerifyName(event.target.value);
+                            setAdultVerifyError("");
+                          }}
+                          placeholder="이름"
+                          required
+                          style={{
+                            height: 44,
+                            boxSizing: "border-box",
+                            border: "1px solid rgba(255,255,255,0.28)",
+                            borderRadius: 4,
+                            background: "#111",
+                            color: "#fff",
+                            padding: "0 12px",
+                            fontSize: 14,
+                          }}
+                        />
+                        <input
+                          type="tel"
+                          value={adultVerifyPhone}
+                          onChange={(event) => {
+                            setAdultVerifyPhone(event.target.value);
+                            setAdultVerifyError("");
+                          }}
+                          placeholder="휴대폰 번호"
+                          required
+                          style={{
+                            height: 44,
+                            boxSizing: "border-box",
+                            border: "1px solid rgba(255,255,255,0.28)",
+                            borderRadius: 4,
+                            background: "#111",
+                            color: "#fff",
+                            padding: "0 12px",
+                            fontSize: 14,
+                          }}
+                        />
+                        <input
+                          type="date"
+                          value={adultBirthDate}
+                          max={getToday()}
+                          onChange={(event) => {
+                            setAdultBirthDate(event.target.value);
+                            setAdultVerifyError("");
+                          }}
+                          required
+                          style={{
+                            height: 44,
+                            boxSizing: "border-box",
+                            border: "1px solid rgba(255,255,255,0.28)",
+                            borderRadius: 4,
+                            background: "#111",
+                            color: "#fff",
+                            padding: "0 12px",
+                            fontSize: 14,
+                            colorScheme: "dark",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={requestAdultVerificationCode}
+                          style={{
+                            height: 44,
+                            border: "1px solid rgba(255,255,255,0.34)",
+                            borderRadius: 4,
+                            background: isAdultCodeSent
+                              ? "rgba(255,255,255,0.08)"
+                              : "#333",
+                            color: "#fff",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {isAdultCodeSent ? "인증번호 재전송" : "인증번호 받기"}
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={adultVerifyCode}
+                        onChange={(event) => {
+                          setAdultVerifyCode(
+                            event.target.value.replace(/\D/g, "").slice(0, 6),
+                          );
+                          setAdultVerifyError("");
+                        }}
+                        placeholder="인증번호 6자리"
+                        disabled={!isAdultCodeSent}
+                        required
+                        style={{
+                          width: "100%",
+                          height: 44,
+                          boxSizing: "border-box",
+                          border: "1px solid rgba(255,255,255,0.28)",
+                          borderRadius: 4,
+                          background: isAdultCodeSent ? "#111" : "#1c1c1c",
+                          color: "#fff",
+                          padding: "0 12px",
+                          fontSize: 14,
+                          marginTop: 10,
+                          opacity: isAdultCodeSent ? 1 : 0.55,
+                        }}
+                      />
+                      {adultVerifyError && (
+                        <p
+                          role="alert"
+                          style={{
+                            margin: "10px 0 0",
+                            color: "#ff7b7b",
+                            fontSize: 13,
+                          }}
+                        >
+                          {adultVerifyError}
+                        </p>
+                      )}
+                      <div
+                        className="profile-edit-actions"
+                        style={{ marginTop: 14 }}
+                      >
+                        <button type="submit" className="is-primary">
+                          인증하고 저장
+                        </button>
+                        <button
+                          type="button"
+                          onClick={revertMaturitySelection}
+                        >
+                          되돌아가기
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                  <div
+                    className="profile-edit-actions"
+                    style={{
+                      display: isAdultVerificationOpen ? "none" : undefined,
+                    }}
+                  >
                     <button
                       type="button"
                       className="is-primary"

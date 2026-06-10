@@ -323,6 +323,8 @@ export default function Hero() {
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
   const [items, setItems] = useState<HeroItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("left");
+  const prevIndexRef = useRef(0);
   const [activeCertification, setActiveCertification] = useState("");
   const [activeVideoKey, setActiveVideoKey] = useState("");
   const [currentVideoKey, setCurrentVideoKey] = useState("");
@@ -335,6 +337,9 @@ export default function Hero() {
   const [isMobile, setIsMobile] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const mouseStartX = useRef<number | null>(null);
+  const mouseStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
 
   useEffect(() => {
     let ignore = false;
@@ -561,21 +566,33 @@ export default function Hero() {
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // 모바일 자동 전환: 12초마다 다음 작품으로.
-  // activeIndex 를 의존성에 둬서 수동 전환(스와이프/도트) 시 타이머가 리셋됨.
   useEffect(() => {
     if (!isMobile || items.length < 2) return;
-
     const timer = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % items.length);
-    }, 12000);
-
+      setSlideDirection("left");
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % items.length;
+        prevIndexRef.current = next;
+        return next;
+      });
+    }, 8000);
     return () => window.clearInterval(timer);
   }, [isMobile, items.length, activeIndex]);
 
-  const selectHeroIndex = (index: number) => {
+
+
+  const goToIndex = (index: number) => {
+    const n = items.length;
+    if (n < 2) { setActiveIndex(index); return; }
+    const prev = prevIndexRef.current;
+    const fwdDist = (index - prev + n) % n;
+    const dir = fwdDist <= n / 2 ? "left" : "right";
+    setSlideDirection(dir);
+    prevIndexRef.current = index;
     setActiveIndex(index);
   };
+
+  const selectHeroIndex = (index: number) => goToIndex(index);
 
   // 모바일 스와이프로 이전/다음 작품 전환 (세로 스크롤과 구분)
   const handleTouchStart = (event: React.TouchEvent) => {
@@ -595,13 +612,55 @@ export default function Hero() {
     if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
     if (items.length < 2) return;
 
-    setActiveIndex((prev) =>
-      deltaX < 0
-        ? (prev + 1) % items.length
-        : (prev - 1 + items.length) % items.length,
-    );
+    const next = deltaX < 0
+      ? (activeIndex + 1) % items.length
+      : (activeIndex - 1 + items.length) % items.length;
+    setSlideDirection(deltaX < 0 ? "left" : "right");
+    prevIndexRef.current = next;
+    setActiveIndex(next);
   };
 
+  const handleMouseDown = (event: React.MouseEvent) => {
+    mouseStartX.current = event.clientX;
+    mouseStartY.current = event.clientY;
+    isDragging.current = false;
+  };
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (mouseStartX.current === null) return;
+    if (Math.abs(event.clientX - mouseStartX.current) > 4) {
+      isDragging.current = true;
+      event.preventDefault();
+    }
+  };
+
+  const handleMouseUp = (event: React.MouseEvent) => {
+    if (mouseStartX.current === null || mouseStartY.current === null) return;
+
+    const deltaX = event.clientX - mouseStartX.current;
+    const deltaY = event.clientY - mouseStartY.current;
+    mouseStartX.current = null;
+    mouseStartY.current = null;
+
+    if (!isDragging.current) return;
+    isDragging.current = false;
+
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+    if (items.length < 2) return;
+
+    const next = deltaX < 0
+      ? (activeIndex + 1) % items.length
+      : (activeIndex - 1 + items.length) % items.length;
+    setSlideDirection(deltaX < 0 ? "left" : "right");
+    prevIndexRef.current = next;
+    setActiveIndex(next);
+  };
+
+  const handleMouseLeave = () => {
+    mouseStartX.current = null;
+    mouseStartY.current = null;
+    isDragging.current = false;
+  };
 
   if (loadState === "loading") {
     return (
@@ -634,7 +693,7 @@ export default function Hero() {
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
   const activeMediaType = activeItem.media_type ?? "movie";
-  const hasPreviewVideo = autoplayPreview && (previousVideoKey || currentVideoKey);
+  const hasPreviewVideo = !isMobile && autoplayPreview && (previousVideoKey || currentVideoKey);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
     `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
@@ -656,11 +715,27 @@ export default function Hero() {
       aria-label="추천 콘텐츠"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     >
       <div
-        className={`hero-backdrop${hasPreviewVideo ? "" : " visible"}`}
+        key={`backdrop-${activeIndex}`}
+        className={`hero-backdrop${hasPreviewVideo ? "" : " visible"} hero-slide-${slideDirection}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
+      {isMobile && (
+        <button
+          className="hero-mobile-tap"
+          type="button"
+          aria-label={`${getTitle(activeItem)} 상세 보기`}
+          onClick={() => {
+            if (isDragging.current) return;
+            router.push(`/detail/${activeMediaType}/${activeItem.id}`);
+          }}
+        />
+      )}
       <div
         className={`hero-video-poster${hasPreviewVideo && isVideoVisible ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
@@ -718,7 +793,7 @@ export default function Hero() {
       </div>
 
 
-      <div className="hero-content">
+      <div key={`content-${activeIndex}`} className="hero-content hero-content-enter">
         <img
           className="hero-logo-img"
           src={activeItem.logoUrl}
@@ -753,32 +828,34 @@ export default function Hero() {
           )}
         </div>
         <p className="hero-desc">{activeItem.overview}</p>
-        <div className="hero-btns">
-          <button
-            className="btn-play"
-            type="button"
-            onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}?play=1`)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-            {t("common.play")}
-          </button>
-          <button
-            className="btn-info"
-            type="button"
-            onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}`)}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            {t("common.detail")}
-          </button>
-          <WishlistButton item={activeItem} mediaType={activeMediaType} className="hero-wish" />
-          <ShareButton mediaType={activeMediaType} id={activeItem.id} className="hero-wish" />
-        </div>
+        {!isMobile && (
+          <div className="hero-btns">
+            <button
+              className="btn-play"
+              type="button"
+              onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}?play=1`)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              {t("common.play")}
+            </button>
+            <button
+              className="btn-info"
+              type="button"
+              onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}`)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              {t("common.detail")}
+            </button>
+            <WishlistButton item={activeItem} mediaType={activeMediaType} className="hero-wish" />
+            <ShareButton mediaType={activeMediaType} id={activeItem.id} className="hero-wish" />
+          </div>
+        )}
       </div>
 
       {items.length > 1 && (

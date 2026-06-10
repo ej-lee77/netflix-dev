@@ -29,17 +29,17 @@ export const mainMenus: mainMenu[] = [
   {
     title: "영화",
     imgUrl: "/images/header/menu/movie.svg",
-    path: "/category?tab=movie",
+    path: "/category?type=movie",
   },
   {
     title: "시리즈",
     imgUrl: "/images/header/menu/tv.svg",
-    path: "/category?tab=tv",
+    path: "/category?type=tv",
   },
   {
     title: "애니메이션",
     imgUrl: "/images/header/menu/animation.svg",
-    path: "/category?tab=animation",
+    path: "/category?type=animation",
   },
   // {
   //     title: "커스텀",
