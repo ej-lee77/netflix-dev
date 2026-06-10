@@ -233,13 +233,23 @@ export default function Home() {
   useEffect(() => {
     let ignore = false;
     const cancelDeferred = deferWork(() => {
-      fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
-        .then((r) => r.json())
-        .then((data) => {
+      // 숨김/제외장르/관람등급 필터 후에도 10개가 채워지도록 2페이지까지 넉넉히 가져온다.
+      // (10개 자르기는 RankingSection에서 모든 필터 적용 후 수행)
+      const base = `https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&api_key=${TMDB_KEY}`;
+      Promise.all([
+        fetch(`${base}&page=1`).then((r) => r.json()),
+        fetch(`${base}&page=2`).then((r) => r.json()),
+      ])
+        .then(([d1, d2]) => {
           if (ignore) return;
-          const items: RankingItem[] = (data.results || [])
+          const seen = new Set<number>();
+          const merged = [...(d1.results || []), ...(d2.results || [])].filter((t: any) => {
+            if (seen.has(t.id)) return false;
+            seen.add(t.id);
+            return true;
+          });
+          const items: RankingItem[] = merged
             .filter((t: any) => t.poster_path && t.backdrop_path)
-            .slice(0, 10)
             .map((t: any) => ({
               id: t.id,
               title: t.name,
@@ -263,13 +273,23 @@ export default function Home() {
   useEffect(() => {
     let ignore = false;
     const cancelDeferred = deferWork(() => {
-      fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
-        .then((r) => r.json())
-        .then((data) => {
+      // 숨김/제외장르/관람등급 필터 후에도 10개가 채워지도록 2페이지까지 넉넉히 가져온다.
+      // (10개 자르기는 RankingSection에서 모든 필터 적용 후 수행)
+      const base = `https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&api_key=${TMDB_KEY}`;
+      Promise.all([
+        fetch(`${base}&page=1`).then((r) => r.json()),
+        fetch(`${base}&page=2`).then((r) => r.json()),
+      ])
+        .then(([d1, d2]) => {
           if (ignore) return;
-          const items: RankingItem[] = (data.results || [])
+          const seen = new Set<number>();
+          const merged = [...(d1.results || []), ...(d2.results || [])].filter((m: any) => {
+            if (seen.has(m.id)) return false;
+            seen.add(m.id);
+            return true;
+          });
+          const items: RankingItem[] = merged
             .filter((m: any) => m.poster_path && m.backdrop_path)
-            .slice(0, 10)
             .map((m: any) => ({
               id: m.id,
               title: m.name,

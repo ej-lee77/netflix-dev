@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useToastStore } from "@/store/useToastStore";
 import "./toaster.scss";
 
 export default function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  if (typeof document === "undefined") return null;
 
   return createPortal(
     <div className="app-toaster" aria-live="polite">
