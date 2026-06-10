@@ -97,20 +97,6 @@ export default function FeedReviewCard({
   );
   const requireFeedAuth = () => {
     if (!currentUserId) {
-      window.alert("로그인이 필요합니다.");
-      router.push("/login");
-      return false;
-    }
-    if (!currentProfile) {
-      window.alert("프로필을 선택해 주세요.");
-      return false;
-    }
-
-    return true;
-  };
-
-  const requireFeedAuthToast = () => {
-    if (!currentUserId) {
       showToast("로그인이 필요합니다.");
       router.push("/login");
       return false;
@@ -141,7 +127,7 @@ export default function FeedReviewCard({
   };
 
   const handleOpenCommentModal = (reviewId: string) => {
-    if (!requireFeedAuthToast()) return;
+    if (!requireFeedAuth()) return;
 
     setCommentTargetReviewId(reviewId);
   };
