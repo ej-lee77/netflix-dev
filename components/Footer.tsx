@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useLangStore, LANG_LABELS, labelToLang } from '@/store/useLangStore'
 import { useT, type TKey } from '@/lib/i18n'
+import AppIcon from '@/components/common/AppIcon'
 import "./scss/footer.scss"
 
 // 링크는 번역 키로 관리
@@ -15,6 +16,25 @@ const LINK_COLS: { titleKey: TKey; links: TKey[] }[] = [
   { titleKey: "footer.service", links: ["footer.giftcard", "footer.terms", "footer.company"] },
   { titleKey: "footer.media", links: ["footer.mediaCenter", "footer.privacy", "footer.contact"] },
 ];
+
+// 각 푸터 링크의 목적지.
+//  · 기존 전용 페이지가 있는 항목은 그 페이지로
+//  · 나머지는 항목별 내용을 담은 공통 문서 페이지(/info/[slug])로 연결
+//    (footer.contact 는 로그인 여부에 따라 별도 처리)
+const FOOTER_LINK_HREF: Partial<Record<TKey, string>> = {
+  "footer.center": "/faq",                 // 고객 센터 → FAQ
+  "footer.jobs": "/faq",                   // 입사 정보 → FAQ
+  "footer.giftcard": "/plan",              // 기프트카드 → 플랜
+  "footer.audioGuide": "/info/audio-guide", // 화면 해설
+  "footer.ir": "/info/ir",                 // 투자 정보(IR)
+  "footer.legal": "/info/legal",           // 법적 고지
+  "footer.cookies": "/info/cookies",       // 쿠키 설정
+  "footer.terms": "/info/terms",           // 이용 약관
+  "footer.company": "/info/company",       // 회사 정보
+  "footer.mediaCenter": "/info/media-center", // 미디어 센터
+  "footer.privacy": "/info/privacy",       // 개인정보
+};
+const FOOTER_LINK_FALLBACK = "/faq"; // 매핑되지 않은 예외 항목
 
 const BUSINESS_INFO = [
   "넷플릭스서비스코리아 유한회사  통신판매업신고번호: 제2018-서울종로-0426호  전화번호: 00-308-321-0161 (수신자 부담)  대표: 레지널드 숀 톰프슨",
@@ -70,7 +90,12 @@ export default function Footer() {
               {key === "footer.contact" ? (
                 <Link href={contactHref} className="footer-link">{t(key)}</Link>
               ) : (
-                <a href="#" className="footer-link">{t(key)}</a>
+                <Link
+                  href={FOOTER_LINK_HREF[key] ?? FOOTER_LINK_FALLBACK}
+                  className="footer-link"
+                >
+                  {t(key)}
+                </Link>
               )}
             </li>
           ))}
@@ -112,9 +137,13 @@ export default function Footer() {
               onClick={() => setLangOpen((o) => !o)}
               aria-expanded={langOpen}
             >
-              <span className="lang-globe">🌐</span>
+              <span className="lang-globe">
+                <AppIcon name="globe" size={16} color="currentColor" />
+              </span>
               <span>{LANG_LABELS[lang]}</span>
-              <span className="lang-arrow">{langOpen ? "▲" : "▼"}</span>
+              <span className={`lang-arrow${langOpen ? " open" : ""}`}>
+                <AppIcon name="chevron" size={14} color="currentColor" />
+              </span>
             </button>
           </div>
         </div>
