@@ -1,20 +1,13 @@
 "use client";
-import NewMovieList from "@/components/main/NewMovieList";
 import { useT } from "@/lib/i18n";
 import { getTmdbLang } from "@/lib/i18n";
-import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import type { ThemeItem } from "@/components/main/ThemeRow";
 import { getNetflixOriginalIdSet } from "@/lib/netflix";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import RankingSection, { type RankingItem } from "@/components/main/RankingSection";
-import WatchingList from "@/components/main/WatchingList";
-import NetflixOriginal from "@/components/main/NetflixOriginal";
-import RecommendList from "@/components/main/RecommendList";
-import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect, useRef, useState } from "react";
 import Hero from "@/components/main/Hero";
-import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
 import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
 import TopButton from "@/components/common/TopButton";
@@ -25,6 +18,8 @@ const ThemeRow = dynamic(() => import("@/components/main/ThemeRow"), {
   ssr: false,
   loading: () => <ThemeRowSkeleton />,
 });
+const WatchingList = dynamic(() => import("@/components/main/WatchingList"), { ssr: false });
+const RecommendList = dynamic(() => import("@/components/main/RecommendList"), { ssr: false });
 const SplitBanner = dynamic(() => import("@/components/main/SplitBanner"), { ssr: false });
 const Release = dynamic(() => import("@/components/main/Release"), { ssr: false });
 
@@ -142,7 +137,6 @@ async function fetchCert(id: number, mediaType: "movie" | "tv"): Promise<string>
 }
 
 async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCount = 1): Promise<ThemeItem[]> {
-  const MIN_ITEMS = 9;
   const startPage = Math.floor(Math.random() * 3) + 1;
   const pages = await Promise.all(
     Array.from({ length: Math.max(pageCount, 2) }, (_, i) =>
@@ -168,7 +162,8 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
   }));
 
   // 모든 아이템의 연령 정보를 병렬로 fetch
-  const certs = await Promise.all(rawItems.map((item) => fetchCert(item.id, mediaType)));
+  return rawItems;
+  /*
 
   // Zustand store에 미리 저장해두면 hover 시 바로 표시됨
   const certMap: Record<string, string> = {};
@@ -183,11 +178,11 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
   // 9개 미만이면 인증 없는 아이템으로 채워서 최소 9개 보장
   const withoutCert = rawItems.filter((_, i) => certs[i] === "");
   return [...withCert, ...withoutCert.slice(0, MIN_ITEMS - withCert.length)];
+  */
 }
 
 export default function Home() {
   const t = useT();
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending, onFetchNetflixOriginals, onFetchKoreanMovies } = useMovieStore();
   const [themeRows, setThemeRows] = useState<ThemeItem[][]>([]);
   const [themeLoading, setThemeLoading] = useState(true);
   const [koreanSeries, setKoreanSeries] = useState<RankingItem[]>([]);
@@ -236,54 +231,63 @@ export default function Home() {
   }, [favoriteGenres]);
 
   useEffect(() => {
-    onFetchPopular();
-    onFetchTvs();
-    onFetchNewest();
-    onFetchTrending();
-    onFetchNetflixOriginals();
-    onFetchKoreanMovies();
+    let ignore = false;
+    const cancelDeferred = deferWork(() => {
+      fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (ignore) return;
+          const items: RankingItem[] = (data.results || [])
+            .filter((t: any) => t.poster_path && t.backdrop_path)
+            .slice(0, 10)
+            .map((t: any) => ({
+              id: t.id,
+              title: t.name,
+              poster_path: t.poster_path,
+              backdrop_path: t.backdrop_path,
+              vote_average: t.vote_average,
+              overview: t.overview,
+              media_type: "tv" as const,
+              genre_ids: t.genre_ids ?? [],
+            }));
+          setKoreanSeries(items);
+        });
+    });
+
+    return () => {
+      ignore = true;
+      cancelDeferred();
+    };
   }, []);
 
   useEffect(() => {
-    fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const items: RankingItem[] = (data.results || [])
-          .filter((t: any) => t.poster_path && t.backdrop_path)
-          .slice(0, 10)
-          .map((t: any) => ({
-            id: t.id,
-            title: t.name,
-            poster_path: t.poster_path,
-            backdrop_path: t.backdrop_path,
-            vote_average: t.vote_average,
-            overview: t.overview,
-            media_type: "tv" as const,
-            genre_ids: t.genre_ids ?? [],
-          }));
-        setKoreanSeries(items);
-      });
-  }, []);
+    let ignore = false;
+    const cancelDeferred = deferWork(() => {
+      fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (ignore) return;
+          const items: RankingItem[] = (data.results || [])
+            .filter((m: any) => m.poster_path && m.backdrop_path)
+            .slice(0, 10)
+            .map((m: any) => ({
+              id: m.id,
+              title: m.name,
+              poster_path: m.poster_path,
+              backdrop_path: m.backdrop_path,
+              vote_average: m.vote_average,
+              overview: m.overview,
+              media_type: "tv" as const,
+              genre_ids: m.genre_ids ?? [],
+            }));
+          setKoreanMovieRanking(items);
+        });
+    });
 
-  useEffect(() => {
-    fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const items: RankingItem[] = (data.results || [])
-          .filter((m: any) => m.poster_path && m.backdrop_path)
-          .slice(0, 10)
-          .map((m: any) => ({
-            id: m.id,
-            title: m.name,
-            poster_path: m.poster_path,
-            backdrop_path: m.backdrop_path,
-            vote_average: m.vote_average,
-            overview: m.overview,
-            media_type: "tv" as const,
-            genre_ids: m.genre_ids ?? [],
-          }));
-        setKoreanMovieRanking(items);
-      });
+    return () => {
+      ignore = true;
+      cancelDeferred();
+    };
   }, []);
 
   useEffect(() => {

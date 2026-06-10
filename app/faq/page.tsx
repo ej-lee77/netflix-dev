@@ -7,6 +7,11 @@ import "../scss/faq.scss";
 import { FAQ_CATEGORIES } from "@/data/faq";
 import FaqAccordion from "@/components/common/FaqAccordion";
 
+type FaqSearchItem = {
+  q: string;
+  a: string;
+};
+
 export default function FaqAllPage() {
   const [keyword, setKeyword] = useState("");
   const [activeCat, setActiveCat] = useState<string>("all"); // "all" = 전체
@@ -20,7 +25,7 @@ export default function FaqAllPage() {
       .map((c) => ({
         ...c,
         items: kw
-          ? c.items.filter((f) => f.q.includes(kw) || f.a.includes(kw))
+          ? c.items.filter((f: FaqSearchItem) => f.q.includes(kw) || f.a.includes(kw))
           : c.items,
       }))
       .filter((c) => c.items.length > 0);
