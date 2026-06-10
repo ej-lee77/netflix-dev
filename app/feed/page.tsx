@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/firebase/firebase";
+import { useConfirmModal } from "@/components/common/ConfirmModal";
 import { useAuthStore } from "@/store/useAuthStore";
 import { type FeedView, useFeedStore } from "@/store/useFeedStore";
 import { showToast } from "@/store/useToastStore";
@@ -342,6 +343,7 @@ const getUserProfileHref = (userId?: string, profileId?: number) => {
 
 export default function FeedPage() {
   const router = useRouter();
+  const { confirm, modal: confirmModal } = useConfirmModal();
   const { user, currentProfile, updateUserLikeFeeds, updateUserCommentFeed } =
     useAuthStore();
   const {
@@ -694,20 +696,6 @@ export default function FeedPage() {
 
   const requireFeedAuth = () => {
     if (!currentUserId) {
-      window.alert("로그인이 필요합니다.");
-      router.push("/login");
-      return false;
-    }
-    if (!currentProfile) {
-      window.alert("프로필을 선택해 주세요.");
-      return false;
-    }
-
-    return true;
-  };
-
-  const requireFeedAuthToast = () => {
-    if (!currentUserId) {
       showToast("로그인이 필요합니다.");
       router.push("/login");
       return false;
@@ -728,7 +716,7 @@ export default function FeedPage() {
   };
 
   const handleOpenCommentModal = (reviewId: string) => {
-    if (!requireFeedAuthToast()) return;
+    if (!requireFeedAuth()) return;
 
     setCommentTargetReviewId(reviewId);
   };
@@ -865,6 +853,13 @@ export default function FeedPage() {
   };
 
   const handleDeleteReview = async (reviewId: string) => {
+    const confirmed = await confirm({
+      title: "리뷰 삭제",
+      message: "정말 삭제하시겠습니까?",
+      confirmLabel: "삭제",
+    });
+    if (!confirmed) return;
+
     await onDeleteFeed(reviewId);
     showToast("리뷰가 삭제되었습니다");
   };
@@ -1353,6 +1348,7 @@ export default function FeedPage() {
 
   return (
     <div className="feed-page">
+      {confirmModal}
       <div className="inner">
         <div className="page-head feed-page-head">
           <div>
