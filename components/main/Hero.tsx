@@ -628,6 +628,7 @@ export default function Hero() {
   }
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
+  const hasPreviewVideo = autoplayPreview && (previousVideoKey || currentVideoKey);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
     `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
@@ -651,14 +652,14 @@ export default function Hero() {
       onTouchEnd={handleTouchEnd}
     >
       <div
-        className={`hero-backdrop${previousVideoKey || currentVideoKey ? "" : " visible"}`}
+        className={`hero-backdrop${hasPreviewVideo ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
       <div
-        className={`hero-video-poster${isVideoVisible ? "" : " visible"}`}
+        className={`hero-video-poster${hasPreviewVideo && isVideoVisible ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
-      {autoplayPreview && (previousVideoKey || currentVideoKey) && (
+      {hasPreviewVideo && (
         <>
           {previousVideoKey && (
             <iframe
@@ -666,6 +667,8 @@ export default function Hero() {
               src={getVideoSrc(previousVideoKey)}
               title={`${getTitle(activeItem)} previous trailer`}
               allow="autoplay; encrypted-media; picture-in-picture"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
               tabIndex={-1}
             />
           )}
@@ -675,6 +678,8 @@ export default function Hero() {
               src={getVideoSrc(currentVideoKey)}
               title={`${getTitle(activeItem)} trailer`}
               allow="autoplay; encrypted-media; picture-in-picture"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
               tabIndex={-1}
             />
           )}
