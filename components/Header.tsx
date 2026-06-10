@@ -15,6 +15,8 @@ import type { UserProfile } from "@/types/auth";
 import "./scss/header.scss";
 import HeaderSearchOverlay from "./HeaderSearchOverlay";
 import { useT } from "@/lib/i18n";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useSubscriptionGuard } from "@/lib/subscription";
 
 const AUTH_PATHS = ["/login", "/signin", "/forgot-password", "/payment"];
 
@@ -155,12 +157,21 @@ export default function Header() {
     };
   }, []);
 
+  const { isUnsubscribed, isLoggedIn } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
+  const handleModeClick = (e: React.MouseEvent) => {
+    if (isUnsubscribed && isLoggedIn) {
+      e.preventDefault();
+      openModal();
+    }
+  };
+
   return (
     <>
       <header
-        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${
-          isSearchOpen ? " search-open" : ""
-        }`}
+        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${isSearchOpen ? " search-open" : ""
+          }`}
       >
         <div className="flex-item">
           <div className="flex-item gap-6">
@@ -178,11 +189,11 @@ export default function Header() {
             {(pathname === "/" || pathname?.startsWith("/connect")) && (
               <ul ref={modeMenuRef} className="mode-menu flex-item gap-4">
                 <li className={pathname === "/" ? "active" : ""}>
-                  <Link href="/">{t("header.cinema")}</Link>
+                  <Link href="/" onClick={(e) => handleModeClick(e)}>{t("header.cinema")}</Link>
                 </li>
                 {canUseConnect && (
                   <li className={pathname?.startsWith("/connect") ? "active" : ""}>
-                    <Link href="/connect">{t("header.connect")}</Link>
+                    <Link href="/connect" onClick={(e) => handleModeClick(e)}>{t("header.connect")}</Link>
                   </li>
                 )}
                 {indicator && (
@@ -196,41 +207,45 @@ export default function Header() {
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
-            <li>
-              <button
-                type="button"
-                className="header-search-toggle"
-                onClick={toggleSearch}
-                aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
-                aria-expanded={isSearchOpen}
-              >
-                {isSearchOpen ? (
-                  <span
-                    className="header-search-toggle__close"
-                    aria-hidden="true"
-                  >
-                    <img src="/images/header/header-search-close.svg" alt="." />
-                  </span>
-                ) : (
+            {!isUnsubscribed && (
+              <li>
+                <button
+                  type="button"
+                  className="header-search-toggle"
+                  onClick={toggleSearch}
+                  aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
+                  aria-expanded={isSearchOpen}
+                >
+                  {isSearchOpen ? (
+                    <span
+                      className="header-search-toggle__close"
+                      aria-hidden="true"
+                    >
+                      <img src="/images/header/header-search-close.svg" alt="." />
+                    </span>
+                  ) : (
+                    <Image
+                      src="/images/header/search.svg"
+                      alt=""
+                      width={24}
+                      height={24}
+                    />
+                  )}
+                </button>
+              </li>
+            )}
+            {!isUnsubscribed && (
+              <li className="gnb-alarm">
+                <Link href="/alarm">
                   <Image
-                    src="/images/header/search.svg"
-                    alt="검색"
+                    src="/images/header/alarm.svg"
+                    alt="알림"
                     width={24}
                     height={24}
                   />
-                )}
-              </button>
-            </li>
-            <li className="gnb-alarm">
-              <Link href="/alarm">
-                <Image
-                  src="/images/header/alarm.svg"
-                  alt="알림"
-                  width={24}
-                  height={24}
-                />
-              </Link>
-            </li>
+                </Link>
+              </li>
+            )}
 
             {!user ? (
               <li>
@@ -374,10 +389,14 @@ export default function Header() {
         />
       </header>
 
-      <Suspense fallback={null}>
-        <HeaderMenu />
-      </Suspense>
-      <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      {!isUnsubscribed && (
+        <>
+          <Suspense fallback={null}>
+            <HeaderMenu />
+          </Suspense>
+          <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+        </>
+      )}
       {pendingProfile && (
         <ProfilePinGate
           key={pendingProfile.id}
