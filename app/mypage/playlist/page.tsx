@@ -1143,6 +1143,31 @@ function ActivityContent() {
     );
   };
 
+  const renderSelectableHistorySkeleton = () => (
+    <div className="selectable-history selectable-history-skeleton">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <article className="select-card select-card-skeleton" key={index}>
+          <div className="select-card-skeleton__poster" />
+        </article>
+      ))}
+    </div>
+  );
+
+  const renderCustomPlaylistSkeleton = () => (
+    <div className="custom-playlist-grid custom-playlist-grid-skeleton">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <article className="custom-playlist-card custom-playlist-card-skeleton" key={index}>
+          <div className="playlist-mosaic custom-playlist-card-skeleton__mosaic" />
+          <div className="custom-playlist-card-skeleton__body">
+            <div className="custom-playlist-card-skeleton__line custom-playlist-card-skeleton__line--title" />
+            <div className="custom-playlist-card-skeleton__line" />
+            <div className="custom-playlist-card-skeleton__line custom-playlist-card-skeleton__line--short" />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+
   const renderPlaylists = () => (
     <section className="activity-section">
       {/* 헤더 및 툴바 영역 */}
@@ -1218,7 +1243,9 @@ function ActivityContent() {
       {/* 리스트 본문 */}
       <div className="playlist-content-layout">
         <div className="selectable-history-wrap">
-          {processedList.length > 0 ? (
+          {wishLoading ? (
+            renderSelectableHistorySkeleton()
+          ) : processedList.length > 0 ? (
             <div className="selectable-history">
               {pagedSelectionItems.map((item) => {
                 const key = getItemKey(item);
@@ -1279,7 +1306,9 @@ function ActivityContent() {
         <span>{customPlaylists.length}개</span>
       </div>
 
-      {customPlaylists.length > 0 ? (
+      {wishLoading ? (
+        renderCustomPlaylistSkeleton()
+      ) : customPlaylists.length > 0 ? (
         <div className="custom-playlist-grid">
           {customPlaylists.map(renderPlaylistMosaic)}
         </div>
