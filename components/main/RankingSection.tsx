@@ -17,6 +17,7 @@ import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "./scss/rankingSection.scss";
 import SectionTitle from "../common/SectionTitle";
+import ThemeRow, { type ThemeItem } from "./ThemeRow";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { useMaturityFiltered } from "@/data/maturityFilter";
 
@@ -55,6 +56,18 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
 
   const [activeId, setActiveId] = useState<number | null>(null);
 
+  // 태블릿/모바일(<=1024px)에서는 ThemeRow와 동일한 디자인/동작으로 렌더
+  const [vw, setVw] = useState(1920);
+
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isCompact = vw <= 1024;
+
   const swiperRef = useRef<SwiperClass | null>(null);
   const pointerStartRef = useRef({ x: 0, y: 0 });
   const isDraggingRef = useRef(false);
@@ -91,6 +104,25 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
       setActiveId(rankingItems[0].id);
     }
   }, [activeId, rankingItems]);
+
+  // 태블릿/모바일: 펼침형 카드 대신 다른 행들과 동일한 ThemeRow 디자인으로 동작
+  if (isCompact) {
+    if (!rankingItems.length) return null;
+
+    const themeItems: ThemeItem[] = rankingItems.map((it) => ({
+      ...it,
+      mediaType: (it.media_type ?? "movie") as "movie" | "tv",
+      genre_ids: it.genre_ids ?? [],
+    }));
+
+    return (
+      <ThemeRow
+        title={title ?? t("home.top10")}
+        items={themeItems}
+        href={href ?? "/category"}
+      />
+    );
+  }
 
 
   const selectRankingItem = (id: number, index: number) => {
