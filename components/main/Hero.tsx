@@ -326,6 +326,10 @@ export default function Hero() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const currentVideoKeyRef = useRef("");
   const itemsRef = useRef<HeroItem[]>([]);
+  // 모바일(≤600px) 여부: 자동 전환은 모바일에서만 동작
+  const [isMobile, setIsMobile] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -543,8 +547,54 @@ export default function Hero() {
     };
   }, [activeItem]);
 
+  // 모바일 여부 감지 (SCSS mobile 브레이크포인트 600px 와 동일 기준)
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 600px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // 모바일 자동 전환: 12초마다 다음 작품으로.
+  // activeIndex 를 의존성에 둬서 수동 전환(스와이프/도트) 시 타이머가 리셋됨.
+  useEffect(() => {
+    if (!isMobile || items.length < 2) return;
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % items.length);
+    }, 12000);
+
+    return () => window.clearInterval(timer);
+  }, [isMobile, items.length, activeIndex]);
+
   const selectHeroIndex = (index: number) => {
     setActiveIndex(index);
+  };
+
+  // 모바일 스와이프로 이전/다음 작품 전환 (세로 스크롤과 구분)
+  const handleTouchStart = (event: React.TouchEvent) => {
+    touchStartX.current = event.touches[0].clientX;
+    touchStartY.current = event.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+
+    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = event.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    // 가로 이동이 48px 미만이거나 세로 이동이 더 크면 스크롤로 간주
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+    if (items.length < 2) return;
+
+    setActiveIndex((prev) =>
+      deltaX < 0
+        ? (prev + 1) % items.length
+        : (prev - 1 + items.length) % items.length,
+    );
   };
 
 
@@ -594,7 +644,12 @@ export default function Hero() {
     );
 
   return (
-    <section className="hero" aria-label="추천 콘텐츠">
+    <section
+      className="hero"
+      aria-label="추천 콘텐츠"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div
         className={`hero-backdrop${previousVideoKey || currentVideoKey ? "" : " visible"}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
@@ -664,22 +719,26 @@ export default function Hero() {
           }}
         />
         <div className="hero-meta">
-          <span className="hero-rating-stars">{meta.stars}</span>
-          <span className="hero-rating-val">{meta.rating}</span>
-          {meta.year && (
-            <>
+          <span className="hero-meta-row">
+            <span className="hero-rating-stars">{meta.stars}</span>
+            <span className="hero-rating-val">{meta.rating}</span>
+            {meta.year && (
+              <>
+                <span className="hero-meta-sep">|</span>
+                <span>{meta.year}</span>
+              </>
+            )}
+            {(meta.genres || activeCertification) && (
               <span className="hero-meta-sep">|</span>
-              <span>{meta.year}</span>
-            </>
-          )}
-          {meta.genres && (
-            <>
-              <span className="hero-meta-sep">|</span>
-              <span>{meta.genres}</span>
-            </>
-          )}
-          {activeCertification && (
-            <span className="hero-age-badge">{activeCertification}</span>
+            )}
+          </span>
+          {(meta.genres || activeCertification) && (
+            <span className="hero-meta-row">
+              {meta.genres && <span>{meta.genres}</span>}
+              {activeCertification && (
+                <span className="hero-age-badge">{activeCertification}</span>
+              )}
+            </span>
           )}
         </div>
         <p className="hero-desc">{activeItem.overview}</p>
@@ -711,6 +770,20 @@ export default function Hero() {
         </div>
       </div>
 
+      {items.length > 1 && (
+        <div className="hero-dots" aria-label="히어로 콘텐츠 선택">
+          {items.map((item, index) => (
+            <button
+              className={`hero-dot${index === activeIndex ? " active" : ""}`}
+              key={`dot-${item.media_type}-${item.id}`}
+              type="button"
+              aria-label={`${index + 1}번째 콘텐츠 보기`}
+              aria-current={index === activeIndex}
+              onClick={() => selectHeroIndex(index)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

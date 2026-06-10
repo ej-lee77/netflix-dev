@@ -336,6 +336,12 @@
     font-size: 14px;
   }
 
+  .hero-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   .hero-meta-sep {
     opacity: 0.35;
   }
@@ -435,19 +441,27 @@
     stroke-width: 2;
   }
 
+  // 도트 인디케이터: 기본(데스크톱)에서는 숨김 — 포스터 스와이퍼가 전환을 담당.
+  // 포스터가 숨겨지는 모바일에서만 표시 (아래 mobile 블록 참고)
   .hero-dots {
-    position: absolute;
-    right: 232px;
-    bottom: 28px;
-    z-index: 11;
-    display: flex;
+    display: none;
     gap: 6px;
-    width: 252px;
     justify-content: center;
   }
 
   .hero-dot {
     width: 24px;
+    height: 14px; // 터치 영역 확보 (보이는 선은 ::before)
+    padding: 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .hero-dot::before {
+    content: "";
+    display: block;
+    width: 100%;
     height: 3px;
     background: rgba(255, 255, 255, 0.25);
     border-radius: 2px;
@@ -458,6 +472,9 @@
 
   .hero-dot.active {
     width: 32px;
+  }
+
+  .hero-dot.active::before {
     background: g.$main-color;
   }
 
@@ -591,13 +608,6 @@
       bottom: 7px;
       width: 286px;
     }
-
-    .hero-dots {
-      right: 92px;
-      bottom: 22px;
-      left: auto;
-      width: 198px;
-    }
   }
 }
 /* ===== 반응형: 히어로 높이 축소 ===== */
@@ -706,7 +716,16 @@
     .hero-badge { margin-bottom: 8px; }
     .hero-logo-img { max-width: 180px; max-height: 64px; margin-bottom: 10px; }
     .hero-logo-text { font-size: 24px; margin-bottom: 8px; }
-    .hero-meta { margin-bottom: 8px; font-size: 12px; }
+    .hero-meta {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 42px; // 1줄(별점/연도) + 2줄(장르/등급) 높이 고정
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .hero-meta-row { gap: 8px; }
     .hero-desc {
       max-width: 100%;
       margin-bottom: 14px;
@@ -721,6 +740,12 @@
       flex-direction: row;
       flex-wrap: wrap;
       width: auto;
+    }
+
+    // 도트 인디케이터: 콘텐츠 아래 일반 흐름으로 표시 (탭하면 해당 작품으로 이동)
+    .hero-dots {
+      display: flex;
+      padding: 10px 16px 4px calc(56px + 12px); // 사이드메뉴(56px) 회피 후 중앙 정렬
     }
   }
 }
