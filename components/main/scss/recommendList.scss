@@ -395,9 +395,11 @@
 @include g.respond(mobile) {
   .recommend-section {
     padding: 26px 0 36px;
-    .section-title-outer { padding-left: 56px; }
-    .recommend-swiper { padding-left: 56px; padding-right: 16px; }
-    .swiper-button-prev { left: 56px; }
+    .section-title-outer { padding-left: 20px; }
+    .recommend-swiper { padding: 16px 20px 16px; }
+    .swiper-button-prev { left: 20px; }
+    .swiper-button-prev,
+    .swiper-button-next { display: none; }
     .recommend-slide { max-height: clamp(230px, 62vw, 320px); }
     .slide-info { padding: 10px 14px; }
     .slide-actions { gap: 8px; flex-wrap: wrap; row-gap: 8px; min-width: 0; }

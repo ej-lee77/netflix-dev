@@ -5,6 +5,12 @@
   padding-bottom: 0;
   padding-left: g.$main-menu-width;
   padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
+
+  @include g.respond(mobile) {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 24px;
+  }
 }
 
 .mood-banner {
@@ -26,6 +32,14 @@
     margin: 0 0 40px;
     clip-path: none;
   }
+
+  @include g.respond(mobile) {
+    padding: 24px 20px 6px;
+    border-radius: 14px;
+    margin: 0;
+    clip-path: inset(-300px 0 0 0 round 0 0 14px 14px);
+    overflow: visible;
+  }
 }
 
 // inner: 텍스트+이미지를 하나의 그룹으로 묶어 flex center로 정확히 가운데 정렬
@@ -34,11 +48,18 @@
   align-items: center;
   gap: 48px;
   z-index: 1;
+  width: 100%;
 
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: flex-start;
     gap: 0;
+  }
+
+  @include g.respond(mobile) {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
   }
 }
 
@@ -49,6 +70,11 @@
   pointer-events: none;
   border-radius: 20px;
   overflow: hidden;
+  clip-path: inset(0 round 20px);
+
+  @include g.respond(mobile) {
+    clip-path: inset(0 round 14px);
+  }
 }
 
 .mood-banner__orb {
@@ -165,6 +191,34 @@
   @media (max-width: 1024px) {
     display: none;
   }
+
+  @include g.respond(mobile) {
+    display: block;
+    position: relative;
+    flex-shrink: 0;
+    width: 110px;
+    align-self: stretch;
+
+    img {
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 150px;
+      width: auto;
+      max-width: none;
+      filter: none;
+    }
+
+    .is-visible & img {
+      transform: translateX(-50%);
+    }
+
+    .is-visible--instant & img {
+      transform: translateX(-50%);
+      transition: none;
+    }
+  }
 }
 
 // 텍스트 콘텐츠
@@ -173,6 +227,14 @@
   z-index: 1;
   max-width: 520px;
   padding-bottom: 36px;
+
+  @include g.respond(mobile) {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    padding-bottom: 0;
+    padding-left: 5px;
+  }
 }
 
 .mood-banner__eyebrow {
@@ -182,6 +244,11 @@
   text-transform: uppercase;
   color: #c084fc;
   margin: 0 0 12px;
+
+  @include g.respond(mobile) {
+    font-size: 11px;
+    margin: 0 0 4px;
+  }
 }
 
 .mood-banner__title {
@@ -190,6 +257,12 @@
   line-height: 1;
   color: #fff;
   margin: 0 0 14px;
+
+  @include g.respond(mobile) {
+    font-size: 17px;
+    line-height: 1.25;
+    margin: 0 0 8px;
+  }
 
   em {
     font-style: normal;
@@ -205,6 +278,12 @@
   color: rgba(255, 255, 255, 0.5);
   margin: 0;
   line-height: 1.5;
+
+  @include g.respond(mobile) {
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 0 0 16px;
+  }
 }
 
 .mood-banner__cta {
@@ -221,6 +300,11 @@
   letter-spacing: 0.2px;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   box-shadow: 0 4px 24px rgba(123, 47, 247, 0.45);
+
+  @include g.respond(mobile) {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
 
   svg {
     transition: transform 0.2s ease;
