@@ -16,11 +16,6 @@ import "../../scss/category.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
-// 무드별 히어로 고정 작품 (해당 무드일 때 결과 첫 번째 대신 이 작품을 히어로로)
-const PINNED_HERO_IDS: Record<string, number> = {
-  chill: 77338,
-};
-
 // 무드 → TMDB 장르 조합 (무드는 TMDB에 직접 없으므로 장르 조합 활용)
 const moodMap: Record<
   string,
@@ -119,6 +114,19 @@ interface MediaItem {
   media_type: "movie" | "tv";
 }
 
+interface TmdbListItem {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  overview?: string;
+  vote_average?: number;
+  release_date?: string;
+  first_air_date?: string;
+  genre_ids?: number[];
+}
+
 export default function MoodPage() {
   const params = useParams();
   const moodName = params.name as string;
@@ -128,7 +136,6 @@ export default function MoodPage() {
   const excludedGenres = useExcludedGenres();
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pinnedHero, setPinnedHero] = useState<MediaItem | null>(null);
   const info = moodMap[moodName];
   const menuItem = customMenus.find((m) => m.path === `/mood/${moodName}`);
 
@@ -138,10 +145,10 @@ export default function MoodPage() {
 
   useEffect(() => {
     if (!info) return;
-    setLoading(true);
 
     const fetchMood = async () => {
-      const endpoint = type === "tv" ? "tv" : "movie";
+      setLoading(true);
+      const endpoint: "movie" | "tv" = type === "tv" ? "tv" : "movie";
       const rawGenres =
         type === "animation"
           ? "16"
@@ -154,14 +161,14 @@ export default function MoodPage() {
       const res = await fetch(
         `https://api.themoviedb.org/3/discover/${endpoint}?api_key=${TMDB_KEY}&language=ko-KR&with_genres=${genres}&sort_by=popularity.desc&page=1&vote_count.gte=20&with_watch_providers=8&watch_region=KR`,
       );
-      const data = await res.json();
-      const list = (data.results || []).map((item: any) => ({
+      const data = (await res.json()) as { results?: TmdbListItem[] };
+      const list: MediaItem[] = (data.results || []).map((item) => ({
         id: item.id,
-        title: item.title || item.name,
+        title: item.title || item.name || "",
         poster_path: item.poster_path,
         backdrop_path: item.backdrop_path,
-        overview: item.overview,
-        vote_average: item.vote_average,
+        overview: item.overview ?? "",
+        vote_average: item.vote_average ?? 0,
         release_date: item.release_date,
         first_air_date: item.first_air_date,
         genre_ids: item.genre_ids ?? [],
@@ -171,54 +178,19 @@ export default function MoodPage() {
       setLoading(false);
     };
 
-    fetchMood();
-  }, [type, moodName, info, excludedGenres]);
-
-  // 무드별 히어로 고정 작품 로드 (영화 → 실패 시 시리즈 순으로 시도)
-  useEffect(() => {
-    const heroId = PINNED_HERO_IDS[moodName];
-    if (!heroId) {
-      setPinnedHero(null);
-      return;
-    }
-    let active = true;
-    const mapDetail = (d: any, mt: "movie" | "tv"): MediaItem => ({
-      id: d.id,
-      title: d.title || d.name,
-      poster_path: d.poster_path,
-      backdrop_path: d.backdrop_path,
-      overview: d.overview,
-      vote_average: d.vote_average,
-      release_date: d.release_date,
-      first_air_date: d.first_air_date,
-      genre_ids: (d.genres || []).map((g: any) => g.id),
-      media_type: mt,
+    fetchMood().catch(() => {
+      setItems([]);
+      setLoading(false);
     });
-    const tryFetch = async (mt: "movie" | "tv") => {
-      const res = await fetch(
-        `https://api.themoviedb.org/3/${mt}/${heroId}?api_key=${TMDB_KEY}&language=ko-KR`,
-      );
-      const d = await res.json();
-      return d && d.success !== false && d.id ? mapDetail(d, mt) : null;
-    };
-    (async () => {
-      const hero = (await tryFetch("movie")) || (await tryFetch("tv"));
-      if (active && hero) setPinnedHero(hero);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [moodName]);
+  }, [type, moodName, info, excludedGenres]);
 
   const visibleItems = useMaturityFiltered(items, (it) => it.media_type);
 
   if (!info) return null;
 
-  const featured = pinnedHero ?? visibleItems[0];
+  const featured = visibleItems[0] ?? null;
   const hasHeroImage = Boolean(featured?.backdrop_path);
-  const otherItems = pinnedHero
-    ? visibleItems.filter((item) => item.id !== pinnedHero.id)
-    : visibleItems.slice(1);
+  const otherItems = visibleItems.slice(1);
   const sortedOtherItems = sortMediaItems(otherItems, sort);
 
   return (
@@ -308,12 +280,12 @@ export default function MoodPage() {
           </div>
 
           {loading ? (
-            <div className="state-text">분위기에 맞는 작품을 찾고 있어요...</div>
+            <div className="state-text">작품을 불러오는 중...</div>
           ) : sortedOtherItems.length > 0 ? (
             <div className="poster-grid">
               {sortedOtherItems.map((item) => (
                 <PosterCard
-                  key={item.id}
+                  key={`${item.media_type}-${item.id}`}
                   id={item.id}
                   mediaType={item.media_type}
                   title={item.title}
@@ -330,7 +302,7 @@ export default function MoodPage() {
               ))}
             </div>
           ) : (
-            <div className="state-text">작품이 없습니다</div>
+            <div className="state-text">조건에 맞는 작품이 없습니다.</div>
           )}
         </section>
       </div>
