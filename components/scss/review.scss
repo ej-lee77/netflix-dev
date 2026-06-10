@@ -101,3 +101,8 @@
   white-space: nowrap;
 }
 }
+
+/* ===== 반응형 ===== */
+@media (max-width: 600px) {
+  .review-container .review-thumb { width: 48px; }
+}
