@@ -518,3 +518,20 @@
     }
   }
 }
+
+@include g.respond(mobile) {
+  .category-section {
+    .section-title-outer {
+      padding-left: 20px;
+    }
+
+    .swiper-outer {
+      padding-left: 20px;
+    }
+
+    .swiper-button-prev,
+    .swiper-button-next {
+      display: none;
+    }
+  }
+}
