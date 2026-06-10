@@ -878,3 +878,14 @@
     }
   }
 }
+
+/* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
+@include g.respond(laptop) {
+  .mypage { padding-left: 80px; }
+}
+@include g.respond(tablet) {
+  .mypage { padding-left: 64px; }
+}
+@include g.respond(mobile) {
+  .mypage { padding-left: 56px; padding-right: 16px; }
+}
