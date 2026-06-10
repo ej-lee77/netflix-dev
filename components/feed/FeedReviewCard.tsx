@@ -1,9 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useState } from "react";
 import Link from "next/link";
-import { type FeedView } from "@/store/useFeedStore";
-import { getInitial, getPosterUrl, getRelativeTime } from "@/types/feedData";
+import {
+  useFeedStore,
+  type FeedCommentView,
+  type FeedView,
+} from "@/store/useFeedStore";
+import {
+  getInitial,
+  getPosterUrl,
+  getRelativeTime,
+  REPORT_REASONS,
+} from "@/types/feedData";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
+import { showToast } from "@/store/useToastStore";
+import { auth } from "@/firebase/firebase";
 
 interface FeedReviewCardProps {
   review: FeedView;
@@ -37,8 +50,381 @@ export default function FeedReviewCard({
   onEdit,
   onDelete,
 }: FeedReviewCardProps) {
+  const router = useRouter();
+  const {
+    user,
+    currentProfile,
+    updateUserLikeFeeds,
+    updateUserCommentFeed,
+    updateUserReportFeed,
+  } = useAuthStore();
+  const currentUserId =
+    user?.userId ||
+    (user as { uid?: string } | null)?.uid ||
+    auth.currentUser?.uid;
+  const {
+    feeds,
+    onAddComment,
+    onDeleteComment,
+    onReportFeed,
+    onToggleCommentLike,
+    onToggleLike,
+    onUpdateComment,
+  } = useFeedStore();
+
+  const [commentTargetReviewId, setCommentTargetReviewId] = useState<
+    string | null
+  >(null);
+
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState("");
+  const profileReported = Boolean(
+    currentProfile?.community?.reportfeeds?.includes(review.feedId),
+  );
+  const [reportOverride, setReportOverride] = useState<boolean | null>(null);
+  const isReported = reportOverride ?? profileReported;
+
+  const selectedCommentReview =
+    feeds.find((feed) => feed.feedId === commentTargetReviewId) ??
+    (commentTargetReviewId === review.feedId ? review : null);
+  const isReviewOwner = Boolean(
+    currentUserId &&
+      review.userId === currentUserId &&
+      (!review.profileId || review.profileId === currentProfile?.id),
+  );
+  const requireFeedAuth = () => {
+    if (!currentUserId) {
+      window.alert("로그인이 필요합니다.");
+      router.push("/login");
+      return false;
+    }
+    if (!currentProfile) {
+      window.alert("프로필을 선택해 주세요.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const requireFeedAuthToast = () => {
+    if (!currentUserId) {
+      showToast("로그인이 필요합니다.");
+      router.push("/login");
+      return false;
+    }
+    if (!currentProfile) {
+      showToast("프로필을 선택해 주세요.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const getUserProfileHref = (userId?: string, profileId?: number) => {
+    if (!userId) return "";
+
+    const params = new URLSearchParams();
+    if (profileId != null) params.set("profileId", String(profileId));
+
+    const query = params.toString();
+    return `/users/${userId}${query ? `?${query}` : ""}`;
+  };
+
+  const handleLike = (feedId: string) => {
+    if (!requireFeedAuth()) return;
+
+    void onToggleLike(feedId);
+    updateUserLikeFeeds(feedId);
+  };
+
+  const handleOpenCommentModal = (reviewId: string) => {
+    if (!requireFeedAuthToast()) return;
+
+    setCommentTargetReviewId(reviewId);
+  };
+  const closeCommentModal = useCallback(() => {
+    setCommentTargetReviewId(null);
+    setEditingCommentId(null);
+    setCommentText("");
+  }, []);
+
+  const getCommentContent = (content: unknown) => {
+    if (typeof content === "string") return content;
+    if (
+      typeof content === "object" &&
+      content !== null &&
+      "content" in content &&
+      typeof (content as { content?: unknown }).content === "string"
+    ) {
+      return (content as { content: string }).content;
+    }
+
+    return "";
+  };
+
+  const isMyComment = (comment: FeedCommentView) =>
+    Boolean(
+      currentUserId &&
+        comment.userId === currentUserId &&
+        (!comment.profileId || comment.profileId === currentProfile?.id),
+    );
+
+  const getCommentAuthor = (comment: FeedCommentView) =>
+    isMyComment(comment) && currentProfile?.nickname
+      ? currentProfile.nickname
+      : comment.author;
+
+  const getCommentAuthorImage = (comment: FeedCommentView) =>
+    isMyComment(comment) && currentProfile?.imgUrl
+      ? currentProfile.imgUrl
+      : comment.authorImage;
+
+  const handleToggleCommentLike = (reviewId: string, commentId: string) => {
+    if (!requireFeedAuth()) return;
+
+    void onToggleCommentLike(reviewId, commentId);
+    updateUserCommentFeed(reviewId, commentId);
+  };
+
+  const handleOpenEditComment = (commentId: string, text: string) => {
+    setEditingCommentId(commentId);
+    setCommentText(text);
+  };
+
+  const handleDeleteComment = async (reviewId: string, commentId: string) => {
+    try {
+      await onDeleteComment(reviewId, commentId);
+      if (editingCommentId === commentId) {
+        setEditingCommentId(null);
+        setCommentText("");
+      }
+    } catch (error) {
+      console.error("댓글 삭제 실패:", error);
+      showToast("댓글 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleToggleReport = async () => {
+    if (!requireFeedAuth()) return;
+    if (isReviewOwner) return;
+
+    if (isReported) {
+      await onReportFeed(review.feedId, false);
+      updateUserReportFeed(review.feedId);
+      setReportOverride(false);
+      setReportOpen(false);
+      setSelectedReportReason("");
+      showToast("신고가 취소되었습니다.");
+      return;
+    }
+
+    setReportOpen((open) => !open);
+    setSelectedReportReason("");
+  };
+
+  const handleSubmitReport = async () => {
+    if (!requireFeedAuth()) return;
+    if (isReviewOwner || !selectedReportReason) return;
+
+    await onReportFeed(review.feedId, true, selectedReportReason);
+    updateUserReportFeed(review.feedId);
+    setReportOverride(true);
+    setReportOpen(false);
+    setSelectedReportReason("");
+    showToast("신고되었습니다.");
+  };
+
+  const handleSubmitComment = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedCommentReview || !commentText.trim()) return;
+    if (!requireFeedAuth()) return;
+    if (!currentUserId || !currentProfile) return;
+
+    if (editingCommentId) {
+      try {
+        await onUpdateComment(
+          selectedCommentReview.feedId,
+          editingCommentId,
+          commentText.trim(),
+        );
+        setEditingCommentId(null);
+        setCommentText("");
+      } catch (error) {
+        console.error("댓글 수정 실패:", error);
+        showToast("댓글 수정에 실패했습니다.");
+      }
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const nextComment = {
+      commentId: "",
+      userId: currentUserId,
+      profileId: currentProfile.id,
+      content: commentText.trim(),
+      reportsCount: 0,
+      likesCount: 0,
+      likedUserIds: [],
+      createdAt: now,
+      updatedAt: now,
+      isDelete: false,
+    };
+
+    void onAddComment(selectedCommentReview.feedId, nextComment);
+    setCommentText("");
+  };
+
+  const renderCommentModal = () => {
+    if (!selectedCommentReview) return null;
+
+    const commentsList = Array.isArray(selectedCommentReview.commentsList)
+      ? selectedCommentReview.commentsList
+      : [];
+
+    return (
+      <div
+        className="feed-modal-backdrop"
+        role="presentation"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) {
+            closeCommentModal();
+          }
+        }}
+      >
+        <section
+          className="feed-comment-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="feed-comment-title"
+        >
+          <div className="feed-modal-head">
+            <div>
+              <h3 id="feed-comment-title">댓글</h3>
+              <p>
+                &quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴
+                의견
+              </p>
+            </div>
+            <button
+              type="button"
+              className="feed-modal-close"
+              onClick={closeCommentModal}
+              aria-label="댓글 닫기"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="comment-list">
+            {commentsList.length > 0 ? (
+              commentsList.map((comment) => {
+                const commentAuthor = getCommentAuthor(comment);
+                const commentAuthorImage = getCommentAuthorImage(comment);
+                const canManageComment = comment.isMine || isMyComment(comment);
+
+                return (
+                <div className="comment-item" key={comment.commentId}>
+                  <Link
+                    href={getUserProfileHref(comment.userId, comment.profileId)}
+                    className="comment-avatar profile-avatar-link"
+                    aria-label={`${commentAuthor} 프로필 보기`}
+                  >
+                    {commentAuthorImage ? (
+                      <img src={commentAuthorImage} alt="" />
+                    ) : (
+                      getInitial(commentAuthor)
+                    )}
+                  </Link>
+                  <div className="comment-content">
+                    <div className="comment-meta">
+                      <strong>{commentAuthor}</strong>
+                      <span>
+                        {getRelativeTime(
+                          comment.updatedAt || comment.createdAt,
+                        )}
+                      </span>
+                    </div>
+                    <p>{getCommentContent(comment.content)}</p>
+                    <div className="comment-actions">
+                      <button
+                        type="button"
+                        className={
+                          comment.liked
+                            ? "comment-like-btn liked"
+                            : "comment-like-btn"
+                        }
+                        onClick={() =>
+                          handleToggleCommentLike(
+                            selectedCommentReview.feedId,
+                            comment.commentId,
+                          )
+                        }
+                        aria-pressed={comment.liked}
+                      >
+                        {comment.liked ? "♥" : "♡"} 좋아요 {comment.likesCount}
+                      </button>
+                      {canManageComment && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleOpenEditComment(
+                                comment.commentId,
+                                getCommentContent(comment.content),
+                              )
+                            }
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="comment-delete-btn"
+                            onClick={() => {
+                              handleDeleteComment(
+                                selectedCommentReview.feedId,
+                                comment.commentId,
+                              );
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                );
+              })
+            ) : (
+              <div className="comment-empty">
+                <div className="empty-img">
+                  <img src="/images/feed/empty-comment.svg" alt="." />
+                </div>
+                <div>아직 댓글이 없어요.</div>
+              </div>
+            )}
+          </div>
+
+          <form className="comment-write" onSubmit={handleSubmitComment}>
+            <input
+              type="text"
+              value={commentText}
+              onChange={(event) => setCommentText(event.target.value)}
+              placeholder="댓글을 입력해 주세요"
+            />
+            <button type="submit" disabled={!commentText.trim()}>
+              {editingCommentId ? "수정" : "등록"}
+            </button>
+          </form>
+        </section>
+      </div>
+    );
+  };
+
   return (
-    <article className="feed-post">
+    <article className={`feed-post ${reportOpen ? "report-open" : ""}`}>
       <Link
         href={`/feed/${review.feedId}`}
         className="feed-card-link"
@@ -46,13 +432,16 @@ export default function FeedReviewCard({
       />
 
       <div className="post-head">
-        <div className="post-avatar">
+        <Link
+          href={getUserProfileHref(review.userId, review.profileId)}
+          className="post-avatar profile-avatar-link feed-card-layer"
+        >
           {review.authorImage ? (
             <img src={review.authorImage} alt="" />
           ) : (
             getInitial(review.author)
           )}
-        </div>
+        </Link>
         <div className="post-meta">
           <h3>{review.author}</h3>
           <div className="post-info">
@@ -61,6 +450,49 @@ export default function FeedReviewCard({
           </div>
         </div>
         <div className="review-tags">
+          {!isReviewOwner && (
+            <div className="report-menu">
+              <button
+                type="button"
+                className={isReported ? "report-btn active" : "report-btn"}
+                onClick={() => void handleToggleReport()}
+                aria-pressed={isReported}
+              >
+                {isReported ? "신고됨" : "신고"}
+              </button>
+              {reportOpen && (
+                <div className="feed-report-panel">
+                  <p>신고 사유</p>
+                  <div className="report-reasons">
+                    {REPORT_REASONS.map((reason) => (
+                      <button
+                        type="button"
+                        key={reason}
+                        className={
+                          selectedReportReason === reason ? "selected" : ""
+                        }
+                        onClick={() => setSelectedReportReason(reason)}
+                      >
+                        {reason}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="report-actions">
+                    <button type="button" onClick={() => setReportOpen(false)}>
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleSubmitReport()}
+                      disabled={!selectedReportReason}
+                    >
+                      신고
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {review.isSpoiler && <span className="spoiler-tag">스포일러</span>}
         </div>
       </div>
@@ -71,7 +503,10 @@ export default function FeedReviewCard({
           className="thumb feed-card-layer"
         >
           {review.mediaPoster && (
-            <img src={getPosterUrl(review.mediaPoster)} alt={review.mediaTitle} />
+            <img
+              src={getPosterUrl(review.mediaPoster)}
+              alt={review.mediaTitle}
+            />
           )}
         </Link>
         <div className="review-info">
@@ -90,10 +525,20 @@ export default function FeedReviewCard({
       </div>
 
       <div className="post-actions feed-card-layer">
-        <span className={`action ${review.liked ? "liked" : ""}`}>
+        <button
+          type="button"
+          className={`action ${review.liked ? "liked" : ""}`}
+          onClick={() => handleLike(review.feedId)}
+        >
           {review.liked ? "♥" : "♡"} {review.likesCount}
-        </span>
-        <span className="action">댓글 {review.comments}</span>
+        </button>
+        <button
+          type="button"
+          className="action"
+          onClick={() => handleOpenCommentModal(review.feedId)}
+        >
+          댓글 {review.comments}
+        </button>
         {showOwnerActions && (
           <div className="review-owner-actions">
             <button
@@ -113,6 +558,7 @@ export default function FeedReviewCard({
           </div>
         )}
       </div>
+      {renderCommentModal()}
     </article>
   );
 }

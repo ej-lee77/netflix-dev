@@ -560,7 +560,7 @@ function SearchResultsContent() {
     fetchTrendingMedia(
       typeFilter === "animation" ? "all" : typeFilter,
       controller.signal,
-      6,
+      8,
     )
       .then(setPopularItems)
       .catch((error: Error) => {
@@ -802,7 +802,7 @@ function SearchResultsContent() {
                 : "검색어 또는 태그를 선택해 주세요."}
             </div>
             <TrendingVideoSection
-              items={popularItems}
+              items={popularItems.slice(0, 8)}
               title="지금 많이 찾는 추천 영상"
               variant="results"
             />

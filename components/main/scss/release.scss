@@ -1,34 +1,86 @@
 @use "@/app/globals" as g;
 
 .release-section {
-  .release-masonry {
-    column-count: 1;
-    column-gap: 12px;
-    column-fill: balance;
-    padding: 0 clamp(24px, calc((100vw - g.$main-menu-width - 1920px) / 2), 80px);
+  position: relative;
+  width: 100%;
+  overflow-x: clip;
+
+  .release-swiper-outer {
+    position: relative;
     padding-left: g.$main-menu-width;
+    overflow-x: clip;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 80px;
+      z-index: 5;
+      pointer-events: none;
+      background: linear-gradient(to left, rgba(g.$d-color, 0.8), transparent);
+    }
+
+    .release-swiper {
+      position: relative;
+      z-index: 6;
+      width: 100%;
+      overflow: visible;
+    }
   }
 
-  @media (min-width: 640px)  { .release-masonry { column-count: 2; } }
-  @media (min-width: 768px)  { .release-masonry { column-count: 3; } }
-  @media (min-width: 1280px) { .release-masonry { column-count: 4; } }
-  @media (min-width: 1920px) { .release-masonry { column-count: 5; } }
-  @media (min-width: 2560px) { .release-masonry { column-count: 6; } }
+  // Swiper 네비게이션 버튼
+  .swiper-button-prev,
+  .swiper-button-next {
+    background: none;
+    border: none;
+    color: g.$w-color;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 
+    &::after {
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    &.swiper-button-disabled {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+  }
+
+  &:hover {
+
+    .swiper-button-prev,
+    .swiper-button-next {
+      opacity: 1;
+
+      &:hover {
+        opacity: 0.7;
+      }
+    }
+  }
+
+  /* ── 카드 ── */
   .release-card {
+    display: block;
     position: relative;
-    break-inside: avoid;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
-    margin-bottom: 12px;
-    background: #1a1a1a;
-    display: block;
+    background: #111;
     text-decoration: none;
     color: inherit;
+    transition: transform 0.2s ease;
 
-    &:hover .card-image {
-      transform: scale(1.05);
+    &:hover {
+      transform: translateY(-4px);
+
+      .card-image {
+        transform: scale(1.05);
+      }
     }
   }
 
@@ -36,122 +88,121 @@
     width: 100%;
     display: block;
     object-fit: cover;
-    filter: brightness(0.8);
+    aspect-ratio: 16 / 9;
+    filter: brightness(0.85);
     transition: transform 0.5s ease;
   }
 
-  /* 세 가지 세로 비율 */
-  .card-tall   .card-image { aspect-ratio: 4 / 3; }   /* 가장 길게 */
-  .card-medium .card-image { aspect-ratio: 3 / 2; }   /* 중간 */
-  .card-short  .card-image { aspect-ratio: 16 / 9; }  /* 짧게 */
-
-  .card-overlay {
+  /* D-day 배지 */
+  .card-badge {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.92) 0%,
-      rgba(0, 0, 0, 0.35) 45%,
-      transparent 100%
-    );
-    pointer-events: none;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 5px 9px;
+    border-radius: 5px;
+    backdrop-filter: blur(4px);
+    line-height: 1;
+    z-index: 2;
   }
 
+  /* 하단 텍스트 오버레이 + 그라데이션 */
   .card-info {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 20px 16px 16px;
-    z-index: 2;
+    padding: 32px 14px 14px;
     box-sizing: border-box;
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.55) 30%,
+        rgba(0, 0, 0, 0.88) 65%,
+        rgba(0, 0, 0, 0.97) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 1;
+  }
+
+  .card-meta {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .card-type {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
   }
 
   .card-title {
-    font-size: clamp(0.95rem, 1.1vw, 1.25rem);
+    font-size: clamp(0.9rem, 1.1vw, 1.1rem);
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.35;
     letter-spacing: -0.02em;
     color: g.$w-color;
-    margin-bottom: 6px;
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin: 0;
   }
 
+  .card-date {
+    font-size: 0.8rem;
+    color: #aaa;
+    font-weight: 400;
+    margin: 0;
+    line-height: 1.4;
+  }
 }
 
-/* ===== 반응형: 공개예정 미리보기 ===== */
+/* ===== 반응형 ===== */
 @include g.respond(tablet) {
   .release-section {
-    .section-title-outer { padding-left: 64px; }
-    .release-masonry { padding-left: 64px; }
-  }
-}
-@include g.respond(mobile) {
-  .release-section {
-    .section-title-outer { padding-left: 56px; }
-    /* 모바일: 다른 행처럼 가로 스크롤 포스터 카드행으로 통일 */
-    .release-masonry {
-      column-count: unset;
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 8px;
-      overflow-x: auto;
-      padding-left: 56px;
-      padding-right: 12px;
-      padding-bottom: 8px;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-      &::-webkit-scrollbar { display: none; }
+    .section-title-outer {
+      padding-left: 64px;
     }
-    .release-card {
-      flex: 0 0 auto;
-      width: 38vw;
-      max-width: 150px;
-      margin-bottom: 0;
-      border-radius: 8px;
+
+    .release-swiper-outer {
+      padding-left: 64px;
     }
-    /* 포스터 비율 통일(다른 행 카드와 동일한 느낌) */
-    .card-image,
-    .card-tall .card-image,
-    .card-medium .card-image,
-    .card-short .card-image { aspect-ratio: 2 / 3; }
-    .card-info { padding: 10px 8px 8px; }
-    .card-title { font-size: 0.8rem; line-height: 1.25; }
   }
 }
 
-/* ===== 반응형(정밀): 모바일 공개예정 = 가로 카드 행(다른 행과 동일 형식) ===== */
 @include g.respond(mobile) {
   .release-section {
-    .release-masonry {
-      column-count: unset !important;
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      gap: 8px;
+    .section-title-outer {
       padding-left: 56px;
-      padding-right: 12px;
-      scroll-snap-type: x mandatory;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
     }
-    .release-masonry::-webkit-scrollbar { display: none; }
-    .release-card {
-      flex: 0 0 38%;
-      max-width: 38%;
-      margin-bottom: 0;
-      border-radius: 6px;
-      scroll-snap-align: start;
+
+    .release-swiper-outer {
+      padding-left: 56px;
     }
-    /* 다른 행 포스터와 동일한 2/3 비율로 통일 */
-    .card-image,
-    .card-tall .card-image,
-    .card-medium .card-image,
-    .card-short .card-image { aspect-ratio: 2 / 3; }
-    .card-info { padding: 10px 8px 8px; }
-    .card-title { font-size: 0.8rem; line-height: 1.25; }
+
+    .card-info {
+      padding: 24px 10px 10px;
+      gap: 4px;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+    }
+
+    .card-date,
+    .card-type,
+    .card-badge {
+      font-size: 0.66rem;
+    }
   }
 }

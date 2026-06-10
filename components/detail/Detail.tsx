@@ -49,7 +49,6 @@ type DetailTab =
   | "episodes"
   | "info"
   | "cast"
-  | "director"
   | "review"
   | "related";
 
@@ -240,6 +239,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     mediaDetails,
     onFetchMediaDetail,
     casts,
+    directors,
     onFetchCredits,
     recommended,
     onFetchRecommended,
@@ -424,15 +424,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       .join(", ") ?? "";
   const seasonOrRuntimeText = isTv
     ? [
-        mediaItem?.number_of_seasons
-          ? `시즌 ${mediaItem.number_of_seasons}`
-          : null,
-        mediaItem?.number_of_episodes
-          ? `${mediaItem.number_of_episodes}부작`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(" / ")
+      mediaItem?.number_of_seasons
+        ? `시즌 ${mediaItem.number_of_seasons}`
+        : null,
+      mediaItem?.number_of_episodes
+        ? `${mediaItem.number_of_episodes}부작`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" / ")
     : mediaItem?.runtime
       ? `${mediaItem.runtime}분`
       : "";
@@ -483,9 +483,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const heroMetaItems = [releaseYear, seasonOrRuntimeText, countryText].filter(
     Boolean,
   );
-  const directorList = isTv
-    ? (mediaItem?.created_by ?? [])
-    : castList.filter((m) => m.order <= 2).slice(0, 3);
+  const directorList = directors[castKey] ?? [];
   const videos = isTv
     ? mediaItem
       ? tvVideos[mediaItem.id]
@@ -531,8 +529,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   );
   const visibleEpisodes = isUpcoming
     ? episodes
-        .filter((episode) => episode.air_date && episode.air_date > today)
-        .slice(0, 1)
+      .filter((episode) => episode.air_date && episode.air_date > today)
+      .slice(0, 1)
     : episodes;
   const visibleSeasons = isUpcoming
     ? seasons.filter((season) => season.season_number > 0).slice(0, 1)
@@ -550,30 +548,29 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const tabItems: { id: DetailTab; label: string; meta?: string }[] = [
     ...(isTv
       ? [
-          {
-            id: "episodes" as const,
-            label: isUpcoming ? "공개예정" : "회차",
-            meta: visibleEpisodes.length
-              ? `${visibleEpisodes.length}`
-              : undefined,
-          },
-        ]
+        {
+          id: "episodes" as const,
+          label: isUpcoming ? "공개예정" : "회차",
+          meta: visibleEpisodes.length
+            ? `${visibleEpisodes.length}`
+            : undefined,
+        },
+      ]
       : []),
     ...(!isTv ? [{ id: "info" as const, label: "작품 정보" }] : []),
     {
       id: "cast",
-      label: "출연진",
+      label: "감독/출연",
       meta: castList.length ? `${castList.length}` : undefined,
     },
-    { id: "director", label: "감독" },
     ...(!isUpcoming
       ? [
-          {
-            id: "review" as const,
-            label: "리뷰",
-            meta: isTv ? "12.8k" : "4.2k",
-          },
-        ]
+        {
+          id: "review" as const,
+          label: "리뷰",
+          meta: isTv ? "12.8k" : "4.2k",
+        },
+      ]
       : []),
     { id: "related", label: "관련 콘텐츠" },
   ];
@@ -647,15 +644,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     const alarm = isUpcomingNotified
       ? removeUpcomingAlarm(currentProfile.alarm, type, mediaId)
       : [
-          ...(currentProfile.alarm ?? []),
-          createUpcomingAlarm({
-            id: mediaId,
-            media_type: type,
-            title: title || "공개 예정",
-            release_date: releaseDate ?? "",
-            poster_path: mediaItem.poster_path,
-          }),
-        ];
+        ...(currentProfile.alarm ?? []),
+        createUpcomingAlarm({
+          id: mediaId,
+          media_type: type,
+          title: title || "공개 예정",
+          release_date: releaseDate ?? "",
+          poster_path: mediaItem.poster_path,
+        }),
+      ];
 
     await onUpdateProfile({
       ...currentProfile,
@@ -1017,7 +1014,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       background: "rgba(0,0,0,0.25)",
                       opacity:
                         (selectEpisodeId !== null && isActive) ||
-                        hoveredEpisodeId === ep.id
+                          hoveredEpisodeId === ep.id
                           ? 1
                           : 0,
                       transition: "opacity 0.2s",
@@ -2311,101 +2308,156 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     </div>
   );
 
-  const renderCast = () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        padding: `56px ${hPad}px 0`,
-      }}
-    >
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
-        출연진
-      </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-        {castList.slice(0, 12).map((member, idx) => {
-          const isLastRow =
-            idx >=
-            castList.slice(0, 12).length -
-              (castList.slice(0, 12).length % 4 || 4);
-          const isRightCol = (idx + 1) % 4 !== 0;
-          return (
+  const renderPersonCard = (
+    id: number,
+    profilePath: string | null,
+    name: string,
+    sub: string,
+    idx: number,
+    total: number,
+    cols: number,
+  ) => {
+    const isLastRow = idx >= total - (total % cols || cols);
+    const isRightCol = (idx + 1) % cols !== 0;
+    return (
+      <a
+        key={`${id}-${idx}`}
+        href={`/person/${id}?from=/detail/${type}/${mediaId}`}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          padding: "16px 0",
+          borderBottom: isLastRow ? "none" : "1px solid rgba(255,255,255,0.07)",
+          borderRight: isRightCol ? "1px solid rgba(255,255,255,0.07)" : "none",
+          paddingLeft: idx % cols === 0 ? 0 : 20,
+          paddingRight: (idx + 1) % cols === 0 ? 0 : 20,
+          textDecoration: "none",
+          transition: "opacity 0.15s",
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+      >
+        <div
+          style={{
+            flexShrink: 0,
+            width: 52,
+            height: 52,
+            borderRadius: 8,
+            overflow: "hidden",
+            background: "#2a2a35",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          {profilePath ? (
+            <img
+              src={imageUrl(profilePath, "w185")}
+              alt={name}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
             <div
-              key={member.id}
               style={{
+                width: "100%",
+                height: "100%",
                 display: "flex",
                 alignItems: "center",
-                gap: 14,
-                padding: "16px 0",
-                borderBottom: isLastRow
-                  ? "none"
-                  : "1px solid rgba(255,255,255,0.07)",
-                borderRight: isRightCol
-                  ? "1px solid rgba(255,255,255,0.07)"
-                  : "none",
-                paddingLeft: idx % 4 === 0 ? 0 : 20,
-                paddingRight: (idx + 1) % 4 === 0 ? 0 : 20,
+                justifyContent: "center",
+                fontSize: 22,
+                color: "#444",
               }}
             >
-              <div
-                style={{
-                  flexShrink: 0,
-                  width: 52,
-                  height: 52,
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  background: "#2a2a35",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                {member.profile_path && (
-                  <img
-                    src={imageUrl(member.profile_path, "w185")}
-                    alt={member.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                )}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: "#fff",
-                    margin: 0,
-                    lineHeight: 1.4,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {member.name}
-                </p>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "#666",
-                    margin: 0,
-                    lineHeight: 1.4,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  출연 | {member.character}
-                </p>
-              </div>
+              👤
             </div>
-          );
-        })}
+          )}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#fff",
+              margin: 0,
+              lineHeight: 1.4,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {name}
+          </p>
+          <p
+            style={{
+              fontSize: 13,
+              color: "#666",
+              margin: 0,
+              lineHeight: 1.4,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {sub}
+          </p>
+        </div>
+      </a>
+    );
+  };
+
+  const renderCast = () => {
+    const COLS = 4;
+    const visibleCast = castList.slice(0, 12);
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 40,
+          padding: `56px ${hPad}px 0`,
+        }}
+      >
+        {directorList.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
+              감독/제작
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+              {directorList.map((member, idx) =>
+                renderPersonCard(
+                  member.id,
+                  member.profile_path,
+                  member.name,
+                  member.job,
+                  idx,
+                  directorList.length,
+                  COLS,
+                )
+              )}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
+            출연진
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
+            {visibleCast.map((member, idx) =>
+              renderPersonCard(
+                member.id,
+                member.profile_path,
+                member.name,
+                `출연 | ${member.character}`,
+                idx,
+                visibleCast.length,
+                COLS,
+              )
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderStills = () => {
     const rawImages = movieImages[mediaId] ?? [];
@@ -2413,13 +2465,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       rawImages.length > 0
         ? rawImages.slice(0, 8).map((img) => imageUrl(img.file_path, "w780"))
         : ([
-            mediaItem?.backdrop_path
-              ? imageUrl(mediaItem.backdrop_path, "w780")
-              : null,
-            mediaItem?.poster_path
-              ? imageUrl(mediaItem.poster_path, "w780")
-              : null,
-          ].filter(Boolean) as string[]);
+          mediaItem?.backdrop_path
+            ? imageUrl(mediaItem.backdrop_path, "w780")
+            : null,
+          mediaItem?.poster_path
+            ? imageUrl(mediaItem.poster_path, "w780")
+            : null,
+        ].filter(Boolean) as string[]);
 
     if (stills.length === 0) return null;
 
@@ -2486,57 +2538,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     );
   };
 
-  const renderDirector = () => (
-    <div style={{ padding: `56px ${hPad}px 0` }}>
-      <div
-        style={{
-          borderRadius: 12,
-          border: "1px solid rgba(255,255,255,0.08)",
-          background: "rgba(255,255,255,0.05)",
-          padding: 28,
-        }}
-      >
-        <p
-          style={{
-            marginBottom: 20,
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#e50914",
-          }}
-        >
-          Creative
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          {directorList.length > 0 ? (
-            directorList.map((person) => (
-              <span
-                key={person.id}
-                style={{
-                  borderRadius: 100,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  padding: "8px 20px",
-                  color: "rgba(255,255,255,0.8)",
-                  fontSize: 14,
-                }}
-              >
-                {person.name}
-              </span>
-            ))
-          ) : (
-            <p
-              style={{
-                color: "rgba(255,255,255,0.5)",
-                fontSize: 14,
-                margin: 0,
-              }}
-            >
-              등록된 감독 정보가 없습니다.
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -2921,7 +2922,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         {activeTab === "info" && !isTv && renderSynopsis()}
         {activeTab === "info" && !isTv && renderRelated()}
         {activeTab === "cast" && renderCast()}
-        {activeTab === "director" && renderDirector()}
         {(!user || currentProfile?.isCommunity) &&
           activeTab === "review" &&
           renderReviewTab()}

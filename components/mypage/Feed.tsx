@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import FeedReviewCard from "@/components/feed/FeedReviewCard";
 import { type FeedView } from "@/store/useFeedStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -85,6 +84,12 @@ export default function MyPageFeed({
     following: feeds.filter((feed) => Boolean(feed.userId && followingIds.includes(feed.userId))),
   };
 
+  const counts = {
+    mine: feedBuckets.mine.length,
+    liked: feedBuckets.liked.length,
+    following: feedBuckets.following.length,
+  };
+
   const filteredFeeds = feedBuckets[scopeFilter];
   const sortedFeeds = sortFeeds(filteredFeeds, sortType);
 
@@ -107,8 +112,7 @@ export default function MyPageFeed({
             className={`chip ${scopeFilter === sf.key ? "is-active" : ""}`}
             onClick={() => setScopeFilter(sf.key)}
           >
-            {sf.label} 
-            {/* {sf.key === "mine" ? counts.mine : sf.key === "liked" ? counts.liked : sf.key === "following" ? counts.following : 0} */}
+            {sf.label} {counts[sf.key]}
           </button>
         ))}
       </div>
