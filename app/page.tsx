@@ -65,10 +65,10 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
     href: "/category?type=movie&genres=action",
   },
   {
-    title: "범죄 드라마",
-    apiUrl: "https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=80&sort_by=popularity.desc",
+    title: "스릴러 시리즈",
+    apiUrl: "https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=53&sort_by=popularity.desc",
     mediaType: "movie",
-    href: "/genre/thriller",
+    href: "/category?type=tv&genres=thriller",
   },
   {
     title: "한국 로맨스 시리즈",
@@ -78,16 +78,16 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
   },
   {
     title: "모험 애니메이션",
-    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=16%2C10759&sort_by=popularity.desc",
+    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=878%2C10759&sort_by=popularity.desc",
     mediaType: "tv",
     pageCount: 3,
-    href: "/genre/animation",
+    href: "/category?type=animation&genres=scifi",
   },
   {
-    title: "해외 코미디 시리즈",
-    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=en&with_genres=35&sort_by=popularity.desc",
-    mediaType: "tv",
-    href: "/genre/comedy",
+    title: "해외 다큐멘터리",
+    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=en&with_genres=99&sort_by=popularity.desc",
+    mediaType: "movie",
+    href: "/category?countries=jp,in,cn,tw,us,uk,fr,es,de&genres=documentary",
   },
   {
     title: "판타지 영화",

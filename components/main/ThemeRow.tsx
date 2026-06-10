@@ -103,7 +103,8 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={title} href={href ?? "/category"} />
+        {title === "오늘 가장 많이보는 시리즈" ? <SectionTitle title={title} href={href ?? "/category"} showMore={false} /> :
+        <SectionTitle title={title} href={href ?? "/category"} />}
       </div>
 
       <div className="swiper-outer">
