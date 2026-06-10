@@ -161,14 +161,18 @@ footer {
         }
 
         .lang-globe {
-          display: block;
-          flex-shrink: 0;
-          filter: brightness(0) invert(1);
-          opacity: 0.5;
+          display: inline-flex;
+          align-items: center;
         }
 
         .lang-arrow {
-          font-size: 10px;
+          display: inline-flex;
+          align-items: center;
+          transition: transform 0.2s ease;
+
+          &.open {
+            transform: rotate(180deg);
+          }
         }
       }
     }
