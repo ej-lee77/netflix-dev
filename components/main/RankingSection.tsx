@@ -17,7 +17,9 @@ import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "./scss/rankingSection.scss";
 import SectionTitle from "../common/SectionTitle";
+import ThemeRow, { type ThemeItem } from "./ThemeRow";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterHidden } from "@/data/hiddenContent";
 import { useMaturityFiltered } from "@/data/maturityFilter";
 
 export interface RankingItem {
@@ -55,6 +57,18 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
 
   const [activeId, setActiveId] = useState<number | null>(null);
 
+  // 태블릿/모바일(<=1024px)에서는 ThemeRow와 동일한 디자인/동작으로 렌더
+  const [vw, setVw] = useState(1920);
+
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isCompact = vw <= 1024;
+
   const swiperRef = useRef<SwiperClass | null>(null);
   const pointerStartRef = useRef({ x: 0, y: 0 });
   const isDraggingRef = useRef(false);
@@ -72,8 +86,8 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
       : koreanMovies
           .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
           .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }));
-    // 제외 장르 작품 숨김
-    return filterByExcludedGenres(source, excludedGenres);
+    // 차단 작품 + 제외 장르 작품 숨김
+    return filterHidden(filterByExcludedGenres(source, excludedGenres));
   }, [externalItems, koreanMovies, excludedGenres]);
 
   // 관람등급 필터 후 상위 10개
@@ -91,6 +105,25 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
       setActiveId(rankingItems[0].id);
     }
   }, [activeId, rankingItems]);
+
+  // 태블릿/모바일: 펼침형 카드 대신 다른 행들과 동일한 ThemeRow 디자인으로 동작
+  if (isCompact) {
+    if (!rankingItems.length) return null;
+
+    const themeItems: ThemeItem[] = rankingItems.map((it) => ({
+      ...it,
+      mediaType: (it.media_type ?? "movie") as "movie" | "tv",
+      genre_ids: it.genre_ids ?? [],
+    }));
+
+    return (
+      <ThemeRow
+        title={title ?? t("home.top10")}
+        items={themeItems}
+        href={href ?? "/category"}
+      />
+    );
+  }
 
 
   const selectRankingItem = (id: number, index: number) => {
@@ -146,7 +179,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   if (!rankingItems.length) {
     return (
       <section className="ranking-section">
-        <SectionTitle title='방구석 TOP 10' subTitle='오늘 많이 보는 작품을 확인해보세요' />
+        <SectionTitle title='방구석 TOP 10' subTitle='오늘 많이 보는 작품을 확인해보세요' showMore={false} />
 
         <div className="ranking-skeleton-row">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -160,7 +193,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   return (
     <section className="ranking-section">
       <div className="section-title-outer">
-        <SectionTitle title={title ?? t("home.top10")} href={href ?? "/category"} />
+        <SectionTitle title={title ?? t("home.top10")} href={href ?? "/category"} showMore={false} />
       </div>
 
       <div className="ranking-swiper-wrap">

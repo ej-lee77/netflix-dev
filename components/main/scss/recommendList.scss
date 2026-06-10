@@ -359,6 +359,8 @@
   .recommend-section {
     padding: 40px 0 56px;
     .section-title-outer { padding-left: 64px; }
+    .recommend-swiper { padding-left: 64px; padding-right: 24px; }
+    .swiper-button-prev { left: 64px; }
     .recommend-slide { max-height: clamp(320px, 42vw, 420px); }
     .btn-play, .btn-info { height: 40px; font-size: 14px; }
     .btn-play { padding: 0 16px; }
@@ -369,6 +371,8 @@
   .recommend-section {
     padding: 26px 0 36px;
     .section-title-outer { padding-left: 56px; }
+    .recommend-swiper { padding-left: 56px; padding-right: 16px; }
+    .swiper-button-prev { left: 56px; }
     .recommend-slide { max-height: clamp(230px, 62vw, 320px); }
     .slide-info { padding: 10px 14px; }
     .btn-play, .btn-info { height: 34px; font-size: 13px; }
