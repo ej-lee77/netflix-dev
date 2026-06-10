@@ -1,20 +1,13 @@
 "use client";
-import NewMovieList from "@/components/main/NewMovieList";
 import { useT } from "@/lib/i18n";
 import { getTmdbLang } from "@/lib/i18n";
-import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import type { ThemeItem } from "@/components/main/ThemeRow";
 import { getNetflixOriginalIdSet } from "@/lib/netflix";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import RankingSection, { type RankingItem } from "@/components/main/RankingSection";
-import WatchingList from "@/components/main/WatchingList";
-import NetflixOriginal from "@/components/main/NetflixOriginal";
-import RecommendList from "@/components/main/RecommendList";
-import { useMovieStore } from "@/store/useMovieStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Hero from "@/components/main/Hero";
-import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
 import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
 import TopButton from "@/components/common/TopButton";
@@ -25,6 +18,8 @@ const ThemeRow = dynamic(() => import("@/components/main/ThemeRow"), {
   ssr: false,
   loading: () => <ThemeRowSkeleton />,
 });
+const WatchingList = dynamic(() => import("@/components/main/WatchingList"), { ssr: false });
+const RecommendList = dynamic(() => import("@/components/main/RecommendList"), { ssr: false });
 const SplitBanner = dynamic(() => import("@/components/main/SplitBanner"), { ssr: false });
 const Release = dynamic(() => import("@/components/main/Release"), { ssr: false });
 
@@ -32,6 +27,11 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const SPLIT_BANNER_AFTER = 3; // 일본 애니(2) 다음, 미국 TV(3) 앞
 const THEME_SPLIT = 5;        // 이 인덱스 이후에 한국 시리즈 랭킹 삽입
 const RELEASE_AFTER = 9;      // 이 인덱스 이후에 공개예정 섹션 삽입
+
+const deferWork = (callback: () => void) => {
+  const id = window.setTimeout(callback, 700);
+  return () => window.clearTimeout(id);
+};
 
 const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv"; pageCount?: number; href: string }[] = [
   {
@@ -65,10 +65,10 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
     href: "/category?type=movie&genres=action",
   },
   {
-    title: "범죄 드라마",
-    apiUrl: "https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=80&sort_by=popularity.desc",
+    title: "스릴러 시리즈",
+    apiUrl: "https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=53&sort_by=popularity.desc",
     mediaType: "movie",
-    href: "/genre/thriller",
+    href: "/category?type=tv&genres=thriller",
   },
   {
     title: "한국 로맨스 시리즈",
@@ -78,16 +78,16 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
   },
   {
     title: "모험 애니메이션",
-    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=16%2C10759&sort_by=popularity.desc",
+    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=878%2C10759&sort_by=popularity.desc",
     mediaType: "tv",
     pageCount: 3,
-    href: "/genre/animation",
+    href: "/category?type=animation&genres=scifi",
   },
   {
-    title: "해외 코미디 시리즈",
-    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=en&with_genres=35&sort_by=popularity.desc",
-    mediaType: "tv",
-    href: "/genre/comedy",
+    title: "해외 다큐멘터리",
+    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=en&with_genres=99&sort_by=popularity.desc",
+    mediaType: "movie",
+    href: "/category?countries=jp,in,cn,tw,us,uk,fr,es,de&genres=documentary",
   },
   {
     title: "판타지 영화",
@@ -137,7 +137,6 @@ async function fetchCert(id: number, mediaType: "movie" | "tv"): Promise<string>
 }
 
 async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCount = 1): Promise<ThemeItem[]> {
-  const MIN_ITEMS = 9;
   const startPage = Math.floor(Math.random() * 3) + 1;
   const pages = await Promise.all(
     Array.from({ length: Math.max(pageCount, 2) }, (_, i) =>
@@ -163,7 +162,8 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
   }));
 
   // 모든 아이템의 연령 정보를 병렬로 fetch
-  const certs = await Promise.all(rawItems.map((item) => fetchCert(item.id, mediaType)));
+  return rawItems;
+  /*
 
   // Zustand store에 미리 저장해두면 hover 시 바로 표시됨
   const certMap: Record<string, string> = {};
@@ -178,15 +178,16 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
   // 9개 미만이면 인증 없는 아이템으로 채워서 최소 9개 보장
   const withoutCert = rawItems.filter((_, i) => certs[i] === "");
   return [...withCert, ...withoutCert.slice(0, MIN_ITEMS - withCert.length)];
+  */
 }
 
 export default function Home() {
   const t = useT();
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending, onFetchNetflixOriginals, onFetchKoreanMovies } = useMovieStore();
   const [themeRows, setThemeRows] = useState<ThemeItem[][]>([]);
   const [themeLoading, setThemeLoading] = useState(true);
   const [koreanSeries, setKoreanSeries] = useState<RankingItem[]>([]);
   const [koreanMovieRanking, setKoreanMovieRanking] = useState<RankingItem[]>([]);
+  const netflixIdsRef = useRef<Set<number>>(new Set());
 
   // 선호 장르: 메인 상단에 "내가 선호하는 OO" 줄을 일반 테마보다 먼저 노출
   const favoriteGenres = useFavoriteGenres();
@@ -230,65 +231,74 @@ export default function Home() {
   }, [favoriteGenres]);
 
   useEffect(() => {
-    onFetchPopular();
-    onFetchTvs();
-    onFetchNewest();
-    onFetchTrending();
-    onFetchNetflixOriginals();
-    onFetchKoreanMovies();
+    let ignore = false;
+    const cancelDeferred = deferWork(() => {
+      fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (ignore) return;
+          const items: RankingItem[] = (data.results || [])
+            .filter((t: any) => t.poster_path && t.backdrop_path)
+            .slice(0, 10)
+            .map((t: any) => ({
+              id: t.id,
+              title: t.name,
+              poster_path: t.poster_path,
+              backdrop_path: t.backdrop_path,
+              vote_average: t.vote_average,
+              overview: t.overview,
+              media_type: "tv" as const,
+              genre_ids: t.genre_ids ?? [],
+            }));
+          setKoreanSeries(items);
+        });
+    });
+
+    return () => {
+      ignore = true;
+      cancelDeferred();
+    };
   }, []);
 
   useEffect(() => {
-    fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const items: RankingItem[] = (data.results || [])
-          .filter((t: any) => t.poster_path && t.backdrop_path)
-          .slice(0, 10)
-          .map((t: any) => ({
-            id: t.id,
-            title: t.name,
-            poster_path: t.poster_path,
-            backdrop_path: t.backdrop_path,
-            vote_average: t.vote_average,
-            overview: t.overview,
-            media_type: "tv" as const,
-            genre_ids: t.genre_ids ?? [],
-          }));
-        setKoreanSeries(items);
-      });
+    let ignore = false;
+    const cancelDeferred = deferWork(() => {
+      fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (ignore) return;
+          const items: RankingItem[] = (data.results || [])
+            .filter((m: any) => m.poster_path && m.backdrop_path)
+            .slice(0, 10)
+            .map((m: any) => ({
+              id: m.id,
+              title: m.name,
+              poster_path: m.poster_path,
+              backdrop_path: m.backdrop_path,
+              vote_average: m.vote_average,
+              overview: m.overview,
+              media_type: "tv" as const,
+              genre_ids: m.genre_ids ?? [],
+            }));
+          setKoreanMovieRanking(items);
+        });
+    });
+
+    return () => {
+      ignore = true;
+      cancelDeferred();
+    };
   }, []);
 
   useEffect(() => {
-    fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&with_genres=10764%7C10767&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const items: RankingItem[] = (data.results || [])
-          .filter((m: any) => m.poster_path && m.backdrop_path)
-          .slice(0, 10)
-          .map((m: any) => ({
-            id: m.id,
-            title: m.name,
-            poster_path: m.poster_path,
-            backdrop_path: m.backdrop_path,
-            vote_average: m.vote_average,
-            overview: m.overview,
-            media_type: "tv" as const,
-            genre_ids: m.genre_ids ?? [],
-          }));
-        setKoreanMovieRanking(items);
-      });
-  }, []);
+    let ignore = false;
+    let cancelDeferred = () => {};
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      const [netflixIds, ...allRows] = await Promise.all([
-        getNetflixOriginalIdSet(5),
-        ...THEME_CONFIGS.map((c) => fetchThemeItems(c.apiUrl, c.mediaType, c.pageCount)),
-      ]) as [Set<number>, ...ThemeItem[][]];
-
+    const buildRows = (rows: ThemeItem[][], existingRows: ThemeItem[][], netflixIds: Set<number>) => {
       const usedIds = new Set<number>();
-      const deduped = allRows.map((row) => {
+      existingRows.forEach((row) => row?.forEach((item) => usedIds.add(item.id)));
+
+      return rows.map((row) => {
         const filtered = row
           .filter((item) => !usedIds.has(item.id))
           .slice(0, 18)
@@ -299,10 +309,63 @@ export default function Home() {
         filtered.forEach((item) => usedIds.add(item.id));
         return filtered;
       });
-      setThemeRows(deduped);
-      setThemeLoading(false);
     };
-    fetchAll();
+
+    const fetchThemeBatch = async (configs: typeof THEME_CONFIGS, startIndex: number, existingRows: ThemeItem[][]) => {
+      const rows = await Promise.all(
+        configs.map((c) => fetchThemeItems(c.apiUrl, c.mediaType, c.pageCount)),
+      );
+      if (ignore) return [];
+
+      const builtRows = buildRows(rows, existingRows, netflixIdsRef.current);
+      setThemeRows((prev) => {
+        const next = [...prev];
+        builtRows.forEach((row, i) => {
+          next[startIndex + i] = row;
+        });
+        return next;
+      });
+
+      return builtRows;
+    };
+
+    const fetchInitial = async () => {
+      netflixIdsRef.current = await getNetflixOriginalIdSet(5);
+      const initialRows = await fetchThemeBatch(THEME_CONFIGS.slice(0, SPLIT_BANNER_AFTER), 0, []);
+      if (ignore) return;
+      setThemeLoading(false);
+
+      cancelDeferred = deferWork(() => {
+        void (async () => {
+          const middleRows = await fetchThemeBatch(
+            THEME_CONFIGS.slice(SPLIT_BANNER_AFTER, THEME_SPLIT),
+            SPLIT_BANNER_AFTER,
+            initialRows,
+          );
+          if (ignore) return;
+
+          const laterRows = await fetchThemeBatch(
+            THEME_CONFIGS.slice(THEME_SPLIT, RELEASE_AFTER),
+            THEME_SPLIT,
+            [...initialRows, ...middleRows],
+          );
+          if (ignore) return;
+
+          await fetchThemeBatch(
+            THEME_CONFIGS.slice(RELEASE_AFTER),
+            RELEASE_AFTER,
+            [...initialRows, ...middleRows, ...laterRows],
+          );
+        })();
+      });
+    };
+
+    fetchInitial();
+
+    return () => {
+      ignore = true;
+      cancelDeferred();
+    };
   }, []);
 
   return (

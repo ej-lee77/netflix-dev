@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { fetchUpcomingItems, type UpcomingItem } from "@/lib/upcoming";
@@ -78,10 +79,13 @@ export default function Release() {
                 href={`/detail/${movie.media_type}/${movie.id}?upcoming=1`}
                 className="release-card"
               >
-                <img
+                <Image
                   src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}
                   alt={movie.title}
                   className="card-image"
+                  width={780}
+                  height={439}
+                  sizes="(max-width: 480px) 67vw, (max-width: 768px) 45vw, (max-width: 1280px) 25vw, 18vw"
                 />
                 <span className="card-badge">{getDday(movie.release_date)}</span>
                 <div className="card-info">
