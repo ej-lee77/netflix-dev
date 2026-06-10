@@ -385,6 +385,85 @@ main {
   }
 }
 
+/* Mobile page shells should not keep the collapsed side-nav offset. */
+@include respond(mobile) {
+  body :is(
+    .alarm-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .login-page,
+    .menu-custom-page,
+    .mood-main-page,
+    .mypage,
+    .release-page,
+    .search-page,
+    .wishlist-page
+  ) {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  body :is(.acset-page, .profile-settings-page) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .mood-main-page,
+    .mypage,
+    .release-page,
+    .search-page
+  ) .inner,
+  body .menu-custom-page__inner,
+  body .acset-container,
+  body .profile-settings-container,
+  body .wishlist-inner {
+    width: 100%;
+    max-width: min(100%, 900px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .mood-main-page,
+    .release-page,
+    .search-page
+  ) .inner {
+    max-width: 100%;
+  }
+
+  body :is(.acset-container, .profile-settings-container) {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  body .playlist-detail-page .pl-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 /* ===== 반응형: 태블릿/모바일(<=1024px)에서는 호버 미리보기 팝업 비활성화 ===== */
 @include respond(tablet) {
   // 팝업 자체 숨김 (ThemeRow/CategoryList의 hover-card, PosterCard/검색결과의 search-hover-card)

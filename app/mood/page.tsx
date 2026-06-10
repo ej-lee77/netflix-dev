@@ -31,6 +31,7 @@ export default function MoodMainPage() {
           <div className="hero-eyebrow">MOOD CURATION</div>
           <h1>
             지금 기분에 딱 맞는<br />
+            {" "}
             <span className="accent">분위기로 골라보기</span>
           </h1>
           <p>오늘의 무드를 선택하면, 그에 어울리는 작품들을 큐레이션해드려요</p>

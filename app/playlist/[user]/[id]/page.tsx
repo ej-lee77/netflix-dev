@@ -49,7 +49,7 @@ export default function PlaylistPage() {
   };
 
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [owner, setOwner] = useState<{ name: string; img: string }>({ name: "", img: "" });
+  const [owner, setOwner] = useState<{ name: string; img: string; badge: string }>({ name: "", img: "", badge: "" });
 
   useEffect(() => {
     if (userId && listId) fetchPlaylist(userId, listId);
@@ -63,15 +63,15 @@ export default function PlaylistPage() {
     (async () => {
       if (userId.startsWith("dummy")) {
         const d = dummyPlaylists.find((p) => p.userId === userId);
-        if (!ignore) setOwner({ name: d?.nickname ?? "유저", img: "" });
+        if (!ignore) setOwner({ name: d?.nickname ?? "유저", img: "", badge: d?.badge ?? "" });
         return;
       }
       try {
         const snap = await getDoc(doc(db, "users", userId));
         const p = snap.exists() ? snap.data().profile?.[0] : null;
-        if (!ignore) setOwner({ name: p?.nickname ?? "유저", img: p?.imgUrl ?? "" });
+        if (!ignore) setOwner({ name: p?.nickname ?? "유저", img: p?.imgUrl ?? "", badge: "" });
       } catch {
-        if (!ignore) setOwner({ name: "유저", img: "" });
+        if (!ignore) setOwner({ name: "유저", img: "", badge: "" });
       }
     })();
 
@@ -129,6 +129,7 @@ export default function PlaylistPage() {
           >
             {owner.name}
           </span>
+          <span className="pl-creator-badge">{owner.badge}</span>
           {!isSelf && myUserId && (
             <button
               type="button"
@@ -147,8 +148,7 @@ export default function PlaylistPage() {
         {currentPlaylist.content && <p className="pl-desc">{currentPlaylist.content}</p>}
 
         <div className="pl-stat-line">
-          좋아요 {likeCount} <span className="dot">·</span> 댓글{" "}
-          {(currentPlaylist as any).commentsCount ?? 0} <span className="dot">·</span>{" "}
+          좋아요 {likeCount} <span className="dot">·</span>{" "}
           {updatedLabel(currentPlaylist.createdAt)}
         </div>
 
@@ -196,7 +196,9 @@ export default function PlaylistPage() {
 
         {/* 작품 목록 */}
         <div className={view === "grid" ? "pl-works pl-works--grid" : "pl-works pl-works--list"}>
-          {items.map((item) => (
+          {items.map((item) => {
+            console.log(item.poster_path)
+            return(
             <Link
               key={`${item.mediaType}-${item.id}`}
               href={`/detail/${item.mediaType}/${item.id}`}
@@ -221,7 +223,7 @@ export default function PlaylistPage() {
                 </span>
               </div>
             </Link>
-          ))}
+          )})}
         </div>
       </div>
     </div>

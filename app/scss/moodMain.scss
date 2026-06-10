@@ -3,10 +3,11 @@
 .mood-main-page {
   min-height: 100vh;
   padding-bottom: 80px;
+  background: g.$bg-color;
 
   .inner {
-    width: 1200px;
-    max-width: 95%;
+    width: min(1200px, calc(100% - 80px));
+    margin: 0 auto;
   }
 
   /* Hero */
@@ -32,32 +33,33 @@
     .inner {
       position: relative;
       z-index: 1;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .hero-eyebrow {
       font-size: g.$text-12;
       color: #a78bfa;
       font-weight: 700;
-      letter-spacing: 0.2em;
+      letter-spacing: 0;
       margin-bottom: 16px;
     }
 
     h1 {
       font-size: 48px;
       font-weight: 800;
-      letter-spacing: -0.02em;
+      letter-spacing: 0;
       line-height: 1.2;
       margin-bottom: 16px;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
 
       .accent {
         background: linear-gradient(135deg, #a78bfa, #f472b6);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-      }
-
-      @media (max-width: 700px) {
-        font-size: g.$text-32;
       }
     }
 
@@ -66,6 +68,8 @@
       color: g.$g-color;
       max-width: 600px;
       line-height: 1.6;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
     }
   }
 
@@ -76,26 +80,28 @@
     gap: 16px;
     margin-bottom: 60px;
 
-    @media (max-width: 1000px) {
+    @media (max-width: 1100px) {
       grid-template-columns: repeat(2, 1fr);
-    }
-    @media (max-width: 500px) {
-      grid-template-columns: 1fr;
     }
   }
 
   .mood-card {
     position: relative;
+    box-sizing: border-box;
     aspect-ratio: 4 / 5;
     padding: 28px 22px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
-    border-radius: g.$radius-lg;
+    border-radius: g.$radius-md;
     cursor: pointer;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: all 0.3s;
+    color: g.$w-color;
+    text-decoration: none;
+    transition:
+      border-color 0.3s,
+      transform 0.3s;
 
     .mood-card-bg {
       position: absolute;
@@ -149,7 +155,7 @@
       font-size: g.$text-20;
       font-weight: 800;
       margin-bottom: 8px;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
       position: relative;
       z-index: 1;
     }
@@ -178,13 +184,10 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
-
-    @media (max-width: 700px) {
-      grid-template-columns: 1fr;
-    }
   }
 
   .info-card {
+    box-sizing: border-box;
     padding: 24px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid #2a2a2a;
@@ -215,6 +218,124 @@
           opacity: 0.8;
         }
       }
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .inner {
+      width: min(100%, calc(100% - 48px));
+    }
+
+    .mood-hero {
+      padding: 64px 0 48px;
+      margin-bottom: 36px;
+
+      h1 {
+        font-size: 36px;
+      }
+    }
+
+    .mood-card {
+      aspect-ratio: 16 / 11;
+      min-height: 220px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    padding-bottom: 56px;
+
+    .inner {
+      width: min(100%, calc(100% - 32px));
+    }
+
+    .mood-hero {
+      padding: 40px 0 32px;
+      margin-bottom: 28px;
+
+      .hero-eyebrow {
+        margin-bottom: 12px;
+        font-size: 11px;
+      }
+
+      h1 {
+        max-width: 10em;
+        font-size: 28px;
+        line-height: 1.25;
+
+        br {
+          display: none;
+        }
+      }
+
+      p {
+        max-width: 22em;
+        font-size: g.$text-14;
+        line-height: 1.55;
+      }
+    }
+
+    .mood-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .mood-card {
+      aspect-ratio: auto;
+      min-height: 168px;
+      padding: 22px 18px;
+
+      .mood-icon-wrap {
+        width: 52px;
+        height: 52px;
+        margin-bottom: 12px;
+      }
+
+      h3 {
+        font-size: g.$text-18;
+      }
+
+      .mood-cta {
+        margin-top: 12px;
+      }
+    }
+
+    .mood-info {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .info-card {
+      padding: 20px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .inner {
+      width: 100%;
+    }
+
+    .mood-hero {
+      padding: 34px 0 28px;
+
+      .hero-eyebrow {
+        margin-bottom: 10px;
+      }
+
+      h1 {
+        max-width: 9.5em;
+        font-size: 24px;
+      }
+
+      p {
+        max-width: 20em;
+        font-size: g.$text-13;
+      }
+    }
+
+    .mood-card {
+      min-height: 156px;
+      padding: 18px 16px;
     }
   }
 }
