@@ -16,7 +16,7 @@ export interface FollowUser {
 export interface FollowingPlaylist {
   userId: string;
   nickname: string;
-  category?: "시리즈" | "영화" | "애니메이션";
+  category?: string;
   posters: string[];
 }
 
@@ -242,12 +242,13 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
       const d = findDummy(id);
       return { userId: id, nickname: d?.nickname ?? "유저", imgUrl: d?.posters?.[0] ?? "" };
     });
-    const dummyPls: FollowingPlaylist[] = dummyIds
-      .map((id) => {
-        const d = findDummy(id);
-        return d ? { userId: id, nickname: d.nickname, category: d.category, posters: d.posters } : null;
-      })
-      .filter((p): p is FollowingPlaylist => p !== null);
+    const dummyPls = dummyIds.reduce<FollowingPlaylist[]>((acc, id) => {
+      const d = findDummy(id);
+      if (d) {
+        acc.push({ userId: id, nickname: d.nickname, category: d.category, posters: d.posters });
+      }
+      return acc;
+    }, []);
     const dummyCards: SimilarUser[] = dummyIds.map((id) => {
       const d = findDummy(id);
       return {

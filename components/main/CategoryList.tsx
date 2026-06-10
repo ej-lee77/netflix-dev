@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -218,10 +219,12 @@ export default function CategoryList({ category }: MediaListProps) {
                 >
                   {/* 기본 포스터 */}
                   <div className="img-box">
-                    <img
+                    <Image
                       className="poster-img"
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
+                      fill
+                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
                     />
                     {category === "netflix" && (
                       <>
@@ -251,10 +254,12 @@ export default function CategoryList({ category }: MediaListProps) {
                             referrerPolicy="strict-origin-when-cross-origin"
                           />
                         ) : (
-                          <img
+                          <Image
                             src={`https://image.tmdb.org/t/p/w500${item.backdrop_path}`}
                             alt={item.title}
                             className="fallback-img"
+                            fill
+                            sizes="(max-width: 640px) 100vw, 40vw"
                           />
                         )}
                       </div>
