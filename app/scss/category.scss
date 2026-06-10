@@ -339,8 +339,13 @@
   padding: 40px 0 90px;
   background: g.$bg-color;
 
+  /* 사이드메뉴(nav) 회피 — laptop 80 / tablet 64 / mobile 56 */
+  @include g.respond(laptop) { padding-left: 80px; }
+  @include g.respond(tablet) { padding-left: 64px; }
+  @include g.respond(mobile) { padding-left: 56px; padding-right: 16px; }
+
   .category-shell {
-    width: min(1400px, calc(100% - 56px));
+    width: min(1400px, 100%);
     margin: 0 auto;
   }
 
@@ -663,7 +668,7 @@
 
   @media (max-width: 1024px) {
     .category-shell {
-      width: min(768px, calc(100% - 32px));
+      width: 100%;
     }
 
     .option-grid {
@@ -676,7 +681,7 @@
     padding: 24px 0 76px;
 
     .category-shell {
-      width: min(375px, 100%);
+      width: 100%;
       min-height: 100vh;
     }
 

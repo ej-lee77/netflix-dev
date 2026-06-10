@@ -14,6 +14,31 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware"; // 💡 persist 미들웨어 임포트
 
 const FALLBACK_PROFILE_IMAGE = "/images/profile/image/default_icons/17.png";
+let kakaoSdkLoadPromise: Promise<void> | null = null;
+
+const loadKakaoSdk = () => {
+  if (typeof window === "undefined") return Promise.reject(new Error("Kakao SDK requires a browser."));
+  if (window.Kakao) return Promise.resolve();
+  if (kakaoSdkLoadPromise) return kakaoSdkLoadPromise;
+
+  kakaoSdkLoadPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://developers.kakao.com/sdk/js/kakao.js"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Failed to load Kakao SDK.")), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://developers.kakao.com/sdk/js/kakao.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Kakao SDK."));
+    document.head.appendChild(script);
+  });
+
+  return kakaoSdkLoadPromise;
+};
 
 export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = {
   maturityRating: "19+",
@@ -208,6 +233,7 @@ export const useAuthStore = create<AuthState>()(
       // 카카오 로그인
       onKakaoLogin: async () => {
         try {
+          await loadKakaoSdk();
           const kakaoKey = kakaoProvider;
           if (!window.Kakao.isInitialized()) {
             window.Kakao.init(kakaoKey);
