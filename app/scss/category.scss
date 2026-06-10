@@ -26,6 +26,18 @@
 
     &.category-hero--fallback {
       border-bottom: 1px solid #242424;
+      background:
+        radial-gradient(
+          circle at 18% 28%,
+          rgba(229, 9, 20, 0.18),
+          transparent 30%
+        ),
+        radial-gradient(
+          circle at 78% 24%,
+          rgba(255, 255, 255, 0.08),
+          transparent 28%
+        ),
+        linear-gradient(135deg, #2a1518 0%, #18181d 45%, #101014 100%);
 
       &::before {
         content: "";
@@ -33,11 +45,16 @@
         inset: 0;
         background:
           radial-gradient(
-            circle at 18% 72%,
-            rgba(255, 255, 255, 0.06),
-            transparent 34%
+            circle at 72% 76%,
+            rgba(229, 9, 20, 0.12),
+            transparent 36%
           ),
-          linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%);
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.055),
+            transparent 38%
+          ),
+          linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.22) 52%, transparent 100%);
       }
     }
 
