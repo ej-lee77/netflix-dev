@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { KeyboardEvent, PointerEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import { useT } from "@/lib/i18n";
@@ -280,9 +281,12 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
                   {...cardRoleProps}
                 >
                   <span className="ranking-card-poster">
-                    <img
+                    <Image
                       src={imageUrl(movie.poster_path, "w500")}
                       alt={movie.title}
+                      width={500}
+                      height={750}
+                      sizes="(max-width: 1024px) 28vw, 12vw"
                       draggable={false}
                     />
                   </span>

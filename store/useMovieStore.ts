@@ -1,11 +1,13 @@
 import { getTmdbLang } from "@/lib/i18n";
 import { getNetflixOriginals } from "@/lib/netflix";
 import { create } from "zustand";
-import type { MovieState } from "@/types/movie";
+import type { HighlightItem, MovieState, RecommendedItem } from "@/types/movie";
 import { filterHidden, isHidden } from "@/data/hiddenContent";
 
 //TMBD키
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
+
+type HighlightMovie = Pick<HighlightItem, "id" | "title" | "poster_path" | "backdrop_path">;
 
 export const useMovieStore = create<MovieState>((set, get) => ({
     //인기영화를 저장할 변수
@@ -268,14 +270,14 @@ export const useMovieStore = create<MovieState>((set, get) => ({
 
         const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/recommendations?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
-        const items = filterHidden(
+        const items = (filterHidden(
             (data.results || []).map((item: any) => ({
                 ...item,
                 media_type: item.media_type ?? mediaType,
                 title: item.title ?? item.name,
                 release_date: item.release_date ?? item.first_air_date,
             }))
-        ).slice(0, 6);
+        ) as RecommendedItem[]).slice(0, 6);
 
         set((state) => ({
             mediaRecommended: { ...state.mediaRecommended, [key]: items }
@@ -368,10 +370,10 @@ export const useMovieStore = create<MovieState>((set, get) => ({
 
         const popularRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const popularData = await popularRes.json();
-        const movies = filterHidden(popularData.results || []).slice(0, 12);
+        const movies = (filterHidden(popularData.results || []) as HighlightMovie[]).slice(0, 12);
 
         const highlightResults = await Promise.all(
-            movies.map(async (movie: { id: number; title: string; poster_path: string; backdrop_path: string }) => {
+            movies.map(async (movie) => {
                 const [koRes, enRes] = await Promise.all([
                     fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=${getTmdbLang()}`),
                     fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}&language=en-US`)
@@ -402,8 +404,12 @@ export const useMovieStore = create<MovieState>((set, get) => ({
             })
         );
 
+        const validHighlights = highlightResults.filter(
+            (item): item is HighlightItem => item !== null
+        );
+
         set({
-            netflixHighlights: highlightResults.filter(Boolean).slice(0, 8)
+            netflixHighlights: validHighlights.slice(0, 8)
         });
     },
 
