@@ -528,7 +528,7 @@ function ActivityContent() {
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
-    await onRemovePlayList(item.id, item.mediaType);
+    await onRemovePlayList(item.id);
   };
 
   const handleDeleteHistItem = async (item: PlayListItem) => {
@@ -546,6 +546,7 @@ function ActivityContent() {
       settings: {
         ...currentProfile.settings,
         maturityRating: currentProfile.settings?.maturityRating ?? DEFAULT_PROFILE_SETTINGS.maturityRating,
+        verifiedAdult: currentProfile.settings?.verifiedAdult ?? DEFAULT_PROFILE_SETTINGS.verifiedAdult,
         subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
         playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
         hiddenWatchingVideos: [...hiddenWatchingVideos, itemKey],
@@ -1076,7 +1077,7 @@ function ActivityContent() {
         >
           -
         </button>
-        {selectedKeys.length > 0 && (
+        {selectedKeys.length > 0 ? (
           hasNewItems ? (
             <button type="button" className="playlist-add-btn" 
             onClick={() => {
@@ -1087,7 +1088,7 @@ function ActivityContent() {
           ) : (
             <span className="playlist-already-added">이미 추가됨</span>
           )
-        )}
+        ) : (null)}
         <Link href={`/playlist/${user?.userId}/${playlist.listId}`} className="mini-poster">
           <div className="playlist-mosaic">
             {previewItems.map((item) => (

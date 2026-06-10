@@ -8,6 +8,12 @@
   margin-top: -(g.$header-height) !important;
   overflow: hidden;
   background: #141414;
+  user-select: none;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
 
   .hero-backdrop {
     position: absolute;
@@ -17,7 +23,7 @@
     background-repeat: no-repeat;
     background-size: cover;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.7s ease;
   }
 
   .hero-backdrop.visible,
@@ -450,32 +456,24 @@
   }
 
   .hero-dot {
-    width: 24px;
-    height: 14px; // 터치 영역 확보 (보이는 선은 ::before)
+    width: 6px;
+    height: 6px;
     padding: 0;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.35);
     border: 0;
+    border-radius: 50%;
     cursor: pointer;
-  }
-
-  .hero-dot::before {
-    content: "";
-    display: block;
-    width: 100%;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 2px;
     transition:
-      width 0.2s ease,
-      background 0.2s ease;
+      width 0.25s ease,
+      border-radius 0.25s ease,
+      background 0.25s ease;
   }
 
   .hero-dot.active {
-    width: 32px;
-  }
-
-  .hero-dot.active::before {
+    width: 44px;
     background: g.$main-color;
+    border-radius: 3px;
+    box-shadow: 0 0 4px 1px rgba(g.$main-color, 0.5), 0 0 10px 2px rgba(g.$main-color, 0.25);
   }
 
   .hero-skeleton {
@@ -538,6 +536,7 @@
       opacity: 0;
     }
   }
+
 
   @media (max-width: 900px) {
     & {
@@ -610,56 +609,190 @@
     }
   }
 }
+
 /* ===== 반응형: 히어로 높이 축소 ===== */
 @include g.respond(laptop) {
-  .hero { height: calc(72vh + g.$header-height); min-height: calc(440px + g.$header-height); }
+  .hero {
+    height: calc(72vh + g.$header-height);
+    min-height: calc(440px + g.$header-height);
+  }
 }
+
 @include g.respond(tablet) {
-  .hero { height: calc(58vh + g.$header-height); min-height: calc(360px + g.$header-height); }
+  .hero {
+    height: calc(58vh + g.$header-height);
+    min-height: calc(360px + g.$header-height);
+  }
 }
 
 /* ===== 반응형: 히어로 버튼 + 포스터 스와이퍼 ===== */
 @include g.respond(laptop) {
-  .hero .hero-posters { right: 32px; width: min(52vw, 620px); height: clamp(190px, 26vh, 280px); }
-}
-@include g.respond(tablet) {
-  .hero {
-    .hero-btns { gap: 8px; }
-    .btn-play, .btn-info { height: 40px; font-size: 14px; }
-    .btn-play { padding: 0 16px; }
-    .btn-info { padding: 0 14px; }
-    .btn-play svg { width: 13px; height: 13px; }
-    .btn-info svg { width: 14px; height: 14px; }
-    .hero-nav-btn { width: 36px; height: 36px; }
-    .hero-posters { right: 20px; width: min(48vw, 440px); height: clamp(150px, 22vh, 220px); }
-    .hero-poster { width: clamp(96px, 16vw, 140px); height: clamp(140px, 23vh, 200px); }
-    .hero-poster.before-2, .hero-poster.after-2 { width: clamp(82px, 13vw, 120px); height: clamp(120px, 20vh, 172px); }
+  .hero .hero-posters {
+    right: 32px;
+    width: min(52vw, 620px);
+    height: clamp(190px, 26vh, 280px);
   }
 }
+
+@include g.respond(tablet) {
+  .hero {
+    .hero-btns {
+      gap: 8px;
+    }
+
+    .btn-play,
+    .btn-info {
+      height: 40px;
+      font-size: 14px;
+    }
+
+    .btn-play {
+      padding: 0 16px;
+    }
+
+    .btn-info {
+      padding: 0 14px;
+    }
+
+    .btn-play svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .btn-info svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .hero-nav-btn {
+      width: 36px;
+      height: 36px;
+    }
+
+    .hero-posters {
+      right: 20px;
+      width: min(48vw, 440px);
+      height: clamp(150px, 22vh, 220px);
+    }
+
+    .hero-poster {
+      width: clamp(96px, 16vw, 140px);
+      height: clamp(140px, 23vh, 200px);
+    }
+
+    .hero-poster.before-2,
+    .hero-poster.after-2 {
+      width: clamp(82px, 13vw, 120px);
+      height: clamp(120px, 20vh, 172px);
+    }
+  }
+}
+
 @include g.respond(mobile) {
   .hero {
-    .hero-btns { gap: 6px; }
-    .btn-play, .btn-info { height: 36px; font-size: 13px; border-radius: 4px; }
-    .btn-play { padding: 0 14px; gap: 6px; }
-    .btn-info { padding: 0 12px; gap: 5px; }
-    .btn-play svg { width: 12px; height: 12px; }
-    .btn-info svg { width: 13px; height: 13px; }
-    .hero-nav-btn { width: 30px; height: 30px; }
+    .hero-btns {
+      gap: 6px;
+    }
+
+    .btn-play,
+    .btn-info {
+      height: 36px;
+      font-size: 13px;
+      border-radius: 4px;
+    }
+
+    .btn-play {
+      padding: 0 14px;
+      gap: 6px;
+    }
+
+    .btn-info {
+      padding: 0 12px;
+      gap: 5px;
+    }
+
+    .btn-play svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .btn-info svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .hero-nav-btn {
+      width: 30px;
+      height: 30px;
+    }
+
     /* 폰에서는 포스터 스와이퍼 숨김(히어로 콘텐츠 공간 확보) */
-    .hero-posters { display: none; }
+    .hero-posters {
+      display: none;
+    }
   }
 }
 
 /* ===== 반응형(정밀): 히어로 로고/콘텐츠 축소 ===== */
 @include g.respond(laptop) {
-  .hero .hero-logo-img { max-width: 320px; max-height: 112px; }
+  .hero .hero-logo-img {
+    max-width: 320px;
+    max-height: 112px;
+  }
 }
+
 @include g.respond(tablet) {
   .hero {
-    .hero-content { max-width: 64vw; bottom: 22px; }
-    .hero-logo-img { max-width: 240px; max-height: 88px; margin-bottom: 12px; }
-    .hero-logo-text { font-size: 30px; }
-    .hero-desc { font-size: 13px; -webkit-line-clamp: 2; line-clamp: 2; margin-bottom: 14px; }
+    .hero-content {
+      max-width: 64vw;
+      bottom: 22px;
+    }
+
+    .hero-logo-img {
+      max-width: 240px;
+      max-height: 88px;
+      margin-bottom: 12px;
+    }
+
+    .hero-logo-text {
+      font-size: 30px;
+    }
+
+    .hero-desc {
+      font-size: 13px;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      margin-bottom: 14px;
+    }
+  }
+}
+
+@keyframes hero-slide-in-left {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes hero-slide-in-right {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes hero-content-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@include g.respond(mobile) {
+  .hero {
+    .hero-slide-left  { animation: hero-slide-in-left  0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+    .hero-slide-right { animation: hero-slide-in-right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+    .hero-content-enter { animation: hero-content-rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
   }
 }
 
@@ -668,70 +801,77 @@
    두 영역으로 나눠서 콘텐츠가 영상을 가리지 않게 한다. */
 @include g.respond(mobile) {
   .hero {
-    // 콘텐츠가 흐름에 따라 쌓이도록 고정 높이 해제
-    height: auto !important;
+    height: 70vh !important;
     min-height: 0 !important;
+    overflow: hidden;
     padding-bottom: 4px;
 
-    // 영상 관련 레이어(배경/포스터/실드)를 상단 미디어 영역에만 가둠
-    // 미디어 영역 = 헤더(56px) + 16:9 영상(56.25vw)
+    .hero-mobile-tap {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+    }
+
     .hero-backdrop,
     .hero-video-poster,
     .hero-video-shield {
-      bottom: auto;
-      height: calc(#{g.$header-height} + 56.25vw);
+      top: 0;
+      bottom: 0;
+      height: 100%;
     }
 
-    // iframe 을 화면 폭 기준 16:9 로 정확히 배치 (기존 데스크톱용 확대/이동 해제)
-    .hero-video {
-      top: g.$header-height;
-      left: 0;
-      width: 100vw;
-      height: 56.25vw;
-      min-width: 0;
-      transform: none;
-    }
-
-    // 그라데이션도 미디어 영역까지만: 영상 하단이 배경(#141414)으로
-    // 자연스럽게 녹아들어 아래 콘텐츠와 끊김 없이 이어지게 함
     &::after,
     .hero-backdrop::after {
-      bottom: auto;
-      height: calc(#{g.$header-height} + 56.25vw);
-      background: linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.4) 14%, transparent 30%);
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      background: linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.4) 30%, transparent 60%);
     }
 
-    // 콘텐츠는 영상 아래 일반 흐름으로 배치 (영상을 덮지 않음)
     .hero-content {
-      position: relative;
+      position: absolute;
       top: auto;
-      right: auto;
-      bottom: auto;
-      left: auto;
+      right: 0;
+      bottom: 36px;
+      left: 0;
       max-width: none;
-      margin-top: calc(#{g.$header-height} + 56.25vw - 10px);
-      padding: 0 16px 8px calc(56px + 12px); // 좌측 사이드메뉴(56px) 회피
+      margin-top: 0;
+      padding: 0 16px 0 20px;
     }
 
-    .hero-badge { margin-bottom: 8px; }
-    .hero-logo-img { max-width: 180px; max-height: 64px; margin-bottom: 10px; }
-    .hero-logo-text { font-size: 24px; margin-bottom: 8px; }
-    .hero-meta {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 5px;
-      min-height: 42px; // 1줄(별점/연도) + 2줄(장르/등급) 높이 고정
+    .hero-badge {
       margin-bottom: 8px;
-      font-size: 12px;
     }
 
-    .hero-meta-row { gap: 8px; }
+    .hero-logo-img {
+      width: 240px;
+      height: 88px;
+      max-width: 240px;
+      max-height: 88px;
+      margin-bottom: 10px;
+      object-fit: contain;
+      object-position: left bottom;
+    }
+
+    .hero-logo-text {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .hero-meta {
+      display: none;
+    }
+
     .hero-desc {
-      max-width: 100%;
+      max-width: 50%;
       margin-bottom: 14px;
       font-size: 12px;
-      -webkit-line-clamp: 3;
-      line-clamp: 3;
+      opacity: 0.65;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
     }
 
     // 버튼은 가로 배치 유지 (재생/상세 + 하트/공유 한 줄)
@@ -742,10 +882,13 @@
       width: auto;
     }
 
-    // 도트 인디케이터: 콘텐츠 아래 일반 흐름으로 표시 (탭하면 해당 작품으로 이동)
     .hero-dots {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      z-index: 11;
       display: flex;
-      padding: 10px 16px 4px calc(56px + 12px); // 사이드메뉴(56px) 회피 후 중앙 정렬
+      padding: 0 16px 0 20px;
     }
   }
 }

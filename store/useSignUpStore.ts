@@ -55,7 +55,7 @@ export const createUserDocument = async (user: {
         id: Date.now(),
         nickname: "나",
         imgUrl: "/images/profile/image/default_icons/17.png",
-        viewAge: "19",
+        viewAge: "15",
         movies: {
           watchingVideos: [],
           wishlist: [],
