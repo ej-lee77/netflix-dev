@@ -18,6 +18,9 @@ const allSelectablePool = [...mainMenus, CATEGORY_MENU, ...customMenus];
 
 const DEFAULT_HEADER_MENU_PATHS = [
   "/category",
+  "/category?tab=movie",
+  "/category?tab=tv",
+  "/category?tab=animation",
   "/mypage/playlist?tab=playlists",
   "/mypage/playlist?tab=history",
 ];

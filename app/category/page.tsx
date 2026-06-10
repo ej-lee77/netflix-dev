@@ -246,7 +246,7 @@ const isMainTab = (value: string | null): value is MainTab =>
 
 export default function CategoryPage() {
   const searchParams = useSearchParams();
-  const initialType = searchParams.get("type");
+  const initialType = searchParams.get("type") ?? searchParams.get("tab");
   const initialGenres = searchParams.get("genres");
   const initialCountries = searchParams.get("countries");
   const sourceParam = searchParams.get("source");
@@ -437,8 +437,8 @@ export default function CategoryPage() {
       genre_ids: item.genre_ids ?? [],
       media_type: mediaType,
     }))
-    .filter((item) => !isHidden(item.id, item.media_type))
-    .filter((item) => !isGenreExcluded(item.genre_ids, excludedIds));
+      .filter((item) => !isHidden(item.id, item.media_type))
+      .filter((item) => !isGenreExcluded(item.genre_ids, excludedIds));
 
   const fetchDiscoverPage = async (
     page: number,
