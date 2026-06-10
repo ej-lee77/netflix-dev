@@ -41,7 +41,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const gridCols = vw <= 480 ? 2 : vw <= 768 ? 3 : vw <= 1024 ? 4 : 5;
+  const gridCols = vw <= 480 ? 2 : vw <= 768 ? 3 : vw <= 1024 ? 4 : 6;
 
   const person = personDetails[personId];
   const credits: PersonCredit[] = personCredits[personId] ?? [];
@@ -68,23 +68,47 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
   return (
     <div style={{ background: "#141414", minHeight: "100vh", color: "#fff" }}>
       {/* 뒤로가기 */}
-      <div style={{ padding: vw <= 600 ? "80px 16px 0 72px" : vw <= 1024 ? "80px 24px 0 88px" : vw <= 1440 ? "80px 40px 0 120px" : "80px 40px 0", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: vw <= 600 ? "80px 16px 0 72px" : vw <= 1024 ? "80px 24px 0 88px" : vw <= 1440 ? "80px 40px 0 120px" : "80px 40px 0", maxWidth: 1400, margin: "0 auto" }}>
         <button
+          type="button"
+          className={`app-back-btn`.trim()}
           onClick={() => from ? router.push(from) : router.back()}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "none",
-            border: "none",
-            color: "#aaa",
-            fontSize: 14,
-            cursor: "pointer",
-            marginBottom: 32,
-            padding: 0,
-          }}
+          aria-label="뒤로가기"
         >
-          ← 돌아가기
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          <span>뒤로</span>
+
+          <style jsx>{`
+            .app-back-btn {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              margin: 16px 0;
+              padding: 8px 14px 8px 10px;
+              background: rgba(255, 255, 255, 0.08);
+              border: 1px solid rgba(255, 255, 255, 0.18);
+              border-radius: 8px;
+              color: #fff;
+              font-size: 14px;
+              line-height: 1;
+              cursor: pointer;
+              transition: background 0.15s ease, border-color 0.15s ease;
+            }
+            .app-back-btn:hover {
+              background: rgba(255, 255, 255, 0.16);
+              border-color: rgba(255, 255, 255, 0.3);
+            }
+            .app-back-btn svg {
+              display: block;
+              fill: none;
+              stroke: currentColor;
+              stroke-width: 2;
+              stroke-linecap: round;
+              stroke-linejoin: round;
+            }
+          `}</style>
         </button>
 
         {isLoading ? (
@@ -342,14 +366,15 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
                       key={f}
                       onClick={() => setFilter(f)}
                       style={{
-                        padding: "6px 16px",
-                        borderRadius: 100,
-                        border: `1px solid ${filter === f ? "#e50914" : "#3a3a48"}`,
-                        background: filter === f ? "rgba(229,9,20,0.15)" : "transparent",
-                        color: filter === f ? "#fff" : "#888",
+                        padding: "8px 18px",
+                        color: `${filter === f ? "#fff" : "#999"}`,
+                        border: `1px solid ${filter === f ? "#e50914" : "#3a3a3a"}`,
+                        background: `${filter === f ? "#e50914" : "transparent"}`,
+                        borderRadius: "100px",
                         fontSize: 13,
                         cursor: "pointer",
-                        fontWeight: filter === f ? 700 : 400,
+                        transition: "all 0.2s",
+                        fontWeight: filter === f ? 600 : "normal",
                       }}
                     >
                       {f === "all" ? "전체" : f === "movie" ? "영화" : "시리즈"}
