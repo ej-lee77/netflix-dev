@@ -336,6 +336,12 @@
     font-size: 14px;
   }
 
+  .hero-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   .hero-meta-sep {
     opacity: 0.35;
   }
@@ -435,19 +441,27 @@
     stroke-width: 2;
   }
 
+  // 도트 인디케이터: 기본(데스크톱)에서는 숨김 — 포스터 스와이퍼가 전환을 담당.
+  // 포스터가 숨겨지는 모바일에서만 표시 (아래 mobile 블록 참고)
   .hero-dots {
-    position: absolute;
-    right: 232px;
-    bottom: 28px;
-    z-index: 11;
-    display: flex;
+    display: none;
     gap: 6px;
-    width: 252px;
     justify-content: center;
   }
 
   .hero-dot {
     width: 24px;
+    height: 14px; // 터치 영역 확보 (보이는 선은 ::before)
+    padding: 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .hero-dot::before {
+    content: "";
+    display: block;
+    width: 100%;
     height: 3px;
     background: rgba(255, 255, 255, 0.25);
     border-radius: 2px;
@@ -458,6 +472,9 @@
 
   .hero-dot.active {
     width: 32px;
+  }
+
+  .hero-dot.active::before {
     background: g.$main-color;
   }
 
@@ -591,44 +608,6 @@
       bottom: 7px;
       width: 286px;
     }
-
-    .hero-dots {
-      right: 92px;
-      bottom: 22px;
-      left: auto;
-      width: 198px;
-    }
-  }
-
-  @media (max-width: 560px) {
-    & {
-      height: 100svh;
-      min-height: 560px;
-    }
-
-    .hero-content {
-      bottom: 110px;
-    }
-
-    .hero-logo-text {
-      font-size: 36px;
-    }
-
-    .hero-desc {
-      max-width: 100%;
-      font-size: 12.5px;
-    }
-
-    .hero-btns {
-      align-items: stretch;
-      flex-direction: column;
-      width: min(100%, 220px);
-    }
-
-    .btn-play,
-    .btn-info {
-      justify-content: center;
-    }
   }
 }
 /* ===== 반응형: 히어로 높이 축소 ===== */
@@ -637,9 +616,6 @@
 }
 @include g.respond(tablet) {
   .hero { height: calc(58vh + g.$header-height); min-height: calc(360px + g.$header-height); }
-}
-@include g.respond(mobile) {
-  .hero { height: calc(56vh + g.$header-height); min-height: calc(300px + g.$header-height); }
 }
 
 /* ===== 반응형: 히어로 버튼 + 포스터 스와이퍼 ===== */
@@ -676,44 +652,100 @@
 
 /* ===== 반응형(정밀): 히어로 로고/콘텐츠 축소 ===== */
 @include g.respond(laptop) {
-  .hero .hero-logo-img { max-width: 320px; max-height: 120px; }
-}
-@include g.respond(tablet) {
-  .hero {
-    .hero-content { max-width: 64vw; bottom: 22px; }
-    .hero-logo-img { max-width: 240px; max-height: 84px; margin-bottom: 12px; }
-    .hero-logo-text { font-size: 28px; }
-    .hero-desc { font-size: 13px; -webkit-line-clamp: 2; line-clamp: 2; margin-bottom: 14px; }
-  }
-}
-@include g.respond(mobile) {
-  .hero {
-    .hero-content { max-width: calc(100vw - 56px - 28px); bottom: 16px; }
-    .hero-logo-img { max-width: 150px; max-height: 56px; margin-bottom: 8px; }
-    .hero-logo-text { font-size: 21px; margin-bottom: 8px; }
-    .hero-desc { font-size: 12px; -webkit-line-clamp: 2; line-clamp: 2; margin-bottom: 12px; max-width: 100%; }
-  }
-}
-
-/* ===== 반응형(정밀): 히어로 로고 이미지 축소 + 모바일 콘텐츠 정리 ===== */
-@include g.respond(laptop) {
   .hero .hero-logo-img { max-width: 320px; max-height: 112px; }
 }
 @include g.respond(tablet) {
   .hero {
+    .hero-content { max-width: 64vw; bottom: 22px; }
     .hero-logo-img { max-width: 240px; max-height: 88px; margin-bottom: 12px; }
     .hero-logo-text { font-size: 30px; }
+    .hero-desc { font-size: 13px; -webkit-line-clamp: 2; line-clamp: 2; margin-bottom: 14px; }
   }
 }
+
+/* ===== 반응형(모바일): 영상/콘텐츠 분리 레이아웃 =====
+   모바일에서는 히어로를 [상단: 16:9 영상] + [하단: 로고·메타·버튼]
+   두 영역으로 나눠서 콘텐츠가 영상을 가리지 않게 한다. */
 @include g.respond(mobile) {
   .hero {
-    height: calc(56vh + g.$header-height) !important;
-    min-height: 320px !important;
-    .hero-content { bottom: 18px; max-width: 100%; }
+    // 콘텐츠가 흐름에 따라 쌓이도록 고정 높이 해제
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 4px;
+
+    // 영상 관련 레이어(배경/포스터/실드)를 상단 미디어 영역에만 가둠
+    // 미디어 영역 = 헤더(56px) + 16:9 영상(56.25vw)
+    .hero-backdrop,
+    .hero-video-poster,
+    .hero-video-shield {
+      bottom: auto;
+      height: calc(#{g.$header-height} + 56.25vw);
+    }
+
+    // iframe 을 화면 폭 기준 16:9 로 정확히 배치 (기존 데스크톱용 확대/이동 해제)
+    .hero-video {
+      top: g.$header-height;
+      left: 0;
+      width: 100vw;
+      height: 56.25vw;
+      min-width: 0;
+      transform: none;
+    }
+
+    // 그라데이션도 미디어 영역까지만: 영상 하단이 배경(#141414)으로
+    // 자연스럽게 녹아들어 아래 콘텐츠와 끊김 없이 이어지게 함
+    &::after,
+    .hero-backdrop::after {
+      bottom: auto;
+      height: calc(#{g.$header-height} + 56.25vw);
+      background: linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.4) 14%, transparent 30%);
+    }
+
+    // 콘텐츠는 영상 아래 일반 흐름으로 배치 (영상을 덮지 않음)
+    .hero-content {
+      position: relative;
+      top: auto;
+      right: auto;
+      bottom: auto;
+      left: auto;
+      max-width: none;
+      margin-top: calc(#{g.$header-height} + 56.25vw - 10px);
+      padding: 0 16px 8px calc(56px + 12px); // 좌측 사이드메뉴(56px) 회피
+    }
+
     .hero-badge { margin-bottom: 8px; }
-    .hero-logo-img { max-width: 170px; max-height: 62px; margin-bottom: 10px; }
+    .hero-logo-img { max-width: 180px; max-height: 64px; margin-bottom: 10px; }
     .hero-logo-text { font-size: 24px; margin-bottom: 8px; }
-    .hero-meta { margin-bottom: 8px; }
-    .hero-desc { -webkit-line-clamp: 2; font-size: 12px; }
+    .hero-meta {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 42px; // 1줄(별점/연도) + 2줄(장르/등급) 높이 고정
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .hero-meta-row { gap: 8px; }
+    .hero-desc {
+      max-width: 100%;
+      margin-bottom: 14px;
+      font-size: 12px;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+    }
+
+    // 버튼은 가로 배치 유지 (재생/상세 + 하트/공유 한 줄)
+    .hero-btns {
+      align-items: center;
+      flex-direction: row;
+      flex-wrap: wrap;
+      width: auto;
+    }
+
+    // 도트 인디케이터: 콘텐츠 아래 일반 흐름으로 표시 (탭하면 해당 작품으로 이동)
+    .hero-dots {
+      display: flex;
+      padding: 10px 16px 4px calc(56px + 12px); // 사이드메뉴(56px) 회피 후 중앙 정렬
+    }
   }
 }
