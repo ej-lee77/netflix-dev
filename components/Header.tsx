@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import HeaderMenu from "./HeaderMenu";
+import MobileDrawer from "./MobileDrawer";
 import ProfilePinGate, { getProfilePin } from "./ProfilePinGate";
 import ProfileSwitchOverlay from "./ProfileSwitchOverlay";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSearchOverlayStore } from "@/store/useSearchOverlayStore";
 import { useCommunityEnabled } from "@/data/maturityFilter";
 import type { UserProfile } from "@/types/auth";
 import "./scss/header.scss";
@@ -35,8 +37,21 @@ export default function Header() {
   >("enter");
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { isOpen: isSearchOpen, toggle: toggleSearch, close: closeSearch } = useSearchOverlayStore();
+  // 마우스(hover 가능) 기기에서만 호버로 프로필 메뉴를 연다. 터치 기기는 탭 토글만 사용.
+  const [canHover, setCanHover] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setCanHover(mql.matches);
+    update();
+    mql.addEventListener?.("change", update);
+    return () => mql.removeEventListener?.("change", update);
+  }, []);
+  // const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const modeMenuRef = useRef<HTMLUListElement>(null);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
 
@@ -102,11 +117,13 @@ export default function Header() {
   };
 
   const handleProfileMenuEnter = () => {
+    if (!canHover) return; // 터치 기기에서는 호버로 열지 않음
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setIsProfileMenuOpen(true);
   };
 
   const handleProfileMenuLeave = () => {
+    if (!canHover) return; // 터치 기기에서는 호버로 닫지 않음
     hoverTimeoutRef.current = setTimeout(() => setIsProfileMenuOpen(false), 200);
   };
 
@@ -123,15 +140,17 @@ export default function Header() {
   }, [router, shouldSelectProfile]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (!profileMenuRef.current?.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
@@ -181,7 +200,7 @@ export default function Header() {
               <button
                 type="button"
                 className="header-search-toggle"
-                onClick={() => setIsSearchOpen((isOpen) => !isOpen)}
+                onClick={toggleSearch}
                 aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
                 aria-expanded={isSearchOpen}
               >
@@ -202,7 +221,7 @@ export default function Header() {
                 )}
               </button>
             </li>
-            <li>
+            <li className="gnb-alarm">
               <Link href="/alarm">
                 <Image
                   src="/images/header/alarm.svg"
@@ -334,17 +353,31 @@ export default function Header() {
               </li>
 
             )}
+            <li>
+              <button
+                type="button"
+                className="mobile-hamburger"
+                onClick={() => setIsMobileMenuOpen(true)}
+                aria-label="메뉴 열기"
+                aria-expanded={isMobileMenuOpen}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M3 6h18M3 12h18M3 18h18" />
+                </svg>
+              </button>
+            </li>
           </ul>
         </div>
         <HeaderSearchOverlay
           isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
+          onClose={closeSearch}
         />
       </header>
 
       <Suspense fallback={null}>
         <HeaderMenu />
       </Suspense>
+      <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       {pendingProfile && (
         <ProfilePinGate
           key={pendingProfile.id}

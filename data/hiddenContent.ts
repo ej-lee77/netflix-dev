@@ -12,7 +12,12 @@
 export const HIDDEN_TMDB_IDS: Array<number | string> = [
   // 여기에 차단할 작품 id 를 추가하세요. 예: "movie-213681",
   "movie-249397",
-  "movie-1446616"
+  "movie-1446616",
+  "tv-113360",
+  "tv-95897",
+  "tv-283884",
+
+
 
 ];
 
