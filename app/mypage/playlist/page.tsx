@@ -528,7 +528,7 @@ function ActivityContent() {
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
-    await onRemovePlayList(item.id, item.mediaType);
+    await onRemovePlayList(item.id);
   };
 
   const handleDeleteHistItem = async (item: PlayListItem) => {

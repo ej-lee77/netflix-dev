@@ -214,7 +214,7 @@ export default function Header() {
                 ) : (
                   <Image
                     src="/images/header/search.svg"
-                    alt=""
+                    alt="검색"
                     width={24}
                     height={24}
                   />
@@ -237,7 +237,7 @@ export default function Header() {
                 <Link href="/login" className="login-link" aria-label="로그인">
                   <Image
                     src="/images/header/menu/mypage.svg"
-                    alt=""
+                    alt="마이페이지"
                     width={24}
                     height={24}
                   />
