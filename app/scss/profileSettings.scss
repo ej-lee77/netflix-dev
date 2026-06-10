@@ -274,16 +274,13 @@
 
   &.is-maturity {
     width: min(100%, 760px);
+    max-height: none;
+    overflow: visible;
   }
 
   &.is-maturity .profile-settings-modal-body {
-    max-height: min(600px, calc(100vh - 132px));
-    overflow-y: auto;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -365,12 +362,13 @@
   &::after {
     content: "";
     position: absolute;
-    top: 3px;
+    top: 50%;
     left: 3px;
     width: 18px;
     height: 18px;
     border-radius: 50%;
     background: g.$w-color;
+    transform: translateY(-50%);
     transition: left 0.2s ease;
   }
 
