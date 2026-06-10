@@ -41,11 +41,12 @@ function PosterGrid() {
   useEffect(() => {
     const fetchPosters = async () => {
       try {
+        // 판타지 장르(14) 영화만, 성인 콘텐츠 제외하여 배경 포스터 구성
         const pages = [1, 2, 3];
         const results = await Promise.all(
           pages.map((p) =>
             fetch(
-              `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=ko-KR&page=${p}`
+              `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=ko-KR&with_genres=14&include_adult=false&sort_by=popularity.desc&page=${p}`
             ).then((r) => r.json())
           )
         );
