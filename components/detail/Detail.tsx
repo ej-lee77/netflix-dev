@@ -2825,13 +2825,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 style={{
                   background: isUpcoming
                     ? isUpcomingNotified
-                      ? "#e50914"
+                      ? "rgba(255, 255, 255, 0.05)"
                       : "transparent"
                     : "#e50914",
                   color: isUpcoming
-                    ? isUpcomingNotified
-                      ? "#fff"
-                      : "#aaa"
+                    ? "#fff"
                     : "#fff",
                   display: "inline-flex",
                   alignItems: "center",
@@ -2842,7 +2840,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   fontSize: isUpcoming ? 14 : 16,
                   fontWeight: 700,
                   border: isUpcoming
-                    ? `1px solid ${isUpcomingNotified ? "#e50914" : "#3a3a3a"}`
+                    ? `1px solid ${isUpcomingNotified ? "rgba(255, 255, 255, 0.3)" : "#fff"}`
                     : "none",
                   borderRadius: 4,
                   cursor:
@@ -2858,9 +2856,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       style={{
                         width: 20,
                         height: 20,
-                        filter: isUpcomingNotified
+                        filter: isUpcoming
                           ? "brightness(0) invert(1)"
                           : undefined,
+                        opacity: 1,
                       }}
                     />
                     <span style={{ fontSize: 14 }}>

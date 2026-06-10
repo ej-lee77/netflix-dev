@@ -1244,7 +1244,7 @@
   .feed-modal-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 220;
+    z-index: 100002;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1886,6 +1886,11 @@
       padding-right: 18px;
     }
   }
+}
+
+.feed-modal-portal.feed-page {
+  min-height: 0;
+  padding: 0;
 }
 
 .feed-detail-page {

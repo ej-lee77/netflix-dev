@@ -180,7 +180,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   if (!rankingItems.length) {
     return (
       <section className="ranking-section">
-        <SectionTitle title='방구석 TOP 10' subTitle='오늘 많이 보는 작품을 확인해보세요' />
+        <SectionTitle title='방구석 TOP 10' subTitle='오늘 많이 보는 작품을 확인해보세요' showMore={false} />
 
         <div className="ranking-skeleton-row">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -194,7 +194,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   return (
     <section className="ranking-section">
       <div className="section-title-outer">
-        <SectionTitle title={title ?? t("home.top10")} href={href ?? "/category"} />
+        <SectionTitle title={title ?? t("home.top10")} href={href ?? "/category"} showMore={false} />
       </div>
 
       <div className="ranking-swiper-wrap">
