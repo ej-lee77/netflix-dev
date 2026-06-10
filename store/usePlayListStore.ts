@@ -112,7 +112,7 @@ filters.genre.forEach((g) => {
     GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
   });
 });
-console.log(GENRE_ID_TO_BADGE_ID)
+// console.log(GENRE_ID_TO_BADGE_ID)
 
 export const getNewlyEarnedBadges = (
   currentBadges: BadgeList,
