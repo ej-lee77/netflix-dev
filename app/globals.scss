@@ -380,3 +380,24 @@ main {
     padding-right: 12px;
   }
 }
+
+/* ===== 반응형: 태블릿/모바일(<=1024px)에서는 호버 미리보기 팝업 비활성화 ===== */
+@include respond(tablet) {
+  // 팝업 자체 숨김 (ThemeRow/CategoryList의 hover-card, PosterCard/검색결과의 search-hover-card)
+  .hover-card,
+  .search-hover-card {
+    display: none !important;
+  }
+
+  // 팝업이 뜰 때 포스터를 페이드아웃하던 부수효과 무력화 (탭 시 포스터가 사라지는 현상 방지)
+  .category-item:has(.hover-card) .img-box {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .poster-card:hover .poster,
+  .poster-card:focus-visible .poster {
+    opacity: 1 !important;
+    transition-delay: 0s !important;
+  }
+}

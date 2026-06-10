@@ -17,6 +17,7 @@ import VideoPlayer from "@/components/common/VideoPlayer";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import "./detail.module.scss";
+import { isHidden } from "@/data/hiddenContent";
 import { useCommunityStore } from "@/store/useCommunityStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -220,6 +221,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const isMobile = vw <= 600;
   const isTablet = vw <= 1024;
   const hPad = isMobile ? 16 : isTablet ? 24 : 40;
+
+  // 차단된 작품에 직접 접근하면 홈으로 돌려보낸다
+  const blocked = isHidden(mediaId, type);
+  useEffect(() => {
+    if (blocked) router.replace("/");
+  }, [blocked, router]);
   const shouldAutoPlay = searchParams.get("play") === "1";
   const itemKey = `${type}-${mediaId}`;
 
@@ -940,8 +947,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             const stillUrl =
               imageUrl(ep.still_path, "w500") ||
               imageUrl(mediaItem?.backdrop_path, "w500");
-            const isLastRow =
-              idx >= paged.length - (paged.length % 2 === 0 ? 2 : 1);
+            const isLastRow = isMobile
+              ? idx === paged.length - 1
+              : idx >= paged.length - (paged.length % 2 === 0 ? 2 : 1);
             const isLeft = idx % 2 === 0;
             const meta = [
               ep.runtime ? `${ep.runtime}분` : null,
@@ -971,8 +979,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   borderBottom: isLastRow
                     ? "none"
                     : "1px solid rgba(255,255,255,0.07)",
-                  paddingLeft: isLeft ? 0 : 20,
-                  paddingRight: isLeft ? 20 : 0,
+                  paddingLeft: !isMobile && !isLeft ? 20 : 0,
+                  paddingRight: !isMobile && isLeft ? 20 : 0,
                   cursor: "pointer",
                   background: "transparent",
                 }}
@@ -981,8 +989,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   style={{
                     position: "relative",
                     flexShrink: 0,
-                    width: 180,
-                    height: 110,
+                    width: isMobile ? 128 : 180,
+                    height: isMobile ? 76 : 110,
                     borderRadius: 6,
                     overflow: "hidden",
                     background: "#2a2a35",
@@ -2158,7 +2166,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
+          gridTemplateColumns: `repeat(${isMobile ? 3 : isTablet ? 4 : 6}, 1fr)`,
           gap: 12,
         }}
       >
@@ -2405,7 +2413,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   };
 
   const renderCast = () => {
-    const COLS = 4;
+    const COLS = isMobile ? 1 : isTablet ? 2 : 4;
     const visibleCast = castList.slice(0, 12);
     return (
       <div
@@ -2578,10 +2586,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         />
 
         {/* Hero spacer */}
-        <div style={{ height: 600 }} />
+        <div style={{ height: isMobile ? 340 : isTablet ? 480 : 600 }} />
 
         {/* Info Section */}
-        <div style={{ position: "relative", display: "flex", gap: 24, padding: `0 ${hPad}px 40px ${isMobile ? 16 : 87}px`, zIndex: 10 }}>
+        <div style={{ position: "relative", display: "flex", gap: 24, padding: `0 ${hPad}px 40px ${isMobile ? 72 : 87}px`, zIndex: 10 }}>
           {/* Poster */}
           <div
             style={{
@@ -2817,13 +2825,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 style={{
                   background: isUpcoming
                     ? isUpcomingNotified
-                      ? "#e50914"
+                      ? "rgba(255, 255, 255, 0.05)"
                       : "transparent"
                     : "#e50914",
                   color: isUpcoming
-                    ? isUpcomingNotified
-                      ? "#fff"
-                      : "#aaa"
+                    ? "#fff"
                     : "#fff",
                   display: "inline-flex",
                   alignItems: "center",
@@ -2834,7 +2840,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   fontSize: isUpcoming ? 14 : 16,
                   fontWeight: 700,
                   border: isUpcoming
-                    ? `1px solid ${isUpcomingNotified ? "#e50914" : "#3a3a3a"}`
+                    ? `1px solid ${isUpcomingNotified ? "rgba(255, 255, 255, 0.3)" : "#fff"}`
                     : "none",
                   borderRadius: 4,
                   cursor:
@@ -2850,9 +2856,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       style={{
                         width: 20,
                         height: 20,
-                        filter: isUpcomingNotified
+                        filter: isUpcoming
                           ? "brightness(0) invert(1)"
                           : undefined,
+                        opacity: 1,
                       }}
                     />
                     <span style={{ fontSize: 14 }}>
@@ -2875,7 +2882,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* TabNav */}
-      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: `0 ${hPad}px 0 ${isMobile ? 16 : 87}px`, marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: `0 ${hPad}px 0 ${isMobile ? 72 : 87}px`, marginTop: 24, overflowX: "auto", scrollbarWidth: "none" }}>
         {tabItems
           // 1. 리뷰 탭이면서 권한이 없는 경우 필터링 (렌더링하지 않음)
           .filter((tab) => {
@@ -2903,6 +2910,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 fontWeight: activeTab === tab.id ? 700 : 400,
                 fontSize: 16,
                 cursor: "pointer",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               {tab.label}

@@ -2,6 +2,7 @@ import { getTmdbLang } from "@/lib/i18n";
 import { getNetflixOriginals } from "@/lib/netflix";
 import { create } from "zustand";
 import type { MovieState } from "@/types/movie";
+import { filterHidden, isHidden } from "@/data/hiddenContent";
 
 //TMBD키
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY
@@ -14,7 +15,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         // console.log("인기영화?", data.results);
-        set({ popMovies: data.results });
+        set({ popMovies: filterHidden(data.results ?? []) });
     },
 
     //==============최신 영화 받아오기==============
@@ -25,7 +26,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         // console.log("최신영화?", data.results);
-        set({ newMovies: data.results });
+        set({ newMovies: filterHidden(data.results ?? []) });
     },
 
     //==============급상승 영화 받아오기==============
@@ -36,7 +37,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         // console.log("급상승 영화?", data.results);
-        set({ trendingMovies: data.results });
+        set({ trendingMovies: filterHidden(data.results ?? []) });
     },
 
     //==============한국 영화 (2026년 이후)==============
@@ -45,7 +46,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_original_language=ko&primary_release_date.gte=2026-01-01&sort_by=popularity.desc&page=1`);
         const data = await res.json();
         // console.log("한국 영화?", data.results);
-        set({ koreanMovies: data.results || [] });
+        set({ koreanMovies: filterHidden(data.results || []) });
     },
 
     //==============급상승 영화 받아오기==============
@@ -77,7 +78,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const res = await fetch(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
         // console.log("인기영화?", data.results);
-        set({ tvs: data.results });
+        set({ tvs: filterHidden(data.results ?? []) });
     },
     onFetchTvVideos: async (id) => {
         const tvId = Number(id);
@@ -140,7 +141,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
             .filter((i: any) => !krIds.has(i.id))
             .sort(() => Math.random() - 0.5);
 
-        set({ upcomings: [...korean, ...global] });
+        set({ upcomings: filterHidden([...korean, ...global]) });
     },
     //넷플릭스 오리지널: TMDB discover/tv, with_networks=213
     netflixOriginals: [],
@@ -159,8 +160,8 @@ export const useMovieStore = create<MovieState>((set, get) => ({
                 }));
             set((state) => ({
                 netflixOriginals: page === 1
-                    ? normalize(data.results)
-                    : [...state.netflixOriginals, ...normalize(data.results)],
+                    ? filterHidden(normalize(data.results))
+                    : [...state.netflixOriginals, ...filterHidden(normalize(data.results))],
                 netflixOriginalsPage: data.page,
                 netflixOriginalsTotalPages: data.total_pages,
             }));
@@ -258,7 +259,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const shuffledMovies = movies.sort(() => Math.random() - 0.5).slice(0, 3);
         const merged = [...shuffledTvs, ...shuffledMovies].sort(() => Math.random() - 0.5);
         // console.log("추천작(한국 시리즈)", merged);
-        set({ recommended: merged });
+        set({ recommended: filterHidden(merged) });
     },
     onFetchMediaRecommended: async (id, mediaType) => {
         const key = `${mediaType}-${id}`;
@@ -267,12 +268,14 @@ export const useMovieStore = create<MovieState>((set, get) => ({
 
         const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/recommendations?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const data = await res.json();
-        const items = (data.results || []).map((item: any) => ({
-            ...item,
-            media_type: item.media_type ?? mediaType,
-            title: item.title ?? item.name,
-            release_date: item.release_date ?? item.first_air_date,
-        })).slice(0, 6);
+        const items = filterHidden(
+            (data.results || []).map((item: any) => ({
+                ...item,
+                media_type: item.media_type ?? mediaType,
+                title: item.title ?? item.name,
+                release_date: item.release_date ?? item.first_air_date,
+            }))
+        ).slice(0, 6);
 
         set((state) => ({
             mediaRecommended: { ...state.mediaRecommended, [key]: items }
@@ -365,7 +368,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
 
         const popularRes = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_KEY}&language=${getTmdbLang()}&page=1`);
         const popularData = await popularRes.json();
-        const movies = (popularData.results || []).slice(0, 12);
+        const movies = filterHidden(popularData.results || []).slice(0, 12);
 
         const highlightResults = await Promise.all(
             movies.map(async (movie: { id: number; title: string; poster_path: string; backdrop_path: string }) => {

@@ -17,7 +17,9 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
+import { filterHidden } from "@/data/hiddenContent";
 import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -51,12 +53,16 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
   const router = useRouter();
   const excludedGenres = useExcludedGenres();
   const maturityCeiling = useMaturityCeiling();
+  const currentProfile = useAuthStore((state) => state.currentProfile);
+  const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
   const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
-  const items = filterByMaturity(
-    filterByExcludedGenres(rawItems, excludedGenres),
-    maturityCeiling,
-    certifications,
-    (it) => `${it.mediaType}-${it.id}`,
+  const items = filterHidden(
+    filterByMaturity(
+      filterByExcludedGenres(rawItems, excludedGenres),
+      maturityCeiling,
+      certifications,
+      (it) => `${it.mediaType}-${it.id}`,
+    ),
   );
 
   const [hover, setHover] = useState<number | null>(null);
@@ -80,7 +86,10 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
     const fetchVideo = item.mediaType === "movie"
       ? () => onFetchVideo(item.id)
       : () => onFetchTvVideos(item.id);
-    await Promise.all([fetchVideo(), onFetchCertification(item.id, item.mediaType)]);
+    await Promise.all([
+      autoplayPreview ? fetchVideo() : Promise.resolve(),
+      onFetchCertification(item.id, item.mediaType),
+    ]);
   };
 
   const handleMouseLeave = () => {
@@ -153,11 +162,13 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                   {hover === item.id && (
                     <div className={`hover-card animate-fade-in${index === leftEdgeIndex ? " left-edge" : index >= rightEdgeIndex ? " right-edge" : ""}`}>
                       <div className="hover-video">
-                        {trailerKey && videoReady === item.id ? (
+                        {autoplayPreview && trailerKey && videoReady === item.id ? (
                           <iframe
                             src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0`}
                             title="트레일러"
                             allow="autoplay"
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
                           />
                         ) : (
                           <Image
