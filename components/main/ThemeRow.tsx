@@ -21,6 +21,9 @@ import { filterHidden } from "@/data/hiddenContent";
 import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
 import { useAuthStore } from "@/store/useAuthStore";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
   99: "다큐", 18: "드라마", 10751: "가족", 14: "판타지", 36: "역사",
@@ -98,6 +101,10 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
     if (videoTimer.current) clearTimeout(videoTimer.current);
   };
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+  const isDragging = useRef(false);
+
   if (items.length === 0) return null;
 
   return (
@@ -121,6 +128,9 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
           onSlideChange={(swiper) => updateEdges(swiper)}
           onBreakpoint={(swiper) => updateEdges(swiper)}
           className="media-swiper"
+          onTouchStart={() => { isDragging.current = false; }}
+          onTouchMove={() => { isDragging.current = true; }}
+          onTouchEnd={() => { setTimeout(() => { isDragging.current = false; }, 50); }}
         >
           {items.map((item, index) => {
             const videos = item.mediaType === "movie" ? popVideos[item.id] : tvVideos[item.id];
@@ -134,7 +144,11 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                   className="category-item"
                   onMouseEnter={() => handleMouseEnter(item)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => router.push(`/detail/${item.mediaType}/${item.id}`)}
+                  onClick={() => {
+                    if (isDragging.current) return;
+                    if (isUnsubscribed) { openModal(); return; }
+                    router.push(`/detail/${item.mediaType}/${item.id}`);
+                  }}
                 >
                   <div className="img-box">
                     <Image
@@ -211,23 +225,41 @@ export default function ThemeRow({ title, items: rawItems, href }: ThemeRowProps
                           <p className="hover-overview">{item.overview}</p>
                         )}
                         <div className="hover-actions">
-                          <Link
-                            href={`/detail/${item.mediaType}/${item.id}?play=1`}
-                            className="btn-play" onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
-                              <polygon points="5 3 19 12 5 21 5 3" />
-                            </svg>
-                            {t("common.play")}
-                          </Link>
-                          <Link href={`/detail/${item.mediaType}/${item.id}`} className="btn-detail">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <circle cx="12" cy="12" r="10" />
-                              <line x1="12" y1="16" x2="12" y2="12" />
-                              <line x1="12" y1="8" x2="12.01" y2="8" />
-                            </svg>
-                            {t("common.detail")}
-                          </Link>
+                          {isUnsubscribed ? (
+                            <>
+                              <button type="button" className="btn-play" onClick={(e) => { e.stopPropagation(); openModal(); }}>
+                                <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
+                                  <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                                {t("common.play")}
+                              </button>
+                              <button type="button" className="btn-detail" onClick={(e) => { e.stopPropagation(); openModal(); }}>
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="12" y1="16" x2="12" y2="12" />
+                                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                {t("common.detail")}
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <Link href={`/detail/${item.mediaType}/${item.id}?play=1`} className="btn-play" onClick={(e) => e.stopPropagation()}>
+                                <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
+                                  <polygon points="5 3 19 12 5 21 5 3" />
+                                </svg>
+                                {t("common.play")}
+                              </Link>
+                              <Link href={`/detail/${item.mediaType}/${item.id}`} className="btn-detail">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="12" y1="16" x2="12" y2="12" />
+                                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                {t("common.detail")}
+                              </Link>
+                            </>
+                          )}
                           <WishlistButton item={item} mediaType={item.mediaType} stopPropagation className="card-wish" />
                           <ShareButton mediaType={item.mediaType} id={item.id} stopPropagation className="card-wish" />
                         </div>
