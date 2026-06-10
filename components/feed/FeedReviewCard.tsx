@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   useFeedStore,
@@ -277,149 +278,157 @@ export default function FeedReviewCard({
   };
 
   const renderCommentModal = () => {
-    if (!selectedCommentReview) return null;
+    if (!selectedCommentReview || typeof document === "undefined") return null;
 
     const commentsList = Array.isArray(selectedCommentReview.commentsList)
       ? selectedCommentReview.commentsList
       : [];
 
-    return (
-      <div
-        className="feed-modal-backdrop"
-        role="presentation"
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) {
-            closeCommentModal();
-          }
-        }}
-      >
-        <section
-          className="feed-comment-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="feed-comment-title"
+    return createPortal(
+      <div className="feed-page feed-modal-portal">
+        <div
+          className="feed-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeCommentModal();
+            }
+          }}
         >
-          <div className="feed-modal-head">
-            <div>
-              <h3 id="feed-comment-title">댓글</h3>
-              <p>
-                &quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴
-                의견
-              </p>
+          <section
+            className="feed-comment-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feed-comment-title"
+          >
+            <div className="feed-modal-head">
+              <div>
+                <h3 id="feed-comment-title">댓글</h3>
+                <p>
+                  &quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴
+                  의견
+                </p>
+              </div>
+              <button
+                type="button"
+                className="feed-modal-close"
+                onClick={closeCommentModal}
+                aria-label="댓글 닫기"
+              >
+                ×
+              </button>
             </div>
-            <button
-              type="button"
-              className="feed-modal-close"
-              onClick={closeCommentModal}
-              aria-label="댓글 닫기"
-            >
-              ×
-            </button>
-          </div>
 
-          <div className="comment-list">
-            {commentsList.length > 0 ? (
-              commentsList.map((comment) => {
-                const commentAuthor = getCommentAuthor(comment);
-                const commentAuthorImage = getCommentAuthorImage(comment);
-                const canManageComment = comment.isMine || isMyComment(comment);
+            <div className="comment-list">
+              {commentsList.length > 0 ? (
+                commentsList.map((comment) => {
+                  const commentAuthor = getCommentAuthor(comment);
+                  const commentAuthorImage = getCommentAuthorImage(comment);
+                  const canManageComment =
+                    comment.isMine || isMyComment(comment);
 
-                return (
-                <div className="comment-item" key={comment.commentId}>
-                  <Link
-                    href={getUserProfileHref(comment.userId, comment.profileId)}
-                    className="comment-avatar profile-avatar-link"
-                    aria-label={`${commentAuthor} 프로필 보기`}
-                  >
-                    {commentAuthorImage ? (
-                      <img src={commentAuthorImage} alt="" />
-                    ) : (
-                      getInitial(commentAuthor)
-                    )}
-                  </Link>
-                  <div className="comment-content">
-                    <div className="comment-meta">
-                      <strong>{commentAuthor}</strong>
-                      <span>
-                        {getRelativeTime(
-                          comment.updatedAt || comment.createdAt,
+                  return (
+                    <div className="comment-item" key={comment.commentId}>
+                      <Link
+                        href={getUserProfileHref(
+                          comment.userId,
+                          comment.profileId,
                         )}
-                      </span>
-                    </div>
-                    <p>{getCommentContent(comment.content)}</p>
-                    <div className="comment-actions">
-                      <button
-                        type="button"
-                        className={
-                          comment.liked
-                            ? "comment-like-btn liked"
-                            : "comment-like-btn"
-                        }
-                        onClick={() =>
-                          handleToggleCommentLike(
-                            selectedCommentReview.feedId,
-                            comment.commentId,
-                          )
-                        }
-                        aria-pressed={comment.liked}
+                        className="comment-avatar profile-avatar-link"
+                        aria-label={`${commentAuthor} 프로필 보기`}
                       >
-                        {comment.liked ? "♥" : "♡"} 좋아요 {comment.likesCount}
-                      </button>
-                      {canManageComment && (
-                        <>
+                        {commentAuthorImage ? (
+                          <img src={commentAuthorImage} alt="" />
+                        ) : (
+                          getInitial(commentAuthor)
+                        )}
+                      </Link>
+                      <div className="comment-content">
+                        <div className="comment-meta">
+                          <strong>{commentAuthor}</strong>
+                          <span>
+                            {getRelativeTime(
+                              comment.updatedAt || comment.createdAt,
+                            )}
+                          </span>
+                        </div>
+                        <p>{getCommentContent(comment.content)}</p>
+                        <div className="comment-actions">
                           <button
                             type="button"
-                            onClick={() =>
-                              handleOpenEditComment(
-                                comment.commentId,
-                                getCommentContent(comment.content),
-                              )
+                            className={
+                              comment.liked
+                                ? "comment-like-btn liked"
+                                : "comment-like-btn"
                             }
-                          >
-                            수정
-                          </button>
-                          <button
-                            type="button"
-                            className="comment-delete-btn"
-                            onClick={() => {
-                              handleDeleteComment(
+                            onClick={() =>
+                              handleToggleCommentLike(
                                 selectedCommentReview.feedId,
                                 comment.commentId,
-                              );
-                            }}
+                              )
+                            }
+                            aria-pressed={comment.liked}
                           >
-                            삭제
+                            {comment.liked ? "♥" : "♡"} 좋아요{" "}
+                            {comment.likesCount}
                           </button>
-                        </>
-                      )}
+                          {canManageComment && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleOpenEditComment(
+                                    comment.commentId,
+                                    getCommentContent(comment.content),
+                                  )
+                                }
+                              >
+                                수정
+                              </button>
+                              <button
+                                type="button"
+                                className="comment-delete-btn"
+                                onClick={() => {
+                                  handleDeleteComment(
+                                    selectedCommentReview.feedId,
+                                    comment.commentId,
+                                  );
+                                }}
+                              >
+                                삭제
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                  );
+                })
+              ) : (
+                <div className="comment-empty">
+                  <div className="empty-img">
+                    <img src="/images/feed/empty-comment.svg" alt="." />
                   </div>
+                  <div>아직 댓글이 없어요.</div>
                 </div>
-                );
-              })
-            ) : (
-              <div className="comment-empty">
-                <div className="empty-img">
-                  <img src="/images/feed/empty-comment.svg" alt="." />
-                </div>
-                <div>아직 댓글이 없어요.</div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <form className="comment-write" onSubmit={handleSubmitComment}>
-            <input
-              type="text"
-              value={commentText}
-              onChange={(event) => setCommentText(event.target.value)}
-              placeholder="댓글을 입력해 주세요"
-            />
-            <button type="submit" disabled={!commentText.trim()}>
-              {editingCommentId ? "수정" : "등록"}
-            </button>
-          </form>
-        </section>
-      </div>
+            <form className="comment-write" onSubmit={handleSubmitComment}>
+              <input
+                type="text"
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                placeholder="댓글을 입력해 주세요"
+              />
+              <button type="submit" disabled={!commentText.trim()}>
+                {editingCommentId ? "수정" : "등록"}
+              </button>
+            </form>
+          </section>
+        </div>
+      </div>,
+      document.body,
     );
   };
 
