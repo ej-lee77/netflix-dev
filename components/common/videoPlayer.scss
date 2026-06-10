@@ -382,3 +382,19 @@ input[type="range"].vp-vol-range {
     cursor: pointer;
   }
 }
+
+/* ===== 반응형: 모바일 플레이어 컨트롤 ===== */
+@include g.respond(tablet) {
+  .vp-bottom { padding: 20px 20px 48px; gap: 12px; }
+  .vp-top { padding: 40px 20px 20px; }
+  .vp-btn { width: 36px; height: 36px; }
+  .vp-btn svg { width: 20px; height: 20px; }
+}
+@include g.respond(mobile) {
+  .vp-bottom { padding: 12px 12px 32px; gap: 8px; }
+  .vp-top { padding: 28px 12px 12px; }
+  .vp-btn { width: 32px; height: 32px; }
+  .vp-btn svg { width: 18px; height: 18px; }
+  .vp-title { font-size: 14px; }
+  .vp-time { font-size: 11px; min-width: 30px; }
+}

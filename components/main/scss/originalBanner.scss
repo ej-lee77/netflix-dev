@@ -59,3 +59,12 @@
     }
   }
 }
+
+/* ===== 반응형 ===== */
+@include g.respond(tablet) {
+  .original-banner { aspect-ratio: 3.6 / 1; gap: 6px; }
+}
+@include g.respond(mobile) {
+  .original-banner { aspect-ratio: 2.6 / 1; gap: 4px; margin-top: 12px; border-radius: 3px; }
+  .original-banner .banner-piece { border-radius: 4px; }
+}
