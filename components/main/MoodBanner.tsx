@@ -61,6 +61,8 @@ export default function MoodBanner() {
               alt=""
               width={400}
               height={260}
+              sizes="(max-width: 700px) 70vw, 400px"
+              quality={72}
             />
           </div>
         </div>
