@@ -33,11 +33,25 @@ interface MediaListProps {
 export default function CategoryList({ category }: MediaListProps) {
   const t = useT();
   const router = useRouter();
-  const { popMovies, popVideos, onFetchVideo, tvs, tvVideos, onFetchTvVideos, netflixOriginals, certifications, onFetchCertification } = useMovieStore();
+  const {
+    popMovies,
+    popVideos,
+    onFetchPopular,
+    onFetchVideo,
+    tvs,
+    tvVideos,
+    onFetchTvs,
+    onFetchTvVideos,
+    netflixOriginals,
+    onFetchNetflixOriginals,
+    certifications,
+    onFetchCertification,
+  } = useMovieStore();
   const { currentProfile } = useAuthStore();
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestedCategoriesRef = useRef<Set<MediaListProps["category"]>>(new Set());
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
 
@@ -50,6 +64,33 @@ export default function CategoryList({ category }: MediaListProps) {
   };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
+
+  useEffect(() => {
+    if (requestedCategoriesRef.current.has(category)) return;
+
+    if (category === "movie" && popMovies.length === 0) {
+      requestedCategoriesRef.current.add(category);
+      onFetchPopular();
+      return;
+    }
+    if (category === "tv" && tvs.length === 0) {
+      requestedCategoriesRef.current.add(category);
+      onFetchTvs();
+      return;
+    }
+    if (category === "netflix" && netflixOriginals.length === 0) {
+      requestedCategoriesRef.current.add(category);
+      onFetchNetflixOriginals();
+    }
+  }, [
+    category,
+    popMovies.length,
+    tvs.length,
+    netflixOriginals.length,
+    onFetchPopular,
+    onFetchTvs,
+    onFetchNetflixOriginals,
+  ]);
 
   const movieSource = [
     ...popMovies.slice(profileOffset),

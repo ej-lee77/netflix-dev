@@ -1,20 +1,16 @@
 "use client";
-import NewMovieList from "@/components/main/NewMovieList";
 import { useT } from "@/lib/i18n";
 import { getTmdbLang } from "@/lib/i18n";
-import RisingMovieList from "@/components/main/RisingMovieList";
 import CategoryList from "@/components/main/CategoryList";
 import type { ThemeItem } from "@/components/main/ThemeRow";
 import { getNetflixOriginalIdSet } from "@/lib/netflix";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import RankingSection, { type RankingItem } from "@/components/main/RankingSection";
 import WatchingList from "@/components/main/WatchingList";
-import NetflixOriginal from "@/components/main/NetflixOriginal";
 import RecommendList from "@/components/main/RecommendList";
 import { useMovieStore } from "@/store/useMovieStore";
 import { useEffect, useRef, useState } from "react";
 import Hero from "@/components/main/Hero";
-import TopCast from "@/components/main/TopCast";
 import MoodBanner from "@/components/main/MoodBanner";
 import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
 import TopButton from "@/components/common/TopButton";
@@ -187,7 +183,6 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
 
 export default function Home() {
   const t = useT();
-  const { onFetchPopular, onFetchTvs, onFetchNewest, onFetchTrending, onFetchNetflixOriginals, onFetchKoreanMovies } = useMovieStore();
   const [themeRows, setThemeRows] = useState<ThemeItem[][]>([]);
   const [themeLoading, setThemeLoading] = useState(true);
   const [koreanSeries, setKoreanSeries] = useState<RankingItem[]>([]);
@@ -234,15 +229,6 @@ export default function Home() {
       ignore = true;
     };
   }, [favoriteGenres]);
-
-  useEffect(() => {
-    onFetchPopular();
-    onFetchTvs();
-    onFetchNewest();
-    onFetchTrending();
-    onFetchNetflixOriginals();
-    onFetchKoreanMovies();
-  }, []);
 
   useEffect(() => {
     fetch(`https://api.themoviedb.org/3/discover/tv?language=${getTmdbLang()}&with_original_language=ko&without_genres=10764%2C10767&first_air_date.gte=2025-01-01&sort_by=popularity.desc&page=1&api_key=${TMDB_KEY}`)
