@@ -1,4 +1,5 @@
 import { getTmdbLang } from "@/lib/i18n";
+import { getNetflixOriginals } from "@/lib/netflix";
 import { create } from "zustand";
 import type { MovieState } from "@/types/movie";
 
@@ -141,17 +142,33 @@ export const useMovieStore = create<MovieState>((set, get) => ({
 
         set({ upcomings: [...korean, ...global] });
     },
-    //넷플릭스 오리지널: TMDB discover 사용, with_networks=213 (Netflix)
+    //넷플릭스 오리지널: TMDB discover/tv, with_networks=213
     netflixOriginals: [],
-    onFetchNetflixOriginals: async () => {
-        //페이지를 1~3 사이에서 랜덤으로 뽑아서 매번 다른 결과가 나오도록
-        const randomPage = Math.floor(Math.random() * 3) + 1;
-        const res = await fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&language=${getTmdbLang()}&with_networks=213&sort_by=popularity.desc&page=${randomPage}`);
-        const data = await res.json();
-        //가져온 결과를 한 번 더 셔플 해서 랜덤성 강화
-        const shuffled = [...(data.results || [])].sort(() => Math.random() - 0.5);
-        // console.log("넷플릭스 오리지널", shuffled);
-        set({ netflixOriginals: shuffled });
+    netflixOriginalsLoading: false,
+    netflixOriginalsPage: 1,
+    netflixOriginalsTotalPages: 1,
+    onFetchNetflixOriginals: async (page = 1) => {
+        set({ netflixOriginalsLoading: true });
+        try {
+            const data = await getNetflixOriginals(page);
+            const normalize = (items: typeof data.results) =>
+                items.map((item) => ({
+                    ...item,
+                    poster_path: item.poster_path ?? "",
+                    backdrop_path: item.backdrop_path ?? "",
+                }));
+            set((state) => ({
+                netflixOriginals: page === 1
+                    ? normalize(data.results)
+                    : [...state.netflixOriginals, ...normalize(data.results)],
+                netflixOriginalsPage: data.page,
+                netflixOriginalsTotalPages: data.total_pages,
+            }));
+        } catch (error) {
+            console.error("넷플릭스 오리지널 조회 실패:", error);
+        } finally {
+            set({ netflixOriginalsLoading: false });
+        }
     },
     //스틸컷(백드롭) 가져오기
     movieImages: {},
@@ -319,18 +336,18 @@ export const useMovieStore = create<MovieState>((set, get) => ({
             }
         }));
     },
+    directors: {},
     onFetchCredits: async (id, mediaType) => {
         const key = `${mediaType}-${id}`;
         const { casts } = get();
         if (casts[key]) return;
         const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/credits?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
-        // console.log("출연진", key, data.cast);
+        const directorJobs = ["Director", "Novel", "Screenplay", "Story", "Writer", "Creator"];
+        const crew = (data.crew || []).filter((m: any) => directorJobs.includes(m.job));
         set((state) => ({
-            casts: {
-                ...state.casts,
-                [key]: data.cast || []
-            }
+            casts: { ...state.casts, [key]: data.cast || [] },
+            directors: { ...state.directors, [key]: crew },
         }));
     },
     //전 세계 인기 인물 (배우/감독)

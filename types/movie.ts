@@ -17,6 +17,7 @@ export interface Movie extends MediaBase {
 export interface TV extends MediaBase {
     name: string;
     title?: string;
+    first_air_date?: string;
 }
 //시즌
 export interface Season {
@@ -82,6 +83,14 @@ export interface CastMember {
     character: string;     //배역명
     profile_path: string | null;
     order: number;
+}
+
+//감독/제작진 (TMDB credits.crew)
+export interface DirectorMember {
+    id: number;
+    name: string;
+    job: string;
+    profile_path: string | null;
 }
 
 //인기 인물 (TMDB person/popular)
@@ -153,8 +162,11 @@ export interface MovieState {
     episodes: Episodes[],
 
     upcomings: Movie[],
-    //넷플릭스 오리지널(provider id 213) TV 리스트
+    //넷플릭스 오리지널(network id 213) TV 리스트
     netflixOriginals: TV[],
+    netflixOriginalsLoading: boolean,
+    netflixOriginalsPage: number,
+    netflixOriginalsTotalPages: number,
     //각 TV별 스틸컷 백드롭 이미지 캐시
     tvImages: { [tvId: number]: StillImage[] },
     //각 영화별 스틸컷 백드롭 이미지 캐시
@@ -167,6 +179,8 @@ export interface MovieState {
     mediaDetails: { [key: string]: Movie | TV },
     //작품별 출연진 캐시: "movie-123" or "tv-456" 키
     casts: { [key: string]: CastMember[] },
+    //작품별 감독/제작진 캐시: "movie-123" or "tv-456" 키
+    directors: { [key: string]: DirectorMember[] },
     //배우 상세 정보 캐시: person id 키
     personDetails: { [id: number]: PersonDetail },
     //배우 필모그래피 캐시: person id 키
@@ -191,7 +205,7 @@ export interface MovieState {
 
     onFetchUpcoming: () => Promise<void>
 
-    onFetchNetflixOriginals: () => Promise<void>,
+    onFetchNetflixOriginals: (page?: number) => Promise<void>,
     onFetchTvImages: (id: string | number) => Promise<void>,
     onFetchMovieImages: (id: string | number) => Promise<void>,
 
