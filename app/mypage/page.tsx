@@ -629,7 +629,23 @@ export default function MyPage() {
                 <span className="more"><Link href="/mypage/community">더보기</Link></span>
               </div>
 
-              {reviews.length > 0 ? (
+              {reviews.length > 0 && enrichedReviews.length === 0 ? (
+                <div className="review-list review-list-skeleton">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="review-item review-item-skeleton">
+                      <div className="review-thumb review-skeleton__thumb" />
+                      <div className="review-body">
+                        <div className="review-head">
+                          <div className="review-skeleton__line review-skeleton__line--title" />
+                          <div className="review-skeleton__line review-skeleton__line--score" />
+                        </div>
+                        <div className="review-skeleton__line" />
+                        <div className="review-skeleton__line review-skeleton__line--short" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : reviews.length > 0 ? (
                 <div className="review-list">
                   {enrichedReviews.map((review) => {
                     const movie = review.mediaInfo;
@@ -643,7 +659,7 @@ export default function MyPage() {
                         </div>
                         <div className="review-body">
                           <div className="review-head">
-                            <h3>{movie?.title || movie?.name || '로딩 중...'}</h3>
+                            <h3>{movie?.title || movie?.name || '제목 없음'}</h3>
                             <span className="stars"><AppIcon name="like" size={14} /> {review.likesCount}</span>
                           </div>
                           <p className="text">
