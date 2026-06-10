@@ -45,7 +45,7 @@ export default function CategoryList({ category }: MediaListProps) {
     const left = swiper.activeIndex;
     setLeftEdgeIndex(left);
     const spv = swiper.params.slidesPerView;
-    const numVisible = typeof spv === "number" ? Math.floor(spv) : 6;
+    const numVisible = typeof spv === "number" ? Math.ceil(spv) : 6;
     setRightEdgeIndex(left + numVisible);
   };
   const profileOffset = Math.max((currentProfile?.id ?? 1) - 1, 0) * 3;
@@ -129,7 +129,10 @@ export default function CategoryList({ category }: MediaListProps) {
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
     videoTimer.current = setTimeout(() => setVideoReady(id), 1500);
-    await Promise.all([fetchVideo(), onFetchCertification(id, mediaType)]);
+    await Promise.all([
+      autoplayPreview ? fetchVideo() : Promise.resolve(),
+      onFetchCertification(id, mediaType),
+    ]);
   };
 
   const handleMouseLeave = () => {
@@ -141,7 +144,7 @@ export default function CategoryList({ category }: MediaListProps) {
   return (
     <section className="category-section">
       <div className="section-title-outer">
-        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" />
+        <SectionTitle title={category === "netflix" ? "넷플릭스 시리즈" : "카테고리"} href="/category" showMore={false} />
       </div>
 
       <div className="swiper-outer">
@@ -203,6 +206,8 @@ export default function CategoryList({ category }: MediaListProps) {
                             src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&showinfo=0`}
                             title="트레일러"
                             allow="autoplay"
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
                           />
                         ) : (
                           <img
