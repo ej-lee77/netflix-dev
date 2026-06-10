@@ -100,6 +100,43 @@ export interface PopularPerson {
     }>;
 }
 
+//배우 외부 링크 (TMDB /person/{id}/external_ids)
+export interface PersonExternalIds {
+    imdb_id: string | null;
+    facebook_id: string | null;
+    instagram_id: string | null;
+    twitter_id: string | null;
+    tiktok_id: string | null;
+    youtube_id: string | null;
+    homepage: string | null;
+}
+
+//배우 상세 정보 (TMDB /person/{id})
+export interface PersonDetail {
+    id: number;
+    name: string;
+    biography: string;
+    birthday: string | null;
+    deathday: string | null;
+    place_of_birth: string | null;
+    profile_path: string | null;
+    known_for_department: string;
+    popularity: number;
+    also_known_as: string[];
+}
+
+//배우 필모그래피 한 항목 (TMDB /person/{id}/combined_credits)
+export interface PersonCredit {
+    id: number;
+    title: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    media_type: "movie" | "tv";
+    character: string;
+    release_date?: string;
+    vote_average: number;
+}
+
 //전역변수 타입정의
 export interface MovieState {
     popMovies: Movie[],
@@ -130,6 +167,12 @@ export interface MovieState {
     mediaDetails: { [key: string]: Movie | TV },
     //작품별 출연진 캐시: "movie-123" or "tv-456" 키
     casts: { [key: string]: CastMember[] },
+    //배우 상세 정보 캐시: person id 키
+    personDetails: { [id: number]: PersonDetail },
+    //배우 필모그래피 캐시: person id 키
+    personCredits: { [id: number]: PersonCredit[] },
+    //배우 외부 링크 캐시: person id 키
+    personExternalIds: { [id: number]: PersonExternalIds },
     //전 세계 인기 인물 (배우/감독) 리스트
     popularPeople: PopularPerson[],
     netflixHighlights: HighlightItem[],
@@ -156,6 +199,9 @@ export interface MovieState {
     onFetchMediaRecommended: (id: number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchMediaDetail: (id: string | number, mediaType: "movie" | "tv") => Promise<void>,
     onFetchCredits: (id: number, mediaType: "movie" | "tv") => Promise<void>,
+    onFetchPersonDetail: (id: number) => Promise<void>,
+    onFetchPersonCredits: (id: number) => Promise<void>,
+    onFetchPersonExternalIds: (id: number) => Promise<void>,
     onFetchPopularPeople: () => Promise<void>,
     onFetchNetflixHighlights: () => Promise<void>,
 

@@ -2331,8 +2331,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               (castList.slice(0, 12).length % 4 || 4);
           const isRightCol = (idx + 1) % 4 !== 0;
           return (
-            <div
+            <a
               key={member.id}
+              href={`/person/${member.id}?from=/detail/${type}/${mediaId}`}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -2346,7 +2347,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   : "none",
                 paddingLeft: idx % 4 === 0 ? 0 : 20,
                 paddingRight: (idx + 1) % 4 === 0 ? 0 : 20,
+                textDecoration: "none",
+                cursor: "pointer",
+                transition: "opacity 0.15s",
               }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
             >
               <div
                 style={{
@@ -2359,7 +2365,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                {member.profile_path && (
+                {member.profile_path ? (
                   <img
                     src={imageUrl(member.profile_path, "w185")}
                     alt={member.name}
@@ -2369,6 +2375,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       objectFit: "cover",
                     }}
                   />
+                ) : (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                      color: "#444",
+                    }}
+                  >
+                    👤
+                  </div>
                 )}
               </div>
               <div style={{ minWidth: 0 }}>
@@ -2400,7 +2420,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   출연 | {member.character}
                 </p>
               </div>
-            </div>
+            </a>
           );
         })}
       </div>

@@ -263,6 +263,62 @@ export const useMovieStore = create<MovieState>((set, get) => ({
     },
     //작품 출연진/감독 캐시
     casts: {},
+    personDetails: {},
+    personCredits: {},
+    personExternalIds: {},
+    onFetchPersonDetail: async (id) => {
+        const { personDetails } = get();
+        if (personDetails[id]) return;
+        const res = await fetch(`https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
+        const data = await res.json();
+        set((state) => ({
+            personDetails: { ...state.personDetails, [id]: data }
+        }));
+    },
+    onFetchPersonCredits: async (id) => {
+        const { personCredits } = get();
+        if (personCredits[id]) return;
+        const res = await fetch(`https://api.themoviedb.org/3/person/${id}/combined_credits?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
+        const data = await res.json();
+        const cast: import("@/types/movie").PersonCredit[] = (data.cast || []).map((item: any) => ({
+            id: item.id,
+            title: item.title || item.name || "",
+            poster_path: item.poster_path ?? null,
+            backdrop_path: item.backdrop_path ?? null,
+            media_type: item.media_type,
+            character: item.character || "",
+            release_date: item.release_date || item.first_air_date || undefined,
+            vote_average: item.vote_average ?? 0,
+        }));
+        cast.sort((a, b) => (b.release_date ?? "").localeCompare(a.release_date ?? ""));
+        set((state) => ({
+            personCredits: { ...state.personCredits, [id]: cast }
+        }));
+    },
+    onFetchPersonExternalIds: async (id) => {
+        const { personExternalIds } = get();
+        if (personExternalIds[id]) return;
+        const [extRes, detailRes] = await Promise.all([
+            fetch(`https://api.themoviedb.org/3/person/${id}/external_ids?api_key=${TMDB_KEY}`),
+            fetch(`https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=en-US`),
+        ]);
+        const ext = await extRes.json();
+        const detail = await detailRes.json();
+        set((state) => ({
+            personExternalIds: {
+                ...state.personExternalIds,
+                [id]: {
+                    imdb_id: ext.imdb_id ?? null,
+                    facebook_id: ext.facebook_id ?? null,
+                    instagram_id: ext.instagram_id ?? null,
+                    twitter_id: ext.twitter_id ?? null,
+                    tiktok_id: ext.tiktok_id ?? null,
+                    youtube_id: ext.youtube_id ?? null,
+                    homepage: detail.homepage ?? null,
+                }
+            }
+        }));
+    },
     onFetchCredits: async (id, mediaType) => {
         const key = `${mediaType}-${id}`;
         const { casts } = get();
