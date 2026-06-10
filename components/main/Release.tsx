@@ -5,22 +5,13 @@ import Link from "next/link";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { fetchUpcomingItems, type UpcomingItem } from "@/lib/upcoming";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 import "./scss/release.scss";
 
-const SIZE_CYCLE = ["tall", "short", "short", "tall"] as const;
-type CardSize = typeof SIZE_CYCLE[number];
-
-function getColCount(width: number): number {
-  if (width >= 2560) return 6;
-  if (width >= 1920) return 5;
-  if (width >= 1280) return 4;
-  if (width >= 768) return 3;
-  if (width >= 640) return 2;
-  return 1;
-}
-
 export default function Release() {
-  const [colCount, setColCount] = useState(3);
   const [upcomings, setUpcomings] = useState<UpcomingItem[]>([]);
   const excludedGenres = useExcludedGenres();
 
@@ -40,45 +31,70 @@ export default function Release() {
     };
   }, []);
 
-  useEffect(() => {
-    const update = () => setColCount(getColCount(window.innerWidth));
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
   const filteredUpcomings = useMemo(
     () => filterByExcludedGenres(upcomings, excludedGenres),
     [upcomings, excludedGenres],
   );
-  const cards = filteredUpcomings.slice(0, colCount * 2);
+  const cards = filteredUpcomings.slice(0, 12);
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 공개`;
+  };
+
+  const getDday = (dateStr: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const release = new Date(dateStr);
+    const diff = Math.ceil((release.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return "오늘 공개";
+    if (diff < 0) return "공개중";
+    return `D-${diff}`;
+  };
 
   return (
     <section className="release-section">
       <div className="section-title-outer">
         <SectionTitle title="공개예정 미리보기" subTitle="새로운 작품들을 시청해보세요" href="/release" />
       </div>
-      <div className="release-masonry">
-        {cards.map((movie, index) => {
-          const size: CardSize = SIZE_CYCLE[index % SIZE_CYCLE.length];
-          return (
-            <Link
-              key={`${movie.media_type}-${movie.id}`}
-              href={`/detail/${movie.media_type}/${movie.id}?upcoming=1`}
-              className={`release-card card-${size}`}
-            >
-              <img
-                src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}
-                alt={movie.title}
-                className="card-image"
-              />
-              <div className="card-overlay" />
-              <div className="card-info">
-                <h3 className="card-title">{movie.title}</h3>
-              </div>
-            </Link>
-          );
-        })}
+      <div className="release-swiper-outer">
+        <Swiper
+          modules={[Navigation]}
+          navigation
+          spaceBetween={12}
+          slidesPerView={5.5}
+          breakpoints={{
+            0:    { slidesPerView: 1.5 },
+            480:  { slidesPerView: 2.2 },
+            768:  { slidesPerView: 3 },
+            1024: { slidesPerView: 4 },
+            1280: { slidesPerView: 5.5 },
+          }}
+          className="release-swiper"
+        >
+          {cards.map((movie) => (
+            <SwiperSlide key={`${movie.media_type}-${movie.id}`}>
+              <Link
+                href={`/detail/${movie.media_type}/${movie.id}?upcoming=1`}
+                className="release-card"
+              >
+                <img
+                  src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}
+                  alt={movie.title}
+                  className="card-image"
+                />
+                <span className="card-badge">{getDday(movie.release_date)}</span>
+                <div className="card-info">
+                  <div className="card-meta">
+                    <span className="card-type">{movie.media_type === "movie" ? "영화" : "시리즈"}</span>
+                  </div>
+                  <h3 className="card-title">{movie.title}</h3>
+                  <p className="card-date">{formatDate(movie.release_date)}</p>
+                </div>
+              </Link>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </section>
   );
