@@ -313,12 +313,18 @@
   /* active 아닌 슬라이드: 텍스트는 보이되 흐리게 */
   .swiper-slide:not(.swiper-slide-active) {
 
-    .slide-actions {
-      pointer-events: none;
+    /* 흐림은 텍스트 요소에만 적용 (slide-info 전체에 주면 자식 opacity가 누적되어
+       버튼만 또렷하게 만들 수 없음) */
+    .slide-title,
+    .slide-meta,
+    .slide-overview {
+      opacity: 0.6;
     }
 
-    .slide-info {
-      opacity: 0.6;
+    /* 버튼은 보이면 항상 클릭 가능 + 또렷하게 */
+    .slide-actions {
+      pointer-events: auto;
+      opacity: 1;
     }
   }
 }
