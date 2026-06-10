@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import BackButton from "@/components/common/BackButton";
+import { useConfirmModal } from "@/components/common/ConfirmModal";
 import Feed from "@/components/mypage/Feed";
 import Review from "@/components/mypage/Review";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -142,6 +143,7 @@ export default function CommunityPage() {
 }
 
 function CommunityContent() {
+  const { confirm, modal: confirmModal } = useConfirmModal();
   const { user, currentProfile } = useAuthStore();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab");
@@ -450,14 +452,20 @@ function CommunityContent() {
     }
   };
 
-  const handleDelete = (feedId: string) => {
-    if (window.confirm("정말 삭제하시겠습니까?")) {
-      void onDeleteFeed(feedId);
-    }
+  const handleDelete = async (feedId: string) => {
+    const confirmed = await confirm({
+      title: "피드 삭제",
+      message: "정말 삭제하시겠습니까?",
+      confirmLabel: "삭제",
+    });
+    if (!confirmed) return;
+
+    void onDeleteFeed(feedId);
   };
 
   return (
     <div className="media-list-page community-page feed-page">
+      {confirmModal}
       <div className="community-inner">
         <BackButton fallback="/mypage" />
 

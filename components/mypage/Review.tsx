@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import { useCommunityStore } from '@/store/useCommunityStore';
+import { useConfirmModal } from "@/components/common/ConfirmModal";
 import "../scss/review.scss"; // SCSS 파일 임포트
 import { useAuthStore } from '@/store/useAuthStore';
 import Link from 'next/link';
@@ -42,6 +45,7 @@ const REPORT_REASONS = [
 ];
 
 export default function Review() {
+  const { confirm, modal: confirmModal } = useConfirmModal();
   const { reviews, fetchUserReviews, reportReview, deleteReview, updateReview, updateReviewLikeCount, fetchUserReviewsById } = useCommunityStore();
   const { currentProfile, updateUserLike } = useAuthStore();
   const { fetchMediaDetail } = useMovieStore(); 
@@ -275,7 +279,12 @@ export default function Review() {
   };
 
   const handleDeleteReview = async (reviewId: string, videoId: string) => {
-    if (!window.confirm("리뷰를 삭제하시겠습니까?")) return;
+    const confirmed = await confirm({
+      title: "리뷰 삭제",
+      message: "리뷰를 삭제하시겠습니까?",
+      confirmLabel: "삭제",
+    });
+    if (!confirmed) return;
 
     await deleteReview(reviewId, videoId);
     if (editingReviewId === reviewId) {
@@ -299,6 +308,7 @@ export default function Review() {
 
   return (
     <>
+    {confirmModal}
     {/* 3. 섹션 타이틀 및 총 개수 표시 */}
     <div className="section-title-row">
       <h2>리뷰 관리</h2>

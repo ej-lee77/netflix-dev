@@ -15,6 +15,7 @@ type TrendingVideoSectionProps = {
   title?: string;
   variant?: "overlay" | "results";
   onSelect?: () => void;
+  disableVideo?: boolean;
 };
 
 const getItemKey = (item: TrendingMediaItem) => `${item.media_type}-${item.id}`;
@@ -24,6 +25,7 @@ export default function TrendingVideoSection({
   title = "지금 많이 찾는 작품",
   variant = "results",
   onSelect,
+  disableVideo = false,
 }: TrendingVideoSectionProps) {
   const [activeItemKey, setActiveItemKey] = useState("");
   const [trailerKeys, setTrailerKeys] = useState<Record<string, string | null>>({});
@@ -40,6 +42,7 @@ export default function TrendingVideoSection({
   );
 
   useEffect(() => {
+    if (disableVideo) return;
     items.forEach((item) => {
       const itemKey = getItemKey(item);
       if (itemKey in trailerKeys || trailerControllers.current[itemKey]) return;
@@ -60,9 +63,10 @@ export default function TrendingVideoSection({
           delete trailerControllers.current[itemKey];
         });
     });
-  }, [items, trailerKeys]);
+  }, [items, trailerKeys, disableVideo]);
 
   const loadTrailer = (item: TrendingMediaItem) => {
+    if (disableVideo) return;
     const itemKey = getItemKey(item);
     setActiveItemKey(itemKey);
 
@@ -93,11 +97,42 @@ export default function TrendingVideoSection({
       <div className="trending-video-grid">
         {items.map((item) => {
           const itemKey = getItemKey(item);
+          const year = getTrendingYear(item);
+
+          if (disableVideo) {
+            return (
+              <Link
+                href={`/detail/${item.media_type}/${item.id}`}
+                className="trending-poster-card"
+                key={itemKey}
+                onClick={onSelect}
+              >
+                {item.poster_path ? (
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                    alt={item.title}
+                    fill
+                    sizes="(max-width: 600px) 33vw, 200px"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <span className="trending-poster-card__empty">🎬</span>
+                )}
+                <span className="trending-poster-card__badge">
+                  {item.media_type === "tv" ? "시리즈" : "영화"}
+                </span>
+                <span className="trending-poster-card__info">
+                  <strong>{item.title}</strong>
+                  {year && <span>{year}</span>}
+                </span>
+              </Link>
+            );
+          }
+
           const trailerKey = trailerKeys[itemKey];
           const hasLoadedTrailer = itemKey in trailerKeys;
           const isTrailerActive = activeItemKey === itemKey && Boolean(trailerKey);
           const isPreviewActive = activeItemKey === itemKey;
-          const year = getTrendingYear(item);
           const stillPath = item.backdrop_path || item.poster_path;
           const stillSize = item.backdrop_path ? "w780" : "w342";
 
