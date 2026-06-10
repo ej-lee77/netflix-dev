@@ -38,6 +38,18 @@ export default function Header() {
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isOpen: isSearchOpen, toggle: toggleSearch, close: closeSearch } = useSearchOverlayStore();
+  // 마우스(hover 가능) 기기에서만 호버로 프로필 메뉴를 연다. 터치 기기는 탭 토글만 사용.
+  const [canHover, setCanHover] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setCanHover(mql.matches);
+    update();
+    mql.addEventListener?.("change", update);
+    return () => mql.removeEventListener?.("change", update);
+  }, []);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const modeMenuRef = useRef<HTMLUListElement>(null);
@@ -105,11 +117,13 @@ export default function Header() {
   };
 
   const handleProfileMenuEnter = () => {
+    if (!canHover) return; // 터치 기기에서는 호버로 열지 않음
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setIsProfileMenuOpen(true);
   };
 
   const handleProfileMenuLeave = () => {
+    if (!canHover) return; // 터치 기기에서는 호버로 닫지 않음
     hoverTimeoutRef.current = setTimeout(() => setIsProfileMenuOpen(false), 200);
   };
 
@@ -126,15 +140,17 @@ export default function Header() {
   }, [router, shouldSelectProfile]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (!profileMenuRef.current?.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
