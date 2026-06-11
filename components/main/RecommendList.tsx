@@ -14,7 +14,7 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from '../common/SectionTitle';
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
 
 const GENRE_MAP: Record<number, string> = {
   28: '액션', 12: '모험', 16: '애니메이션', 35: '코미디', 80: '범죄',
@@ -37,9 +37,9 @@ function StarRating({ score }: { score: number }) {
 
 export default function RecommendList() {
   const t = useT();
-  const { recommended: rawRecommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
+  const { recommended: rawRecommended, onFetchRecommended, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
-  const maturityCeiling = useMaturityCeiling();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   // 제외 장르 작품 숨김 (인덱스 정합성을 위해 이후 로직은 모두 이 목록을 사용)
   const genreFiltered = useMemo(
     () => filterByExcludedGenres(rawRecommended, excludedGenres),

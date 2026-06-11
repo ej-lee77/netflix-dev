@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -17,7 +18,7 @@ import ShareButton from "@/components/common/ShareButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -45,7 +46,6 @@ export default function CategoryList({ category }: MediaListProps) {
     onFetchTvVideos,
     netflixOriginals,
     onFetchNetflixOriginals,
-    certifications,
     onFetchCertification,
   } = useMovieStore();
   const { currentProfile } = useAuthStore();
@@ -56,7 +56,7 @@ export default function CategoryList({ category }: MediaListProps) {
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
 
-  const updateEdges = (swiper: any) => {
+  const updateEdges = (swiper: SwiperType) => {
     const left = swiper.activeIndex;
     setLeftEdgeIndex(left);
     const spv = swiper.params.slidesPerView;
@@ -148,7 +148,7 @@ export default function CategoryList({ category }: MediaListProps) {
   const excludedList = filterByExcludedGenres(rawCurrentList, excludedGenres);
 
   // 관람등급 필터 (netflix 카테고리는 tv 등급으로 조회)
-  const maturityCeiling = useMaturityCeiling();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   const certMediaType = category === "netflix" ? "tv" : category;
   const currentList = filterByMaturity(
     excludedList,
@@ -166,15 +166,14 @@ export default function CategoryList({ category }: MediaListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, maturityCeiling, excludedList.length]);
 
-  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
+  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>) => {
     setHover(id);
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
     videoTimer.current = setTimeout(() => setVideoReady(id), 1500);
-    await Promise.all([
-      autoplayPreview ? fetchVideo() : Promise.resolve(),
-      onFetchCertification(id, mediaType),
-    ]);
+    if (autoplayPreview) {
+      await fetchVideo();
+    }
   };
 
   const handleMouseLeave = () => {
@@ -213,7 +212,7 @@ export default function CategoryList({ category }: MediaListProps) {
               <SwiperSlide key={item.id} className="category-slide">
                 <li
                   className="category-item"
-                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo, category === "netflix" ? "tv" : category)}
+                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo)}
                   onMouseLeave={handleMouseLeave}
                   onClick={() => router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`)}
                 >
