@@ -72,7 +72,7 @@ export default function Release() {
           spaceBetween={12}
           slidesPerView={5.5}
           breakpoints={{
-            0:    { slidesPerView: 1.5, spaceBetween: 10 },
+            0:    { slidesPerView: 2.5, spaceBetween: 10 },
             480:  { slidesPerView: 2.2 },
             768:  { slidesPerView: 3 },
             1024: { slidesPerView: 4 },
@@ -93,7 +93,7 @@ export default function Release() {
                   className="card-image"
                   width={780}
                   height={439}
-                  sizes="(max-width: 480px) 67vw, (max-width: 768px) 45vw, (max-width: 1280px) 25vw, 18vw"
+                  sizes="(max-width: 480px) 40vw, (max-width: 768px) 45vw, (max-width: 1280px) 25vw, 18vw"
                 />
                 <span className="card-badge">{getDday(movie.release_date)}</span>
                 <div className="card-info">
