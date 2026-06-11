@@ -383,6 +383,13 @@ main {
 
   main.has-nav {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    /* 커넥트 페이지의 히어로/소셜 캐러셀(Swiper)들이 peek 슬라이드를 위해 overflow:visible 을 쓰면서
+       화면 밖 슬라이드가 가로 오버플로를 만든다. 이게 body 까지 전파되면 body(overflow-x: clip/hidden)가
+       클리핑 컨텍스트가 되어, 모바일 Safari에서 body 직속 position:fixed 형제인
+       헤더(햄버거)·하단 모바일 nav 가 함께 잘려 사라진다.
+       main 은 그 둘의 '조상이 아니라 형제'이므로, 여기서 가로 오버플로를 가두면
+       고정 요소에는 영향 없이 body 로의 전파만 끊을 수 있다. (peek 은 뷰포트 안쪽이라 그대로 노출) */
+    overflow-x: clip; /* overflow-y 는 visible 유지 → 세로 흐름/스티키 영향 없음 */
   }
 }
 
