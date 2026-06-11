@@ -198,15 +198,16 @@ export default function Header() {
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
-            {!isUnsubscribed && (
-              <li>
-                <button
-                  type="button"
-                  className="header-search-toggle"
-                  onClick={toggleSearch}
-                  aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
-                  aria-expanded={isSearchOpen}
-                >
+            {/* 검색·알림·프로필 GNB는 구독 여부와 무관하게 항상 표시
+                (planType 미설정 계정에서 우측 GNB가 사라지던 문제 수정) */}
+            <li>
+              <button
+                type="button"
+                className="header-search-toggle"
+                onClick={toggleSearch}
+                aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
+                aria-expanded={isSearchOpen}
+              >
                   {isSearchOpen ? (
                     <span
                       className="header-search-toggle__close"
@@ -224,19 +225,16 @@ export default function Header() {
                   )}
                 </button>
               </li>
-            )}
-            {!isUnsubscribed && (
-              <li className="gnb-alarm">
-                <Link href="/alarm">
-                  <Image
-                    src="/images/header/alarm.svg"
-                    alt="알림"
-                    width={24}
-                    height={24}
-                  />
-                </Link>
-              </li>
-            )}
+            <li className="gnb-alarm">
+              <Link href="/alarm">
+                <Image
+                  src="/images/header/alarm.svg"
+                  alt="알림"
+                  width={24}
+                  height={24}
+                />
+              </Link>
+            </li>
 
             {!user ? (
               <li>
@@ -380,14 +378,13 @@ export default function Header() {
         />
       </header>
 
-      {!isUnsubscribed && (
-        <>
-          <Suspense fallback={null}>
-            <HeaderMenu />
-          </Suspense>
-          <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-        </>
-      )}
+      {/* 사이드메뉴·모바일 드로어는 구독 여부와 무관하게 항상 표시
+          (planType 로딩 전/미구독 시 메뉴 전체가 사라지던 문제 수정.
+           구독 차단은 콘텐츠 클릭 시 SubscribeModal로 처리됨) */}
+      <Suspense fallback={null}>
+        <HeaderMenu />
+      </Suspense>
+      <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       {pendingProfile && (
         <ProfilePinGate
           key={pendingProfile.id}
