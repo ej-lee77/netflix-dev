@@ -5,6 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import "./scss/moodBanner.scss";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 export default function MoodBanner() {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -35,9 +38,16 @@ export default function MoodBanner() {
     return () => observer.disconnect();
   }, []);
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   return (
     <section className="mood-banner-section" ref={sectionRef}>
-      <Link href="/mood" className="mood-banner">
+      <Link
+        href="/mood"
+        className="mood-banner"
+        onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
+      >
         <div className="mood-banner__bg" aria-hidden="true">
           <span className="mood-banner__orb mood-banner__orb--1" />
           <span className="mood-banner__orb mood-banner__orb--2" />
