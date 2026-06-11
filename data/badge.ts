@@ -264,3 +264,25 @@ export const BADGE_MAP: BadgeMap = BADGE_LIST.reduce((acc, badge) => {
   acc[badge.id] = badge.name;
   return acc;
 }, {} as BadgeMap);
+// ── 뱃지 → 포인트 (등급 차등) ──────────────────────
+// 등급은 목표치(total)로 자동 산출: 전설 500P · 희귀 300P · 일반 100P
+export function badgeGrade(total: number): { label: string; points: number } {
+  if (total >= 10) return { label: "전설", points: 500 };
+  if (total >= 5) return { label: "희귀", points: 300 };
+  return { label: "일반", points: 100 };
+}
+
+export function badgePoints(badgeId: string): number {
+  const b = BADGE_LIST.find((x) => x.id === badgeId);
+  return badgeGrade(b?.total ?? 1).points;
+}
+
+// 획득(isComplete) 뱃지들의 포인트 합산 = 적립 포인트 총량
+export function earnedBadgePoints(
+  earnedBadges?: { id: string; isComplete?: boolean }[] | null,
+): number {
+  if (!earnedBadges?.length) return 0;
+  return earnedBadges
+    .filter((b) => b.isComplete)
+    .reduce((sum, b) => sum + badgePoints(b.id), 0);
+}

@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import "../scss/goods.scss";
 import { BADGE_LIST } from "@/data/badge";
 import { useAuthStore } from "@/store/useAuthStore";
+import Link from "next/link";
 import BackButton from "@/components/common/BackButton";
 
 const limitedGoods = [
@@ -66,6 +67,24 @@ export default function GoodsPage() {
             나만의 컬렉션
           </h1>
           <p>뱃지를 모으고 칭호를 획득하세요</p>
+          <Link
+            href="/shop"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              marginTop: "14px",
+              padding: "12px 20px",
+              borderRadius: "10px",
+              background: "#e50914",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "14px",
+              textDecoration: "none",
+            }}
+          >
+            🎁 모은 포인트로 굿즈 받기 →
+          </Link>
         
 
           {/* 컬렉션 통계 */}

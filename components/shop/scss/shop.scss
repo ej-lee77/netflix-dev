@@ -1,0 +1,825 @@
+@use "../../../app/globals.scss" as g;
+
+/* ===== 페이지 공통 셸 (사이드 nav 회피) ===== */
+.shop-page {
+  min-height: 100vh;
+  padding: 28px 0 72px;
+  background: g.$bg-color;
+  color: #fff;
+
+  @include g.respond(laptop) {
+    padding-left: 80px;
+  }
+  @include g.respond(tablet) {
+    padding: 20px 24px 64px;
+  }
+  @include g.respond(mobile) {
+    padding: 14px 16px 56px;
+  }
+
+  .shop-shell {
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    padding: 0 24px;
+
+    @include g.respond(mobile) {
+      padding: 0;
+    }
+  }
+}
+
+/* ===== 상단 바 ===== */
+.shop-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.shop-topbar__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.shop-topbar__brand b {
+  color: #e50914;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+.shop-topbar__title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+}
+.shop-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shop-topbar__link {
+  font-size: 13px;
+  color: #cfcfcf;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.shop-topbar__link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.shop-cart-btn {
+  position: relative;
+}
+.shop-cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #e50914;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ===== 히어로 ===== */
+.shop-hero {
+  margin-bottom: 22px;
+}
+.shop-hero__eyebrow {
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #e50914;
+  font-weight: 800;
+}
+.shop-hero__title {
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 900;
+  margin: 6px 0 8px;
+  line-height: 1.2;
+}
+.shop-hero__sub {
+  color: #9a9a9a;
+  font-size: 14px;
+}
+
+/* ===== 필터 / 정렬 ===== */
+.shop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.shop-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.shop-chip {
+  font-size: 13px;
+  color: #cfcfcf;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shop-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.shop-chip.active {
+  background: #e50914;
+  border-color: #e50914;
+  color: #fff;
+  font-weight: 600;
+}
+.shop-sort {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #eee;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ===== 상품 그리드 / 카드 ===== */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 18px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+  }
+}
+.goods-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.goods-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(229, 9, 20, 0.5);
+}
+.goods-card__thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52px;
+}
+.goods-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+.goods-card__badge--LIMITED { background: #e50914; }
+.goods-card__badge--BEST { background: #f5a623; color: #1a1a1a; }
+.goods-card__badge--NEW { background: #2ecc71; color: #0a0a0a; }
+.goods-card__sold {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ddd;
+}
+.goods-card__body {
+  padding: 12px 13px 14px;
+}
+.goods-card__cat {
+  font-size: 11px;
+  color: #8f8f8f;
+}
+.goods-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 3px 0 8px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.goods-card__price {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* ===== 상품 상세 ===== */
+.shop-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: start;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+.shop-detail__thumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.shop-detail__cat {
+  font-size: 13px;
+  color: #e50914;
+  font-weight: 700;
+}
+.shop-detail__name {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 6px 0 4px;
+}
+.shop-detail__theme {
+  font-size: 13px;
+  color: #9a9a9a;
+}
+.shop-detail__price {
+  font-size: 24px;
+  font-weight: 900;
+  margin: 18px 0;
+}
+.shop-detail__desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #cfcfcf;
+  padding: 16px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.shop-field-label {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+}
+.shop-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.shop-opt-btn {
+  font-size: 13px;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.shop-opt-btn.active {
+  border-color: #e50914;
+  color: #fff;
+  background: rgba(229, 9, 20, 0.14);
+}
+.shop-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.shop-qty__btn {
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.shop-qty__btn:disabled {
+  color: #555;
+  cursor: default;
+}
+.shop-qty__val {
+  min-width: 44px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+.shop-detail__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 22px 0 14px;
+}
+.shop-detail__total b {
+  font-size: 22px;
+  font-weight: 900;
+}
+.shop-detail__actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ===== 공통 버튼 ===== */
+.shop-btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 13px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.shop-btn--primary {
+  background: #e50914;
+  color: #fff;
+}
+.shop-btn--primary:hover { background: #ff4d57; }
+.shop-btn--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #eee;
+}
+.shop-btn--ghost:hover { background: rgba(255, 255, 255, 0.08); }
+.shop-btn--block { width: 100%; }
+.shop-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ===== 장바구니 ===== */
+.shop-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
+  align-items: start;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+  }
+}
+.cart-row {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cart-row__thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cart-row__info {
+  flex: 1;
+  min-width: 0;
+}
+.cart-row__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.cart-row__opt {
+  font-size: 12px;
+  color: #9a9a9a;
+  margin-top: 2px;
+}
+.cart-row__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 10px;
+}
+.cart-row__price {
+  font-size: 15px;
+  font-weight: 800;
+}
+.cart-row__remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* 요약 패널 */
+.shop-summary {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.015);
+  position: sticky;
+  top: 90px;
+}
+.shop-summary__title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+.shop-sum-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #cfcfcf;
+  margin: 9px 0;
+}
+.shop-sum-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 14px 0 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.shop-sum-total b {
+  font-size: 20px;
+  font-weight: 900;
+}
+.shop-summary__hint {
+  font-size: 12px;
+  color: #8f8f8f;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* ===== 빈 상태 ===== */
+.shop-empty {
+  text-align: center;
+  padding: 70px 20px;
+  color: #9a9a9a;
+}
+.shop-empty__emoji { font-size: 44px; }
+.shop-empty__msg { margin: 14px 0 18px; font-size: 15px; }
+
+/* ===== 체크아웃 ===== */
+.checkout-section {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.015);
+}
+.checkout-section__title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+.checkout-field {
+  margin-bottom: 12px;
+}
+.checkout-field label {
+  display: block;
+  font-size: 12px;
+  color: #9a9a9a;
+  margin-bottom: 6px;
+}
+.checkout-field input,
+.checkout-field textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  padding: 11px 12px;
+  font-size: 14px;
+  outline: none;
+}
+.checkout-field input:focus,
+.checkout-field textarea:focus {
+  border-color: rgba(229, 9, 20, 0.6);
+}
+.checkout-field--row {
+  display: flex;
+  gap: 10px;
+}
+.checkout-pay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #ddd;
+}
+.checkout-pay__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(229, 9, 20, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+/* ===== 주문 완료 ===== */
+.shop-complete {
+  text-align: center;
+  padding: 80px 20px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.shop-complete__circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  margin: 0 auto 22px;
+  background: rgba(46, 204, 113, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shop-complete__circle svg {
+  width: 38px;
+  height: 38px;
+}
+.shop-complete__title {
+  font-size: 24px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+.shop-complete__sub {
+  color: #9a9a9a;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.shop-complete__order {
+  font-size: 13px;
+  color: #cfcfcf;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: inline-block;
+  margin-bottom: 26px;
+}
+.shop-complete__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ===== 주문내역 ===== */
+.order-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.015);
+}
+.order-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.order-card__date {
+  font-size: 13px;
+  color: #9a9a9a;
+}
+.order-card__status {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.order-item__thumb {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.order-item__info { flex: 1; min-width: 0; }
+.order-item__name { font-size: 13px; font-weight: 600; }
+.order-item__meta { font-size: 12px; color: #9a9a9a; margin-top: 2px; }
+.order-item__price { font-size: 13px; font-weight: 700; }
+.order-card__total {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  color: #9a9a9a;
+}
+.order-card__total b {
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* 로딩 */
+.shop-loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: #9a9a9a;
+  font-size: 14px;
+}
+
+/* ===== 포인트 ===== */
+.shop-point-chip {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffcf3f;
+  background: rgba(255, 207, 63, 0.12);
+  border: 1px solid rgba(255, 207, 63, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.point-balance {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #cfcfcf;
+  margin-bottom: 12px;
+}
+.point-balance b {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffcf3f;
+}
+.point-use {
+  display: flex;
+  gap: 8px;
+}
+.point-use input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  padding: 11px 12px;
+  font-size: 14px;
+  outline: none;
+}
+.point-use input:focus {
+  border-color: rgba(255, 207, 63, 0.6);
+}
+.point-use input:disabled {
+  opacity: 0.5;
+}
+.point-use .shop-btn {
+  padding: 11px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.point-hint {
+  font-size: 12px;
+  color: #8f8f8f;
+  margin-top: 8px;
+}
+.point-earn-preview {
+  text-align: center;
+  font-size: 13px;
+  color: #9a9a9a;
+  margin: -6px 0 14px;
+}
+.point-earn-preview b {
+  color: #ffcf3f;
+  font-weight: 800;
+}
+.shop-complete__points {
+  font-size: 14px;
+  color: #cfcfcf;
+  background: rgba(255, 207, 63, 0.1);
+  border: 1px solid rgba(255, 207, 63, 0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: inline-block;
+  margin-bottom: 14px;
+}
+.shop-complete__points b {
+  color: #ffcf3f;
+  font-weight: 900;
+}
+
+/* ===== 포인트 교환 모델 추가 스타일 ===== */
+.goods-card__points {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffcf3f;
+}
+.goods-card__ship {
+  font-size: 11px;
+  color: #8f8f8f;
+  margin-top: 2px;
+}
+.goods-card__ok {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: rgba(46, 204, 113, 0.85);
+  color: #06210f;
+}
+.shop-detail__price {
+  color: #ffcf3f;
+}
+.shop-detail__ship {
+  font-size: 13px;
+  color: #9a9a9a;
+  margin-top: -10px;
+  margin-bottom: 4px;
+}
+.shop-detail__balance {
+  font-size: 13px;
+  color: #cfcfcf;
+  margin-bottom: 14px;
+}
+.shop-detail__balance .ok {
+  color: #2ecc71;
+  font-weight: 700;
+}
+.shop-detail__balance .no {
+  color: #ff4d57;
+  font-weight: 700;
+}
+.point-short {
+  color: #ff4d57;
+  font-weight: 700;
+}
+
+/* ===== 진입 칩 (마이페이지 등) ===== */
+.point-entry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 207, 63, 0.12);
+  border: 1px solid rgba(255, 207, 63, 0.35);
+  text-decoration: none;
+  width: fit-content;
+}
+.point-entry-chip__label {
+  font-size: 12px;
+  color: #cfcfcf;
+}
+.point-entry-chip b {
+  font-size: 15px;
+  font-weight: 900;
+  color: #ffcf3f;
+}
+.point-entry-chip__go {
+  font-size: 12px;
+  color: #ffcf3f;
+  font-weight: 700;
+}
