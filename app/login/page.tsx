@@ -292,6 +292,9 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
+              <div className="demo-ac">
+                <span>ID : delexi4121@fixscal.com</span>
+              </div>
             </div>
 
             <div className="form-field">
@@ -314,6 +317,9 @@ export default function LoginPage() {
                 >
                   {showPassword ? <EyeOpenIcon /> : <EyeOffIcon />}
                 </button>
+              </div>
+              <div className="demo-ac">
+                <span>PW : ezen123456</span>
               </div>
             </div>
 

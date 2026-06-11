@@ -78,6 +78,7 @@ export interface ProfileSettings {
   excludedGenres: string[]; // 제외 장르 slug 목록
   favoriteMoods: string[]; // 선호 무드 slug 목록
   excludedMoods: string[]; // 제외 무드 slug 목록
+  favoriteTitles?: string[]; // 온보딩 관심 작품 ("movie:123" | "tv:456")
 }
 
 export interface AlarmInfo {

@@ -100,7 +100,13 @@ function ProfileSelectContent() {
     setSwitchingProfile(profile);
     await new Promise((resolve) => window.setTimeout(resolve, 2000));
     onSetProfile(profile);
-    router.replace("/");
+    const s = profile.settings;
+    let done = false;
+    try {
+      done = typeof window !== "undefined" && !!localStorage.getItem(`onboarded:${profile.id}`);
+    } catch {}
+    const noTaste = !s?.favoriteGenres?.length && !s?.favoriteMoods?.length;
+    router.replace(noTaste && !done ? "/onboarding" : "/");
   };
 
   const handleSelect = (profile: UserProfile) => {
