@@ -100,7 +100,14 @@ export default function WatchingList() {
                                         </div>
                                     </Link>
                                     <div className="watching-title-row">
-                                        <h3 className="watching-title">{item.title}</h3>
+                                        <h3 className="watching-title">
+                                            {item.title}
+                                            {item.mediaType === 'tv' && item.lastEpisodeNumber ? (
+                                                <span className="watching-episode">
+                                                    {item.lastEpisodeNumber}화
+                                                </span>
+                                            ) : null}
+                                        </h3>
                                         <button
                                             type="button"
                                             className={`watching-more-btn${menuState?.key === key ? ' active' : ''}`}

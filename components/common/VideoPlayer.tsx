@@ -9,11 +9,26 @@ declare global {
   }
 }
 
+export interface PlayerEpisode {
+  id: number;
+  number: number;
+  name: string;
+  stillUrl?: string | null;
+  runtime?: number | null;
+  progress?: number; // 0~100
+}
+
 interface VideoPlayerProps {
   videoKey: string;
   title?: string;
   onClose: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  /** 회차 목록 (시리즈일 때만 전달) */
+  episodes?: PlayerEpisode[];
+  activeEpisodeId?: number | null;
+  onSelectEpisode?: (id: number) => void;
+  /** 이어보기 시작 지점 (0~100 %) */
+  startPct?: number;
 }
 
 function formatTime(sec: number) {
@@ -22,7 +37,16 @@ function formatTime(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function VideoPlayer({ videoKey, title, onClose, onTimeUpdate }: VideoPlayerProps) {
+export default function VideoPlayer({
+  videoKey,
+  title,
+  onClose,
+  onTimeUpdate,
+  episodes,
+  activeEpisodeId,
+  onSelectEpisode,
+  startPct,
+}: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -32,6 +56,9 @@ export default function VideoPlayer({ videoKey, title, onClose, onTimeUpdate }: 
   const playerId = useRef(`vp-${Math.random().toString(36).slice(2)}`);
   const onTimeUpdateRef = useRef(onTimeUpdate);
   const isDraggingProgress = useRef(false);
+  // 이어보기: 최초 1회만 시작 지점으로 이동
+  const startPctRef = useRef(startPct ?? 0);
+  const didInitialSeek = useRef(false);
   const resetHideTimerRef = useRef<() => void>(() => {});
   const seekToRef = useRef<(pct: number) => void>(() => {});
   onTimeUpdateRef.current = onTimeUpdate;
@@ -44,16 +71,70 @@ export default function VideoPlayer({ videoKey, title, onClose, onTimeUpdate }: 
   const [showControls, setShowControls] = useState(true);
   const [feedback, setFeedback] = useState<"play" | "pause" | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showEpisodes, setShowEpisodes] = useState(false);
+  const [episodesClosing, setEpisodesClosing] = useState(false);
+  const episodesCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showEpisodesRef = useRef(showEpisodes);
+  showEpisodesRef.current = showEpisodes;
+
+  // 회차 패널 닫기 (슬라이드아웃 애니메이션 후 언마운트)
+  const closeEpisodes = useCallback(() => {
+    setEpisodesClosing(true);
+    if (episodesCloseTimer.current) clearTimeout(episodesCloseTimer.current);
+    episodesCloseTimer.current = setTimeout(() => {
+      setShowEpisodes(false);
+      setEpisodesClosing(false);
+    }, 200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (episodesCloseTimer.current) clearTimeout(episodesCloseTimer.current);
+    };
+  }, []);
 
   const resetHideTimer = useCallback(() => {
     setShowControls(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setShowControls(false), 3000);
+    hideTimer.current = setTimeout(() => {
+      // 회차 패널이 열려있는 동안엔 컨트롤을 숨기지 않음
+      if (!showEpisodesRef.current) setShowControls(false);
+    }, 3000);
   }, []);
   resetHideTimerRef.current = resetHideTimer;
 
   useEffect(() => {
+    let cancelled = false;
+    let apiPoll: ReturnType<typeof setInterval> | null = null;
+
+    // 진행바 갱신 틱: onReady 이벤트와 무관하게 플레이어 메서드가 준비되면 동작
+    const startTick = () => {
+      if (tickRef.current) clearInterval(tickRef.current);
+      tickRef.current = setInterval(() => {
+        const p = playerRef.current;
+        if (!p || typeof p.getCurrentTime !== 'function') return;
+        const ct = p.getCurrentTime();
+        const d = p.getDuration();
+        // 이어보기: 길이를 알게 된 시점에 한 번만 시작 지점으로 이동
+        if (!didInitialSeek.current && d > 0) {
+          didInitialSeek.current = true;
+          const pct = startPctRef.current;
+          if (pct > 1 && pct < 95) {
+            p.seekTo?.((pct / 100) * d, true);
+            setCurrentTime((pct / 100) * d);
+            return;
+          }
+        }
+        setCurrentTime(ct);
+        if (d > 0) {
+          setDuration(d);
+          onTimeUpdateRef.current?.(ct, d);
+        }
+      }, 500);
+    };
+
     const createPlayer = () => {
+      if (cancelled) return;
       if (!document.getElementById(playerId.current)) return;
       playerRef.current = new window.YT.Player(playerId.current, {
         videoId: videoKey,
@@ -74,44 +155,39 @@ export default function VideoPlayer({ videoKey, title, onClose, onTimeUpdate }: 
             playerRef.current = e.target;
             e.target.setVolume(80);
             e.target.playVideo();
-            if (tickRef.current) clearInterval(tickRef.current);
-            tickRef.current = setInterval(() => {
-              const p = playerRef.current;
-              if (!p || typeof p.getCurrentTime !== 'function') return;
-              const ct = p.getCurrentTime();
-              const d = p.getDuration();
-              setCurrentTime(ct);
-              if (d > 0) {
-                setDuration(d);
-                onTimeUpdateRef.current?.(ct, d);
-              }
-            }, 500);
           },
           onStateChange: (e: any) => {
             setPlaying(e.data === window.YT.PlayerState.PLAYING);
           },
         },
       });
+      // 최초 로드 시 onReady가 유실되어도 진행바가 동작하도록 즉시 틱 시작
+      startTick();
     };
 
     if (window.YT?.Player) {
       createPlayer();
     } else {
-      const prev = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        prev?.();
-        createPlayer();
-      };
       if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
         const s = document.createElement("script");
         s.src = "https://www.youtube.com/iframe_api";
         document.head.appendChild(s);
       }
+      // 전역 콜백 체이닝 대신 API 준비를 폴링 (이중 마운트/콜백 유실에 안전)
+      apiPoll = setInterval(() => {
+        if (window.YT?.Player) {
+          if (apiPoll) clearInterval(apiPoll);
+          apiPoll = null;
+          createPlayer();
+        }
+      }, 100);
     }
 
     resetHideTimer();
 
     return () => {
+      cancelled = true;
+      if (apiPoll) clearInterval(apiPoll);
       try { playerRef.current?.destroy?.(); } catch { }
       if (tickRef.current) clearInterval(tickRef.current);
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -343,6 +419,25 @@ export default function VideoPlayer({ videoKey, title, onClose, onTimeUpdate }: 
             </div>
 
             <div className="vp-right-btns">
+              {/* 회차 목록 */}
+              {episodes && episodes.length > 0 && (
+                <button
+                  className={`vp-btn vp-episodes-btn${showEpisodes ? " active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (showEpisodes) closeEpisodes();
+                    else setShowEpisodes(true);
+                    resetHideTimer();
+                  }}
+                  title="회차 목록"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="13" height="14" rx="2" />
+                    <line x1="20" y1="6" x2="20" y2="18" />
+                  </svg>
+                </button>
+              )}
+
               {/* 전체화면 */}
               <button className="vp-btn" onClick={doToggleFullscreen} title="전체화면 (F)">
                 {isFullscreen ? (
@@ -359,6 +454,65 @@ export default function VideoPlayer({ videoKey, title, onClose, onTimeUpdate }: 
           </div>
         </div>
       </div>
+
+      {/* 회차 목록 패널 */}
+      {episodes && episodes.length > 0 && showEpisodes && (
+        <aside
+          className={`vp-episodes-panel${episodesClosing ? " vp-episodes-panel--closing" : ""}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="vp-episodes-head">
+            <h4>회차</h4>
+            <button
+              className="vp-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeEpisodes();
+              }}
+              aria-label="회차 목록 닫기"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div className="vp-episodes-list">
+            {episodes.map((ep) => {
+              const isActive = ep.id === activeEpisodeId;
+              return (
+                <button
+                  key={ep.id}
+                  className={`vp-episode-item${isActive ? " active" : ""}`}
+                  onClick={() => {
+                    if (!isActive) onSelectEpisode?.(ep.id);
+                    closeEpisodes();
+                  }}
+                >
+                  <div className="vp-episode-thumb">
+                    {ep.stillUrl && <img src={ep.stillUrl} alt={ep.name} />}
+                    {isActive && <span className="vp-episode-playing">재생 중</span>}
+                    {(ep.progress ?? 0) > 0 && (
+                      <span
+                        className="vp-episode-progress"
+                        style={{ width: `${ep.progress}%` }}
+                      />
+                    )}
+                  </div>
+                  <div className="vp-episode-info">
+                    <p className="vp-episode-name">
+                      {ep.number}. {ep.name}
+                    </p>
+                    {ep.runtime ? (
+                      <p className="vp-episode-runtime">{ep.runtime}분</p>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
