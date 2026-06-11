@@ -888,6 +888,18 @@
       height: 100%;
     }
 
+    /* 모바일: 영상이 히어로(70vh) 전체를 덮도록 확대 + 정중앙 배치 */
+    .hero-video {
+      height: 70vh;
+      width: calc(70vh * 16 / 9);
+      min-width: 100vw;
+      margin-left: calc(70vh * -8 / 9); /* 가로 중앙 보정 (top/left 50% + 음수 마진) */
+      margin-top: -35vh;
+      top: 50%;
+      left: 50%;
+      transform: scale(1.45);
+    }
+
     &::after,
     .hero-backdrop::after {
       top: 0;
