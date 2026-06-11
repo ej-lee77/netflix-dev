@@ -20,6 +20,9 @@ import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
   99: "다큐", 18: "드라마", 10751: "가족", 14: "판타지", 36: "역사",
@@ -49,6 +52,10 @@ export default function CategoryList({ category }: MediaListProps) {
     onFetchCertification,
   } = useMovieStore();
   const { currentProfile } = useAuthStore();
+
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -214,7 +221,7 @@ export default function CategoryList({ category }: MediaListProps) {
                   className="category-item"
                   onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`)}
+                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`); }}
                 >
                   {/* 기본 포스터 */}
                   <div className="img-box">
@@ -301,18 +308,15 @@ export default function CategoryList({ category }: MediaListProps) {
                             재생하기
                           </button> */}
 
-                          <Link
-                            className="btn-play"
-                            href={`/detail/${category === "netflix" ? "tv" : category
-                              }/${item.id}?play=1`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <Link className="btn-play" href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}?play=1`}
+                            onClick={(e) => { e.stopPropagation(); if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
                             재생하기
                           </Link>
-                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`} className="btn-detail">
+                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`}
+                            className="btn-detail" onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="10" />
                               <line x1="12" y1="16" x2="12" y2="12" />

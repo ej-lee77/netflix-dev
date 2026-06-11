@@ -111,7 +111,7 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
     <section className="category-section">
       <div className="section-title-outer">
         {title === "오늘 가장 많이보는 시리즈" || title === "팔로우 취향 저격 작품" || title === "지금 커넥트에서 핫한 작품" ? <SectionTitle title={title} href={href ?? "/category"} showMore={false} /> :
-        <SectionTitle title={title} href={href ?? "/category"} />}
+          <SectionTitle title={title} href={href ?? "/category"} />}
       </div>
 
       <div className="swiper-outer">
@@ -132,6 +132,7 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
           onTouchStart={() => { isDragging.current = false; }}
           onTouchMove={() => { isDragging.current = true; }}
           onTouchEnd={() => { setTimeout(() => { isDragging.current = false; }, 50); }}
+          onClick={() => { if (isUnsubscribed) openModal(); }}
         >
           {items.map((item, index) => {
             const videos = item.mediaType === "movie" ? popVideos[item.id] : tvVideos[item.id];
