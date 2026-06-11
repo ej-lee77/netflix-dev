@@ -28,16 +28,11 @@
   }
   animation: banner-slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
 
-  @media (max-width: 768px) {
-    left: 0;
-  }
-
   @include g.respond(mobile) {
     // MobileBottomNav 위에 띄워서 겹침 방지
     bottom: calc(90px + env(safe-area-inset-bottom)); // 하단 네비와 10px 간격
     z-index: 99995; // MobileBottomNav(99996) 바로 아래
     border-top: none;
-    border-radius: 0;
     box-shadow: 0 -2px 12px rgba(g.$d-color, 0.5);
   }
 }
