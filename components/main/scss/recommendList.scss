@@ -43,8 +43,7 @@
   .recommend-swiper {
     width: 100%;
     overflow: visible;
-    padding: 20px clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px) 40px;
-    padding-left: g.$main-menu-width;
+    padding: 20px clamp(24px, calc((100vw - 80px - 1920px) / 2), 80px) 40px g.$main-menu-width;
     position: relative;
   }
 
@@ -163,6 +162,14 @@
     flex-direction: column;
     justify-content: center;
     gap: clamp(4px, 0.45vw, 6px);
+    overflow: hidden;
+  }
+
+  /* 타이틀 + 연령 뱃지 행 */
+  .slide-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     overflow: hidden;
   }
 
@@ -396,17 +403,21 @@
   .recommend-section {
     padding: 26px 0 36px;
     .section-title-outer { padding-left: 20px; }
-    .recommend-swiper { padding: 16px 20px 16px; }
+    .recommend-swiper {
+      /* 부모의 padding/margin 오프셋을 무력화하고 뷰포트 정중앙에 배치 */
+      width: 100vw;
+      margin-left: calc(-1 * (100vw - 100%) / 2);
+      padding: 16px 0;
+    }
     .swiper-button-prev { left: 20px; }
     .swiper-button-prev,
     .swiper-button-next { display: none; }
-    .recommend-slide { max-height: clamp(230px, 62vw, 320px); }
+    .recommend-slide { max-height: clamp(240px, 68vw, 340px); }
+    .slide-poster { flex: 0 0 70%; }
     .slide-info { padding: 10px 14px; }
-    .slide-actions { gap: 8px; flex-wrap: wrap; row-gap: 8px; min-width: 0; }
-    .btn-play, .btn-info { height: 34px; font-size: 13px; white-space: nowrap; }
-    .btn-play { padding: 0 13px; gap: 6px; }
-    .btn-info { padding: 0 11px; gap: 5px; }
-    .btn-play svg, .btn-info svg { width: 12px; height: 12px; }
-    .card-wish { width: 34px; height: 34px; flex-shrink: 0; }
+    .slide-meta { display: none; }
+    .meta-cert { font-size: 9px; padding: 1px 5px; }
+    .slide-overview { opacity: 0.5; }
+    .slide-actions { display: none; }
   }
 }

@@ -208,9 +208,11 @@
 @include g.respond(mobile) {
   .watching-section {
     padding: 20px 0;
-    .watching-swiper-wrap { padding-left: 68px; padding-right: 12px; }
+    .watching-swiper-wrap { padding-left: 20px; padding-right: 10px; }
     .watching-title { font-size: g.$text-14; }
     .watching-title-row { margin-top: 6px; }
-    .watching-play-overlay { width: 40px; height: 40px; font-size: 17px; }
+    .watching-play-btn { width: 40px; height: 40px; font-size: 17px; }
+    .swiper-button-prev,
+    .swiper-button-next { display: none !important; }
   }
 }

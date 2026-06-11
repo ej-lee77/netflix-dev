@@ -9,7 +9,8 @@
   @include g.respond(mobile) {
     padding-left: 20px;
     padding-right: 20px;
-    padding-top: 24px;
+    padding-top: 12px;
+    padding-bottom: 0;
   }
 }
 
@@ -197,7 +198,7 @@
     display: block;
     position: relative;
     flex-shrink: 0;
-    width: 110px;
+    width: 80px;
     align-self: stretch;
 
     img {
@@ -205,7 +206,7 @@
       bottom: -16px;
       left: 50%;
       transform: translateX(-50%);
-      height: 150px;
+      height: 110px;
       width: auto;
       max-width: none;
       filter: none;
@@ -247,7 +248,7 @@
   margin: 0 0 12px;
 
   @include g.respond(mobile) {
-    font-size: 11px;
+    font-size: 10px;
     margin: 0 0 4px;
   }
 }
@@ -260,9 +261,9 @@
   margin: 0 0 14px;
 
   @include g.respond(mobile) {
-    font-size: 17px;
+    font-size: 15px;
     line-height: 1.25;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
   }
 
   em {
@@ -281,9 +282,9 @@
   line-height: 1.5;
 
   @include g.respond(mobile) {
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.5;
-    margin: 0 0 16px;
+    margin: 0 0 14px;
   }
 }
 
