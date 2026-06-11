@@ -1097,7 +1097,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       justifyContent: "center",
                       background: "rgba(0,0,0,0.25)",
                       opacity:
-                        (selectEpisodeId !== null && isActive) ||
+                        isMobile ||
+                          (selectEpisodeId !== null && isActive) ||
                           hoveredEpisodeId === ep.id
                           ? 1
                           : 0,
@@ -1106,15 +1107,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   >
                     <div
                       style={{
-                        width: 42,
-                        height: 42,
+                        width: isMobile ? 32 : 42,
+                        height: isMobile ? 32 : 42,
                         borderRadius: "50%",
                         background: "rgba(0,0,0,0.65)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         color: "#fff",
-                        fontSize: 20,
+                        fontSize: isMobile ? 15 : 20,
                       }}
                     >
                       {isUpcoming ? "🔔" : "▶"}
