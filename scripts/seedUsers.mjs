@@ -41,7 +41,7 @@ const testUsers = [
         genreStats: { "드라마": 12, "스릴러": 8 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_drama", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_drama", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -58,7 +58,7 @@ const testUsers = [
         genreStats: { "드라마": 20, "로맨스": 15 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_thriller", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_thriller", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -75,7 +75,7 @@ const testUsers = [
         genreStats: { "애니": 30, "판타지": 10 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_animation", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_animation", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -92,7 +92,7 @@ const testUsers = [
         genreStats: { "공포": 18, "스릴러": 22 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "culture_k_drama", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "culture_k_drama", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -109,7 +109,7 @@ const testUsers = [
         genreStats: { "독립영화": 9, "드라마": 14 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_action", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_action", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -126,7 +126,7 @@ const testUsers = [
         genreStats: { "한국드라마": 25, "액션": 10 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "binge_master", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "binge_master", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -143,7 +143,7 @@ const testUsers = [
         genreStats: { "액션": 35, "SF": 12 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_sf", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_sf", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -160,7 +160,7 @@ const testUsers = [
         genreStats: { "SF": 40, "스릴러": 8 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_romance", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_romance", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -177,7 +177,7 @@ const testUsers = [
         genreStats: { "한국영화": 30, "드라마": 20 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "culture_jp_drama", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "culture_jp_drama", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -194,7 +194,7 @@ const testUsers = [
         genreStats: { "일본애니": 45, "판타지": 10 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_mystery", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_mystery", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -211,7 +211,7 @@ const testUsers = [
         genreStats: { "클래식": 28, "드라마": 18 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "social_reviewer", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "social_reviewer", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -228,7 +228,7 @@ const testUsers = [
         genreStats: { "범죄": 32, "스릴러": 20 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_fantasy", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_fantasy", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -245,7 +245,7 @@ const testUsers = [
         genreStats: { "힐링": 22, "애니": 18 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "7days_attendance", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "7days_attendance", progress: 7, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -262,7 +262,7 @@ const testUsers = [
         genreStats: { "한국영화": 18, "일본애니": 15 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "social_taste_sharer", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "social_taste_sharer", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
   {
@@ -279,7 +279,7 @@ const testUsers = [
         genreStats: { "액션": 20, "SF": 15, "애니": 12 }, moodStats: {},
       },
       community: { followers: [], following: [], reviews: [], feeds: [] },
-      bages: { equippedBadges: null, earnedBadges: [] }, alarm: [],
+      badges: { equippedBadges: "genre_documentary", earnedBadges: [{ id: "first_streaming", progress: 1, isComplete: true }, { id: "genre_documentary", progress: 1, isComplete: true }] }, alarm: [],
     }],
   },
 ];
