@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useCommunityEnabled } from "@/data/maturityFilter";
 import ConnectHero from "@/components/connect/ConnectHero";
+import ConnectWatchParties from "@/components/connect/ConnectWatchParties";
 import ConnectFollowingUsers from "@/components/connect/ConnectFollowingUsers";
 import ConnectFollowingPlaylists from "@/components/connect/ConnectFollowingPlaylists";
 import ConnectFriendReactions from "@/components/connect/ConnectFriendReactions";
@@ -79,6 +80,9 @@ export default function ConnectPage() {
     <div className="main-page-wrap">
       <ConnectHero />
 
+      {/* 같이보기: 지금 열린 파티 목록 */}
+      <ConnectWatchParties />
+
       {/* 소셜: 팔로우하는 유저 */}
       <ConnectFollowingUsers />
 
@@ -93,7 +97,7 @@ export default function ConnectPage() {
 
       {/* OTT: 팔로우 취향 저격 (트렌딩 기반) */}
       {trendingItems.length > 0 ? (
-        <ThemeRow title="팔로우 취향 저격 작품" items={trendingItems} href="/category" />
+        <ThemeRow title="취향 저격 작품" items={trendingItems} href="/category" />
       ) : (
         <ThemeRowSkeleton />
       )}

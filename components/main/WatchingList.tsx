@@ -80,7 +80,7 @@ export default function WatchingList() {
                         return (
                             <SwiperSlide key={key}>
                                 <div className="watching-card-wrap">
-                                    <Link href={`/detail/${item.mediaType}/${item.id}?play=1`} className="watching-card">
+                                    <Link href={`/watch/${item.mediaType}/${item.id}`} className="watching-card">
                                         <div className="watching-thumb">
                                             <img
                                                 src={item.backdrop_path

@@ -289,7 +289,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const { user, currentProfile, updateUserLike, onInitAuth, onUpdateProfile } =
     useAuthStore();
 
-  const [showPopup, setShowPopup] = useState(false);
+  // ?play=1 로 진입(메인/커넥트의 '재생하기')하면 첫 렌더부터 풀스크린 플레이어 오버레이를
+  // 띄워 상세 콘텐츠가 잠깐 보이는 것을 막는다. (영상 로딩 중에는 검은 화면 + 스피너)
+  const [showPopup, setShowPopup] = useState(shouldAutoPlay);
   const [popupVideoKey, setPopupVideoKey] = useState<string | null>(null);
   const [showAdultModal, setShowAdultModal] = useState(false);
   const [selectSeason, setSelectSeason] = useState(1);
@@ -623,7 +625,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         {
           id: "review" as const,
           label: "리뷰",
-          meta: isTv ? "12.8k" : "4.2k",
+          meta: filteredReviews.length ? `${filteredReviews.length}` : undefined,
         },
       ]
       : []),
@@ -2277,6 +2279,22 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               </article>
             );
           })}
+
+          {filteredReviews.length === 0 && (
+            <div
+              style={{
+                padding: "44px 0",
+                textAlign: "center",
+                color: "#888",
+                fontSize: 14,
+                border: "1px dashed #2a2a35",
+                borderRadius: 8,
+                background: "rgba(255,255,255,0.015)",
+              }}
+            >
+              등록된 리뷰가 없습니다.
+            </div>
+          )}
         </div>
 
         {totalReviewPages > 1 && (

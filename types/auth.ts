@@ -150,4 +150,6 @@ export interface UserDocument {
   planType: string;
   payment: PayInfo;
   profile: UserProfile[];
+  points?: number; // (미사용) 과거 적립 잔액 필드
+  pointsUsed?: number; // 굿즈샵에서 교환에 사용한 누적 포인트 (적립은 뱃지에서 산출)
 }

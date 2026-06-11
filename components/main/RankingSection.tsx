@@ -324,7 +324,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
 
                     <span className="ranking-detail-actions">
                       <Link
-                        href={`/detail/${movie.media_type ?? "movie"}/${movie.id}?play=1`}
+                        href={`/watch/${movie.media_type ?? "movie"}/${movie.id}`}
                         className="ranking-btn-play"
                         onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                       >
