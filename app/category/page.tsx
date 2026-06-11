@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -9,8 +10,16 @@ import PosterGridSkeleton from "@/components/common/PosterGridSkeleton";
 import CustomSelect from "@/components/common/CustomSelect";
 import { getTmdbLang } from "@/lib/i18n";
 import { isHidden } from "@/data/hiddenContent";
-import { excludedSlugsToIdSet, isGenreExcluded, useExcludedGenres } from "@/data/excludedGenres";
+import {
+  excludedSlugsToIdSet,
+  isGenreExcluded,
+  useExcludedGenres,
+} from "@/data/excludedGenres";
 import "../scss/category.scss";
+
+const BackButton = dynamic(() => import("@/components/common/BackButton"), {
+  ssr: false,
+});
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const DISCOVER_FETCH_BATCH_SIZE = 5;
@@ -300,7 +309,10 @@ function CategoryPageContent() {
     initialSelected.country.length > 0 ? "country" : "genreMood",
   );
   const excludedGenres = useExcludedGenres();
-  const excludedIds = useMemo(() => excludedSlugsToIdSet(excludedGenres), [excludedGenres]);
+  const excludedIds = useMemo(
+    () => excludedSlugsToIdSet(excludedGenres),
+    [excludedGenres],
+  );
   const [selected, setSelected] = useState(initialSelected);
   const [selectedOrder, setSelectedOrder] =
     useState<SelectedFilterKey[]>(initialSelectedOrder);
@@ -439,18 +451,19 @@ function CategoryPageContent() {
   };
 
   const normalizeResults = (results: TmdbListItem[]): MediaItem[] =>
-    (results || []).map((item) => ({
-      id: item.id,
-      title: item.title || item.name || "",
-      poster_path: item.poster_path ?? null,
-      vote_average: item.vote_average ?? 0,
-      release_date: item.release_date,
-      first_air_date: item.first_air_date,
-      backdrop_path: item.backdrop_path ?? null,
-      overview: item.overview,
-      genre_ids: item.genre_ids ?? [],
-      media_type: mediaType,
-    }))
+    (results || [])
+      .map((item) => ({
+        id: item.id,
+        title: item.title || item.name || "",
+        poster_path: item.poster_path ?? null,
+        vote_average: item.vote_average ?? 0,
+        release_date: item.release_date,
+        first_air_date: item.first_air_date,
+        backdrop_path: item.backdrop_path ?? null,
+        overview: item.overview,
+        genre_ids: item.genre_ids ?? [],
+        media_type: mediaType,
+      }))
       .filter((item) => !isHidden(item.id, item.media_type))
       .filter((item) => !isGenreExcluded(item.genre_ids, excludedIds));
 
@@ -596,25 +609,28 @@ function CategoryPageContent() {
   ): SelectedFilterOption => {
     const merged: Record<string, string> = {};
     options.forEach((opt) => {
-      Object.entries(getOptionQuery(opt, mediaType)).forEach(
-        ([key, value]) => {
-          if (key.endsWith(".gte")) {
-            merged[key] =
-              merged[key] !== undefined
-                ? String(Math.max(Number(merged[key]), Number(value)))
-                : value;
-          } else if (key.endsWith(".lte")) {
-            merged[key] =
-              merged[key] !== undefined
-                ? String(Math.min(Number(merged[key]), Number(value)))
-                : value;
-          } else {
-            merged[key] = value;
-          }
-        },
-      );
+      Object.entries(getOptionQuery(opt, mediaType)).forEach(([key, value]) => {
+        if (key.endsWith(".gte")) {
+          merged[key] =
+            merged[key] !== undefined
+              ? String(Math.max(Number(merged[key]), Number(value)))
+              : value;
+        } else if (key.endsWith(".lte")) {
+          merged[key] =
+            merged[key] !== undefined
+              ? String(Math.min(Number(merged[key]), Number(value)))
+              : value;
+        } else {
+          merged[key] = value;
+        }
+      });
     });
-    return { id: "__merged_curation__", label: "", query: merged, group: "curation" };
+    return {
+      id: "__merged_curation__",
+      label: "",
+      query: merged,
+      group: "curation",
+    };
   };
 
   const fetchCategoryBatch = async (
@@ -680,6 +696,10 @@ function CategoryPageContent() {
   return (
     <div className="category-catalog-page">
       <div className="category-shell">
+        <div className="category-back-wrap">
+          <BackButton fallback="/" />
+        </div>
+
         <div className="category-topbar">
           <h1>큐레이션</h1>
         </div>
@@ -819,7 +839,11 @@ function CategoryPageContent() {
                       title={item.title}
                       posterPath={item.poster_path}
                       voteAverage={item.vote_average}
-                      year={(item.release_date || item.first_air_date || "").slice(0, 4)}
+                      year={(
+                        item.release_date ||
+                        item.first_air_date ||
+                        ""
+                      ).slice(0, 4)}
                       backdropPath={item.backdrop_path}
                       overview={item.overview}
                       genreIds={item.genre_ids}
