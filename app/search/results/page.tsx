@@ -12,6 +12,7 @@ import {
   fetchTrendingMedia,
   type TrendingMediaItem,
 } from "@/lib/trendingContent";
+import PosterGridSkeleton from "@/components/common/PosterGridSkeleton";
 import TrendingVideoSection from "@/components/search/TrendingVideoSection";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { useMaturityFiltered } from "@/data/maturityFilter";
@@ -647,7 +648,7 @@ function SearchResultsContent() {
         </div>
 
         {loading ? (
-          <div className="loading">검색 중...</div>
+          <PosterGridSkeleton />
         ) : errorMessage ? (
           <div className="empty">{errorMessage}</div>
         ) : visibleItems.length > 0 ? (

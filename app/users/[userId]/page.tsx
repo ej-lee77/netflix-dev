@@ -287,7 +287,38 @@ export default function UserDetailPage() {
       <div className="mypage user-detail-page">
         <div className="inner">
           <BackButton fallback="/friends" />
-          <p style={{ padding: "40px 0", opacity: 0.6 }}>불러오는 중...</p>
+          <div className="profile-summary user-detail-skeleton">
+            <div className="profile-avatar user-detail-skeleton__avatar" />
+            <div className="profile-info">
+              <div className="user-detail-skeleton__line user-detail-skeleton__line--name" />
+              <div className="user-detail-skeleton__button" />
+            </div>
+            <div className="profile-stats">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div className="stat user-detail-skeleton__stat" key={index}>
+                  <div className="user-detail-skeleton__line user-detail-skeleton__line--value" />
+                  <div className="user-detail-skeleton__line user-detail-skeleton__line--label" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <section className="section-block user-detail-skeleton__section">
+            <div className="section-h">
+              <div className="user-detail-skeleton__line user-detail-skeleton__line--heading" />
+            </div>
+            <div className="udp-playlist-row">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div className="udp-playlist-card user-detail-skeleton__playlist" key={index}>
+                  <div className="udp-collage" />
+                  <div className="udp-playlist-meta">
+                    <div className="user-detail-skeleton__line" />
+                    <div className="user-detail-skeleton__line user-detail-skeleton__line--short" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     );
