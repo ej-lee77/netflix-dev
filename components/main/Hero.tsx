@@ -334,7 +334,7 @@ export default function Hero() {
   const currentVideoKeyRef = useRef("");
   const itemsRef = useRef<HeroItem[]>([]);
   // 모바일(≤600px) 여부: 자동 전환은 모바일에서만 동작
-  const [isMobile, setIsMobile] = useState(false);
+  const [isCompactHero, setIsCompactHero] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const mouseStartX = useRef<number | null>(null);
@@ -559,15 +559,15 @@ export default function Hero() {
 
   // 모바일 여부 감지 (SCSS mobile 브레이크포인트 600px 와 동일 기준)
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 600px)");
-    const update = () => setIsMobile(mq.matches);
+    const mq = window.matchMedia("(max-width: 1024px)");
+    const update = () => setIsCompactHero(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
-    if (!isMobile || items.length < 2) return;
+    if (!isCompactHero || items.length < 2) return;
     const timer = window.setInterval(() => {
       setSlideDirection("left");
       setActiveIndex((prev) => {
@@ -577,7 +577,7 @@ export default function Hero() {
       });
     }, 8000);
     return () => window.clearInterval(timer);
-  }, [isMobile, items.length, activeIndex]);
+  }, [isCompactHero, items.length, activeIndex]);
 
 
 
@@ -693,7 +693,7 @@ export default function Hero() {
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
   const activeMediaType = activeItem.media_type ?? "movie";
-  const hasPreviewVideo = !isMobile && autoplayPreview && (previousVideoKey || currentVideoKey);
+  const hasPreviewVideo = !isCompactHero && autoplayPreview && (previousVideoKey || currentVideoKey);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
     `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
@@ -725,7 +725,7 @@ export default function Hero() {
         className={`hero-backdrop${hasPreviewVideo ? "" : " visible"} hero-slide-${slideDirection}`}
         style={{ backgroundImage: `url(${activeBackdrop})` }}
       />
-      {isMobile && (
+      {isCompactHero && (
         <button
           className="hero-mobile-tap"
           type="button"
@@ -828,7 +828,7 @@ export default function Hero() {
           )}
         </div>
         <p className="hero-desc">{activeItem.overview}</p>
-        {!isMobile && (
+        {!isCompactHero && (
           <div className="hero-btns">
             <button
               className="btn-play"
