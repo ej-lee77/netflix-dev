@@ -8,7 +8,7 @@ import {
   parseVideoId,
 } from "@/types/feedData";
 import { FeedComment } from "@/types/community";
-import type { FeedActivity } from "@/types/auth";
+import type { BadgeList, FeedActivity } from "@/types/auth";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   addDoc,
@@ -53,6 +53,7 @@ export interface FeedView extends FeedReview {
   feedId: string;
   author: string;
   authorImage?: string;
+  authorBadgeIds: string[];
   isMine: boolean;
   isFollowing: boolean;
   mediaId: number;
@@ -74,6 +75,7 @@ type UserProfileRecord = {
   id?: number;
   nickname?: string;
   imgUrl?: string;
+  badges?: BadgeList;
   community?: {
     feeds?: FeedActivity[];
     following?: string[];
@@ -94,6 +96,10 @@ const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const mediaCache = new Map<string, MediaDetail>();
 const authorCache = new Map<string, string>();
 const authorImageCache = new Map<string, string>();
+const authorProfileCache = new Map<
+  string,
+  Promise<UserProfileRecord | undefined>
+>();
 
 const readString = (data: FirestoreRecord, key: string, fallback = "") => {
   const value = data[key];
@@ -215,6 +221,36 @@ const safelySyncProfileFeedActivity = async (
   }
 };
 
+const getAuthorProfile = async (userId: string, profileId?: number) => {
+  const authorCacheKey = profileId ? `${userId}:${profileId}` : userId;
+  const { user, currentProfile } = useAuthStore.getState();
+  const currentUserId =
+    user?.userId ||
+    (user as { uid?: string } | null)?.uid ||
+    auth.currentUser?.uid;
+
+  if (
+    currentUserId === userId &&
+    currentProfile &&
+    (!profileId || profileId === currentProfile.id)
+  ) {
+    return currentProfile as UserProfileRecord;
+  }
+
+  if (!authorProfileCache.has(authorCacheKey)) {
+    authorProfileCache.set(
+      authorCacheKey,
+      getCurrentProfiles(userId).then(
+        (profileData) =>
+          profileData?.profiles.find((item) => item.id === profileId) ||
+          profileData?.profiles[0],
+      ),
+    );
+  }
+
+  return authorProfileCache.get(authorCacheKey);
+};
+
 const getAuthorName = async (userId: string, profileId?: number) => {
   if (SEED_AUTHOR_NAMES[userId]) return SEED_AUTHOR_NAMES[userId];
   const authorCacheKey = profileId ? `${userId}:${profileId}` : userId;
@@ -228,8 +264,7 @@ const getAuthorName = async (userId: string, profileId?: number) => {
   }
 
   try {
-    const profileData = await getCurrentProfiles(userId);
-    const profile = profileData?.profiles.find((item) => item.id === profileId) || profileData?.profiles[0];
+    const profile = await getAuthorProfile(userId, profileId);
     const author = profile?.nickname || "익명";
     authorCache.set(authorCacheKey, author);
     return author;
@@ -251,13 +286,34 @@ const getAuthorImage = async (userId: string, profileId?: number) => {
   }
 
   try {
-    const profileData = await getCurrentProfiles(userId);
-    const profile = profileData?.profiles.find((item) => item.id === profileId) || profileData?.profiles[0];
+    const profile = await getAuthorProfile(userId, profileId);
     const authorImage = profile?.imgUrl || "";
     authorImageCache.set(authorCacheKey, authorImage);
     return authorImage;
   } catch {
     return "";
+  }
+};
+
+const getAuthorBadgeIds = async (userId: string, profileId?: number) => {
+  if (SEED_AUTHOR_NAMES[userId]) return [];
+
+  try {
+    const profile = await getAuthorProfile(userId, profileId);
+    const completedBadgeIds =
+      profile?.badges?.earnedBadges
+        ?.filter((badge) => badge.isComplete)
+        .map((badge) => badge.id) ?? [];
+    const equippedBadgeId = profile?.badges?.equippedBadges;
+
+    return [
+      ...(equippedBadgeId && completedBadgeIds.includes(equippedBadgeId)
+        ? [equippedBadgeId]
+        : []),
+      ...completedBadgeIds.filter((badgeId) => badgeId !== equippedBadgeId),
+    ].slice(0, 3);
+  } catch {
+    return [];
   }
 };
 
@@ -365,12 +421,18 @@ const buildFeedView = async (
   const likedUserIds = review.likedUserIds || [];
   const currentProfileId = useAuthStore.getState().currentProfile?.id;
   const currentActorId = currentUserId && currentProfileId ? `${currentUserId}:${currentProfileId}` : currentUserId;
+  const [author, authorImage, authorBadgeIds] = await Promise.all([
+    getAuthorName(review.userId, review.profileId),
+    getAuthorImage(review.userId, review.profileId),
+    getAuthorBadgeIds(review.userId, review.profileId),
+  ]);
 
   return {
     ...review,
     feedId: review.feedId || "",
-    author: await getAuthorName(review.userId, review.profileId),
-    authorImage: await getAuthorImage(review.userId, review.profileId),
+    author,
+    authorImage,
+    authorBadgeIds,
     isMine: Boolean(
       currentUserId &&
       review.userId === currentUserId &&

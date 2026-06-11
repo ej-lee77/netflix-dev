@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { showToast } from "@/store/useToastStore";
 import { auth } from "@/firebase/firebase";
+import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
 
 interface FeedReviewCardProps {
   review: FeedView;
@@ -438,7 +439,10 @@ export default function FeedReviewCard({
           )}
         </Link>
         <div className="post-meta">
-          <h3>{review.author}</h3>
+          <h3>
+            {review.author}
+            <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
+          </h3>
           <div className="post-info">
             <span className="time">{getRelativeTime(review.createdAt)}</span>
             {!review.isPublic && <span className="private-tag">비공개</span>}
@@ -519,7 +523,11 @@ export default function FeedReviewCard({
         </div>
       </div>
 
-      <div className="post-actions feed-card-layer">
+      <div
+        className={`post-actions feed-card-layer ${
+          showOwnerActions ? "has-owner-actions" : ""
+        }`}
+      >
         <button
           type="button"
           className={`action ${review.liked ? "liked" : ""}`}

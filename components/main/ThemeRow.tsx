@@ -18,7 +18,7 @@ import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { filterHidden } from "@/data/hiddenContent";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
 import { useAuthStore } from "@/store/useAuthStore";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
@@ -56,10 +56,10 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
   const t = useT();
   const router = useRouter();
   const excludedGenres = useExcludedGenres();
-  const maturityCeiling = useMaturityCeiling();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   const currentProfile = useAuthStore((state) => state.currentProfile);
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
-  const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
+  const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos } = useMovieStore();
   const items = filterHidden(
     filterByMaturity(
       filterByExcludedGenres(rawItems, excludedGenres),
@@ -90,10 +90,9 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
     const fetchVideo = item.mediaType === "movie"
       ? () => onFetchVideo(item.id)
       : () => onFetchTvVideos(item.id);
-    await Promise.all([
-      autoplayPreview ? fetchVideo() : Promise.resolve(),
-      onFetchCertification(item.id, item.mediaType),
-    ]);
+    if (autoplayPreview) {
+      await fetchVideo();
+    }
   };
 
   const handleMouseLeave = () => {
@@ -122,6 +121,7 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
           spaceBetween={12}
           slidesPerView={2.5}
           breakpoints={{
+            0: { slidesPerView: 3.3 },
             640: { slidesPerView: 3.5 },
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
@@ -159,7 +159,7 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
                       fill
-                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
+                      sizes="(max-width: 640px) 31vw, (max-width: 1024px) 28vw, 12vw"
                     />
                     {showRank && (
                       <span className="theme-rank-num" aria-hidden="true">
