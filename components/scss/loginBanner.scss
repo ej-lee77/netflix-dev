@@ -3,7 +3,8 @@
 .login-banner {
   position: fixed;
   // 헤더(60px) + 사이드nav(60px) 고려해서 왼쪽 패딩 처리
-  left: g.$main-menu-width;
+  // 였으나 그냥 풀로 채움
+  left: 0;
   right: 0;
   bottom: 0;
   z-index: 100;
