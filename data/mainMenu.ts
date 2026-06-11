@@ -41,6 +41,11 @@ export const mainMenus: mainMenu[] = [
     imgUrl: "/images/header/menu/animation.svg",
     path: "/category?type=animation",
   },
+  {
+    title: "굿즈샵",
+    imgUrl: "/images/header/menu/shop.svg",
+    path: "/shop",
+  },
   // {
   //     title: "커스텀",
   //     imgUrl: "/images/header/menu/custom.svg",

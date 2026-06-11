@@ -9,7 +9,6 @@ import type { Swiper as SwiperType } from "swiper";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
 import FollowFriendsModal from "./FollowFriendsModal";
-import RepBadge from "@/components/common/RepBadge";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -135,7 +134,6 @@ export default function ConnectFollowingUsers() {
                     )}
                   </span>
                   <strong>{user.nickname}</strong>
-                  <RepBadge badge={user.badge} size="sm" className="connect-following-users__rep-badge" />
                 </button>
               </SwiperSlide>
             );

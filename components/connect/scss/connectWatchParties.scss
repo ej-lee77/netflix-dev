@@ -1,0 +1,111 @@
+@use "../../../app/globals.scss" as g;
+
+.connect-watch-parties {
+  margin-top: 8px;
+}
+
+.cwp-list {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+.cwp-list::-webkit-scrollbar {
+  height: 6px;
+}
+.cwp-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+}
+
+.cwp-card {
+  flex: 0 0 248px;
+  width: 248px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.cwp-card:hover {
+  border-color: rgba(229, 9, 20, 0.5);
+  transform: translateY(-2px);
+}
+
+.cwp-thumb {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  background-color: #1a1a1a;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.cwp-live {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(229, 9, 20, 0.92);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+.cwp-count {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.cwp-body {
+  padding: 12px 14px 14px;
+}
+.cwp-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cwp-host {
+  font-size: 12px;
+  color: #9a9a9a;
+  margin: 0 0 12px;
+}
+.cwp-join {
+  width: 100%;
+  background: #e50914;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cwp-join:hover {
+  background: #ff4d57;
+}
+
+@include g.respond(mobile) {
+  .cwp-card {
+    flex-basis: 200px;
+    width: 200px;
+  }
+  .cwp-thumb {
+    height: 116px;
+  }
+}
