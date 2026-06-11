@@ -11,7 +11,7 @@ export default function FeedAuthorBadges({
   badgeIds = [],
 }: FeedAuthorBadgesProps) {
   const badges = badgeIds
-    .slice(0, 3)
+    .slice(0, 1)
     .map((badgeId) => badgeMap.get(badgeId))
     .filter((badge) => badge !== undefined);
 
@@ -23,17 +23,15 @@ export default function FeedAuthorBadges({
         <span
           key={badge.id}
           className="feed-author-badge-item"
-          tabIndex={0}
-          aria-label={badge.title}
-          data-tooltip={badge.title}
         >
           <Image
             className="feed-author-badge"
             src={badge.imgUrl}
             alt={`${badge.name} 뱃지`}
-            width={40}
-            height={40}
+            width={18}
+            height={18}
           />
+          <span className="feed-author-badge-name">{badge.name}</span>
         </span>
       ))}
     </span>
