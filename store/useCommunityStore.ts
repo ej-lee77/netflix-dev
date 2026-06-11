@@ -95,8 +95,32 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
         const sortedReviews = reviewList.sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        
-        set({ reviews: sortedReviews });
+
+        // 작성자별 대표 칭호(장착 뱃지) 부착: userId 문서를 조회해 profileId 별 equippedBadges 매핑
+        try {
+          const uniqueUserIds = Array.from(
+            new Set(sortedReviews.map((r) => r.userId).filter(Boolean))
+          ) as string[];
+          const userSnaps = await Promise.all(
+            uniqueUserIds.map((uid) => getDoc(doc(db, "users", uid)))
+          );
+          const badgeByKey = new Map<string, string>();
+          userSnaps.forEach((snap, i) => {
+            if (!snap.exists()) return;
+            const profiles = (snap.data().profile ?? []) as Array<{ id: number; badges?: BadgeList }>;
+            profiles.forEach((p) => {
+              badgeByKey.set(`${uniqueUserIds[i]}:${p.id}`, p.badges?.equippedBadges ?? "");
+            });
+          });
+          const reviewsWithBadge = sortedReviews.map((r) => ({
+            ...r,
+            equippedBadge: r.userId ? badgeByKey.get(`${r.userId}:${r.profileId}`) ?? "" : "",
+          }));
+          set({ reviews: reviewsWithBadge });
+        } catch {
+          // 칭호 부착 실패해도 리뷰 자체는 그대로 노출
+          set({ reviews: sortedReviews });
+        }
       } else {
         // 리뷰가 없는 경우 빈 배열로 상태 초기화
         set({ reviews: [] });

@@ -245,41 +245,58 @@
 }
 @include g.respond(mobile) {
   // 사이드바 숨김 → 전체 너비 사용
+  // 카드 디자인은 데스크탑과 동일한 가로형 레이아웃
+  /* 섹션 간격 통일 (위 40px, 아래 0) */
+  .connect-friend-reactions { margin: 32px 0 0; }
   .connect-friend-reactions__inner { width: 100vw; }
+
+  /* 전체보기 버튼: 다른 섹션과 동일하게 오른쪽 20px 라인에 맞춤 */
+  .connect-friend-reactions .section-header {
+    padding-right: 0;
+
+    .see-all {
+      margin-right: 8px; /* inner 패딩 12px + 8px = 화면 끝에서 20px (TOP10과 동일) */
+    }
+  }
+
   .connect-friend-reactions__slide,
-  .connect-friend-reactions__card {
-    width: calc((100vw - 98px) / 3.3);
-    max-width: none;
-    min-height: 0;
-    grid-template-columns: 1fr;
-  }
-
+  .connect-friend-reactions__card,
   .connect-friend-reactions__list .connect-friend-reactions__slide {
-    width: calc((100vw - 98px) / 3.3);
+    width: calc((100vw - 52px) / 1.5);
+    max-width: none;
   }
 
-  .connect-friend-reactions__poster {
-    aspect-ratio: 2 / 3;
+  .connect-friend-reactions__card {
+    grid-template-columns: 80px 1fr;
+    min-height: 0;
   }
 
   .connect-friend-reactions__content {
     gap: 5px;
-    padding: 8px;
+    padding: 12px 12px 12px 14px;
   }
 
-  .connect-friend-reactions__user,
-  .connect-friend-reactions__review {
-    display: none;
+  .connect-friend-reactions__avatar {
+    width: 22px;
+    height: 22px;
+  }
+
+  .connect-friend-reactions__user-info {
+    strong { font-size: 0.72rem; }
+    span { font-size: 0.62rem; }
   }
 
   .connect-friend-reactions__predicted {
-    font-size: 0.64rem;
+    font-size: 0.7rem;
   }
 
   .connect-friend-reactions h3 {
-    font-size: 0.68rem;
-    line-height: 1.25;
+    font-size: 0.84rem;
+    -webkit-line-clamp: 1;
   }
 
-  .connect-friend-reactions .section-header { padding-right: 12px; }
+  .connect-friend-reactions__review {
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
 }

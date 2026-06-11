@@ -236,10 +236,19 @@
   .connect-following-users__item { width: 86px; }
 }
 @include g.respond(mobile) {
+  /* 섹션 간격 통일 (위 40px, 아래 0) */
+  .connect-following-users { margin: 32px 0 0; }
+
   .connect-following-users__slide,
   .connect-following-users__item { width: 72px; }
   .connect-following-users__avatar-wrap,
   .connect-following-users__avatar { width: 72px; height: 72px; }
   .connect-following-users__skeleton-item { width: 72px; }
   .connect-following-users__skeleton-avatar { width: 72px; height: 72px; }
+}
+
+/* 대표 칭호 칩 (팔로잉 유저 슬라이드) */
+.connect-following-users__rep-badge {
+  margin-top: 5px;
+  max-width: 100%;
 }

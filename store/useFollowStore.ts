@@ -12,6 +12,7 @@ export interface FollowUser {
   userId: string;
   nickname: string;
   imgUrl: string;
+  badge?: string; // 장착 뱃지(대표 칭호) ID
 }
 
 export interface FollowingPlaylist {
@@ -301,7 +302,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
     const findDummy = (id: string) => dummyPlaylists.find((p) => p.userId === id);
     const dummyUsers: FollowUser[] = dummyIds.map((id) => {
       const d = findDummy(id);
-      return { userId: id, nickname: d?.nickname ?? "유저", imgUrl: d?.posters?.[0] ?? "" };
+      return { userId: id, nickname: d?.nickname ?? "유저", imgUrl: d?.posters?.[0] ?? "", badge: d?.badge ?? "" };
     });
     const dummyPls = dummyIds.reduce<FollowingPlaylist[]>((acc, id) => {
       const d = findDummy(id);
@@ -344,6 +345,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
         userId,
         nickname: firstProfile.nickname ?? "유저",
         imgUrl: firstProfile.imgUrl ?? "",
+        badge: firstProfile.badges?.equippedBadges ?? "",
       }));
       set({ followingUsers: [...dummyUsers, ...users] });
 

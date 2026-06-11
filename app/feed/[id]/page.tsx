@@ -8,7 +8,12 @@ import BackButton from "@/components/common/BackButton";
 import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
-import { getInitial, getPosterUrl, getRelativeTime } from "@/types/feedData";
+import {
+  getInitial,
+  getPosterUrl,
+  getRelativeTime,
+  parseFeedMediaMeta,
+} from "@/types/feedData";
 import "../../scss/feed.scss";
 import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
 
@@ -80,6 +85,7 @@ export default function FeedDetailPage() {
     () => feeds.find((item) => item.feedId === params.id) ?? null,
     [params.id, feeds],
   );
+  const mediaMeta = review ? parseFeedMediaMeta(review.mediaMeta) : null;
 
   useEffect(() => {
     void onHydrateFeeds();
@@ -205,23 +211,21 @@ export default function FeedDetailPage() {
                 getInitial(review.author)
               )}
             </Link>
-            <div className="post-meta">
-              <h3>
-                {review.author}
-                <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
-              </h3>
-              <div className="post-info">
-                <span className="time">
-                  {getRelativeTime(review.createdAt)}
-                </span>
-                {!review.isPublic && (
-                  <span className="private-tag">비공개</span>
-                )}
+            <div className="feed-meta-info">
+              <div className="post-meta">
+                <h3>
+                  {review.author}
+                  <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
+                </h3>
+                <div className="post-info">
+                  <span className="time">
+                    {getRelativeTime(review.createdAt)}
+                  </span>
+                  {!review.isPublic && (
+                    <span className="private-tag">비공개</span>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="detail-rating">
-              {renderRatingStars(review.rating)}
-              <em>{review.rating.toFixed(1)}</em>
             </div>
           </div>
 
@@ -238,8 +242,18 @@ export default function FeedDetailPage() {
               )}
             </Link>
             <div className="review-info">
-              <h4>{review.mediaTitle}</h4>
-              <p className="meta">{review.mediaMeta}</p>
+              <div className="review-media-copy">
+                <h4>{review.mediaTitle}</h4>
+                <p className="meta meta-primary">{mediaMeta?.primary}</p>
+                {mediaMeta?.average && (
+                  <p className="meta meta-average">{mediaMeta.average}</p>
+                )}
+                <div className="stars">
+                  <span className="stars-label">내 별점</span>
+                  {renderRatingStars(review.rating)}
+                  <em>{review.rating.toFixed(1)} / 5.0</em>
+                </div>
+              </div>
               <p className="review-text">{review.content}</p>
             </div>
           </div>

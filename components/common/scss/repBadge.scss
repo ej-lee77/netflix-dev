@@ -1,0 +1,46 @@
+@use "@/app/globals" as g;
+
+// 대표 칭호 칩 — 피드 좌측 카드(.feed-profile-badge)와 동일 톤(빨강 알약 + 아이콘 + 이름)
+.rep-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid rgba(229, 9, 20, 0.36);
+  border-radius: 999px;
+  background: rgba(229, 9, 20, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: g.$text-12;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: middle;
+
+  &__icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    object-fit: contain;
+  }
+
+  &__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // 작은 칩(목록/카드용)
+  &--sm {
+    gap: 5px;
+    padding: 3px 8px;
+    font-size: 11px;
+
+    .rep-badge__icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}

@@ -274,42 +274,47 @@
 }
 @include g.respond(mobile) {
   // 사이드바 숨김 → 전체 너비 사용
+  /* 섹션 간격 통일 (위 40px, 아래 0) */
+  .connect-following-playlists { margin: 32px 0 0; }
   .connect-following-playlists__inner { width: 100vw; }
   .connect-following-playlists__slide,
   .connect-following-playlists__card { width: 190px; }
   .connect-following-playlists__card { min-height: 320px; }
   .connect-following-playlists__poster-grid { height: 225px; img { height: 108px; } }
+  /* 카드 2.5개 노출 */
   .connect-following-playlists__card {
-    width: calc((100vw - 98px) / 3.3);
+    width: calc((100vw - 98px) / 2.3);
     min-height: 0;
     padding: 8px;
   }
 
   .connect-following-playlists__list .connect-following-playlists__slide {
-    width: calc((100vw - 98px) / 3.3);
+    width: calc((100vw - 98px) / 2.3);
   }
 
   .connect-following-playlists__poster-grid {
     gap: 3px;
-    height: calc((((100vw - 98px) / 3.3) - 16px) * 1.1);
+    height: calc((((100vw - 98px) / 2.3) - 16px) * 1.1);
 
     img {
-      height: calc(((((100vw - 98px) / 3.3) - 16px) * 1.1 - 3px) / 2);
+      height: calc(((((100vw - 98px) / 2.3) - 16px) * 1.1 - 3px) / 2);
     }
   }
 
   .connect-following-playlists__meta {
     gap: 5px;
-    padding-top: 8px;
+    padding: 12px 0 2px; /* 텍스트 위아래 여백 (아래는 카드 패딩 8px과 합산) */
   }
 
   .connect-following-playlists__badge {
     padding: 4px 5px;
     font-size: 0.6rem;
+    margin-left: 3px; /* 오른쪽으로 3px 이동 */
   }
 
   .connect-following-playlists__title {
     padding-right: 0;
+    margin-left: 3px; /* 뱃지와 왼쪽 정렬 */
     font-size: 0.68rem;
     line-height: 1.25;
     white-space: normal;

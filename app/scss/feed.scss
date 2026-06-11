@@ -160,7 +160,13 @@
     }
   }
 
-  .feed-profile-card > strong {
+  .feed-profile-identity,
+  .feed-profile-identity__meta {
+    display: contents;
+  }
+
+  .feed-profile-card > strong,
+  .feed-profile-identity__meta > strong {
     display: block;
     overflow: hidden;
     margin-bottom: 8px;
@@ -459,11 +465,36 @@
         transform: translateY(-1px);
       }
     }
+
+    .feed-profile-nav__primary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+
+      a {
+        min-width: 0;
+        min-height: 58px;
+        flex-direction: column;
+        gap: 5px;
+        padding: 7px 3px;
+        border-color: rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        font-size: 10px;
+
+        span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+    }
+
     .feed-write-btn {
-      min-height: 46px;
+      min-height: 42px;
       align-items: center;
       justify-content: center;
-      margin-top: 4px;
+      gap: 6px;
+      margin-top: 0;
       border: 1px solid rgba(229, 9, 20, 0.95);
       border-radius: 6px;
       background: #e50914;
@@ -493,7 +524,7 @@
 
     .edit-profile-area {
       display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) 44px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
 
       a,
@@ -501,18 +532,9 @@
       button {
         min-width: 0;
         min-height: 42px;
+        gap: 6px;
         padding: 0 10px;
         white-space: nowrap;
-      }
-
-      .follow-more-btn {
-        width: 44px;
-        padding: 0;
-
-        svg {
-          width: 18px;
-          height: 18px;
-        }
       }
     }
   }
@@ -717,6 +739,28 @@
     flex-shrink: 0;
   }
 
+  .desktop-card-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: g.$w-color;
+
+    .rating-star {
+      font-size: 16px;
+    }
+
+    em {
+      color: g.$g-color;
+      font-size: g.$text-12;
+      font-style: normal;
+      font-weight: 700;
+    }
+  }
+
+  .mobile-card-rating {
+    display: none !important;
+  }
+
   .report-menu {
     position: relative;
   }
@@ -874,6 +918,10 @@
       flex: 1;
       min-width: 0;
 
+      .feed-review-media-copy {
+        min-width: 0;
+      }
+
       h4 {
         font-size: g.$text-14;
         font-weight: 700;
@@ -883,7 +931,12 @@
       .meta {
         font-size: g.$text-12;
         color: g.$g-color;
-        margin-bottom: 8px;
+        margin-bottom: 2px;
+        line-height: 1.45;
+      }
+
+      .meta-average {
+        margin-bottom: 7px;
       }
 
       .stars {
@@ -899,12 +952,19 @@
           letter-spacing: 0;
         }
       }
+
+      .stars-label {
+        color: g.$g-color;
+        font-size: g.$text-12;
+        white-space: nowrap;
+      }
     }
   }
 
   .review-text-wrap {
     position: relative;
     min-height: 0;
+    margin-top: 10px;
 
     &.spoiler-blurred {
       min-height: 96px;
@@ -938,6 +998,21 @@
     font-size: g.$text-13;
     line-height: 1.6;
     color: g.$w-color;
+  }
+
+  @media (min-width: 721px) {
+    .feed-post:not(.feed-detail-card) {
+      .feed-review-media-copy {
+        .meta {
+          display: inline;
+          margin: 0;
+        }
+
+        .meta-average::before {
+          content: " · ";
+        }
+      }
+    }
   }
 
   .spoiler-reveal-btn {
@@ -1895,15 +1970,135 @@
     .feed-page-head {
       align-items: stretch;
       flex-direction: column;
+
+      h1 {
+        margin-bottom: 6px;
+        font-size: 26px;
+        line-height: 1.25;
+      }
+
+      p {
+        max-width: 32rem;
+        font-size: g.$text-13;
+        line-height: 1.65;
+        overflow-wrap: break-word;
+        word-break: keep-all;
+      }
     }
 
     .feed-profile-card {
-      padding: 20px;
+      padding: 16px;
+    }
+
+    .feed-profile-card__eyebrow {
+      display: none;
+    }
+
+    .feed-profile-card--guest .feed-profile-card__eyebrow {
+      display: block;
+    }
+
+    .feed-profile-identity {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+    }
+
+    .feed-profile-identity__meta {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .feed-profile-card__avatar {
-      width: 92px;
-      height: 92px;
+      width: 76px;
+      height: 76px;
+      margin: 0;
+      font-size: g.$text-24;
+    }
+
+    .feed-profile-identity__meta > strong {
+      width: 100%;
+      margin-bottom: 6px;
+      font-size: g.$text-18;
+      text-align: left;
+    }
+
+    .feed-profile-badge {
+      max-width: 100%;
+      min-height: 26px;
+      justify-content: flex-start;
+      margin: 0 0 8px;
+      padding: 3px 8px;
+      font-size: 11px;
+
+      img {
+        width: 15px;
+        height: 15px;
+      }
+    }
+
+    .profile-meta-info {
+      justify-content: flex-start;
+      gap: 12px;
+      font-size: 11px;
+    }
+
+    .feed-profile-stats {
+      gap: 0;
+      margin: 16px 0 12px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+      div,
+      a {
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+
+        &:last-child {
+          border-right: 0;
+        }
+      }
+
+      b {
+        font-size: g.$text-16;
+      }
+
+      span {
+        margin-top: 4px;
+        font-size: 10px;
+      }
+    }
+
+    .feed-profile-taste-tags {
+      justify-content: flex-start;
+      margin-bottom: 14px;
+
+      span {
+        padding: 4px 7px;
+        font-size: 10px;
+      }
+    }
+
+    .feed-profile-nav {
+      gap: 10px;
+    }
+
+    .feed-profile-nav .edit-profile-area {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+
+      button {
+        min-height: 38px;
+        gap: 6px;
+        font-size: 11px;
+      }
+
+      .feed-write-btn {
+        min-height: 38px;
+        margin-top: 0;
+      }
     }
 
     .post-head {
@@ -1934,11 +2129,64 @@
       flex-direction: column;
     }
 
+    .desktop-card-rating {
+      display: none;
+    }
+
+    .mobile-card-rating {
+      display: flex !important;
+    }
+
     .review-body {
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      align-items: start;
+      gap: 0 12px;
+      padding: 14px 16px 18px;
 
       .thumb {
-        width: 120px;
+        grid-column: 1;
+        grid-row: 1;
+        width: 76px;
+
+        img {
+          border-radius: 6px;
+        }
+      }
+
+      .review-info {
+        display: contents;
+      }
+
+      .feed-detail-link {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: start;
+        min-width: 0;
+      }
+
+      .review-text-wrap {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin-top: 16px;
+      }
+
+      .review-text {
+        font-size: g.$text-14;
+        line-height: 1.65;
+      }
+
+      .stars {
+        gap: 5px;
+        margin: 7px 0 0;
+
+        .rating-star {
+          font-size: 15px;
+        }
+
+        em {
+          font-size: 11px;
+        }
       }
     }
 
@@ -1998,17 +2246,157 @@
     margin-bottom: 24px;
   }
 
+  .feed-meta-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 16px;
+  }
+
   .detail-rating {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-left: auto;
     color: g.$w-color;
+    flex-shrink: 0;
 
     em {
       color: #d8d8d8;
       font-size: g.$text-13;
       font-style: normal;
       font-weight: 800;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .feed-detail-card {
+      .post-head {
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+      }
+
+      .post-avatar {
+        width: 36px;
+        height: 36px;
+      }
+
+      .post-meta {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        gap: 6px;
+
+        h3 {
+          flex-shrink: 1;
+          min-width: 0;
+          margin-bottom: 0;
+          white-space: nowrap;
+        }
+
+        .post-info {
+          flex-shrink: 0;
+          gap: 6px;
+          white-space: nowrap;
+        }
+      }
+
+      .review-body {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        align-items: start;
+        gap: 0 12px;
+        padding: 14px 16px 18px;
+        border-top: 1px solid #2a2a2a;
+
+        .thumb {
+          grid-column: 1;
+          grid-row: 1;
+          width: 76px;
+
+          img {
+            border-radius: 6px;
+          }
+        }
+
+        .review-info {
+          display: contents;
+        }
+
+        .review-media-copy {
+          grid-column: 2;
+          grid-row: 1;
+          align-self: start;
+
+          h4 {
+            margin: 0 0 5px;
+            font-size: g.$text-14;
+            line-height: 1.35;
+          }
+
+          .meta {
+            margin: 0;
+            font-size: g.$text-12;
+            line-height: 1.5;
+          }
+
+          .meta-average {
+            margin-top: 2px;
+          }
+
+          .stars {
+            gap: 5px;
+            margin: 7px 0 0;
+
+            .rating-star {
+              font-size: 15px;
+            }
+
+            em {
+              font-size: 11px;
+            }
+          }
+        }
+
+        .review-text {
+          grid-column: 1 / -1;
+          grid-row: 2;
+          margin-top: 16px;
+          font-size: g.$text-14;
+          line-height: 1.65;
+        }
+      }
+    }
+
+    .feed-meta-info {
+      gap: 10px;
+    }
+
+    .detail-rating {
+      gap: 4px;
+
+      .rating-stars {
+        gap: 0;
+      }
+
+      .rating-star {
+        display: none;
+
+        &:first-child {
+          display: inline-block;
+          background: none;
+          color: #8a8a8a;
+          font-size: 16px;
+        }
+      }
+
+      em {
+        color: #aaa;
+        font-size: g.$text-14;
+        font-weight: 500;
+      }
     }
   }
 
@@ -2085,4 +2473,9 @@
     padding-left: 56px;
     padding-right: 16px;
   }
+}
+
+/* 피드 게시물 작성자 대표 칭호 칩 */
+.feed-author-rep-badge {
+  margin-top: 4px;
 }

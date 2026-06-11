@@ -59,8 +59,17 @@ export default function HeaderMenu() {
   const queryString = searchParams.toString();
   const currentUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
-  const isMenuActive = (menuPath: string) =>
-    menuPath.includes("?") ? currentUrl === menuPath : pathname === menuPath;
+  const isMenuActive = (menuPath: string) => {
+    const [targetPathname, targetQuery = ""] = menuPath.split("?");
+
+    if (targetPathname !== pathname) return false;
+    if (!targetQuery) return true;
+
+    const targetParams = new URLSearchParams(targetQuery);
+    return Array.from(targetParams.entries()).every(
+      ([key, value]) => searchParams.get(key) === value,
+    );
+  };
 
   useEffect(() => {
     setIsMounted(true); // 클라이언트에서만 실행
@@ -74,7 +83,7 @@ export default function HeaderMenu() {
     // 1. 마운트 전(서버)에는 무조건 기본 메뉴 반환 (Hydration 불일치 방지)
     if (!isMounted) {
       return DEFAULT_HEADER_MENU_PATHS.map((path) =>
-        allSelectablePool.find((m) => m.path === path)
+        allSelectablePool.find((m) => m.path === path),
       ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
     }
 
@@ -108,7 +117,7 @@ export default function HeaderMenu() {
     }
 
     return DEFAULT_HEADER_MENU_PATHS.map((path) =>
-      allSelectablePool.find((m) => m.path === path)
+      allSelectablePool.find((m) => m.path === path),
     ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
   }, [isMounted, currentProfile, liveMenuPaths, storageRevision]); // 의존성 추가
 
@@ -140,6 +149,9 @@ export default function HeaderMenu() {
     "/category?type=movie",
     "/category?type=tv",
     "/category?type=animation",
+    "/category?tab=movie",
+    "/category?tab=tv",
+    "/category?tab=animation",
   ]);
 
   const categoryChildren = dynamicMenus.filter(
@@ -163,7 +175,7 @@ export default function HeaderMenu() {
 
   const isCategoryActive = categoryParent
     ? isMenuActive(categoryParent.path) ||
-    categoryPanelMenus.some((menu) => isMenuActive(menu.path))
+      categoryPanelMenus.some((menu) => isMenuActive(menu.path))
     : false;
 
   return (
@@ -196,6 +208,9 @@ export default function HeaderMenu() {
               "/category?type=movie",
               "/category?type=tv",
               "/category?type=animation",
+              "/category?tab=movie",
+              "/category?tab=tv",
+              "/category?tab=animation",
             ].includes(menu.path);
 
             if (isCategoryChild && !isCategoryTopLevel) {
@@ -206,8 +221,9 @@ export default function HeaderMenu() {
               return (
                 <div
                   key={menu.path}
-                  className={`sb-icon sb-category-group ${isCategoryActive ? "active" : ""
-                    }`}
+                  className={`sb-icon sb-category-group ${
+                    isCategoryActive ? "active" : ""
+                  }`}
                 >
                   <Link href={menu.path}>
                     <Image
