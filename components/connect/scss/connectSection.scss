@@ -40,7 +40,8 @@
   .connect-section__inner {
     width: 100vw;
     margin-left: 0;
-    padding-left: 12px;
+    /* TOP10(ThemeRow)·섹션 타이틀과 동일한 20px 좌측 기준선으로 통일 */
+    padding-left: 20px;
     padding-right: 12px;
   }
 }
