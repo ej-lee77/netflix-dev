@@ -31,6 +31,10 @@ interface VideoPlayerProps {
   startPct?: number;
   /** 페이지 내 임베드 모드 (전체화면 고정 대신 부모 컨테이너를 채움) */
   embedded?: boolean;
+  /** 같이보기: 이 사용자가 직접 재생/정지/탐색했을 때 호출 (호스트가 즉시 브로드캐스트) */
+  onLocalControl?: (state: { positionPct: number; isPlaying: boolean }) => void;
+  /** 같이보기: 호스트가 보낸 재생 상태. ts가 바뀌면 그 위치/상태로 즉시 따라감 (참여자용) */
+  remoteControl?: { positionPct: number; isPlaying: boolean; ts: number } | null;
 }
 
 function formatTime(sec: number) {
@@ -49,6 +53,8 @@ export default function VideoPlayer({
   onSelectEpisode,
   startPct,
   embedded = false,
+  onLocalControl,
+  remoteControl,
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -66,6 +72,13 @@ export default function VideoPlayer({
   const seekToRef = useRef<(pct: number) => void>(() => {});
   onTimeUpdateRef.current = onTimeUpdate;
 
+  // 같이보기 동기화용
+  const applyingRemoteRef = useRef(false);
+  const lastRemoteTsRef = useRef(0);
+  const onLocalControlRef = useRef(onLocalControl);
+  onLocalControlRef.current = onLocalControl;
+  const playingRef = useRef(false);
+
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(80);
@@ -76,6 +89,9 @@ export default function VideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [episodesClosing, setEpisodesClosing] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSettings, setShowSettings] = useState(false);
+  playingRef.current = playing;
   const episodesCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showEpisodesRef = useRef(showEpisodes);
   showEpisodesRef.current = showEpisodes;
@@ -219,16 +235,51 @@ export default function VideoPlayer({
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
+  // 같이보기: 호스트가 보낸 재생 상태를 즉시 따라감 (참여자)
+  useEffect(() => {
+    if (!remoteControl) return;
+    if (remoteControl.ts === lastRemoteTsRef.current) return;
+    lastRemoteTsRef.current = remoteControl.ts;
+    const p = playerRef.current;
+    if (!p || typeof p.getDuration !== "function") return;
+    applyingRemoteRef.current = true;
+    const d = p.getDuration() || 0;
+    if (d > 0) {
+      const target = (remoteControl.positionPct / 100) * d;
+      const cur = p.getCurrentTime?.() ?? 0;
+      // 1.5초 이상 어긋날 때만 위치 보정 (불필요한 끊김 방지)
+      if (Math.abs(target - cur) > 1.5) {
+        p.seekTo?.(target, true);
+        setCurrentTime(target);
+      }
+    }
+    if (remoteControl.isPlaying) p.playVideo?.();
+    else p.pauseVideo?.();
+    const tid = setTimeout(() => { applyingRemoteRef.current = false; }, 800);
+    return () => clearTimeout(tid);
+  }, [remoteControl?.ts]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const triggerFeedback = (type: "play" | "pause") => {
     setFeedback(type);
     if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
     feedbackTimer.current = setTimeout(() => setFeedback(null), 600);
   };
 
+  const broadcastLocal = (isPlaying: boolean) => {
+    if (applyingRemoteRef.current) return;
+    const fn = onLocalControlRef.current;
+    if (!fn) return;
+    const p = playerRef.current;
+    const d = p?.getDuration?.() ?? duration;
+    const ct = p?.getCurrentTime?.() ?? currentTime;
+    const pct = d > 0 ? (ct / d) * 100 : 0;
+    fn({ positionPct: pct, isPlaying });
+  };
+
   const doTogglePlay = () => {
     if (!playerRef.current) return;
-    if (playing) { playerRef.current.pauseVideo?.(); triggerFeedback("pause"); }
-    else { playerRef.current.playVideo?.(); triggerFeedback("play"); }
+    if (playing) { playerRef.current.pauseVideo?.(); triggerFeedback("pause"); broadcastLocal(false); }
+    else { playerRef.current.playVideo?.(); triggerFeedback("play"); broadcastLocal(true); }
   };
 
   const doToggleMute = () => {
@@ -258,6 +309,7 @@ export default function VideoPlayer({
     const t = Math.max(0, Math.min(dur, cur + secs));
     p.seekTo?.(t, true);
     setCurrentTime(t);
+    broadcastLocal(playingRef.current);
   };
 
   const seekTo = (pct: number) => {
@@ -268,6 +320,7 @@ export default function VideoPlayer({
     const t = (pct / 100) * dur;
     p.seekTo?.(t, true);
     setCurrentTime(t);
+    broadcastLocal(playingRef.current);
   };
   seekToRef.current = seekTo;
 
@@ -442,6 +495,44 @@ export default function VideoPlayer({
                   </svg>
                 </button>
               )}
+
+              {/* 설정 (재생 속도) */}
+              <div className="vp-settings-wrap">
+                <button
+                  className={`vp-btn${showSettings ? " active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSettings((s) => !s);
+                    resetHideTimer();
+                  }}
+                  title="설정"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </button>
+                {showSettings && (
+                  <div className="vp-settings-menu" onClick={(e) => e.stopPropagation()}>
+                    <div className="vp-settings-title">재생 속도</div>
+                    {[0.5, 0.75, 1, 1.25, 1.5, 2].map((r) => (
+                      <button
+                        key={r}
+                        className={`vp-settings-item${playbackRate === r ? " active" : ""}`}
+                        onClick={() => {
+                          playerRef.current?.setPlaybackRate?.(r);
+                          setPlaybackRate(r);
+                          setShowSettings(false);
+                          resetHideTimer();
+                        }}
+                      >
+                        <span>{r === 1 ? "정상" : `${r}x`}</span>
+                        {playbackRate === r && <span className="vp-settings-check">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* 전체화면 */}
               <button className="vp-btn" onClick={doToggleFullscreen} title="전체화면 (F)">

@@ -48,7 +48,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const { onUpdateProgress } = usePlayListStore();
   const { user, currentProfile } = useAuthStore();
   const canUseConnect = useCommunityEnabled();
-  const { party, messages, createParty, subscribe, join, sendMessage, updatePlayback, leave } =
+  const { party, messages, createParty, subscribe, join, sendMessage, updatePlayback, updatePlaybackNow, leave } =
     useWatchPartyStore();
 
   const userId = user?.userId || (user as any)?.uid || "guest";
@@ -154,6 +154,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
       type,
       mediaId,
       title,
+      posterPath: mediaItem?.poster_path ?? "",
+      backdropPath: mediaItem?.backdrop_path ?? "",
       host: { userId, nickname, badge: myBadge },
     });
     if (pid) router.push(`/watch/${type}/${mediaId}?party=${pid}`);
@@ -306,6 +308,12 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   if (idx >= 0) setEpIndex(idx);
                 }}
                 startPct={startPct}
+                onLocalControl={isHost ? (s) => updatePlaybackNow(s) : undefined}
+                remoteControl={
+                  isPartyMode && !isHost && party
+                    ? { positionPct: party.positionPct, isPlaying: party.isPlaying, ts: party.updatedAt }
+                    : null
+                }
               />
             ) : (
               <div

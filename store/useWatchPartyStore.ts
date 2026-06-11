@@ -11,6 +11,7 @@ import {
   addDoc,
   query,
   orderBy,
+  limit,
   arrayUnion,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -22,6 +23,8 @@ export interface PartyDoc {
   type: "movie" | "tv";
   mediaId: number;
   title: string;
+  posterPath?: string;
+  backdropPath?: string;
   isPlaying: boolean;
   positionPct: number; // 0~100 (호스트 진행 위치)
   updatedAt: number;
@@ -49,22 +52,30 @@ interface WatchPartyState {
   party: PartyDoc | null;
   messages: PartyMessage[];
   isHost: boolean;
+  openParties: PartyDoc[];
   createParty: (args: {
     type: "movie" | "tv";
     mediaId: number;
     title: string;
+    posterPath?: string;
+    backdropPath?: string;
     host: PartyUser;
   }) => Promise<string | null>;
   subscribe: (partyId: string) => void;
   join: (partyId: string, user: PartyUser) => Promise<void>;
   sendMessage: (text: string, user: PartyUser) => Promise<void>;
   updatePlayback: (data: { positionPct: number; isPlaying: boolean }) => Promise<void>;
+  updatePlaybackNow: (data: { positionPct: number; isPlaying: boolean }) => Promise<void>;
+  subscribeOpenParties: () => void;
+  unsubscribeOpenParties: () => void;
   leave: () => void;
 }
 
 let unsubParty: Unsubscribe | null = null;
 let unsubMessages: Unsubscribe | null = null;
+let unsubOpen: Unsubscribe | null = null;
 let lastPlaybackPush = 0;
+let lastNowPush = 0;
 
 function randomCode() {
   return Math.random().toString(36).slice(2, 8);
@@ -75,8 +86,9 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
   party: null,
   messages: [],
   isHost: false,
+  openParties: [],
 
-  createParty: async ({ type, mediaId, title, host }) => {
+  createParty: async ({ type, mediaId, title, posterPath, backdropPath, host }) => {
     try {
       const partyId = randomCode();
       const now = Date.now();
@@ -87,6 +99,8 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
         type,
         mediaId,
         title,
+        posterPath: posterPath ?? "",
+        backdropPath: backdropPath ?? "",
         isPlaying: true,
         positionPct: 0,
         updatedAt: now,
@@ -166,6 +180,48 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
     } catch (e) {
       console.error("[watchParty] updatePlayback 실패:", e);
     }
+  },
+
+  updatePlaybackNow: async ({ positionPct, isPlaying }) => {
+    const { partyId } = get();
+    if (!partyId) return;
+    // 즉시 동기화(재생/정지/탐색). 드래그 연타 방지로 0.5초 스로틀
+    const now = Date.now();
+    if (now - lastNowPush < 500) return;
+    lastNowPush = now;
+    lastPlaybackPush = now; // 주기 동기화 타이머도 함께 밀어줌
+    try {
+      await updateDoc(doc(db, "watchParties", partyId), {
+        positionPct: Math.round(positionPct),
+        isPlaying,
+        updatedAt: now,
+      });
+    } catch (e) {
+      console.error("[watchParty] updatePlaybackNow 실패:", e);
+    }
+  },
+
+  subscribeOpenParties: () => {
+    if (unsubOpen) {
+      unsubOpen();
+      unsubOpen = null;
+    }
+    unsubOpen = onSnapshot(
+      query(collection(db, "watchParties"), orderBy("createdAt", "desc"), limit(20)),
+      (snap) => {
+        const list = snap.docs.map((d) => d.data() as PartyDoc);
+        set({ openParties: list });
+      },
+      (e) => console.error("[watchParty] openParties 구독 실패:", e),
+    );
+  },
+
+  unsubscribeOpenParties: () => {
+    if (unsubOpen) {
+      unsubOpen();
+      unsubOpen = null;
+    }
+    set({ openParties: [] });
   },
 
   leave: () => {
