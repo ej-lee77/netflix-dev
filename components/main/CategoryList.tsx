@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
+import type { Swiper as SwiperType } from "swiper";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -17,7 +18,10 @@ import ShareButton from "@/components/common/ShareButton";
 import "./scss/categoryList.scss";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
+
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -45,10 +49,13 @@ export default function CategoryList({ category }: MediaListProps) {
     onFetchTvVideos,
     netflixOriginals,
     onFetchNetflixOriginals,
-    certifications,
     onFetchCertification,
   } = useMovieStore();
   const { currentProfile } = useAuthStore();
+
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   const [hover, setHover] = useState<number | null>(null);
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,7 +63,7 @@ export default function CategoryList({ category }: MediaListProps) {
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const [rightEdgeIndex, setRightEdgeIndex] = useState(8);
 
-  const updateEdges = (swiper: any) => {
+  const updateEdges = (swiper: SwiperType) => {
     const left = swiper.activeIndex;
     setLeftEdgeIndex(left);
     const spv = swiper.params.slidesPerView;
@@ -148,7 +155,7 @@ export default function CategoryList({ category }: MediaListProps) {
   const excludedList = filterByExcludedGenres(rawCurrentList, excludedGenres);
 
   // 관람등급 필터 (netflix 카테고리는 tv 등급으로 조회)
-  const maturityCeiling = useMaturityCeiling();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   const certMediaType = category === "netflix" ? "tv" : category;
   const currentList = filterByMaturity(
     excludedList,
@@ -166,15 +173,14 @@ export default function CategoryList({ category }: MediaListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, maturityCeiling, excludedList.length]);
 
-  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>, mediaType: "movie" | "tv") => {
+  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>) => {
     setHover(id);
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
     videoTimer.current = setTimeout(() => setVideoReady(id), 1500);
-    await Promise.all([
-      autoplayPreview ? fetchVideo() : Promise.resolve(),
-      onFetchCertification(id, mediaType),
-    ]);
+    if (autoplayPreview) {
+      await fetchVideo();
+    }
   };
 
   const handleMouseLeave = () => {
@@ -196,6 +202,7 @@ export default function CategoryList({ category }: MediaListProps) {
           spaceBetween={12}
           slidesPerView={2.5}
           breakpoints={{
+            0: { slidesPerView: 3.3 },
             640: { slidesPerView: 3.5 },
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
@@ -213,9 +220,9 @@ export default function CategoryList({ category }: MediaListProps) {
               <SwiperSlide key={item.id} className="category-slide">
                 <li
                   className="category-item"
-                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo, category === "netflix" ? "tv" : category)}
+                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo)}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`)}
+                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`); }}
                 >
                   {/* 기본 포스터 */}
                   <div className="img-box">
@@ -224,7 +231,7 @@ export default function CategoryList({ category }: MediaListProps) {
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
                       fill
-                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
+                      sizes="(max-width: 640px) 31vw, (max-width: 1024px) 28vw, 12vw"
                     />
                     {category === "netflix" && (
                       <>
@@ -302,18 +309,15 @@ export default function CategoryList({ category }: MediaListProps) {
                             재생하기
                           </button> */}
 
-                          <Link
-                            className="btn-play"
-                            href={`/detail/${category === "netflix" ? "tv" : category
-                              }/${item.id}?play=1`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <Link className="btn-play" href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}?play=1`}
+                            onClick={(e) => { e.stopPropagation(); if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
                             재생하기
                           </Link>
-                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`} className="btn-detail">
+                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`}
+                            className="btn-detail" onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="10" />
                               <line x1="12" y1="16" x2="12" y2="12" />

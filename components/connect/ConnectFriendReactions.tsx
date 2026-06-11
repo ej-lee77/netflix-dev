@@ -8,6 +8,8 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 import { useFeedStore } from "@/store/useFeedStore";
 import { getPosterUrl, getRelativeTime } from "@/types/feedData";
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -19,6 +21,8 @@ export default function ConnectFriendReactions() {
   const swiperRef = useRef<SwiperType | null>(null);
   const [swiperKey, setSwiperKey] = useState(0);
   const { feeds, onHydrateFeeds } = useFeedStore();
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   useEffect(() => {
     const id = setTimeout(() => setSwiperKey((key) => key + 1), 100);
@@ -66,7 +70,11 @@ export default function ConnectFriendReactions() {
           >
             {visibleFeeds.map((item) => (
               <SwiperSlide className="connect-friend-reactions__slide" key={item.feedId}>
-                <Link href={`/feed/${item.feedId}`} className="connect-friend-reactions__card-link">
+                <Link
+                  href={`/feed/${item.feedId}`}
+                  className="connect-friend-reactions__card-link"
+                  onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
+                >
                   <article className="connect-friend-reactions__card">
                     <div className="connect-friend-reactions__glow" />
 

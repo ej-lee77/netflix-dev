@@ -190,12 +190,12 @@ const normalizeUserDocument = (
     Array.isArray(data.profile) && data.profile.length > 0
       ? data.profile.map(normalizeProfile)
       : [
-          normalizeProfile({
-            id: 1,
-            nickname: data.displayName ?? data.nickname ?? "프로필",
-            imgUrl: FALLBACK_PROFILE_IMAGE,
-          }),
-        ];
+        normalizeProfile({
+          id: 1,
+          nickname: data.displayName ?? data.nickname ?? "프로필",
+          imgUrl: FALLBACK_PROFILE_IMAGE,
+        }),
+      ];
 
   return {
     ...data,
@@ -221,6 +221,11 @@ export const useAuthStore = create<AuthState>()(
       onInitAuth: () => {
         onAuthStateChanged(auth, async (firebaseUser) => {
           if (!firebaseUser) {
+            // 💡 카카오/네이버 로그인 유저는 Firebase Auth가 없으므로 건드리지 않음
+            const currentUser = get().user;
+            if (currentUser?.provider === "kakao" || currentUser?.provider === "naver") {
+              return; // 스토어 상태 유지
+            }
             set({ user: null, currentProfile: null });
             return;
           }
@@ -246,7 +251,7 @@ export const useAuthStore = create<AuthState>()(
                 firebaseUser.uid,
                 provider,
                 userDocSnap.data() as Partial<UserDocument> &
-                  Record<string, any>,
+                Record<string, any>,
               );
               await setDoc(userDocRef, userData, { merge: true });
 
@@ -342,10 +347,10 @@ export const useAuthStore = create<AuthState>()(
             const fixedProfiles =
               fallbackProfiles.length > 0
                 ? fallbackProfiles.map((p: any) => ({
-                    id: p.id,
-                    nickname: p.nickname || "나",
-                    imgUrl: p.imgUrl,
-                  }))
+                  id: p.id,
+                  nickname: p.nickname || "나",
+                  imgUrl: p.imgUrl,
+                }))
                 : [{ id: 1, nickname: "나", imgUrl: FALLBACK_PROFILE_IMAGE }];
 
             const normalizedFallback = fixedProfiles.map(normalizeProfile);
@@ -540,15 +545,15 @@ export const useAuthStore = create<AuthState>()(
                 const updatedProfiles =
                   userData.profile && userData.profile.length
                     ? userData.profile.map((p, idx) =>
-                        idx === 0 ? { ...p, imgUrl: providerImage } : p,
-                      )
+                      idx === 0 ? { ...p, imgUrl: providerImage } : p,
+                    )
                     : [
-                        {
-                          id: Date.now(),
-                          nickname: userInfo.name || "네이버사용자",
-                          imgUrl: providerImage,
-                        },
-                      ];
+                      {
+                        id: Date.now(),
+                        nickname: userInfo.name || "네이버사용자",
+                        imgUrl: providerImage,
+                      },
+                    ];
 
                 await updateDoc(userRef, { profile: updatedProfiles });
                 userData.profile = updatedProfiles.map(normalizeProfile);
@@ -986,7 +991,7 @@ export const useAuthStore = create<AuthState>()(
 
       // 💡 [중요] 전체 스토어 상태 중에서 오직 'currentProfile'만 로컬 스토리지에 저장되도록 필터링합니다.
       // 이렇게 해야 유저 정보가 꼬이거나 불필요한 대용량 데이터가 스토리지에 쌓이지 않습니다.
-      partialize: (state) => ({ currentProfile: state.currentProfile }),
+      partialize: (state) => ({ user: state.user, currentProfile: state.currentProfile }),
     },
   ),
 );
