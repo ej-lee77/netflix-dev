@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import "../scss/friends.scss";
+import RepBadge from "@/components/common/RepBadge";
 
 type TabType = "following" | "followers";
 
@@ -8,21 +9,22 @@ interface User {
   name: string;
   watched: number;
   lastActivity: string;
+  badge: string; // 대표 칭호(장착 뱃지) ID
 }
 
 const followingList: User[] = [
-  { name: "친구A", watched: 234, lastActivity: "1시간 전" },
-  { name: "친구B", watched: 189, lastActivity: "3시간 전" },
-  { name: "친구C", watched: 312, lastActivity: "어제" },
-  { name: "친구D", watched: 156, lastActivity: "2일 전" },
-  { name: "친구E", watched: 98, lastActivity: "1주 전" },
-  { name: "친구F", watched: 421, lastActivity: "1주 전" },
+  { name: "친구A", watched: 234, lastActivity: "1시간 전", badge: "genre_drama" },
+  { name: "친구B", watched: 189, lastActivity: "3시간 전", badge: "binge_master" },
+  { name: "친구C", watched: 312, lastActivity: "어제", badge: "7days_attendance" },
+  { name: "친구D", watched: 156, lastActivity: "2일 전", badge: "first_streaming" },
+  { name: "친구E", watched: 98, lastActivity: "1주 전", badge: "genre_drama" },
+  { name: "친구F", watched: 421, lastActivity: "1주 전", badge: "binge_master" },
 ];
 
 const followersList: User[] = [
-  { name: "팔로워1", watched: 145, lastActivity: "2시간 전" },
-  { name: "팔로워2", watched: 67, lastActivity: "5시간 전" },
-  { name: "팔로워3", watched: 234, lastActivity: "어제" },
+  { name: "팔로워1", watched: 145, lastActivity: "2시간 전", badge: "first_streaming" },
+  { name: "팔로워2", watched: 67, lastActivity: "5시간 전", badge: "genre_drama" },
+  { name: "팔로워3", watched: 234, lastActivity: "어제", badge: "7days_attendance" },
 ];
 
 export default function FollowPage() {
@@ -89,6 +91,7 @@ export default function FollowPage() {
               <div className="avatar"></div>
               <div className="info">
                 <h3>{user.name}</h3>
+                <RepBadge badge={user.badge} size="sm" />
                 <p>
                   시청 {user.watched}편 · 활동 {user.lastActivity}
                 </p>

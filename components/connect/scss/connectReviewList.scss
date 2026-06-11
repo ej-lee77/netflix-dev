@@ -362,76 +362,37 @@
 /* ===== 반응형: 사이드메뉴 오프셋 보정 ===== */
 @include g.respond(tablet) {
   .connect-review-list__inner {
-    width: 100vw;
-    margin-left: 0;
-    padding-left: 24px;
-    padding-right: 24px;
+    width: calc(100vw - 64px);
+    margin-left: 64px;
   }
-  .connect-review-list .section-header { padding-right: 0; }
+  .connect-review-list .section-header { padding-right: 16px; }
 }
 @include g.respond(mobile) {
   // 사이드바 숨김 → 전체 너비 사용 (좌측 20px 기준선 통일)
+  // 카드 디자인은 데스크탑과 동일하게 유지
+  /* 섹션 간격 통일 — 자체 상하 패딩(44px/52px) 제거 */
+  .connect-review-list {
+    margin: 32px 0 0;
+    padding: 0;
+  }
   .connect-review-list__inner {
     width: 100vw;
     margin-left: 0;
     padding-left: 20px;
   }
   .connect-review-list .section-header { padding-right: 12px; }
-  .review-card { width: min(80vw, 300px); }
-  .connect-review-list__skeleton-card { width: min(80vw, 300px); }
 
+  /* 카드 1.2개 노출 */
   .connect-review-list__swiper .connect-review-list__slide,
   .connect-review-list__slide,
   .review-card,
   .connect-review-list__skeleton-card {
-    width: calc((100vw - 98px) / 3.3);
+    width: calc((100vw - 52px) / 1.2);
+    max-width: none;
   }
+}
 
-  .review-card {
-    min-height: 0;
-  }
-
-  .review-card__content {
-    gap: 7px;
-    min-height: 0;
-    padding: 8px;
-  }
-
-  .review-card__user-row,
-  .review-card__tags,
-  .review-card__analysis-badge,
-  .review-card__movie-text p {
-    display: none;
-  }
-
-  .review-card__movie-row {
-    align-items: stretch;
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .review-card__movie {
-    width: 100%;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .review-card__poster {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 2 / 3;
-  }
-
-  .review-card__movie-text h4 {
-    font-size: 0.68rem;
-    line-height: 1.25;
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .review-card__movie-text .review-card__predicted-rating {
-    font-size: 0.64rem;
-  }
+/* 대표 칭호 칩 (RisingReviewCard) */
+.review-card .review-card__rep-badge {
+  margin: 4px 0 2px;
 }
