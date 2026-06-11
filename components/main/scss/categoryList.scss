@@ -549,3 +549,31 @@
     }
   }
 }
+
+@include g.respond(tablet) {
+  .category-section {
+    .section-title-outer {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .swiper-outer {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+  }
+}
+
+@include g.respond(mobile) {
+  .category-section {
+    .section-title-outer {
+      padding-left: 20px;
+      padding-right: 12px;
+    }
+
+    .swiper-outer {
+      padding-left: 20px;
+      padding-right: 12px;
+    }
+  }
+}

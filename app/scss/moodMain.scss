@@ -13,10 +13,12 @@
   /* Hero */
   .mood-hero {
     padding: 80px 0 60px;
-    background: linear-gradient(135deg,
-        rgba(168, 85, 247, 0.15),
-        rgba(229, 9, 20, 0.1),
-        rgba(245, 158, 11, 0.1));
+    background: linear-gradient(
+      135deg,
+      rgba(168, 85, 247, 0.15),
+      rgba(229, 9, 20, 0.1),
+      rgba(245, 158, 11, 0.1)
+    );
     margin-top: -56px;
     margin-bottom: 48px;
     position: relative;
@@ -235,7 +237,7 @@
     }
 
     .mood-hero {
-      padding: 64px 0 48px;
+      padding: 44px 0 40px;
       margin-bottom: 36px;
 
       h1 {
@@ -258,7 +260,7 @@
     }
 
     .mood-hero {
-      padding: 40px 0 32px;
+      padding: 28px 0 28px;
       margin-bottom: 28px;
 
       .hero-eyebrow {
@@ -348,11 +350,11 @@
 
   @media (max-width: 420px) {
     .inner {
-      width: 100%;
+      width: min(100%, calc(100% - 32px));
     }
 
     .mood-hero {
-      padding: 34px 0 28px;
+      padding: 24px 0 24px;
 
       .hero-eyebrow {
         margin-bottom: 10px;
@@ -406,13 +408,14 @@
 
 @include g.respond(tablet) {
   .mood-main-page {
-    padding-left: 64px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 
 @include g.respond(mobile) {
   .mood-main-page {
-    padding-left: 56px;
+    padding-left: 16px;
     padding-right: 16px;
   }
 }
