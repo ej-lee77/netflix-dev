@@ -367,6 +367,17 @@ main {
     margin-left: 64px;
     padding-right: 16px;
   }
+
+  /* 태블릿·모바일(≤1024px): 커넥트 페이지의 히어로/소셜 캐러셀(Swiper)들이 peek 슬라이드를 위해
+     overflow:visible 을 써서 화면 밖 슬라이드가 가로로 넘친다. 이 가로 오버플로가 body 까지
+     전파되면 (1) 고정 헤더의 우측 GNB(검색/알림/프로필)가 뷰포트 밖으로 밀려 잘리고,
+     (2) 넘친 영역만큼 문서가 늘어나 푸터 아래로 빈 공간이 생긴다.
+     main 은 고정 헤더/하단 nav 의 '조상이 아니라 형제'이므로, 여기서 가로 오버플로를 가두면
+     고정 요소에는 영향 없이 body 로의 전파만 끊을 수 있다. peek 은 뷰포트 안쪽이라 그대로 노출되고,
+     화면 밖 슬라이드만 잘린다. (≤1024px 에서는 hover-card 가 이미 display:none 이라 가로 클립 부작용 없음) */
+  main.has-nav {
+    overflow-x: clip; /* overflow-y 는 visible 유지 → 세로 흐름/스티키 영향 없음 */
+  }
 }
 @include respond(mobile) {
   .main-page-wrap section .inner {
