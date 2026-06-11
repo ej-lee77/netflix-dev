@@ -882,11 +882,6 @@
         align-items: center;
         gap: 6px;
 
-        &:hover {
-          background: #333;
-          transform: translateY(-2px);
-          border-color: #444;
-        }
       }
 
       .mood-summary-box {
@@ -899,7 +894,7 @@
         color: #999;
         line-height: 1.6;
 
-        p {
+        >div {
           display: flex;
           gap: 4px;
           align-items: center;
