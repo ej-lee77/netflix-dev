@@ -29,9 +29,10 @@
 /* ===== 반응형: 사이드메뉴 오프셋 보정 ===== */
 @include g.respond(tablet) {
   .connect-section__inner {
-    width: min(1920px, calc(100vw - 64px));
-    margin-left: 64px;
-    padding-right: 16px;
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 @include g.respond(mobile) {

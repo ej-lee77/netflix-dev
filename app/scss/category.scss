@@ -336,13 +336,13 @@
 
 .category-catalog-page {
   min-height: 100vh;
-  padding: 40px 0 90px;
+  padding: 28px 0 72px;
   background: g.$bg-color;
 
   /* 사이드메뉴(nav) 회피 — laptop 80 / tablet 64 / mobile 56 */
   @include g.respond(laptop) { padding-left: 80px; }
-  @include g.respond(tablet) { padding-left: 64px; }
-  @include g.respond(mobile) { padding-left: 56px; padding-right: 16px; }
+  @include g.respond(tablet) { padding: 20px 24px 64px; }
+  @include g.respond(mobile) { padding: 14px 16px 56px; }
 
   .category-shell {
     width: min(1400px, 100%);
@@ -678,7 +678,8 @@
   }
 
   @media (max-width: 640px) {
-    padding: 24px 0 76px;
+    padding-top: 14px;
+    padding-bottom: 56px;
 
     .category-shell {
       width: 100%;
@@ -745,12 +746,13 @@
 }
 @include g.respond(tablet) {
   .category-page {
-    padding-left: 64px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
 @include g.respond(mobile) {
   .category-page {
-    padding-left: 56px;
+    padding-left: 16px;
     padding-right: 16px;
   }
 }
