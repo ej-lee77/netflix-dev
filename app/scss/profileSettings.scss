@@ -1476,7 +1476,10 @@
   .profile-settings-page { padding-left: 80px; }
 }
 @include g.respond(tablet) {
-  .profile-settings-page { padding-left: 64px; }
+  .profile-settings-page {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 @include g.respond(mobile) {
   .profile-settings-page { padding-left: 56px; padding-right: 16px; }
