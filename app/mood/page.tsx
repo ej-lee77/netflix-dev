@@ -51,12 +51,16 @@ export default function MoodMainPage() {
                     background: `radial-gradient(circle at 70% 30%, ${meta.color}30, transparent 70%)`,
                   }}
                 ></div>
-                <div className="mood-icon-wrap" style={{ borderColor: meta.color }}>
-                  <Image src={mood.imgUrl} alt={mood.title} width={36} height={36} />
+                <div className="mood-card-main">
+                  <div className="mood-icon-wrap" style={{ borderColor: meta.color }}>
+                    <Image src={mood.imgUrl} alt={mood.title} width={36} height={36} />
+                  </div>
+                  <div className="mood-card-copy">
+                    <h3>{mood.title}</h3>
+                    <p>{meta.desc}</p>
+                  </div>
                 </div>
                 {/* <div className="mood-emoji">{meta.emoji}</div> */}
-                <h3>{mood.title}</h3>
-                <p>{meta.desc}</p>
                 <span className="mood-cta" style={{ color: meta.color }}>
                   작품 보기 →
                 </span>

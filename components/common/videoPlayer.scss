@@ -383,6 +383,167 @@ input[type="range"].vp-vol-range {
   }
 }
 
+/* ===== 회차 목록 ===== */
+.vp-episodes-btn {
+  svg {
+    fill: none;
+  }
+
+  &.active {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.vp-episodes-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6; // 컨트롤 오버레이(5)보다 위
+  width: min(380px, 86vw);
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 12, 14, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  animation: vpPanelIn 0.25s ease;
+
+  &--closing {
+    animation: vpPanelOut 0.22s ease forwards;
+  }
+}
+
+@keyframes vpPanelIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes vpPanelOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.vp-episodes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  h4 {
+    margin: 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .vp-btn svg {
+    fill: none;
+  }
+}
+
+.vp-episodes-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(229, 9, 20, 0.7) transparent;
+}
+
+.vp-episode-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &.active {
+    background: rgba(229, 9, 20, 0.14);
+  }
+}
+
+.vp-episode-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 110px;
+  height: 64px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #1a1a22;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.vp-episode-playing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.vp-episode-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: #e50914;
+}
+
+.vp-episode-info {
+  min-width: 0;
+}
+
+.vp-episode-name {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.vp-episode-runtime {
+  margin: 3px 0 0;
+  color: #888;
+  font-size: 12px;
+}
+
 /* ===== 반응형: 모바일 플레이어 컨트롤 ===== */
 @include g.respond(tablet) {
   .vp-bottom { padding: 20px 20px 48px; gap: 12px; }
@@ -397,4 +558,8 @@ input[type="range"].vp-vol-range {
   .vp-btn svg { width: 18px; height: 18px; }
   .vp-title { font-size: 14px; }
   .vp-time { font-size: 11px; min-width: 30px; }
+
+  .vp-episodes-panel { width: min(320px, 88vw); }
+  .vp-episode-thumb { width: 96px; height: 56px; }
+  .vp-episode-name { font-size: 13px; }
 }
