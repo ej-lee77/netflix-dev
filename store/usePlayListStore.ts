@@ -682,11 +682,16 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             console.error("Progress 업데이트 및 자동 삭제 실패:", err);
         }
     },
-    onUpdateEpisodeProgress: async (id, mediaType, episodeId, progress) => {
+    onUpdateEpisodeProgress: async (id, mediaType, episodeId, progress, episodeNumber) => {
         // 1. Zustand 상태 업데이트
         const updated = get().playList.map((item) =>
             item.id === id && item.mediaType === mediaType
-                ? { ...item, episodeProgress: { ...(item.episodeProgress ?? {}), [episodeId]: progress } }
+                ? {
+                    ...item,
+                    episodeProgress: { ...(item.episodeProgress ?? {}), [episodeId]: progress },
+                    // 마지막 시청 회차 번호 기록 (시청중 섹션 표시용)
+                    ...(episodeNumber != null ? { lastEpisodeNumber: episodeNumber } : {}),
+                }
                 : item
         );
         set({ playList: updated });
