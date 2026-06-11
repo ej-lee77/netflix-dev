@@ -195,6 +195,7 @@ export default function CategoryList({ category }: MediaListProps) {
           spaceBetween={12}
           slidesPerView={2.5}
           breakpoints={{
+            0: { slidesPerView: 3.3 },
             640: { slidesPerView: 3.5 },
             1024: { slidesPerView: 6.5 },
             1280: { slidesPerView: 8.5 },
@@ -223,7 +224,7 @@ export default function CategoryList({ category }: MediaListProps) {
                       src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
                       alt={item.title}
                       fill
-                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 28vw, 12vw"
+                      sizes="(max-width: 640px) 31vw, (max-width: 1024px) 28vw, 12vw"
                     />
                     {category === "netflix" && (
                       <>
