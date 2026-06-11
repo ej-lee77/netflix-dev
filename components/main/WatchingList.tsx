@@ -16,15 +16,16 @@ type MenuState = { key: string; top: number; right: number } | null;
 export default function WatchingList() {
     const { playList, onLoadPlayList, onRemovePlayList } = usePlayListStore();
     const currentProfile = useAuthStore((s) => s.currentProfile);
+    const userId = useAuthStore((s) => s.user?.userId);
     const router = useRouter();
     const [menuState, setMenuState] = useState<MenuState>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (currentProfile) {
+        if (currentProfile && userId) {
             onLoadPlayList();
         }
-    }, [currentProfile?.id]);
+    }, [currentProfile?.id, userId]);
 
     useEffect(() => {
         if (!menuState) return;
@@ -65,9 +66,13 @@ export default function WatchingList() {
                 <Swiper
                     modules={[Navigation]}
                     navigation
-                    slidesPerView={6}
-                    spaceBetween={12}
-                    slidesPerGroup={6}
+                    slidesPerView={2.5}
+                    spaceBetween={10}
+                    slidesPerGroup={2}
+                    breakpoints={{
+                        601: { slidesPerView: 4, spaceBetween: 12, slidesPerGroup: 4 },
+                        1025: { slidesPerView: 6, spaceBetween: 12, slidesPerGroup: 6 },
+                    }}
                     className="watching-swiper"
                 >
                     {playList.map((item) => {

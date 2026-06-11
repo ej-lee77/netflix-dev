@@ -29,6 +29,16 @@ const IconFeed = () => (
   </svg>
 );
 
+const IconConnect = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="6" cy="12" r="2.5" />
+    <circle cx="18" cy="6" r="2.5" />
+    <circle cx="18" cy="18" r="2.5" />
+    <path d="M8.4 11l7.2-3.5" />
+    <path d="M8.4 13l7.2 3.5" />
+  </svg>
+);
+
 const IconMypage = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="8" r="4" />
@@ -43,6 +53,7 @@ export default function MobileBottomNav() {
 
   const isHome = pathname === "/";
   const isSearch = pathname?.startsWith("/search");
+  const isConnect = pathname?.startsWith("/connect");
   const isFeed = pathname?.startsWith("/feed");
   const isMypage = pathname?.startsWith("/mypage") || pathname?.startsWith("/profiles") || pathname?.startsWith("/settings");
 
@@ -66,6 +77,15 @@ export default function MobileBottomNav() {
         <span className="mobile-bottom-nav__icon"><IconSearch /></span>
         <span className="mobile-bottom-nav__label">검색</span>
       </button>
+
+      <Link
+        href="/connect"
+        className={`mobile-bottom-nav__item${isConnect ? " active" : ""}`}
+        aria-current={isConnect ? "page" : undefined}
+      >
+        <span className="mobile-bottom-nav__icon"><IconConnect /></span>
+        <span className="mobile-bottom-nav__label">커넥트</span>
+      </Link>
 
       <Link
         href="/feed"
