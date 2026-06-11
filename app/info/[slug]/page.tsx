@@ -21,22 +21,22 @@ export default function InfoPage({ params }: InfoPageProps) {
   return (
     <div className="info-page">
       <div className="inner">
-        <nav className="info-breadcrumb" aria-label="breadcrumb">
+        <div className="info-breadcrumb" role="navigation" aria-label="breadcrumb">
           <Link href="/">홈</Link>
           <span className="sep">›</span>
           <span className="current">{doc.title}</span>
-        </nav>
+        </div>
 
-        <header className="info-head">
-          <h1>{doc.title}</h1>
+        <div className="info-head">
+          <h2>{doc.title}</h2>
           <p className="info-intro">{doc.intro}</p>
           <p className="info-updated">최종 개정일 · {doc.updated}</p>
-        </header>
+        </div>
 
         <div className="info-body">
           {doc.sections.map((section, si) => (
-            <section className="info-section" key={si}>
-              <h2>{section.heading}</h2>
+            <div className="info-section" key={si}>
+              <h3>{section.heading}</h3>
               {section.body.map((block, bi) =>
                 Array.isArray(block) ? (
                   <ul className="info-list" key={bi}>
@@ -48,7 +48,7 @@ export default function InfoPage({ params }: InfoPageProps) {
                   <p key={bi}>{block}</p>
                 ),
               )}
-            </section>
+            </div>
           ))}
         </div>
 
