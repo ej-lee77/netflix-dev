@@ -100,25 +100,37 @@ function normalizeMediaId(raw: RawMediaId | null | undefined): { id: string; med
 }
 
 /** TMDB 단건 조회. 타입을 알면 해당 엔드포인트만, 모르면 movie → (실패 시) tv 순차 조회.
- *  기존처럼 movie/tv를 동시에 쏘면 둘 중 하나는 반드시 404라 콘솔이 에러로 뒤덮인다. */
+ *  기존처럼 movie/tv를 동시에 쏘면 둘 중 하나는 반드시 404라 콘솔이 에러로 뒤덮인다.
+ *  동일 id 반복 조회를 막기 위해 세션 단위로 결과(실패 포함)를 캐시한다. */
+const tmdbDetailCache = new Map<string, Promise<any | null>>();
+
 async function fetchTmdbDetail(raw: RawMediaId): Promise<any | null> {
   const normalized = normalizeMediaId(raw);
   if (!normalized) return null;
   const { id, mediaType } = normalized;
-  const types: Array<"movie" | "tv"> = mediaType ? [mediaType] : ["movie", "tv"];
-  for (const type of types) {
-    try {
-      const res = await fetch(
-        `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_KEY}&language=ko-KR`,
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data?.poster_path) return data;
-    } catch {
-      // 네트워크 오류는 다음 타입으로 폴백
+  const cacheKey = `${mediaType ?? "any"}-${id}`;
+  const cached = tmdbDetailCache.get(cacheKey);
+  if (cached) return cached;
+
+  const request = (async () => {
+    const types: Array<"movie" | "tv"> = mediaType ? [mediaType] : ["movie", "tv"];
+    for (const type of types) {
+      try {
+        const res = await fetch(
+          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_KEY}&language=ko-KR`,
+        );
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data?.poster_path) return data;
+      } catch {
+        // 네트워크 오류는 다음 타입으로 폴백
+      }
     }
-  }
-  return null;
+    return null;
+  })();
+
+  tmdbDetailCache.set(cacheKey, request);
+  return request;
 }
 
 async function fetchMediaInfo(rawId: RawMediaId): Promise<{ title: string; poster: string; genres: string[] } | null> {

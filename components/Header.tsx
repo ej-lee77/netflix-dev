@@ -173,6 +173,7 @@ export default function Header() {
                   alt="Netflix"
                   width={40}
                   height={40}
+                  style={{ height: "auto" }}
                 />
               </Link>
             </h1>
