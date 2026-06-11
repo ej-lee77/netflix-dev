@@ -4,6 +4,7 @@ import { collection, doc, getDoc, getDocs, limit, query, updateDoc } from "fireb
 import { useAuthStore } from "./useAuthStore";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
 import { BadgeList } from "@/types/auth";
+import { GENRE_SLUG_META } from "@/data/excludedGenres";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
@@ -200,7 +201,15 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
 
     const myGenreStats: Record<string, number> = currentProfile.movies?.genreStats ?? {};
     const myMoodStats: Record<string, number> = (currentProfile.movies as any)?.moodStats ?? {};
-    const myCombined = { ...myGenreStats, ...myMoodStats };
+    // 콜드스타트: 시청 이력이 없어도 온보딩 선호 장르로 취향 벡터를 시드
+    const favSeed: Record<string, number> = {};
+    for (const slug of currentProfile.settings?.favoriteGenres ?? []) {
+      const meta = GENRE_SLUG_META[slug];
+      if (!meta) continue;
+      favSeed[String(meta.movieId)] = (favSeed[String(meta.movieId)] ?? 0) + 3;
+      favSeed[String(meta.tvId)] = (favSeed[String(meta.tvId)] ?? 0) + 3;
+    }
+    const myCombined = { ...favSeed, ...myGenreStats, ...myMoodStats };
     const myVideos: string[] = [
       ...(currentProfile.movies?.watchingVideos ?? []),
       ...(currentProfile.movies?.playlist?.playlistVideos ?? []),
