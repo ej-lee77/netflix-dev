@@ -332,8 +332,8 @@ const getMediaDetail = async (videoId: string): Promise<MediaDetail> => {
     
     // [수정된 부분] 안전한 숫자 처리
     const rawAverage = data?.vote_average;
-    const average = (typeof rawAverage === "number" && !isNaN(rawAverage)) 
-      ? rawAverage.toFixed(1) 
+    const average = (typeof rawAverage === "number" && !isNaN(rawAverage))
+      ? (rawAverage / 2).toFixed(1)
       : "-";
 
     const detail = {
