@@ -1,11 +1,11 @@
 .topBtn {
   position: fixed;
   right: 32px;
-  bottom: 110px;
+  bottom: 98px;
 
   @media (max-width: 1024px) {
-    // MobileBottomNav(72px) + safe-area + AI버튼(48px) + 여유(16px*2)
-    bottom: calc(72px + env(safe-area-inset-bottom) + 96px);
+    // MobileBottomNav(80px) + safe-area + AI버튼(48px) + 여유
+    bottom: calc(80px + env(safe-area-inset-bottom) + 68px);
     right: 16px;
     width: 40px;
     height: 40px;
