@@ -897,7 +897,7 @@ export default function Hero() {
             <button
               className="btn-play"
               type="button"
-              onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}?play=1`)}
+              onClick={() => router.push(`/watch/${activeMediaType}/${activeItem.id}`)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <polygon points="5 3 19 12 5 21 5 3" />

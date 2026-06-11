@@ -12,11 +12,15 @@ import { BADGE_LIST } from "@/data/badge";
 import { filters } from "../../category/page";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
 import BackButton from "@/components/common/BackButton";
+import RepBadge from "@/components/common/RepBadge";
 import "../../scss/mypage.scss";
 import "./userDetail.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
+
+// 더미 플레이리스트의 badge 값은 '뱃지 이름'이므로 ID로 변환해 쓴다.
+const BADGE_NAME_TO_ID = new Map(BADGE_LIST.map((b) => [b.name, b.id]));
 
 interface TargetProfile {
   profileId: number;
@@ -107,7 +111,15 @@ export default function UserDetailPage() {
               following: [],
               reviews: d.videoIds.map((v, i) => ({ reviewId: `${userId}-r${i}`, videoId: v })),
             },
-            badges: { equippedBadges: "", earnedBadges: [] },
+            badges: {
+              equippedBadges: BADGE_NAME_TO_ID.get(d.badge) ?? "",
+              earnedBadges: [
+                { id: "first_streaming", progress: 1, isComplete: true },
+                ...(BADGE_NAME_TO_ID.get(d.badge)
+                  ? [{ id: BADGE_NAME_TO_ID.get(d.badge)!, progress: 1, isComplete: true }]
+                  : []),
+              ],
+            },
           });
           setLoading(false);
           return;
@@ -216,11 +228,6 @@ export default function UserDetailPage() {
       ignore = true;
     };
   }, [target, userId]);
-
-  const equippedBadgeName = useMemo(() => {
-    const b = BADGE_LIST.find((x) => x.id === target?.badges?.equippedBadges);
-    return b?.name ?? null;
-  }, [target]);
 
   const stats = useMemo(
     () => ({
@@ -352,9 +359,7 @@ export default function UserDetailPage() {
           <div className="profile-info">
             <div className="name-wrapper" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <h2>{target.nickname}</h2>
-              {equippedBadgeName && (
-                <span className="user-equipped-badge-tag">{equippedBadgeName}</span>
-              )}
+              <RepBadge badge={target?.badges?.equippedBadges} size="sm" />
             </div>
             {!isMe && (
               <button

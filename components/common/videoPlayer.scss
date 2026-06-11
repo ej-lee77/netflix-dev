@@ -8,6 +8,20 @@
   overflow: hidden;
 }
 
+/* 페이지 내 임베드 모드: 부모(16:9 박스 등)를 채우고 전체화면 고정 해제 */
+.vp-root--embed {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+.vp-root--embed:fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 300000;
+  border-radius: 0;
+}
+
 /* YouTube iframe */
 .vp-iframe {
   position: absolute;
@@ -562,4 +576,54 @@ input[type="range"].vp-vol-range {
   .vp-episodes-panel { width: min(320px, 88vw); }
   .vp-episode-thumb { width: 96px; height: 56px; }
   .vp-episode-name { font-size: 13px; }
+}
+
+/* 설정(재생 속도) 메뉴 */
+.vp-settings-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.vp-settings-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  min-width: 132px;
+  background: rgba(20, 20, 20, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  z-index: 20;
+}
+.vp-settings-title {
+  font-size: 11px;
+  color: #9a9a9a;
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+.vp-settings-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #eee;
+  font-size: 13px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+.vp-settings-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.vp-settings-item.active {
+  color: #ff6b73;
+  font-weight: 600;
+}
+.vp-settings-check {
+  color: #ff6b73;
 }

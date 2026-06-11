@@ -309,7 +309,7 @@ export default function CategoryList({ category }: MediaListProps) {
                             재생하기
                           </button> */}
 
-                          <Link className="btn-play" href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}?play=1`}
+                          <Link className="btn-play" href={`/watch/${category === "netflix" ? "tv" : category}/${item.id}`}
                             onClick={(e) => { e.stopPropagation(); if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
