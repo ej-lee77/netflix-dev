@@ -620,8 +620,52 @@
 
 @include g.respond(tablet) {
   .hero {
-    height: calc(58vh + g.$header-height);
-    min-height: calc(360px + g.$header-height);
+    width: 100vw;
+    height: clamp(520px, 72svh, 680px);
+    aspect-ratio: auto;
+    min-height: 0;
+    margin-top: -(g.$header-height) !important;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    left: auto;
+    transform: none;
+
+    .hero-backdrop,
+    .hero-video-poster,
+    .hero-video-shield {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-video {
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      transform: none;
+    }
+
+    .hero-backdrop,
+    .hero-video-poster {
+      background-position: center center;
+      background-size: cover;
+    }
+
+    .hero-posters {
+      display: none;
+    }
+
+    .hero-dots {
+      position: absolute;
+      bottom: 28px;
+      left: 24px;
+      z-index: 11;
+      display: flex;
+      padding: 0;
+    }
   }
 }
 
@@ -670,20 +714,38 @@
     }
 
     .hero-posters {
-      right: 20px;
-      width: min(48vw, 440px);
-      height: clamp(150px, 22vh, 220px);
+      display: none;
     }
 
     .hero-poster {
-      width: clamp(96px, 16vw, 140px);
-      height: clamp(140px, 23vh, 200px);
+      top: 12px;
+      width: 96px;
+      height: 136px;
     }
 
     .hero-poster.before-2,
     .hero-poster.after-2 {
-      width: clamp(82px, 13vw, 120px);
-      height: clamp(120px, 20vh, 172px);
+      top: 22px;
+      width: 84px;
+      height: 118px;
+    }
+
+    .hero-poster.before-1,
+    .hero-poster.after-1 {
+      width: 96px;
+      height: 144px;
+    }
+
+    .hero-poster.active {
+      top: 0;
+      width: 112px;
+      height: 164px;
+    }
+
+    .hero-nav {
+      right: 56px;
+      bottom: 8px;
+      width: 280px;
     }
   }
 }
@@ -744,8 +806,11 @@
 @include g.respond(tablet) {
   .hero {
     .hero-content {
-      max-width: 64vw;
-      bottom: 22px;
+      z-index: 10;
+      max-width: min(58vw, 520px);
+      right: 24px;
+      bottom: 42px;
+      left: 24px;
     }
 
     .hero-logo-img {

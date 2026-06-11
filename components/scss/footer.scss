@@ -3,7 +3,7 @@
 footer {
   padding-left: g.$main-menu-width;
   background: g.$bg-color;
-  margin-top: 80px;
+  margin-top: 48px;
   border-top: 1px solid #2a2a2a;
 
   .footer-inner {
@@ -183,6 +183,7 @@ footer {
 @include g.respond(tablet) {
   footer {
     padding-left: 64px;
+    margin-top: 36px;
 
     .footer-inner {
       padding: 32px 24px 28px;
@@ -193,7 +194,7 @@ footer {
 @include g.respond(mobile) {
   footer {
     padding-left: 0;
-    margin-top: 56px;
+    margin-top: 24px;
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
 
     .footer-inner {

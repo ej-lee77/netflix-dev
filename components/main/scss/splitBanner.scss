@@ -61,5 +61,53 @@
 
 /* 태블릿(≤1024px)부터 "넷플릭스 화제작"(스플릿배너) 숨김 */
 @media (max-width: 1024px) {
-  .split-banner { display: none !important; }
+  .split-banner {
+    display: block !important;
+    width: calc(100vw - 48px);
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 34px;
+    padding: 0;
+
+    .split-panels {
+      gap: 4px;
+    }
+
+    .split-panel-wrap {
+      height: clamp(150px, 24vw, 240px);
+      border-radius: 4px;
+    }
+
+    .split-panel-still {
+      border-radius: 4px;
+    }
+
+    .split-panel-logo {
+      bottom: 10px;
+      left: 8px;
+      gap: 8px;
+
+      img:first-child {
+        width: 58px;
+        height: auto;
+      }
+
+      img:last-child {
+        width: 110px;
+        height: auto;
+      }
+    }
+
+    .split-panel-right-logo img {
+      width: 150px;
+      height: auto;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .split-banner {
+    display: none !important;
+  }
 }

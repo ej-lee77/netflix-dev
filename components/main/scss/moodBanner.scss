@@ -6,6 +6,12 @@
   padding-left: g.$main-menu-width;
   padding-right: clamp(24px, calc((100vw - #{g.$main-menu-width} - 1920px) / 2), 80px);
 
+  @include g.respond(tablet) {
+    padding-top: 40px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
   @include g.respond(mobile) {
     padding-left: 20px;
     padding-right: 20px;
@@ -27,6 +33,13 @@
   text-decoration: none;
   // 좌·우·하단은 배너 경계에서 클리핑, 상단만 이미지 overflow 허용
   clip-path: inset(-400px 0 0 0 round 0 0 20px 20px);
+
+  @include g.respond(tablet) {
+    width: min(100%, 1480px);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 36px 56px 0;
+  }
 
   @media (max-width: 768px) {
     padding: 28px 28px;

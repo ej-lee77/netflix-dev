@@ -233,10 +233,15 @@
 }
 /* ===== 반응형 ===== */
 @include g.respond(tablet) {
-  .connect-friend-reactions__inner { width: calc(100vw - 64px); }
+  .connect-friend-reactions__inner {
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
   .connect-friend-reactions__slide,
   .connect-friend-reactions__card { width: 330px; }
-  .connect-friend-reactions .section-header { padding-right: 16px; }
+  .connect-friend-reactions .section-header { padding-right: 0; }
 }
 @include g.respond(mobile) {
   // 사이드바 숨김 → 전체 너비 사용
