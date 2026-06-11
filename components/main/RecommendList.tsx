@@ -43,7 +43,6 @@ export default function RecommendList() {
   const { recommended: rawRecommended, onFetchRecommended, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
   const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
-  const maturityCeiling = useMaturityCeiling();
 
   const { isUnsubscribed } = useSubscriptionGuard();
   const openModal = useSubscribeModalStore((state) => state.openModal);
