@@ -13,6 +13,7 @@ export interface PlayListItem{
     overview: string;
     progress: number; // 0~100
     episodeProgress: Record<number, number>; // episodeId → 0~100
+    lastEpisodeNumber?: number; // 마지막으로 시청한 회차 번호 (TV)
     first_air_date: string;
     release_date: string;
 }
@@ -46,7 +47,7 @@ export interface PlayListState{
     onRemoveMyList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadMyList: ()=>Promise<void>,
     onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
-    onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number)=>void,
+    onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number, episodeNumber?: number)=>void,
     createMyCustomPlaylist: (data: any)=>Promise<void>,
     fetchMyCustomPlaylists: ()=>Promise<void>,
     updateCustomPlaylist: (listId: string, updatedData: Partial<PlaylistDocument>) => Promise<void>;
