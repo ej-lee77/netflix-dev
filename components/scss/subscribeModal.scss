@@ -40,6 +40,14 @@
   &__icon {
     font-size: 40px;
     margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+
+    img {
+      width: 1em;
+      height: 1em;
+      object-fit: cover;
+    }
   }
 
   &__title {
