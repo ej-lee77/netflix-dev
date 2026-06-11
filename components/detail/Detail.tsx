@@ -623,7 +623,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         {
           id: "review" as const,
           label: "리뷰",
-          meta: isTv ? "12.8k" : "4.2k",
+          meta: filteredReviews.length ? `${filteredReviews.length}` : undefined,
         },
       ]
       : []),
@@ -2277,6 +2277,22 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               </article>
             );
           })}
+
+          {filteredReviews.length === 0 && (
+            <div
+              style={{
+                padding: "44px 0",
+                textAlign: "center",
+                color: "#888",
+                fontSize: 14,
+                border: "1px dashed #2a2a35",
+                borderRadius: 8,
+                background: "rgba(255,255,255,0.015)",
+              }}
+            >
+              등록된 리뷰가 없습니다.
+            </div>
+          )}
         </div>
 
         {totalReviewPages > 1 && (
