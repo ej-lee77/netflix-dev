@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import AppIcon from "@/components/common/AppIcon";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useMovieStore } from "@/store/useMovieStore";
@@ -39,6 +40,7 @@ const getGenreColor = (genreName: string) => {
 };
 
 export default function MyPage() {
+  const router = useRouter();
   const { user, currentProfile, onLogout, toggleCommunity } = useAuthStore();
   const { playHist, onLoadPlayList } = usePlayListStore();
   const { popMovies, tvs, onFetchPopular, onFetchTvs, mediaDetails, onFetchMediaDetail, fetchMediaDetail } = useMovieStore();
@@ -46,6 +48,11 @@ export default function MyPage() {
   const userId = user?.userId;
   const { reviews, fetchUserReviews } = useCommunityStore();
   const [historyItems, setHistoryItems] = useState<PlayListItem[]>([]);
+
+  const handleLogout = async () => {
+    await onLogout();
+    router.replace("/login");
+  };
 
     useEffect(() => {
     onLoadPlayList();
@@ -453,7 +460,7 @@ export default function MyPage() {
         <div className="quick-menu">
           {quickMenuItems.map((item, idx) => (
             <Link href={item.href} className="quick-card" key={idx}>
-              <div className="icon">
+              <div className={`icon ${item.href === "/alarm" ? "alarm-icon" : ""}`}>
                 {item.icon.endsWith(".svg") || item.icon.endsWith(".png") ? (
                   <Image src={item.icon} alt="" width={24} height={24} />
                 ) : (
@@ -717,7 +724,7 @@ export default function MyPage() {
         {/* 로그아웃 */}
         {user && (
           <div className="logout-row">
-            <button onClick={onLogout}>로그아웃</button>
+            <button onClick={handleLogout}>로그아웃</button>
           </div>
         )}
       </div>

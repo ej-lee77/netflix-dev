@@ -9,6 +9,9 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/connectHero.scss";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 const KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const IMG = "https://image.tmdb.org/t/p";
 
@@ -160,6 +163,10 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
 
 export default function ConnectHero() {
   const router = useRouter();
+
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   const swiperRef = useRef<SwiperType | null>(null);
   const [items, setItems] = useState<HeroItem[]>([]);
   const [realIndex, setRealIndex] = useState(0);      // 실제 콘텐츠 인덱스 (0~TOTAL-1)
@@ -192,6 +199,8 @@ export default function ConnectHero() {
   // ─────────────────────────────────────────────────────────
   const loopItems = isLoading ? [] : [...items, ...items, ...items];
   const LOOP_CENTER = TOTAL;                          // 중간 셋의 첫 번째 슬라이드 인덱스
+
+
 
   return (
     <section className={`connect-hero${isLoading ? " connect-hero--loading" : ""}`} aria-label="커넥트 컬렉션">
@@ -304,7 +313,7 @@ export default function ConnectHero() {
                 <button
                   className="connect-hero__btn-play"
                   type="button"
-                  onClick={() => router.push(`/detail/${item.mediaType}/${item.id}?play=1`)}
+                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/detail/${item.mediaType}/${item.id}?play=1`); }}
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <polygon points="5 3 19 12 5 21 5 3" />
@@ -314,7 +323,7 @@ export default function ConnectHero() {
                 <button
                   className="connect-hero__btn-info"
                   type="button"
-                  onClick={() => router.push(`/detail/${item.mediaType}/${item.id}`)}
+                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/detail/${item.mediaType}/${item.id}`); }}
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />

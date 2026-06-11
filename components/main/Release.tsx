@@ -12,9 +12,15 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/release.scss";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 export default function Release() {
   const [upcomings, setUpcomings] = useState<UpcomingItem[]>([]);
   const excludedGenres = useExcludedGenres();
+
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   useEffect(() => {
     let ignore = false;
@@ -53,6 +59,7 @@ export default function Release() {
     return `D-${diff}`;
   };
 
+
   return (
     <section className="release-section">
       <div className="section-title-outer">
@@ -78,6 +85,7 @@ export default function Release() {
               <Link
                 href={`/detail/${movie.media_type}/${movie.id}?upcoming=1`}
                 className="release-card"
+                onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
               >
                 <Image
                   src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}

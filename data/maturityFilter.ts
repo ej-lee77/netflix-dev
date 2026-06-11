@@ -1,7 +1,8 @@
 // 관람등급(maturityRating)에 따른 콘텐츠 필터 헬퍼
 // - 프로필 settings.maturityRating ("전체관람가"|"12+"|"15+"|"19+") 을 허용 최대 레벨로 변환
 // - 각 작품의 TMDB KR 등급(certifications 맵, `${mediaType}-${id}`)을 레벨로 변환해 비교
-// - 등급 미상(아직 못 불러온 경우 포함)은 행이 비는 것을 막기 위해 일단 표시한다.
+// - 등급을 아직 못 불러온 항목은 genre_ids 로 먼저 추정한다.
+//   명확히 제한 장르인 항목은 즉시 숨기고, 안전 추정 항목은 화면을 비우지 않도록 노출한다.
 
 import { useAuthStore } from "@/store/useAuthStore";
 import type { MaturityRating } from "@/types/auth";
@@ -43,6 +44,17 @@ export function useMaturityCeiling(): number {
   return ratingCeiling(rating);
 }
 
+export function useMaturityFilterSnapshot() {
+  const ceiling = useMaturityCeiling();
+  return useMemo(
+    () => ({
+      ceiling,
+      certifications: useMovieStore.getState().certifications,
+    }),
+    [ceiling],
+  );
+}
+
 // 등급 데이터가 없을 때 장르로 연령을 보수적으로 추정 (TMDB genre id 기준)
 // 등급 데이터가 없을 때만 쓰는 장르 추정(최소 세트).
 // 장르 범위를 넓히면 한국 인기작(스릴러·범죄 多)이 과도하게 사라지므로 공포만 둠.
@@ -62,7 +74,7 @@ export function genreLevel(genreIds?: number[]): number {
 }
 
 // items 를 등급으로 필터링. getKey 로 certifications 맵 키(`${mediaType}-${id}`)를 만든다.
-// 등급(cert)이 미상이면 genre_ids 로 추정한다(제한 장르 없으면 전체관람가로 간주해 표시).
+// undefined/""는 등급 미확인 또는 등급 없음이므로 genre_ids 로 먼저 추정한다.
 export function filterByMaturity<T>(
   items: T[],
   ceiling: number,
@@ -71,7 +83,9 @@ export function filterByMaturity<T>(
 ): T[] {
   if (ceiling >= 19) return items; // 19+ 프로필은 전체 허용
   return items.filter((item) => {
-    let level = certToLevel(certifications[getKey(item)]);
+    const cert = certifications[getKey(item)];
+
+    let level = certToLevel(cert);
     if (level < 0) {
       const gl = genreLevel((item as { genre_ids?: number[] }).genre_ids);
       level = gl < 0 ? 0 : gl; // 등급·제한장르 모두 없으면 전체관람가로 간주
@@ -86,8 +100,7 @@ export function useMaturityFiltered<T extends { id: number }>(
   items: T[],
   getMediaType: (item: T) => "movie" | "tv",
 ): T[] {
-  const ceiling = useMaturityCeiling();
-  const certifications = useMovieStore((s) => s.certifications);
+  const { ceiling, certifications } = useMaturityFilterSnapshot();
   const onFetchCertification = useMovieStore((s) => s.onFetchCertification);
 
   useEffect(() => {

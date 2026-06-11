@@ -23,6 +23,9 @@ import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres
 import { filterHidden } from "@/data/hiddenContent";
 import { useMaturityFiltered } from "@/data/maturityFilter";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 export interface RankingItem {
   id: number;
   title: string;
@@ -56,6 +59,9 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
   const excludedGenres = useExcludedGenres();
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   const [activeId, setActiveId] = useState<number | null>(null);
 
   // 태블릿/모바일(<=1024px)에서는 ThemeRow와 동일한 디자인/동작으로 렌더
@@ -85,8 +91,8 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
     const source = externalItems
       ? externalItems
       : koreanMovies
-          .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
-          .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }));
+        .filter((movie: Movie) => movie.poster_path && movie.backdrop_path)
+        .map((movie: Movie) => ({ ...movie, media_type: "movie" as const }));
     // 차단 작품 + 제외 장르 작품 숨김
     return filterHidden(filterByExcludedGenres(source, excludedGenres));
   }, [externalItems, koreanMovies, excludedGenres]);
@@ -191,6 +197,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
       </section>
     );
   }
+
 
   return (
     <section className="ranking-section">
@@ -324,13 +331,21 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
                     </span>
 
                     <span className="ranking-detail-actions">
-                      <Link href={`/detail/${movie.media_type ?? "movie"}/${movie.id}?play=1`} className="ranking-btn-play">
+                      <Link
+                        href={`/detail/${movie.media_type ?? "movie"}/${movie.id}?play=1`}
+                        className="ranking-btn-play"
+                        onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
+                      >
                         <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
                         {t("common.play")}
                       </Link>
-                      <Link href={`/detail/${movie.media_type ?? "movie"}/${movie.id}`} className="ranking-btn-info">
+                      <Link
+                        href={`/detail/${movie.media_type ?? "movie"}/${movie.id}`}
+                        className="ranking-btn-info"
+                        onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
+                      >
                         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" style={{ fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="16" x2="12" y2="12" />

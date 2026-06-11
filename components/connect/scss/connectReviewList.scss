@@ -377,4 +377,59 @@
   .connect-review-list .section-header { padding-right: 12px; }
   .review-card { width: min(80vw, 300px); }
   .connect-review-list__skeleton-card { width: min(80vw, 300px); }
+
+  .connect-review-list__swiper .connect-review-list__slide,
+  .connect-review-list__slide,
+  .review-card,
+  .connect-review-list__skeleton-card {
+    width: calc((100vw - 98px) / 3.3);
+  }
+
+  .review-card {
+    min-height: 0;
+  }
+
+  .review-card__content {
+    gap: 7px;
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .review-card__user-row,
+  .review-card__tags,
+  .review-card__analysis-badge,
+  .review-card__movie-text p {
+    display: none;
+  }
+
+  .review-card__movie-row {
+    align-items: stretch;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .review-card__movie {
+    width: 100%;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .review-card__poster {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
+
+  .review-card__movie-text h4 {
+    font-size: 0.68rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .review-card__movie-text .review-card__predicted-rating {
+    font-size: 0.64rem;
+  }
 }
