@@ -70,7 +70,11 @@ export default function HeaderSearchOverlay({
 
   useEffect(() => {
     if (isOpen) {
-      inputRef.current?.focus();
+      // 모바일에선 자동 포커스 시 키보드가 바로 올라오므로,
+      // 입력창을 직접 탭했을 때만 키보드가 뜨도록 데스크탑에서만 자동 포커스
+      const isTouchDevice =
+        typeof window !== "undefined" && window.innerWidth <= 600;
+      if (!isTouchDevice) inputRef.current?.focus();
       document.body.style.overflow = "hidden";
 
       const timer = setTimeout(() => {
