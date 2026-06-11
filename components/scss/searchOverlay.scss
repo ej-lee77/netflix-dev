@@ -537,17 +537,18 @@
   .search-overlay {
     top: 0;
     height: 100vh;
-    justify-content: flex-end;
+    /* 위에서 내려오는 패널: 키보드가 올라와도 패널 위치가 밀리지 않음 */
+    justify-content: flex-start;
 
     .search-overlay__content {
       display: flex;
       flex-direction: column;
-      padding: 16px 14px calc(env(safe-area-inset-bottom) + 24px);
+      padding: 16px 14px 24px;
       max-height: 90vh;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      border-bottom: none;
-      border-radius: 20px 20px 0 0;
-      animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      border-top: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0 0 20px 20px;
+      animation: slideDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .search-overlay__close {
