@@ -2035,7 +2035,11 @@
           .playlist-mosaic-empty {
             border: 1px solid rgba(255, 255, 255, 0.22);
             background:
-              linear-gradient(135deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+              linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.055),
+                rgba(255, 255, 255, 0.015)
+              ),
               #141414;
           }
 
@@ -2595,16 +2599,39 @@
       }
     }
 
+    // .wish-toolbar {
+    //   justify-content: flex-start;
+    //   flex-direction: row;
+    //   flex-wrap: wrap;
+    //   align-items: flex-start;
+    //   gap: 8px;
+
+    //   .mobile-filter-accordion {
+    //     flex: 0 1 150px;
+    //     width: min(150px, calc(50% - 4px));
+    //   }
+
+    //   .wish-sort {
+    //     display: none;
+    //   }
+    // }
+
     .wish-toolbar {
+      display: flex; // (혹시 부모에 display: flex가 안 들어가 있다면 확실히 명시)
       justify-content: flex-start;
       flex-direction: row;
       flex-wrap: wrap;
       align-items: flex-start;
       gap: 8px;
+      width: 100%; // 부모 자체가 꽉 차도록 설정
 
       .mobile-filter-accordion {
-        flex: 0 1 150px;
-        width: min(150px, calc(50% - 4px));
+        // 핵심: flex-grow를 1로 주어 남는 공간을 꽉 채우게 만듭니다.
+        // flex-basis는 calc(50% - 4px)로 주어 정확히 반반씩 나누어 갖도록 유도합니다.
+        flex: 1 1 calc(50% - 4px);
+
+        // 기존에 가로막고 있던 150px 고정 한계선을 제거합니다.
+        width: auto;
       }
 
       .wish-sort {
