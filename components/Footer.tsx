@@ -12,8 +12,8 @@ import "./scss/footer.scss"
 // 링크는 번역 키로 관리
 const LINK_COLS: { titleKey: TKey; links: TKey[] }[] = [
   { titleKey: "footer.companyInfo", links: ["footer.audioGuide", "footer.ir", "footer.legal"] },
-  { titleKey: "footer.customerCenter", links: ["footer.center", "footer.jobs", "footer.cookies"] },
-  { titleKey: "footer.service", links: ["footer.giftcard", "footer.terms", "footer.company"] },
+  { titleKey: "footer.customerCenter", links: ["footer.center", "footer.cookies"] },
+  { titleKey: "footer.service", links: [ "footer.terms", "footer.company"] },
   { titleKey: "footer.media", links: ["footer.mediaCenter", "footer.privacy", "footer.contact"] },
 ];
 
@@ -23,8 +23,8 @@ const LINK_COLS: { titleKey: TKey; links: TKey[] }[] = [
 //    (footer.contact 는 로그인 여부에 따라 별도 처리)
 const FOOTER_LINK_HREF: Partial<Record<TKey, string>> = {
   "footer.center": "/faq",                 // 고객 센터 → FAQ
-  "footer.jobs": "/faq",                   // 입사 정보 → FAQ
-  "footer.giftcard": "/plan",              // 기프트카드 → 플랜
+  // "footer.jobs": "/faq",                   // 입사 정보 → FAQ
+  // "footer.giftcard": "/plan",              // 기프트카드 → 플랜
   "footer.audioGuide": "/info/audio-guide", // 화면 해설
   "footer.ir": "/info/ir",                 // 투자 정보(IR)
   "footer.legal": "/info/legal",           // 법적 고지
