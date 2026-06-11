@@ -10,6 +10,8 @@ import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 export default function MoodBanner() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -38,8 +40,6 @@ export default function MoodBanner() {
     return () => observer.disconnect();
   }, []);
 
-  const { isUnsubscribed } = useSubscriptionGuard();
-  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   return (
     <section className="mood-banner-section" ref={sectionRef}>

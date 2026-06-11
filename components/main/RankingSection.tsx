@@ -59,6 +59,9 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
   const excludedGenres = useExcludedGenres();
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   const [activeId, setActiveId] = useState<number | null>(null);
 
   // 태블릿/모바일(<=1024px)에서는 ThemeRow와 동일한 디자인/동작으로 렌더
@@ -194,9 +197,6 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
       </section>
     );
   }
-
-  const { isUnsubscribed } = useSubscriptionGuard();
-  const openModal = useSubscribeModalStore((state) => state.openModal);
 
 
   return (

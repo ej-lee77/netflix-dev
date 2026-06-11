@@ -19,6 +19,9 @@ export default function Release() {
   const [upcomings, setUpcomings] = useState<UpcomingItem[]>([]);
   const excludedGenres = useExcludedGenres();
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   useEffect(() => {
     let ignore = false;
 
@@ -56,8 +59,6 @@ export default function Release() {
     return `D-${diff}`;
   };
 
-  const { isUnsubscribed } = useSubscriptionGuard();
-  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   return (
     <section className="release-section">

@@ -91,6 +91,10 @@ export default function SplitBanner() {
   const router = useRouter();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
+
   // 현재 프로필 관람등급에 맞는 배너 선택 (없으면 19+ 기본)
   const rating =
     useAuthStore((s) => s.currentProfile?.settings?.maturityRating) ??
@@ -98,8 +102,6 @@ export default function SplitBanner() {
   const banner =
     BANNERS[rating] ?? BANNERS[DEFAULT_PROFILE_SETTINGS.maturityRating];
 
-  const { isUnsubscribed } = useSubscriptionGuard();
-  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   return (
     <section className="split-banner">

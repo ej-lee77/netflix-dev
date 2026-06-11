@@ -43,6 +43,10 @@ export default function RecommendList() {
   const { recommended: rawRecommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
   const maturityCeiling = useMaturityCeiling();
+
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   // 제외 장르 작품 숨김 (인덱스 정합성을 위해 이후 로직은 모두 이 목록을 사용)
   const genreFiltered = useMemo(
     () => filterByExcludedGenres(rawRecommended, excludedGenres),
@@ -101,8 +105,7 @@ export default function RecommendList() {
     ? `https://image.tmdb.org/t/p/w1280${activeBackdrop.backdropPath}`
     : '';
 
-  const { isUnsubscribed } = useSubscriptionGuard();
-  const openModal = useSubscribeModalStore((state) => state.openModal);
+
 
   return (
     <section className="recommend-section">
