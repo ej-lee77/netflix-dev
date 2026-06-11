@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import FeedReviewCard from "@/components/feed/FeedReviewCard";
 import { type FeedView } from "@/store/useFeedStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import MobileFilterAccordion from "@/components/mypage/MobileFilterAccordion";
 
 interface MyPageFeedProps {
   feeds: FeedView[];
@@ -116,6 +117,27 @@ export default function MyPageFeed({
           </button>
         ))}
       </div>
+      <MobileFilterAccordion
+        ariaLabel="피드 범위 필터"
+        value={scopeFilter}
+        options={scopeFilters.map((sf) => ({
+          value: sf.key,
+          label: sf.label,
+          count: counts[sf.key],
+        }))}
+        onChange={setScopeFilter}
+      />
+      <MobileFilterAccordion
+        ariaLabel="피드 정렬"
+        value={sortType}
+        options={sortOptions
+          .filter((option) => option.key !== "comments")
+          .map((option) => ({
+            value: option.key,
+            label: option.label,
+          }))}
+        onChange={setSortType}
+      />
 
       <div className="community-sort">
         <button type="button" className="sort-btn" onClick={() => setSortOpen(!sortOpen)}>
