@@ -4,6 +4,87 @@ import { db } from '@/firebase/firebase';
 import { ReviewDocument, CommunityStore } from '@/types/community';
 import { useAuthStore } from './useAuthStore';
 import { BadgeList } from '@/types/auth';
+import { dummyPlaylists } from '@/data/dummyPlaylist';
+
+// ───────────────────────────────────────────────────────────
+// 더미 리뷰 생성기 (videoId 기반 결정적 생성 — 새로고침해도 동일)
+// 실제 작품 대부분에 더미 유저들의 리뷰가 보이도록 채운다.
+// ───────────────────────────────────────────────────────────
+const DUMMY_REVIEW_TEXTS = [
+  "기대 이상이었어요. 몰입해서 끝까지 봤네요.",
+  "연출이랑 음악이 진짜 좋았습니다.",
+  "배우들 연기가 자연스러워서 푹 빠져들었어요.",
+  "초반은 살짝 느렸지만 후반부가 정말 몰아쳐요.",
+  "분위기 있는 작품 좋아하면 강력 추천합니다.",
+  "다시 봐도 좋을 것 같은 작품이에요.",
+  "스토리가 탄탄해서 시간 가는 줄 몰랐어요.",
+  "영상미가 예술이네요. 장면 하나하나가 그림 같아요.",
+  "가볍게 보기 좋으면서도 여운이 남습니다.",
+  "주말에 정주행하기 딱 좋은 작품!",
+  "기분 전환하고 싶을 때 보기 좋아요.",
+  "캐릭터들이 매력 있어서 더 보고 싶어졌어요.",
+  "생각보다 훨씬 재밌어서 놀랐어요.",
+  "결말이 깔끔해서 만족스러웠습니다.",
+  "오랜만에 인생작 만난 기분이에요.",
+];
+
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function buildDummyReviews(videoId: string): ReviewDocument[] {
+  if (!videoId) return [];
+  const rand = mulberry32(hashStr(videoId));
+  // 약 8%는 더미 리뷰 0개 → "등록된 리뷰가 없습니다" 빈 상태도 자연스럽게 노출
+  if (rand() < 0.08) return [];
+  const count = 2 + Math.floor(rand() * 5); // 2~6개
+
+  // 리뷰어(더미 유저) 셔플 후 중복 없이 선택
+  const pool = [...dummyPlaylists];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picked = pool.slice(0, Math.min(count, pool.length));
+
+  const now = Date.now();
+  return picked.map((d, i) => {
+    const rating = 3 + Math.floor(rand() * 3); // 3~5
+    const text = DUMMY_REVIEW_TEXTS[Math.floor(rand() * DUMMY_REVIEW_TEXTS.length)];
+    const daysAgo = 1 + Math.floor(rand() * 120);
+    const createdAt = new Date(now - daysAgo * 86400000).toISOString();
+    return {
+      reviewId: `dummy-${videoId}-${i}`,
+      userId: d.userId, // dummy-N → 현재 유저와 절대 겹치지 않음(수정/삭제 버튼 안 뜸)
+      content: text,
+      videoId,
+      likesCount: Math.floor(rand() * 40),
+      isSpoiler: false,
+      reportsCount: 0,
+      nickname: d.nickname,
+      createdAt,
+      profileId: 1000 + i,
+      rating,
+      equippedBadge: d.badge, // 이름이지만 RepBadge가 id/이름 모두 해석
+    } as ReviewDocument;
+  });
+}
+
 
 export const getReviewCreatedBadge = (currentBadges: BadgeList): BadgeList => {
   const updatedEarnedBadges = [...currentBadges.earnedBadges];
@@ -82,6 +163,12 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
   },
 
   fetchVideoReviews: async (videoId: string) => {
+    // videoId 기반 결정적 더미 리뷰 (실제 리뷰와 합쳐서 노출)
+    const dummies = buildDummyReviews(videoId);
+    const mergeSort = (real: ReviewDocument[]) =>
+      [...real, ...dummies].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     try {
       // videoId를 문서 ID로 가지는 문서를 직접 조회
       const docRef = doc(db, "videoReviews", videoId);
@@ -116,17 +203,18 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
             ...r,
             equippedBadge: r.userId ? badgeByKey.get(`${r.userId}:${r.profileId}`) ?? "" : "",
           }));
-          set({ reviews: reviewsWithBadge });
+          set({ reviews: mergeSort(reviewsWithBadge) });
         } catch {
           // 칭호 부착 실패해도 리뷰 자체는 그대로 노출
-          set({ reviews: sortedReviews });
+          set({ reviews: mergeSort(sortedReviews) });
         }
       } else {
-        // 리뷰가 없는 경우 빈 배열로 상태 초기화
-        set({ reviews: [] });
+        // 실제 리뷰가 없으면 더미 리뷰만 노출 (없으면 빈 배열)
+        set({ reviews: mergeSort([]) });
       }
     } catch (error) {
       console.error("영상 리뷰 페칭 에러:", error);
+      set({ reviews: mergeSort([]) });
     }
   },
 

@@ -12,6 +12,7 @@ import "../scss/mypage.scss";
 import { BADGE_LIST } from "@/data/badge";
 import { useCommunityEnabled } from "@/data/maturityFilter";
 import { useCommunityStore } from "@/store/useCommunityStore";
+import PointChip from "@/components/shop/PointChip";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 import { filters } from "../category/page";
@@ -465,6 +466,7 @@ export default function MyPage() {
                 구독하고 무제한으로 즐기세요 →
               </Link>
             )}
+            <PointChip className="mypage-point-chip" />
           </div>
 
           <div className="profile-stats">
