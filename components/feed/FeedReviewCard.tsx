@@ -444,9 +444,9 @@ export default function FeedReviewCard({
         <div className="post-meta">
           <h3>
             {review.author}
-            <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
+            {/* <FeedAuthorBadges badgeIds={review.authorBadgeIds} /> */}
+            <RepBadge badge={review.authorEquippedBadge} size="sm" className="feed-author-rep-badge" />
           </h3>
-          <RepBadge badge={review.authorEquippedBadge} size="sm" className="feed-author-rep-badge" />
           <div className="post-info">
             <span className="time">{getRelativeTime(review.createdAt)}</span>
             {!review.isPublic && <span className="private-tag">비공개</span>}

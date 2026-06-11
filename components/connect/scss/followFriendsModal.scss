@@ -184,17 +184,6 @@
       gap: 4px;
       align-items: center;
       margin-bottom: 4px;
-
-      span {
-        display: inline-block;
-        padding: 2px 12px;
-        background: rgba(229, 9, 20, 0.15);
-        color: g.$main-color;
-        border: 1px solid g.$main-color;
-        border-radius: 100px;
-        font-size: g.$text-12;
-        font-weight: 600;
-      }
     }
 
     strong {
