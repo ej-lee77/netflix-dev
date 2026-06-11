@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
@@ -73,6 +73,16 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
   const [videoReady, setVideoReady] = useState<number | null>(null);
   const [leftEdgeIndex, setLeftEdgeIndex] = useState(0);
   const [rightEdgeIndex, setRightEdgeIndex] = useState(Infinity);
+
+  // 태블릿/모바일(<=1024px) 감지: TOP10(showRank) 행은 호버 프리뷰 없이 탭 → 바로 상세 이동
+  const [isCompactView, setIsCompactView] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1024px)");
+    const update = () => setIsCompactView(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   const videoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 현재 보이는 슬라이드의 좌/우 끝 인덱스 갱신 (오른쪽 끝 카드가 컨테이너 밖으로 안 나가게)
@@ -145,7 +155,11 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
               <SwiperSlide key={item.id} className="category-slide">
                 <li
                   className="category-item"
-                  onMouseEnter={() => handleMouseEnter(item)}
+                  onMouseEnter={() => {
+                    // 태블릿/모바일 TOP10: 프리뷰 카드가 떠서 숫자/카드가 올라가 보이는 현상 방지
+                    if (showRank && isCompactView) return;
+                    handleMouseEnter(item);
+                  }}
                   onMouseLeave={handleMouseLeave}
                   onClick={() => {
                     if (isDragging.current) return;
