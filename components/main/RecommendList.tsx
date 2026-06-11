@@ -220,7 +220,7 @@ export default function RecommendList() {
 
                 <div className="slide-actions">
                   <Link
-                    href={`/detail/${item.media_type}/${item.id}?play=1`}
+                    href={`/watch/${item.media_type}/${item.id}`}
                     className="btn-play"
                     onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                   >

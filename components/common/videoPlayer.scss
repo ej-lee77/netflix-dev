@@ -8,6 +8,20 @@
   overflow: hidden;
 }
 
+/* 페이지 내 임베드 모드: 부모(16:9 박스 등)를 채우고 전체화면 고정 해제 */
+.vp-root--embed {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+.vp-root--embed:fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 300000;
+  border-radius: 0;
+}
+
 /* YouTube iframe */
 .vp-iframe {
   position: absolute;

@@ -29,6 +29,8 @@ interface VideoPlayerProps {
   onSelectEpisode?: (id: number) => void;
   /** 이어보기 시작 지점 (0~100 %) */
   startPct?: number;
+  /** 페이지 내 임베드 모드 (전체화면 고정 대신 부모 컨테이너를 채움) */
+  embedded?: boolean;
 }
 
 function formatTime(sec: number) {
@@ -46,6 +48,7 @@ export default function VideoPlayer({
   activeEpisodeId,
   onSelectEpisode,
   startPct,
+  embedded = false,
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -315,7 +318,7 @@ export default function VideoPlayer({
   return (
     <div
       ref={wrapRef}
-      className="vp-root"
+      className={`vp-root${embedded ? " vp-root--embed" : ""}`}
       onMouseMove={resetHideTimer}
       onMouseLeave={() => { if (hideTimer.current) clearTimeout(hideTimer.current); setShowControls(false); }}
     >
@@ -343,11 +346,13 @@ export default function VideoPlayer({
       <div className={`vp-controls ${showControls ? "vp-controls--on" : "vp-controls--off"}`}>
         {/* 상단: 뒤로가기 + 제목 */}
         <div className="vp-top">
-          <button className="vp-back-btn" onClick={onClose}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
+          {!embedded && (
+            <button className="vp-back-btn" onClick={onClose}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
           {title && <span className="vp-title">{title}</span>}
         </div>
 
