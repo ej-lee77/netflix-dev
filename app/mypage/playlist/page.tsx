@@ -694,6 +694,13 @@ function ActivityContent() {
             </div>
 
             <div className="modify-actions">
+              <button
+                type="button"
+                className="modify-delete-btn"
+                onClick={() => handleDeletePlaylist(modifyPlaylistId)}
+              >
+                삭제
+              </button>
               <button type="button" className="modify-cancel-btn" onClick={closeModifyCard}>
                 취소
               </button>
@@ -1076,14 +1083,6 @@ function ActivityContent() {
 
     return (
       <article className="custom-playlist-card" key={playlist.listId}>
-        <button
-          type="button"
-          className="playlist-delete-btn"
-          onClick={() => handleDeletePlaylist(playlist.listId)}
-          aria-label={`${playlist.name} 플레이리스트 삭제`}
-        >
-          -
-        </button>
         {selectedKeys.length > 0 ? (
           hasNewItems ? (
             <button type="button" className="playlist-add-btn" 
@@ -1098,17 +1097,28 @@ function ActivityContent() {
         ) : (null)}
         <Link href={`/playlist/${user?.userId}/${playlist.listId}`} className="mini-poster">
           <div className="playlist-mosaic">
-            {previewItems.map((item) => (
-              <div key={getItemKey(item)}>
-                {(item.backdrop_path || item.poster_path) && (
-                  <img src={getBackdropUrl(item)} alt={typeof item === 'object' && 'title' in item ? item.title : '작품'} />
-                )}
-              </div>
-            ))}
+            {Array.from({ length: 4 }).map((_, index) => {
+              const item = previewItems[index];
+
+              return (
+                <div
+                  key={item ? getItemKey(item) : `${playlist.listId}-empty-${index}`}
+                  className={item ? undefined : "playlist-mosaic-empty"}
+                >
+                  {item && (item.poster_path || item.backdrop_path) && (
+                    <img
+                      src={item.poster_path ? getPosterUrl(item.poster_path) : getBackdropUrl(item)}
+                      alt={typeof item === 'object' && 'title' in item ? item.title : '작품'}
+                    />
+                  )}
+                </div>
+              );
+            })}
             {playlistItems.length > 4 && <span>+{playlistItems.length - 4}</span>}
           </div>
 
           <h3>{playlist.name}</h3>
+          <p className="playlist-date">{formatDate(playlist.createdAt)}</p>
           {playlist.content && <p className="playlist-description">{playlist.content}</p>}
 
           {playlist.tags && playlist.tags.length > 0 && (
@@ -1125,12 +1135,11 @@ function ActivityContent() {
             </div>
           )}
 
-          <span className={playlist.isShare ? "playlist-visibility public" : "playlist-visibility"}>
-            {playlist.isShare ? "피드 공개" : "비공개"}
-          </span>
-
           <div className="playlist-extra-area">
-            <p>{playlistItems.length}개 작품 · {formatDate(playlist.createdAt)}</p>
+            <p>{playlistItems.length}개 작품</p>
+            <span className={playlist.isShare ? "playlist-visibility public" : "playlist-visibility"}>
+              {playlist.isShare ? "피드 공개" : "비공개"}
+            </span>
           </div>
         </Link>
         <button

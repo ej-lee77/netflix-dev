@@ -385,7 +385,11 @@ export default function Header() {
           <Suspense fallback={null}>
             <HeaderMenu />
           </Suspense>
-          <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+          <MobileDrawer
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            onProfileSwitch={runProfileSwitch}
+          />
         </>
       )}
       {pendingProfile && (

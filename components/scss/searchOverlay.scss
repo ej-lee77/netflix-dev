@@ -532,8 +532,8 @@
   }
 }
 
-/* ===== 모바일 전용 (600px 이하) ===== */
-@include g.respond(mobile) {
+/* ===== 태블릿/모바일: 아래에서 올라오는 검색창 ===== */
+@include g.respond(tablet) {
   .search-overlay {
     top: 0;
     height: 100vh;

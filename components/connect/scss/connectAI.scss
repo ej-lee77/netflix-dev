@@ -6,9 +6,9 @@
   right: 30px;
   bottom: 48px;
 
-  @media (max-width: 600px) {
+  @media (max-width: 1024px) {
     // MobileBottomNav(72px) + safe-area + 여유 16px 확보
-    bottom: calc(72px + env(safe-area-inset-bottom) + 16px);
+    bottom: calc(72px + env(safe-area-inset-bottom) + 28px);
     right: 16px;
   }
   z-index: 9999;
@@ -79,7 +79,7 @@
   transform: translateX(100%);
   animation: aiPanelIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
-  @media (max-width: 600px) {
+  @media (max-width: 1024px) {
     top: auto;
     left: 0;
     right: 0;
@@ -99,7 +99,7 @@
 .connect-ai-panel--closing {
   animation: aiPanelOut 0.28s cubic-bezier(0.4, 0, 1, 1) forwards;
 
-  @media (max-width: 600px) {
+  @media (max-width: 1024px) {
     animation: aiPanelOutMobile 0.28s cubic-bezier(0.4, 0, 1, 1) forwards;
   }
 }
@@ -131,7 +131,7 @@
   flex-shrink: 0;
   background: linear-gradient(90deg, rgba(229, 9, 20, 0.06) 0%, transparent 100%);
 
-  @media (max-width: 600px) {
+  @media (max-width: 1024px) {
     padding-top: 8px;
 
     &::before {

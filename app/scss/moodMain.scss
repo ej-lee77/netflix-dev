@@ -227,7 +227,7 @@
     }
 
     .mood-hero {
-      padding: 64px 0 48px;
+      padding: 44px 0 40px;
       margin-bottom: 36px;
 
       h1 {
@@ -249,7 +249,7 @@
     }
 
     .mood-hero {
-      padding: 40px 0 32px;
+      padding: 28px 0 28px;
       margin-bottom: 28px;
 
       .hero-eyebrow {
@@ -312,11 +312,11 @@
 
   @media (max-width: 420px) {
     .inner {
-      width: 100%;
+      width: min(100%, calc(100% - 32px));
     }
 
     .mood-hero {
-      padding: 34px 0 28px;
+      padding: 24px 0 24px;
 
       .hero-eyebrow {
         margin-bottom: 10px;
@@ -345,8 +345,8 @@
   .mood-main-page { padding-left: 80px; }
 }
 @include g.respond(tablet) {
-  .mood-main-page { padding-left: 64px; }
+  .mood-main-page { padding-left: 24px; padding-right: 24px; }
 }
 @include g.respond(mobile) {
-  .mood-main-page { padding-left: 56px; padding-right: 16px; }
+  .mood-main-page { padding-left: 16px; padding-right: 16px; }
 }

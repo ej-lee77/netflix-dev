@@ -487,6 +487,76 @@ main {
     padding-left: 24px !important;
     padding-right: 24px !important;
   }
+
+  body :is(
+    .alarm-page,
+    .category-catalog-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .info-page,
+    .login-page,
+    .media-list-page,
+    .menu-custom-page,
+    .mood-main-page,
+    .mypage,
+    .payment-page,
+    .pay-change-page,
+    .plan-page,
+    .playlist-detail-page,
+    .profile-settings-page,
+    .release-page,
+    .search-page,
+    .search-results-page,
+    .signin-page,
+    .wishlist-page,
+    .acset-page
+  ) {
+    padding-top: 16px !important;
+    padding-right: 24px !important;
+    padding-left: 24px !important;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .info-page,
+    .media-list-page,
+    .mood-main-page,
+    .mypage,
+    .release-page,
+    .search-page,
+    .search-results-page
+  ) .inner,
+  body :is(
+    .category-shell,
+    .menu-custom-page__inner,
+    .search-page__inner,
+    .wishlist-inner,
+    .acset-container,
+    .profile-settings-container
+  ) {
+    width: 100% !important;
+    max-width: min(100%, 1100px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
 }
 
 /* Mobile page shells should not keep the collapsed side-nav offset. */
@@ -565,6 +635,76 @@ main {
   body .playlist-detail-page .pl-body {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-catalog-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .info-page,
+    .login-page,
+    .media-list-page,
+    .menu-custom-page,
+    .mood-main-page,
+    .mypage,
+    .payment-page,
+    .pay-change-page,
+    .plan-page,
+    .playlist-detail-page,
+    .profile-settings-page,
+    .release-page,
+    .search-page,
+    .search-results-page,
+    .signin-page,
+    .wishlist-page,
+    .acset-page
+  ) {
+    padding-top: 16px !important;
+    padding-right: 16px !important;
+    padding-left: 16px !important;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .info-page,
+    .media-list-page,
+    .mood-main-page,
+    .mypage,
+    .release-page,
+    .search-page,
+    .search-results-page
+  ) .inner,
+  body :is(
+    .category-shell,
+    .menu-custom-page__inner,
+    .search-page__inner,
+    .wishlist-inner,
+    .acset-container,
+    .profile-settings-container
+  ) {
+    width: 100% !important;
+    max-width: min(100%, 900px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
 

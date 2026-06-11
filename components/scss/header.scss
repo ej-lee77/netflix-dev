@@ -677,8 +677,22 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
 
 /* ===== 반응형: 헤더 + 사이드메뉴(nav) ===== */
 @include g.respond(tablet) {
+    header {
+        padding-top: 8px;
+
+        &.scrolled {
+            background: linear-gradient(to bottom,
+                rgba(17, 17, 15, 0.95) 0%,
+                rgba(17, 17, 15, 0.88) 20%,
+                rgba(17, 17, 15, 0.66) 50%,
+                rgba(17, 17, 15, 0.22) 80%,
+                rgba(17, 17, 15, 0) 100%);
+            box-shadow: none;
+        }
+    }
+
     header>.flex-item {
-        padding: 8px 8px 0 0;
+        padding: 6px 24px;
     }
 
     header .mode-menu {
@@ -722,6 +736,8 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
 
     .mobile-hamburger {
         display: grid;
+        width: 40px;
+        height: 40px;
     }
 }
 
@@ -741,7 +757,7 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
     }
 
     header>.flex-item {
-        padding: 4px 6px 4px 6px;
+        padding: 4px 16px;
     }
 
     header .mode-menu {
@@ -775,5 +791,7 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
     /* 햄버거 버튼 표시 */
     .mobile-hamburger {
         display: grid;
+        width: 40px;
+        height: 40px;
     }
 }
