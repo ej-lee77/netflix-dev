@@ -371,9 +371,9 @@
 @include g.respond(tablet) {
   .recommend-section {
     padding: 40px 0 56px;
-    .section-title-outer { padding-left: 64px; }
-    .recommend-swiper { padding-left: 64px; padding-right: 24px; }
-    .swiper-button-prev { left: 64px; }
+    .section-title-outer { padding-left: 24px; padding-right: 24px; }
+    .recommend-swiper { padding-left: 24px; padding-right: 24px; }
+    .swiper-button-prev { left: 24px; }
 
     /* 카드 높이: 고정 비율(2/1.8) 해제 → 내용 기준 자동 높이
        (비율 높이 < 내용 높이라서 justify-content:center + overflow:hidden 에

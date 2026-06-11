@@ -3,7 +3,7 @@
 .menu-custom-page {
   min-height: calc(100vh - g.$header-height);
   color: #fff;
-  padding: 44px 6vw 72px;
+  padding: 32px 6vw 64px;
 
   // 1. 레이아웃 컨테이너
   .menu-custom-page__inner {
@@ -473,8 +473,8 @@
     }
   }
 
-  @media (max-width: 760px) {
-    padding: 24px 16px 72px;
+  @media (max-width: 1024px) {
+    padding: 16px 16px 56px;
 
     .custom-panel {
       margin-top: 16px;
@@ -594,8 +594,8 @@
   .menu-custom-page { padding-left: 80px; }
 }
 @include g.respond(tablet) {
-  .menu-custom-page { padding-left: 64px; }
+  .menu-custom-page { padding: 16px 24px 64px; }
 }
 @include g.respond(mobile) {
-  .menu-custom-page { padding: 24px 16px 72px; }
+  .menu-custom-page { padding: 16px 16px 56px; }
 }
