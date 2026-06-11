@@ -93,7 +93,7 @@ export default function ConnectPage() {
 
       {/* OTT: 팔로우 취향 저격 (트렌딩 기반) */}
       {trendingItems.length > 0 ? (
-        <ThemeRow title="팔로우 취향 저격 작품" items={trendingItems} href="/category" />
+        <ThemeRow title="취향 저격 작품" items={trendingItems} href="/category" />
       ) : (
         <ThemeRowSkeleton />
       )}
