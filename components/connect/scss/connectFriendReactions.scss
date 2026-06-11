@@ -239,7 +239,8 @@
   .connect-friend-reactions .section-header { padding-right: 16px; }
 }
 @include g.respond(mobile) {
-  .connect-friend-reactions__inner { width: calc(100vw - 56px); }
+  // 사이드바 숨김 → 전체 너비 사용
+  .connect-friend-reactions__inner { width: 100vw; }
   .connect-friend-reactions__slide,
   .connect-friend-reactions__card {
     width: calc((100vw - 98px) / 3.3);

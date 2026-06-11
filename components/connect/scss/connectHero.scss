@@ -438,12 +438,20 @@ $hero-h: clamp(420px, 40vw, 900px);
     width: 92%;
   }
 
-  .connect-hero__nav {
-    display: none;
+  // 모바일에서 swiper 화살표 숨김 (터치 스와이프로 대체)
+  .connect-hero__nav,
+  .connect-hero__swiper .swiper-button-prev,
+  .connect-hero__swiper .swiper-button-next {
+    display: none !important;
   }
 
   .connect-hero__title {
     font-size: 1.2rem;
+  }
+
+  .connect-hero__logo img {
+    max-width: clamp(140px, 44vw, 240px);
+    max-height: 110px;
   }
 
   .connect-hero__rec-reason,
@@ -453,6 +461,21 @@ $hero-h: clamp(420px, 40vw, 900px);
 
   .connect-hero__content {
     bottom: 52px;
+    left: 18px;
+    max-width: calc(100% - 36px);
+  }
+
+  .connect-hero__counter {
+    bottom: 16px;
+    right: 16px;
+    font-size: 0.72rem;
+  }
+
+  .connect-hero__badge {
+    top: 14px;
+    left: 14px;
+    font-size: 0.72rem;
+    padding: 5px 10px;
   }
 }
 /* ===== 반응형: 히어로 버튼 축소 ===== */

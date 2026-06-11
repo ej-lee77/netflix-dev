@@ -292,7 +292,8 @@ i {
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: hidden; /* fallback: older Safari */
+  overflow-x: clip;   /* prevents horizontal scroll without creating scroll container → fixes iOS Safari position:fixed bug */
   color: $w-color;
   font-size: $main-text;
   background-color: $bg-color;
@@ -381,7 +382,7 @@ main {
   }
 
   main.has-nav {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
 }
 
