@@ -191,6 +191,20 @@
     }
   }
 
+  /* 터치 기기·태블릿·모바일: 탭이 :hover로 고착되어
+     포스터(순위 숫자 포함)가 위로 떠오르는 현상 차단 → 탭하면 바로 상세 이동 */
+  @media (hover: none), (max-width: 1024px) {
+    .category-item:hover .img-box {
+      transform: none;
+      box-shadow: none;
+      border-radius: 0;
+
+      .poster-img {
+        transform: none;
+      }
+    }
+  }
+
   // hover-card 등장 후: 포스터 페이드아웃 (hover-card가 덮음)
   .category-item:has(.hover-card) .img-box {
     opacity: 0;
