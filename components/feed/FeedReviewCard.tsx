@@ -12,6 +12,7 @@ import {
   getInitial,
   getPosterUrl,
   getRelativeTime,
+  parseFeedMediaMeta,
   REPORT_REASONS,
 } from "@/types/feedData";
 import { useRouter } from "next/navigation";
@@ -54,6 +55,7 @@ export default function FeedReviewCard({
   onDelete,
 }: FeedReviewCardProps) {
   const router = useRouter();
+  const mediaMeta = parseFeedMediaMeta(review.mediaMeta);
   const {
     user,
     currentProfile,
@@ -451,6 +453,10 @@ export default function FeedReviewCard({
           </div>
         </div>
         <div className="review-tags">
+          <div className="desktop-card-rating">
+            {renderRatingStars(review.rating)}
+            <em>{review.rating.toFixed(1)}</em>
+          </div>
           {!isReviewOwner && (
             <div className="report-menu">
               <button
@@ -512,9 +518,15 @@ export default function FeedReviewCard({
         </Link>
         <div className="review-info">
           <div className="feed-detail-link">
-            <h4>{review.mediaTitle}</h4>
-            <p className="meta">{review.mediaMeta}</p>
-            <div className="stars">
+            <div className="feed-review-media-copy">
+              <h4>{review.mediaTitle}</h4>
+              <p className="meta meta-primary">{mediaMeta.primary}</p>
+              {mediaMeta.average && (
+                <p className="meta meta-average">{mediaMeta.average}</p>
+              )}
+            </div>
+            <div className="stars mobile-card-rating">
+              <span className="stars-label">내 별점</span>
               {renderRatingStars(review.rating)}
               <em>{review.rating.toFixed(1)} / 5.0</em>
             </div>
