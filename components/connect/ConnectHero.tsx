@@ -184,22 +184,21 @@ export default function ConnectHero() {
   }, [realIndex, items]);
 
   const TOTAL = items.length;
-
-  if (TOTAL === 0) {
-    return <section className="connect-hero connect-hero--loading" aria-label="커넥트 컬렉션" />;
-  }
+  const isLoading = TOTAL === 0;
 
   // ─────────────────────────────────────────────────────────
   // Swiper 내장 loop 대신 아이템 3배 복제로 직접 무한 루프 구현
   // → initialSlide를 중간 셋 시작점으로 명시 → 타이밍 무관하게 항상 1번 슬라이드 시작
   // ─────────────────────────────────────────────────────────
-  const loopItems = [...items, ...items, ...items];  // 총 TOTAL*3 슬라이드
+  const loopItems = isLoading ? [] : [...items, ...items, ...items];
   const LOOP_CENTER = TOTAL;                          // 중간 셋의 첫 번째 슬라이드 인덱스
 
   return (
-    <section className="connect-hero" aria-label="커넥트 컬렉션">
-      {/* 배경 블러: overflow:hidden 래퍼 안에서 클리핑 */}
+    <section className={`connect-hero${isLoading ? " connect-hero--loading" : ""}`} aria-label="커넥트 컬렉션">
+      {/* 배경 블러: 로딩 중에도 항상 렌더링 → GPU compositing 레이어 유지 → fixed 요소 깜빡임 방지 */}
       <div className="connect-hero__bg-layer">
+        {/* 플레이스홀더: filter:blur GPU 레이어를 초기 렌더부터 확보 */}
+        <div className="connect-hero__section-bg" style={{ opacity: 0 }} />
         {items.map((item, i) => (
           <div
             key={item.id}
@@ -212,7 +211,7 @@ export default function ConnectHero() {
         ))}
       </div>
 
-      <Swiper
+      {!isLoading && <Swiper
         className="connect-hero__swiper"
         centeredSlides
         slidesPerView="auto"
@@ -333,7 +332,7 @@ export default function ConnectHero() {
             </div>
           </SwiperSlide>
         ))}
-      </Swiper>
+      </Swiper>}
     </section>
   );
 }

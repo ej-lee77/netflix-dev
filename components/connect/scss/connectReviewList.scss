@@ -368,8 +368,13 @@
   .connect-review-list .section-header { padding-right: 16px; }
 }
 @include g.respond(mobile) {
+  // 사이드바 숨김 → 전체 너비 사용
   .connect-review-list__inner {
-    width: calc(100vw - 56px);
-    margin-left: 56px;
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 12px;
   }
+  .connect-review-list .section-header { padding-right: 12px; }
+  .review-card { width: min(80vw, 300px); }
+  .connect-review-list__skeleton-card { width: min(80vw, 300px); }
 }
