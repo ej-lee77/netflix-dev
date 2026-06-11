@@ -257,96 +257,135 @@ export default function MyPage() {
     return results.filter((item): item is PlayListItem => item !== null);
   };
 
+  const ID_MAP = useMemo(() => {
+    const genreToTargets: Record<string, { label: string; type: 'genre' | 'mood' }[]> = {};
+    const moodToInfo: Record<string, { label: string; id: string }> = {};
+
+    // 1. 장르 처리
+    filters.genre.forEach((g) => {
+      const ids = [...(g.query?.with_genres?.split(",") || []), ...(g.tvQuery?.with_genres?.split(",") || [])];
+      ids.forEach(id => {
+        const cleanId = id.trim();
+        if (!genreToTargets[cleanId]) genreToTargets[cleanId] = [];
+        genreToTargets[cleanId].push({ label: g.label, type: 'genre' });
+      });
+    });
+
+    // 2. 무드 처리
+    filters.mood.forEach((m) => {
+      moodToInfo[m.id] = { label: m.label, id: m.id }; // 무드 ID와 레이블 저장
+      
+      const ids = [...(m.query?.with_genres?.split(",") || []), ...(m.tvQuery?.with_genres?.split(",") || [])];
+      ids.forEach(id => {
+        const cleanId = id.trim();
+        if (!genreToTargets[cleanId]) genreToTargets[cleanId] = [];
+        genreToTargets[cleanId].push({ label: m.label, type: 'mood' });
+      });
+    });
+
+    return { genreToTargets, moodToInfo };
+  }, []);
+
   // const genreMoodStats = useMemo(() => {
-  //   const gStats = activeProfile?.movies?.genreStats || {};
-  //   const mStats = activeProfile?.movies?.moodStats || {};
+  //   const stats = activeProfile?.movies?.genreStats || {}; // 통합된 stats 객체
+  //   const totalCount = Object.values(stats).reduce((a, b) => a + b, 0);
 
-  //   const totalCount = Object.values(gStats).reduce((a, b) => a + b, 0);
+  //   if (totalCount === 0) return { isEmpty: true };
 
-  //   if (totalCount === 0) {
-  //     return {
-  //       isEmpty: true,
-  //       genres: [],
-  //       moods: [],
-  //       topGenre: { name: "없음" },
-  //       topMood: { tag: "없음" }
-  //     };
-  //   }
-
-  //   // 1. 장르 데이터 처리
-  //   const totalGenre = Object.values(gStats).reduce((a, b) => a + b, 0);
-  //   const genres = Object.entries(gStats)
-  //     .map(([name, count]) => ({
-  //       name,
-  //       count,
-  //       percentage: totalGenre > 0 ? Math.round((count / totalGenre) * 100) : 0,
-  //       color: getGenreColor(name)
-  //     }))
+  //   // 1. 장르 처리: filters.genre에 ID가 존재하는지 확인
+  //   const genres = Object.entries(stats)
+  //     .filter(([id]) => filters.genre.some(g => g.query.with_genres?.includes(id)))
+  //     .map(([id, count]) => {
+  //       const gInfo = filters.genre.find(g => g.query.with_genres?.includes(id));
+  //       return {
+  //         name: gInfo?.label || "기타",
+  //         count,
+  //         percentage: Math.round((count / totalCount) * 100),
+  //         color: GENRE_COLORS[gInfo?.label || "기타"] // 필요시 별도 컬러 함수 사용
+  //       };
+  //     })
   //     .sort((a, b) => b.count - a.count);
 
-  //   // 2. 무드 데이터 처리
-  //   const moods = Object.entries(mStats)
-  //     .map(([tag, count]) => ({
-  //       tag,
-  //       count,
-  //       type: "neutral", // 추후 로직에 따라 positive/negative 할당
-  //       img: `/images/header/menu/mood-${tag}.svg`
-  //     }))
+  //   // 2. 무드 처리: filters.mood에 ID가 존재하는지 확인
+  //   const moods = Object.entries(stats)
+  //     .filter(([id]) => filters.mood.some(m => m.id === id))
+  //     .map(([id, count]) => {
+  //       const mInfo = filters.mood.find(m => m.id === id);
+  //       return {
+  //         tag: mInfo?.label || "일반",
+  //         count,
+  //         type: "neutral",
+  //         img: `/images/header/menu/mood-${id}.svg`
+  //       };
+  //     })
   //     .sort((a, b) => b.count - a.count);
 
   //   return {
+  //     isEmpty: false,
   //     genres,
   //     moods,
-  //     topGenre: genres[0] || { name: "없음", count: 0 },
-  //     topMood: moods[0] || { tag: "없음" },
-  //     totalGenre
+  //     topGenre: genres[0] || { name: "없음" },
+  //     topMood: moods[0] || { tag: "없음" }
   //   };
   // }, [activeProfile]);
 
+  // Firestore에서 플랜/결제 정보 불러오기
+  
   const genreMoodStats = useMemo(() => {
-    const stats = activeProfile?.movies?.genreStats || {}; // 통합된 stats 객체
+    const stats = activeProfile?.movies?.genreStats || {};
     const totalCount = Object.values(stats).reduce((a, b) => a + b, 0);
 
     if (totalCount === 0) return { isEmpty: true };
 
-    // 1. 장르 처리: filters.genre에 ID가 존재하는지 확인
-    const genres = Object.entries(stats)
-      .filter(([id]) => filters.genre.some(g => g.query.with_genres?.includes(id)))
-      .map(([id, count]) => {
-        const gInfo = filters.genre.find(g => g.query.with_genres?.includes(id));
-        return {
-          name: gInfo?.label || "기타",
-          count,
-          percentage: Math.round((count / totalCount) * 100),
-          color: GENRE_COLORS[gInfo?.label || "기타"] // 필요시 별도 컬러 함수 사용
-        };
-      })
-      .sort((a, b) => b.count - a.count);
+    const genreResults: Record<string, number> = {};
+    const moodResults: Record<string, { count: number; id: string }> = {};
 
-    // 2. 무드 처리: filters.mood에 ID가 존재하는지 확인
-    const moods = Object.entries(stats)
-      .filter(([id]) => filters.mood.some(m => m.id === id))
-      .map(([id, count]) => {
-        const mInfo = filters.mood.find(m => m.id === id);
-        return {
-          tag: mInfo?.label || "일반",
-          count,
-          type: "neutral",
-          img: `/images/header/menu/mood-${id}.svg`
-        };
-      })
-      .sort((a, b) => b.count - a.count);
+    Object.entries(stats).forEach(([id, count]) => {
+      // 1. 무드 ID 직접 매핑
+      if (ID_MAP.moodToInfo[id]) {
+        const { label, id: moodId } = ID_MAP.moodToInfo[id];
+        if (!moodResults[label]) moodResults[label] = { count: 0, id: moodId };
+        moodResults[label].count += count;
+      }
+
+      // 2. 장르 ID를 통한 매핑
+      const targets = ID_MAP.genreToTargets[id] || [];
+      targets.forEach(t => {
+        if (t.type === 'genre') {
+          genreResults[t.label] = (genreResults[t.label] || 0) + count;
+        } else if (t.type === 'mood') {
+          // 장르 ID를 통해 무드 레이블을 찾고, 그에 해당하는 ID도 찾음
+          const moodInfo = filters.mood.find(m => m.label === t.label);
+          if (moodInfo) {
+            if (!moodResults[t.label]) moodResults[t.label] = { count: 0, id: moodInfo.id };
+            moodResults[t.label].count += count;
+          }
+        }
+      });
+    });
+
+    // 배열 변환 로직
+    const genres = Object.entries(genreResults).map(([name, count]) => ({
+      name, count, percentage: Math.round((count / totalCount) * 100), color: GENRE_COLORS[name] || "#ccc"
+    })).sort((a, b) => b.count - a.count);
+
+    // 배열 변환 (이제 mood 객체 안에 id가 포함되어 있음)
+    const moods = Object.entries(moodResults).map(([tag, data]) => ({
+      tag, 
+      count: data.count, 
+      id: data.id, // 추가됨
+      img: `/images/header/menu/mood-${data.id}.svg` // 여기에서 id 사용
+    })).sort((a, b) => b.count - a.count);
 
     return {
-      isEmpty: false,
+      isEmpty: false, // 이 부분을 추가했습니다
       genres,
       moods,
       topGenre: genres[0] || { name: "없음" },
       topMood: moods[0] || { tag: "없음" }
     };
-  }, [activeProfile]);
-
-  // Firestore에서 플랜/결제 정보 불러오기
+  }, [activeProfile, ID_MAP]);
+  
   const [planType, setPlanType] = useState<string>("");
   const [nextDate, setNextDate] = useState<string>("");
 
@@ -556,8 +595,8 @@ export default function MyPage() {
                   <h3>선호하는 무드</h3>
                   <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 보셨어요.</p>
                   <div className="mood-tag-cloud">
-                    {genreMoodStats.moods?.map((m, index) => (
-                      <span key={index} className={`mood-tag-item ${m.type}`}>
+                    {genreMoodStats.moods?.slice(0, 8).map((m, index) => (
+                      <span key={index} className={`mood-tag-item `}>
                         <img src={m.img} alt={m.tag} />
                         {m.tag}
                       </span>
@@ -567,18 +606,21 @@ export default function MyPage() {
                   <div className="mood-summary-box">
                     {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
                       <p>
-                        <AppIcon name="bulb" size={15} /> 주로 
-                        {genreMoodStats.topGenre?.name !== "없음" && (
-                          <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
-                        )}
-                        
-                        {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
-                        {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
-                        
-                        {genreMoodStats.topMood?.tag !== "없음" && (
-                          <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
-                        )}
-                        의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                        <AppIcon name="bulb" size={15} />  
+                        <div>
+                          주로
+                          {genreMoodStats.topGenre?.name !== "없음" && (
+                            <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
+                          )}
+                          
+                          {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
+                          {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
+                          
+                          {genreMoodStats.topMood?.tag !== "없음" && (
+                            <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
+                          )}
+                          의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                        </div>
                       </p>
                     )}                  
                   </div>
