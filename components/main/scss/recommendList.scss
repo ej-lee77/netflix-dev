@@ -367,10 +367,24 @@
     .section-title-outer { padding-left: 64px; }
     .recommend-swiper { padding-left: 64px; padding-right: 24px; }
     .swiper-button-prev { left: 64px; }
-    .recommend-slide { max-height: clamp(320px, 42vw, 420px); }
 
-    /* 좁은 카드 폭에 버튼 4개(재생·상세·찜·공유)가 한 줄에 들어가도록 축소 */
-    .slide-info { padding-left: 16px; padding-right: 16px; }
+    /* 카드 높이: 고정 비율(2/1.8) 해제 → 내용 기준 자동 높이
+       (비율 높이 < 내용 높이라서 justify-content:center + overflow:hidden 에
+       타이틀·별점이 위아래로 잘리던 문제 해결) */
+    .swiper-slide { height: auto; }
+    .recommend-slide {
+      aspect-ratio: auto;
+      max-height: none;
+      height: 100%;          // 가장 높은 카드 기준으로 줄 맞춤
+    }
+    .slide-poster { flex: none; aspect-ratio: 16 / 9; }
+    .slide-info {
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 14px 16px 16px;
+    }
+    .slide-title { font-size: 18px; line-height: 1.25; }
+    .slide-overview { -webkit-line-clamp: 1; line-clamp: 1; }
 
     .slide-actions {
       gap: 8px;
@@ -400,8 +414,33 @@
     .swiper-button-prev { left: 20px; }
     .swiper-button-prev,
     .swiper-button-next { display: none; }
-    .recommend-slide { max-height: clamp(230px, 62vw, 320px); }
-    .slide-info { padding: 10px 14px; }
+
+    /* 카드 높이: 비율 해제 → 내용 기준 (62vw 제한 때문에 정보 영역이 잘리던 문제 해결) */
+    .swiper-slide { height: auto; }
+    .recommend-slide {
+      aspect-ratio: auto;
+      max-height: none;
+      height: 100%;
+    }
+    .slide-poster { flex: none; aspect-ratio: 16 / 9; }
+    .slide-info {
+      justify-content: flex-start;
+      gap: 5px;
+      padding: 12px 14px 14px;
+    }
+    .slide-title { font-size: 17px; line-height: 1.25; }
+    .meta-stars .star { font-size: 12px; }
+    .meta-score,
+    .meta-sep,
+    .meta-year,
+    .meta-genres { font-size: 12px; }
+    .meta-cert { font-size: 10px; padding: 1px 6px; }
+    .slide-overview {
+      font-size: 12px;
+      line-height: 1.55;
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
+    }
     .slide-actions { gap: 8px; flex-wrap: wrap; row-gap: 8px; min-width: 0; }
     .btn-play, .btn-info { height: 34px; font-size: 13px; white-space: nowrap; }
     .btn-play { padding: 0 13px; gap: 6px; }

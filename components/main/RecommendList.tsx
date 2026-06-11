@@ -131,7 +131,7 @@ export default function RecommendList() {
         className="recommend-swiper"
         breakpoints={{
           0:    { slidesPerView: 1,  spaceBetween: 10 },
-          768:  { slidesPerView: 3,  spaceBetween: 10 },
+          768:  { slidesPerView: 2,  spaceBetween: 12 }, // 3장이면 카드 폭 ~300px로 타이틀·버튼이 비좁아 2장으로 조정
           1280: { slidesPerView: 3,  spaceBetween: 4  },
           1920: { slidesPerView: 3,  spaceBetween: -3 },
           2560: { slidesPerView: 5,  spaceBetween: 1  },
