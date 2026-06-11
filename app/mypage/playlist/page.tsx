@@ -17,6 +17,7 @@ import { WishItem } from "@/types/wishlist";
 import { convertToMedia } from "../wishlist/page";
 import { PlaylistDocument } from "@/types/playList";
 import Image from "next/image";
+import MobileFilterAccordion from "@/components/mypage/MobileFilterAccordion";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv" | "animation";
@@ -353,9 +354,14 @@ function ActivityContent() {
     return list.sort((a, b) => {
       switch (wishSort) {
         case "title":
-          return a.title.localeCompare(b.title);
+          return String(a.title ?? "").localeCompare(
+            String(b.title ?? ""),
+            "ko",
+          );
         case "rating":
-          return b.vote_average - a.vote_average;
+          return (
+            Number(b.vote_average ?? 0) - Number(a.vote_average ?? 0)
+          );
         case "recent":
         default:
           // 최근 찜한 순 (보통 배열 순서가 최신이므로 기본 유지)
@@ -535,7 +541,13 @@ function ActivityContent() {
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
-    await onRemovePlayList(item.id);
+    try {
+      await onRemovePlayList(item.id);
+      showToast("삭제되었습니다.");
+    } catch (error) {
+      console.error("시청 중인 콘텐츠 삭제 실패:", error);
+      showToast("삭제에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const handleDeleteHistItem = async (item: PlayListItem) => {
@@ -847,7 +859,6 @@ function ActivityContent() {
     <section className="activity-section">
       <div className="section-head">
         <h2>시청 중인 콘텐츠 <strong>{watchingItems.length}</strong></h2>
-        <button type="button" onClick={() => setActiveTab("history")}>전체보기</button>
       </div>
 
       {watchingItems.length > 0 ? (
@@ -938,6 +949,21 @@ function ActivityContent() {
             애니메이션 {animationCount}
           </button>
         </div>
+        <MobileFilterAccordion
+          ariaLabel="시청기록 필터"
+          value={filter}
+          options={[
+            { value: "all", label: "전체", count: visibleHistoryItems.length },
+            { value: "movie", label: "영화", count: movieCount },
+            { value: "tv", label: "시리즈", count: tvCount },
+            {
+              value: "animation",
+              label: "애니메이션",
+              count: animationCount,
+            },
+          ]}
+          onChange={setFilter}
+        />
       </div>
 
       {filteredHistory.length > 0 ? (
@@ -1208,6 +1234,38 @@ function ActivityContent() {
             </button>
           ))}
         </div>
+        <MobileFilterAccordion
+          ariaLabel="위시리스트 필터"
+          value={wishFilter}
+          options={wishTabs.map((tab) => ({
+            value: tab.key,
+            label: tab.label,
+            count:
+              tab.key === "all"
+                ? listItems.length
+                : tab.key === "movie"
+                  ? plmovieCount
+                  : tab.key === "drama"
+                    ? pltvCount
+                    : planimationCount,
+          }))}
+          onChange={(nextFilter) => {
+            setWishFilter(nextFilter);
+            setSelectionPage(1);
+          }}
+        />
+        <MobileFilterAccordion
+          ariaLabel="위시리스트 정렬"
+          value={wishSort}
+          options={wishSortOptions.map((option) => ({
+            value: option.key,
+            label: option.label,
+          }))}
+          onChange={(nextSort) => {
+            setWishSort(nextSort);
+            setSelectionPage(1);
+          }}
+        />
 
         <div className="wish-sort">
           <button

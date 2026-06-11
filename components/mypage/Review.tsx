@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useMovieStore } from '@/store/useMovieStore';
 import { showToast } from "@/store/useToastStore";
 import { relative } from 'path';
+import MobileFilterAccordion from "@/components/mypage/MobileFilterAccordion";
 
 const REVIEW_PAGE_SIZE = 10;
 
@@ -331,6 +332,27 @@ export default function Review() {
           </button>
         ))}
       </div>
+      <MobileFilterAccordion
+        ariaLabel="리뷰 범위 필터"
+        value={scopeFilter}
+        options={scopeFilters.map((sf) => ({
+          value: sf.key,
+          label: sf.label,
+          count: counts[sf.key],
+        }))}
+        onChange={setScopeFilter}
+      />
+      <MobileFilterAccordion
+        ariaLabel="리뷰 정렬"
+        value={sortType}
+        options={sortOptions
+          .filter((option) => option.key !== "comments")
+          .map((option) => ({
+            value: option.key,
+            label: option.label,
+          }))}
+        onChange={setSortType}
+      />
 
       <div className="community-sort">
         <button type="button" className="sort-btn" onClick={() => setSortOpen(!sortOpen)}>
@@ -395,6 +417,7 @@ export default function Review() {
             return (
               <article
                 key={review.reviewId}
+                className="mypage-review-card"
                 style={{
                   border: "1px solid #2a2a35",
                   borderRadius: 8,
@@ -403,8 +426,8 @@ export default function Review() {
                 }}
               >
                 
-                <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                  <Link href={`/detail/${linkType}/${linkId}`}>
+                <div className="mypage-review-card__main" style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                  <Link className="mypage-review-card__poster-link" href={`/detail/${linkType}/${linkId}`}>
                     <div className="review-thumb">
                       <img
                         src={movie ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : 'https://image.tmdb.org/t/p/w200/evoEi8SBSvllEveM3V6nCJ6vKj8.jpg'}
@@ -412,7 +435,7 @@ export default function Review() {
                       />
                     </div>
                   </Link>
-                  <div className='w-full'>
+                  <div className="mypage-review-card__info w-full">
                     <h3>{movie?.title || movie?.name || '로딩 중...'}</h3>
                     <strong style={{ color: "#fff", fontSize: 15 }}>{review.nickname}</strong>
                     <span style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}>{renderStars(review.rating)}</span>
@@ -674,6 +697,7 @@ export default function Review() {
                           }}
                         >
                           <p
+                            className="mypage-review-card__content"
                             style={{
                               margin: 0,
                               color: "#cfcfcf",
@@ -727,10 +751,11 @@ export default function Review() {
                   </div>
                 </div>
 
-                <time style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>
+                <time className="mypage-review-card__date" style={{ display: "block", marginTop: 12, color: "#666", fontSize: 12 }}>
                   {new Date(review.createdAt).toLocaleDateString("ko-KR")}
                 </time>
                 <div
+                  className="mypage-review-card__actions"
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -780,6 +805,7 @@ export default function Review() {
                   </button>
                   {isMyReview && (
                   <div
+                    className="mypage-review-card__owner-actions"
                     style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
                     {/*  오른쪽 버튼들을 묶어주는 div 추가 */}
