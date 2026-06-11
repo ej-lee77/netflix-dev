@@ -17,6 +17,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 import { filters } from "../category/page";
 import { PlayListItem } from "@/types/playList";
+import RepBadge from "@/components/common/RepBadge";
 
 const GENRE_COLORS: { [key: string]: string } = {
   // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
@@ -447,11 +448,12 @@ export default function MyPage() {
           <div className="profile-info">
             <div className="name-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h2>{activeProfile?.nickname || "사용자"}</h2>
-              {profileData.equippedBadgeName && (
+              <RepBadge badge={profileData.equippedBadgeName} size="md" className="pl-creator-badge" />
+              {/* {profileData.equippedBadgeName && (
                 <span className="user-equipped-badge-tag">
                   {profileData.equippedBadgeName}
                 </span>
-              )}
+              )} */}
             </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
             {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
