@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/alarm.scss";
 import BackButton from "@/components/common/BackButton";
+import AppIcon from "@/components/common/AppIcon";
 
 type NotifType = "episode" | "friend" | "upcoming" | "reaction";
 type FilterType = "all" | NotifType;
@@ -246,16 +247,18 @@ function AlarmContent() {
 }
 
 function NotifItem({ notif }: { notif: Notif }) {
-  const iconMap = {
-    episode: "▶",
-    friend: "👥",
-    upcoming: "📅",
-    reaction: "♥",
+  const iconMap : any = {
+    episode: "episode",
+    friend: "friend",
+    upcoming: "upcoming",
+    reaction: "reaction",
   };
 
   const content = (
     <>
-      <div className={`notif-icon ${notif.type}`}>{iconMap[notif.type]}</div>
+      <div className={`notif-icon ${notif.type}`}>
+        <AppIcon name={iconMap[notif.type]} size={15} /> 
+      </div>
       <div className="notif-body">
         <div className="text">
           <strong>{notif.title}</strong>
