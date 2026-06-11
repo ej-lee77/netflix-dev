@@ -722,6 +722,11 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
         padding: 4px 6px 4px 6px;
     }
 
+    /* 로고와 모드 메뉴(시네마/커넥트) 사이 간격 축소 */
+    header .flex-item.gap-6 {
+        gap: 10px;
+    }
+
     header .mode-menu {
         gap: 8px;
         font-size: g.$text-14;
