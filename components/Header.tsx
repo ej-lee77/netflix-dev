@@ -178,9 +178,8 @@ export default function Header() {
   return (
     <>
       <header
-        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${
-          isSearchOpen ? " search-open" : ""
-        }`}
+        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${isSearchOpen ? " search-open" : ""
+          }`}
       >
         <div className="flex-item">
           <div className="flex-item gap-6">
@@ -219,43 +218,45 @@ export default function Header() {
           </div>
 
           <ul className="gnb-menu flex-item gap-4">
-            {/* 검색·알림·프로필 GNB는 구독 여부와 무관하게 항상 표시
-                (planType 미설정 계정에서 우측 GNB가 사라지던 문제 수정) */}
-            <li>
-              <button
-                type="button"
-                className="header-search-toggle"
-                onClick={toggleSearch}
-                aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
-                aria-expanded={isSearchOpen}
-              >
-                {isSearchOpen ? (
-                  <span
-                    className="header-search-toggle__close"
-                    aria-hidden="true"
-                  >
-                    <img src="/images/header/header-search-close.svg" alt="." />
-                  </span>
-                ) : (
+            {!isUnsubscribed && (
+              <li>
+                <button
+                  type="button"
+                  className="header-search-toggle"
+                  onClick={toggleSearch}
+                  aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
+                  aria-expanded={isSearchOpen}
+                >
+                  {isSearchOpen ? (
+                    <span
+                      className="header-search-toggle__close"
+                      aria-hidden="true"
+                    >
+                      <img src="/images/header/header-search-close.svg" alt="." />
+                    </span>
+                  ) : (
+                    <Image
+                      src="/images/header/search.svg"
+                      alt=""
+                      width={24}
+                      height={24}
+                    />
+                  )}
+                </button>
+              </li>
+            )}
+            {!isUnsubscribed && (
+              <li className="gnb-alarm">
+                <Link href="/alarm">
                   <Image
-                    src="/images/header/search.svg"
-                    alt=""
+                    src="/images/header/alarm.svg"
+                    alt="알림"
                     width={24}
                     height={24}
                   />
-                )}
-              </button>
-            </li>
-            <li className="gnb-alarm">
-              <Link href="/alarm">
-                <Image
-                  src="/images/header/alarm.svg"
-                  alt="알림"
-                  width={24}
-                  height={24}
-                />
-              </Link>
-            </li>
+                </Link>
+              </li>
+            )}
 
             {!user ? (
               <li>
@@ -404,18 +405,19 @@ export default function Header() {
         </div>
         <HeaderSearchOverlay isOpen={isSearchOpen} onClose={closeSearch} />
       </header>
-      {/* 사이드메뉴·모바일 드로어는 구독 여부와 무관하게 항상 표시
-          (planType 로딩 전/미구독 시 메뉴 전체가 사라지던 문제 수정.
-           구독 차단은 콘텐츠 클릭 시 SubscribeModal로 처리됨) */}
-      <Suspense fallback={null}>
-        <HeaderMenu />
-      </Suspense>
+      {!isUnsubscribed && (
+        <>
+          <Suspense fallback={null}>
+            <HeaderMenu />
+          </Suspense>
 
-      <MobileDrawer
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-        onProfileSwitch={runProfileSwitch}
-      />
+          <MobileDrawer
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            onProfileSwitch={runProfileSwitch}
+          />
+        </>
+      )}
       {pendingProfile && (
         <ProfilePinGate
           key={pendingProfile.id}
