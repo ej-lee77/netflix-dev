@@ -2469,3 +2469,147 @@
     margin: 0;
   }
 }
+
+@media (max-width: 640px) {
+  .media-list-page.activity-page {
+    padding-top: 28px;
+
+    .activity-hero {
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .activity-hero .page-head {
+      margin-bottom: 0;
+
+      h1 {
+        margin-bottom: 6px;
+        font-size: g.$text-24;
+        line-height: 1.3;
+      }
+
+      p {
+        font-size: g.$text-12;
+        line-height: 1.5;
+      }
+    }
+
+    .activity-section {
+      .section-head {
+        margin-bottom: 18px;
+
+        h2 {
+          font-size: g.$text-18;
+
+          strong {
+            margin-left: 6px;
+            font-size: g.$text-14;
+          }
+        }
+      }
+
+      .filter-chips {
+        display: none;
+      }
+    }
+
+    .watching-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .watch-card {
+      min-width: 0;
+      border-radius: 8px;
+
+      > a {
+        display: grid;
+        grid-template-columns: minmax(112px, 42%) minmax(0, 1fr);
+        min-width: 0;
+        height: 100%;
+      }
+    }
+
+    .watch-thumb {
+      height: 100%;
+      min-height: 94px;
+      aspect-ratio: auto;
+    }
+
+    .watch-info {
+      min-width: 0;
+      padding: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-direction: column;
+      gap: 10px;
+
+      > div {
+        min-width: 0;
+        width: 100%;
+      }
+
+      h3 {
+        margin-bottom: 5px;
+        overflow-wrap: anywhere;
+        word-break: keep-all;
+        font-size: g.$text-14;
+        line-height: 1.35;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+      }
+
+      p {
+        overflow-wrap: anywhere;
+        word-break: keep-all;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+    }
+
+    .play-pill {
+      align-self: flex-start;
+      min-width: 0;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .watch-delete-btn {
+      top: 7px;
+      right: 7px;
+      width: 24px;
+      height: 24px;
+      font-size: g.$text-14;
+      opacity: 1;
+    }
+
+    .filter-row {
+      justify-content: flex-start;
+      margin-bottom: 18px;
+
+      .mobile-filter-accordion {
+        width: 150px;
+      }
+    }
+
+    .wish-toolbar {
+      justify-content: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 8px;
+
+      .mobile-filter-accordion {
+        flex: 0 1 150px;
+        width: min(150px, calc(50% - 4px));
+      }
+
+      .wish-sort {
+        display: none;
+      }
+    }
+  }
+}

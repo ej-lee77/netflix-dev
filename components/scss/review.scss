@@ -103,6 +103,130 @@
 }
 
 /* ===== 반응형 ===== */
-@media (max-width: 600px) {
-  .review-container .review-thumb { width: 48px; }
+@media (max-width: 640px) {
+  .review-container {
+    min-width: 0;
+
+    .mypage-review-card {
+      min-width: 0;
+      padding: 14px !important;
+    }
+
+    .mypage-review-card__main {
+      display: grid !important;
+      grid-template-columns: 72px minmax(0, 1fr);
+      align-items: start !important;
+      gap: 12px !important;
+      min-width: 0;
+      margin-bottom: 12px !important;
+    }
+
+    .mypage-review-card__poster-link,
+    .review-thumb {
+      display: block;
+      width: 72px;
+      min-width: 0;
+    }
+
+    .review-thumb {
+      border-radius: 6px;
+    }
+
+    .mypage-review-card__info {
+      min-width: 0;
+      width: 100%;
+
+      > h3 {
+        display: -webkit-box;
+        margin: 0 0 8px;
+        overflow: hidden;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+        word-break: keep-all;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+      }
+
+      > strong {
+        max-width: 100%;
+        font-size: 13px !important;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+        word-break: keep-all;
+      }
+
+      > span {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 4px;
+        margin-left: 7px !important;
+        font-size: 11px !important;
+        white-space: nowrap;
+      }
+    }
+
+    .mypage-review-card__content {
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+      overflow-wrap: anywhere;
+      word-break: keep-all;
+    }
+
+    .mypage-review-card__date {
+      margin-top: 10px !important;
+      font-size: 11px !important;
+    }
+
+    .mypage-review-card__actions {
+      align-items: center !important;
+      gap: 8px !important;
+      margin-top: 10px !important;
+
+      > button {
+        height: 30px !important;
+        padding: 0 9px !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+      }
+    }
+
+    .mypage-review-card__owner-actions {
+      gap: 6px !important;
+      margin-left: auto;
+
+      button {
+        height: 30px !important;
+        padding: 0 10px !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  .review-container {
+    .mypage-review-card__main {
+      grid-template-columns: 60px minmax(0, 1fr);
+      gap: 10px !important;
+    }
+
+    .mypage-review-card__poster-link,
+    .review-thumb {
+      width: 60px;
+    }
+
+    .mypage-review-card__actions {
+      align-items: flex-start !important;
+      flex-direction: column;
+    }
+
+    .mypage-review-card__owner-actions {
+      margin-left: 0;
+    }
+  }
 }
