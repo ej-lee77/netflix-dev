@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 // 사이트 톤 듀오톤 라인 아이콘 세트 (윈도우 기본 이모지 대체).
 // 색은 단일 `color` 값으로 제어(라인 stroke + 은은한 면 fill 모두 currentColor).
-export type AppIconName = "like" | "comment" | "share" | "film" | "clapper" | "lock" | "unlock" | "gear" | "bulb" | "eye" | "masks" | "popcorn" | "target" | "globe" | "bell" | "clip" | "mood-chill" | "mood-exciting" | "mood-emotional" | "mood-scary" | "mood-funny" | "mood-thoughtful" | "mood-romantic" | "mood-dark" | "sparkle" | "faq-account" | "faq-payment" | "faq-plan" | "faq-watch" | "faq-device" | "faq-link" | "chevron";
+export type AppIconName = "like" | "comment" | "share" | "film" | "clapper" | "lock" | "unlock" | "gear" | "bulb" | "eye" | "masks" | "popcorn" | "target" | "globe" | "bell" | "clip" | "mood-chill" | "mood-exciting" | "mood-emotional" | "mood-scary" | "mood-funny" | "mood-thoughtful" | "mood-romantic" | "mood-dark" | "sparkle" | "faq-account" | "faq-payment" | "faq-plan" | "faq-watch" | "faq-device" | "faq-link" | "chevron" | "episode" | "friend" | "upcoming" | "reaction";
 
 const COLORS: Record<AppIconName, string> = {
   "like": "#e50914",
@@ -39,6 +39,10 @@ const COLORS: Record<AppIconName, string> = {
   "faq-device": "#22c4b8",
   "faq-link": "#a78bfa",
   "chevron": "#9aa0a6",
+  "episode": "#f5a524",
+  "friend": "#34d399",
+  "upcoming": "#60a5fa",
+  "reaction": "#e50914",
 };
 
 const PATHS: Record<AppIconName, ReactNode> = {
@@ -74,6 +78,10 @@ const PATHS: Record<AppIconName, ReactNode> = {
   "faq-device": (<><rect x="6" y="3" width="12" height="18" rx="2" fill="currentColor" fillOpacity="0.14"/><path d="M11 18h2"/></>),
   "faq-link": (<><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></>),
   "chevron": (<><path d="m6 9 6 6 6-6"/></>),
+  "episode": (<><path d="m6 4 14 8-14 8z" fill="currentColor" fillOpacity="0.2"/><path d="M6 4v16l14-8z"/></>),
+  "friend": (<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>),
+  "upcoming": (<><rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" fillOpacity="0.14"/><path d="M16 2v4M8 2v4M3 10h18"/></>),
+  "reaction": (<><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor" fillOpacity="0.2"/></>),
 };
 
 interface AppIconProps {
