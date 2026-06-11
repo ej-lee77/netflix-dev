@@ -438,6 +438,8 @@ export default function FeedPage() {
   }, []);
 
   useEffect(() => {
+    if (!currentUserId) return;
+
     void onHydrateFeeds();
   }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
 
@@ -1481,12 +1483,13 @@ export default function FeedPage() {
               </div>
             )}
           </aside>
-          <div className="feed-main">
-            <div
-              className="feed-tabs"
-              role="tablist"
-              aria-label="피드 게시물 필터"
-            >
+          {currentUserId && (
+            <div className="feed-main">
+              <div
+                className="feed-tabs"
+                role="tablist"
+                aria-label="피드 게시물 필터"
+              >
               <button
                 type="button"
                 role="tab"
@@ -1715,11 +1718,12 @@ export default function FeedPage() {
                 );
               })
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-      {renderWriteModal()}
-      {renderCommentModal()}
+      {currentUserId && renderWriteModal()}
+      {currentUserId && renderCommentModal()}
     </div>
   );
 }
