@@ -175,6 +175,78 @@ export default function ConnectHero() {
   const [failedLogos, setFailedLogos] = useState<Set<number>>(new Set());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 영상 종료 1초 전 다음 슬라이드 전환용
+  const videoIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const currentVideoKeyRef = useRef("");
+  const advancedKeyRef = useRef("");
+
+  // YT iframe API 핸드셰이크: 이걸 보내야 iframe이 상태/시간 이벤트를 보내줌
+  const subscribeVideoIframe = () => {
+    const win = videoIframeRef.current?.contentWindow;
+    if (!win) return;
+    const target = "https://www.youtube.com";
+    win.postMessage(
+      JSON.stringify({ event: "listening", id: "connect-hero-video", channel: "widget" }),
+      target,
+    );
+    win.postMessage(
+      JSON.stringify({
+        event: "command",
+        func: "addEventListener",
+        args: ["onStateChange"],
+        id: "connect-hero-video",
+        channel: "widget",
+      }),
+      target,
+    );
+  };
+
+  // 유튜브 메시지 수신 → 끝나기 1초 전(또는 종료 시) 다음 슬라이드로
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== "https://www.youtube.com") return;
+      try {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+
+        const advanceToNext = () => {
+          const key = currentVideoKeyRef.current;
+          if (!key || advancedKeyRef.current === key) return;
+          advancedKeyRef.current = key;
+          swiperRef.current?.slideNext();
+        };
+
+        if (data.event === "onStateChange" && data.info === 0) {
+          advanceToNext();
+        } else if (data.event === "infoDelivery" && data.info) {
+          if (data.info.playerState === 0) advanceToNext();
+          const { currentTime, duration } = data.info;
+          if (
+            typeof currentTime === "number" &&
+            typeof duration === "number" &&
+            duration > 0 &&
+            duration - currentTime <= 1
+          ) {
+            advanceToNext();
+          }
+        }
+      } catch {
+        // ignore non-JSON messages
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  // 모바일 뷰 감지 (히어로 탭 → 상세페이지 이동용)
+  const [isMobileView, setIsMobileView] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobileView(window.innerWidth <= 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   useEffect(() => {
     fetchHeroItems().then(setItems).catch(console.error);
   }, []);
@@ -184,6 +256,8 @@ export default function ConnectHero() {
     setShowVideo(false);
     if (timerRef.current) clearTimeout(timerRef.current);
     const item = items[realIndex];
+    currentVideoKeyRef.current = item?.videoKey ?? "";
+    advancedKeyRef.current = ""; // 슬라이드가 바뀌면 전환 가드 리셋
     if (item?.videoKey) {
       timerRef.current = setTimeout(() => setShowVideo(true), 2000);
     }
@@ -250,7 +324,25 @@ export default function ConnectHero() {
         }}
       >
         {loopItems.map((item, i) => (
-          <SwiperSlide key={`loop-${i}`} className="connect-hero__slide">
+          <SwiperSlide
+            key={`loop-${i}`}
+            className="connect-hero__slide"
+            onClick={() => {
+              // 비활성(옆) 슬라이드 탭 → 해당 슬라이드로 이동
+              if (i !== swiperIdx) {
+                swiperRef.current?.slideTo(i);
+                return;
+              }
+              // 모바일: 활성 슬라이드 탭 → 상세페이지 이동
+              if (isMobileView) {
+                if (isUnsubscribed) {
+                  openModal();
+                  return;
+                }
+                router.push(`/detail/${item.mediaType}/${item.id}`);
+              }
+            }}
+          >
             <div
               className="connect-hero__bg"
               style={{ backgroundImage: `url(${IMG}/original${item.backdropPath})` }}
@@ -260,10 +352,13 @@ export default function ConnectHero() {
             {i === swiperIdx && showVideo && item.videoKey && (
               <div className="connect-hero__video">
                 <iframe
+                  ref={videoIframeRef}
+                  onLoad={subscribeVideoIframe}
                   src={
                     `https://www.youtube.com/embed/${item.videoKey}` +
-                    `?autoplay=1&mute=1&controls=0&loop=1&playlist=${item.videoKey}` +
-                    `&modestbranding=1&showinfo=0&rel=0`
+                    `?autoplay=1&mute=1&controls=0` +
+                    `&modestbranding=1&showinfo=0&rel=0&playsinline=1` +
+                    `&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`
                   }
                   allow="autoplay; encrypted-media"
                   title={item.title}

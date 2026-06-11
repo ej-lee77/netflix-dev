@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SimilarUser, useFollowStore } from "@/store/useFollowStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import RepBadge from "@/components/common/RepBadge";
 
 type Props = {
     user: SimilarUser;
@@ -55,6 +56,7 @@ export default function RisingReviewCard({ user }: Props) {
 
                         <div>
                             <h3>{user.nickname}</h3>
+                            <RepBadge badge={user.badge} size="sm" className="review-card__rep-badge" />
                             {user.followersCount > 0 && (
                                 <p className="review-card__followers">팔로워 {user.followersCount}명</p>
                             )}

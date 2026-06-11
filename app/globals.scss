@@ -370,7 +370,7 @@ main {
   }
 
   main.has-nav {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
   /* 태블릿·모바일(≤1024px): 커넥트 페이지의 히어로/소셜 캐러셀(Swiper)들이 peek 슬라이드를 위해
@@ -385,6 +385,11 @@ main {
   }
 }
 @include respond(mobile) {
+  /* 모바일 섹션 간격 일괄 32px */
+  .main-page-wrap section {
+    margin-top: 32px;
+  }
+
   .main-page-wrap section .inner {
     width: 100vw;
     margin-left: 0;
@@ -398,7 +403,7 @@ main {
   }
 
   main.has-nav {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 }
 

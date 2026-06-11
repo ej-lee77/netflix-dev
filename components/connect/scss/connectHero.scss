@@ -122,7 +122,10 @@ $hero-h: clamp(420px, 40vw, 900px);
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
-  animation: heroVideoFadeIn 1s ease forwards;
+  // 유튜브 UI(제목/버튼)가 떠 있는 초반엔 투명하게 두고(배경 이미지 노출),
+  // UI가 자동으로 사라지는 시점(~3초)에 페이드 인
+  opacity: 0;
+  animation: heroVideoFadeIn 1s ease 5s forwards;
 
   iframe {
     position: absolute;
@@ -429,13 +432,30 @@ $hero-h: clamp(420px, 40vw, 900px);
 
 @media (max-width: 640px) {
 
+  /* 모바일 히어로 세로 크기: 60vh */
+  .connect-hero,
+  .connect-hero--loading {
+    height: calc(60vh + #{g.$header-height});
+  }
+
   .connect-hero__swiper {
-    height: calc(#{$hero-h} + #{g.$header-height} - 48px);
+    height: calc(60vh + #{g.$header-height} - 48px);
     top: 24px; // (section - swiper) / 2 = 48px / 2
   }
 
+  /* 양옆 슬라이드가 더 보이도록 슬라이드 폭 축소 */
   .connect-hero__swiper .swiper-slide {
-    width: 92%;
+    width: 84%;
+  }
+
+  /* 인라인 영상 확대 (세로형 카드에서 영상이 더 크게 보이도록) */
+  .connect-hero__video iframe {
+    transform: translate(-50%, -50%) scale(1.38);
+  }
+
+  /* 재생하기/상세정보 버튼 숨김 */
+  .connect-hero__btns {
+    display: none;
   }
 
   // 모바일에서 swiper 화살표 숨김 (터치 스와이프로 대체)
@@ -460,7 +480,7 @@ $hero-h: clamp(420px, 40vw, 900px);
   }
 
   .connect-hero__content {
-    bottom: 52px;
+    bottom: 8px;
     left: 18px;
     max-width: calc(100% - 36px);
   }
