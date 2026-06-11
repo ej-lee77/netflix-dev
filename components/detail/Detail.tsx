@@ -223,7 +223,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   }, []);
   const isMobile = vw <= 600;
   const isTablet = vw <= 1024;
-  const hPad = isMobile ? 16 : isTablet ? 24 : 40;
+  const hPad = isMobile ? 20 : isTablet ? 24 : 40;
+  const sectionPadTop = isMobile ? 40 : 56; // 탭 콘텐츠 상단 여백
 
   // 차단된 작품에 직접 접근하면 홈으로 돌려보낸다
   const blocked = isHidden(mediaId, type);
@@ -257,6 +258,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     onFetchMovieImages,
     certifications,
     onFetchCertification,
+    fetchMediaDetail,
   } = useMovieStore();
 
   const {
@@ -268,6 +270,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     onLoadMyList,
     onUpdateProgress,
     onUpdateEpisodeProgress,
+    customPlaylists,
+    fetchMyCustomPlaylists,
+    updateCustomPlaylist,
   } = usePlayListStore();
   const { onLoadWishlist, onAddWish, onRemoveWish, isWished, wishlistIds } =
     useWishlistStore();
@@ -299,6 +304,38 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [hoveredRelatedId, setHoveredRelatedId] = useState<number | null>(null);
   const [hoveredEpisodeId, setHoveredEpisodeId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
+  const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [addingToListId, setAddingToListId] = useState<string | null>(null);
+  // 플레이리스트 카드 모자이크용 작품 이미지 캐시 (videoId → 이미지 URL)
+  const [pickerImages, setPickerImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!showPlaylistPicker || customPlaylists.length === 0) return;
+    const previewKeys = Array.from(
+      new Set(customPlaylists.flatMap((p) => (p.videoIds ?? []).slice(0, 4))),
+    );
+    const missing = previewKeys.filter((k) => !pickerImages[k]);
+    if (missing.length === 0) return;
+
+    (async () => {
+      const results = await Promise.all(
+        missing.map(async (key) => {
+          const [mt, id] = key.split("-");
+          const data = await fetchMediaDetail(id, mt as "movie" | "tv");
+          const path = data?.backdrop_path || data?.poster_path;
+          return { key, url: path ? imageUrl(path, "w300") : "" };
+        }),
+      );
+      setPickerImages((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => {
+          if (r.url) next[r.key] = r.url;
+        });
+        return next;
+      });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPlaylistPicker, customPlaylists]);
   const [isAddingMyList, setIsAddingMyList] = useState(false);
   const [isAddingWish, setIsAddingWish] = useState(false);
   const [reviewText, setReviewText] = useState("");
@@ -909,7 +946,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           display: "flex",
           flexDirection: "column",
           gap: 16,
-          padding: `48px ${hPad}px 0`,
+          padding: `${isMobile ? 36 : 48}px ${hPad}px 0`,
         }}
       >
         {isTv && renderSynopsis({ compact: true })}
@@ -1012,6 +1049,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                 onMouseLeave={() => setHoveredEpisodeId(null)}
                 style={{
                   display: "flex",
+                  flexWrap: isMobile ? "wrap" : "nowrap",
                   gap: 14,
                   padding: "20px 0",
                   borderBottom: isLastRow
@@ -1111,14 +1149,14 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     minWidth: 0,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 6,
-                    marginLeft: 16,
+                    gap: isMobile ? 2 : 6,
+                    marginLeft: isMobile ? 0 : 16,
                   }}
                 >
                   <p
                     style={{
-                      fontSize: 18,
-                      fontWeight: 700,
+                      fontSize: isMobile ? 15 : 18,
+                      fontWeight: isMobile ? 500 : 700,
                       color: "#fff",
                       margin: 0,
                       lineHeight: 1.4,
@@ -1129,11 +1167,17 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       : `${ep.episode_number}. ${ep.name}`}
                   </p>
                   {meta && (
-                    <p style={{ fontSize: 14, color: "#666", margin: 0 }}>
+                    <p
+                      style={{
+                        fontSize: isMobile ? 13 : 14,
+                        color: "#666",
+                        margin: 0,
+                      }}
+                    >
                       {meta}
                     </p>
                   )}
-                  {!isUpcoming && ep.overview && (
+                  {!isMobile && !isUpcoming && ep.overview && (
                     <p
                       style={
                         {
@@ -1152,6 +1196,26 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     </p>
                   )}
                 </div>
+                {/* 모바일: 줄거리는 썸네일 아래 전체 폭으로 */}
+                {isMobile && !isUpcoming && ep.overview && (
+                  <p
+                    style={
+                      {
+                        flexBasis: "100%",
+                        fontSize: 12,
+                        color: "#999",
+                        margin: 0,
+                        lineHeight: 1.6,
+                        overflow: "hidden",
+                        display: "-webkit-box",
+                        WebkitBoxOrient: "vertical",
+                        WebkitLineClamp: 3,
+                      } as CSSProperties
+                    }
+                  >
+                    {ep.overview}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -1280,7 +1344,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          padding: compact ? "0 0 24px" : "56px 40px 0",
+          padding: compact ? "0 0 24px" : `${sectionPadTop}px ${hPad}px 0`,
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
@@ -1290,8 +1354,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           <p
             ref={synopsisRef}
             style={{
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               color: "#ccc",
+              opacity: 0.7,
               lineHeight: 1.72,
               margin: 0,
               overflow: "hidden",
@@ -1330,7 +1395,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        padding: `56px ${hPad}px 0`,
+        padding: `${sectionPadTop}px ${hPad}px 0`,
       }}
     >
       <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
@@ -1420,8 +1485,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 24,
-        padding: `56px ${hPad}px 0`,
+        gap: isMobile ? 18 : 24,
+        padding: `${sectionPadTop}px ${hPad}px 0`,
       }}
     >
       <section
@@ -1429,7 +1494,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           border: "1px solid #2a2a35",
           borderRadius: 8,
           background: "rgba(255,255,255,0.03)",
-          padding: 24,
+          padding: isMobile ? 16 : 24,
         }}
       >
         <div
@@ -1589,7 +1654,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   border: "1px solid #2a2a35",
                   borderRadius: 8,
                   background: "rgba(255,255,255,0.025)",
-                  padding: 18,
+                  padding: isMobile ? 14 : 18,
                 }}
               >
                 <div
@@ -2184,7 +2249,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         display: "flex",
         flexDirection: "column",
         gap: 12,
-        padding: `56px ${hPad}px 0`,
+        padding: `${sectionPadTop}px ${hPad}px 0`,
       }}
     >
       <div
@@ -2205,7 +2270,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${isMobile ? 3 : isTablet ? 4 : 6}, 1fr)`,
-          gap: 12,
+          gap: isMobile ? 8 : 12,
         }}
       >
         {relatedItems.map((item) => {
@@ -2467,8 +2532,8 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 40,
-          padding: `56px ${hPad}px 0`,
+          gap: isMobile ? 28 : 40,
+          padding: `${sectionPadTop}px ${hPad}px 0`,
         }}
       >
         {directorList.length > 0 && (
@@ -2536,7 +2601,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          padding: `56px ${hPad}px 0`,
+          padding: `${sectionPadTop}px ${hPad}px 0`,
         }}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0 }}>
@@ -2634,31 +2699,33 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         />
 
         {/* Hero spacer */}
-        <div style={{ height: isMobile ? 340 : isTablet ? 480 : 600 }} />
+        <div style={{ height: isMobile ? 360 : isTablet ? 480 : 600 }} />
 
         {/* Info Section */}
-        <div style={{ position: "relative", display: "flex", gap: 24, padding: `0 ${hPad}px 40px ${isMobile ? 72 : 87}px`, zIndex: 10 }}>
+        <div style={{ position: "relative", display: "flex", gap: 24, padding: `0 ${hPad}px ${isMobile ? 8 : 40}px ${isMobile ? hPad : 87}px`, zIndex: 10 }}>
           {/* Poster */}
-          <div
-            style={{
-              flexShrink: 0,
-              width: isMobile ? 110 : 180,
-              height: isMobile ? 160 : 260,
-              borderRadius: 8,
-              overflow: "hidden",
-              border: "1.5px solid rgba(255,255,255,0.12)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.7)",
-              background: "#2a2a35",
-            }}
-          >
-            {posterUrl && (
-              <img
-                src={posterUrl}
-                alt={title}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            )}
-          </div>
+          {!isMobile && (
+            <div
+              style={{
+                flexShrink: 0,
+                width: 180,
+                height: 260,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: "1.5px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.7)",
+                background: "#2a2a35",
+              }}
+            >
+              {posterUrl && (
+                <img
+                  src={posterUrl}
+                  alt={title}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              )}
+            </div>
+          )}
 
           {/* Metadata */}
           <div
@@ -2672,29 +2739,31 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               paddingBottom: 4,
             }}
           >
-            <div>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: 25,
-                  padding: "0 8px",
-                  borderRadius: 3,
-                  background: "rgba(255,255,255,0.14)",
-                  color: "rgba(255,255,255,0.72)",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  letterSpacing: 0,
-                }}
-              >
-                {heroTypeBadgeText}
-              </span>
-            </div>
+            {!isMobile && (
+              <div>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 25,
+                    padding: "0 8px",
+                    borderRadius: 3,
+                    background: "rgba(255,255,255,0.14)",
+                    color: "rgba(255,255,255,0.72)",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    letterSpacing: 0,
+                  }}
+                >
+                  {heroTypeBadgeText}
+                </span>
+              </div>
+            )}
 
             <h1
               style={{
                 fontWeight: 900,
-                fontSize: isMobile ? 24 : isTablet ? 32 : 40,
+                fontSize: isMobile ? 30 : isTablet ? 32 : 40,
                 color: "#fff",
                 lineHeight: 1.15,
                 letterSpacing: -0.8,
@@ -2705,46 +2774,109 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             </h1>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                {heroMetaItems.map((item, index) => (
-                  <React.Fragment key={item}>
-                    {index > 0 && <span style={{ color: "#444" }}>·</span>}
-                    <span style={{ fontSize: 14, color: "#888" }}>{item}</span>
-                  </React.Fragment>
-                ))}
-                {heroMetaItems.length > 0 && (
-                  <span style={{ color: "#444" }}>·</span>
-                )}
-                <span
+              {isMobile ? (
+                /* 모바일: 연도 · 등급(빨간 뱃지) · 시즌 · 4K — 넷플릭스 앱 스타일 */
+                <div
                   style={{
-                    display: "inline-flex",
+                    display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    minWidth: 38,
-                    height: 20,
-                    padding: "0 8px",
-                    border: "1px solid rgba(255,255,255,0.35)",
-                    borderRadius: 3,
-                    color: "rgba(255,255,255,0.78)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    lineHeight: 1,
+                    gap: 10,
+                    flexWrap: "wrap",
                   }}
                 >
-                  {ageBadge}
-                </span>
-              </div>
+                  {releaseYear && (
+                    <span style={{ fontSize: 14, color: "#bbb" }}>
+                      {releaseYear}
+                    </span>
+                  )}
+                  {seasonOrRuntimeText && (
+                    <span style={{ fontSize: 14, color: "#bbb" }}>
+                      {seasonOrRuntimeText}
+                    </span>
+                  )}
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 20,
+                      padding: "0 6px",
+                      border: "1px solid rgba(255,255,255,0.4)",
+                      borderRadius: 3,
+                      color: "rgba(255,255,255,0.8)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {/* TMDB 장르(16=Animation) 기준 분류 */}
+                    {mediaItem?.genres?.some((g) => g.id === 16)
+                      ? "애니메이션"
+                      : isTv
+                        ? "시리즈"
+                        : "영화"}
+                  </span>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 20,
+                      padding: "0 6px",
+                      border: "1px solid rgba(255,255,255,0.4)",
+                      borderRadius: 3,
+                      color: "rgba(255,255,255,0.8)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {ageBadge}
+                  </span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {heroMetaItems.map((item, index) => (
+                    <React.Fragment key={item}>
+                      {index > 0 && <span style={{ color: "#444" }}>·</span>}
+                      <span style={{ fontSize: 14, color: "#888" }}>{item}</span>
+                    </React.Fragment>
+                  ))}
+                  {heroMetaItems.length > 0 && (
+                    <span style={{ color: "#444" }}>·</span>
+                  )}
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 38,
+                      height: 20,
+                      padding: "0 8px",
+                      border: "1px solid rgba(255,255,255,0.35)",
+                      borderRadius: 3,
+                      color: "rgba(255,255,255,0.78)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {ageBadge}
+                  </span>
+                </div>
+              )}
               <div
                 style={{
-                  display: "flex",
+                  display: isMobile ? "none" : "flex",
                   alignItems: "center",
+                  justifyContent: "flex-start",
                   gap: 8,
                   flexWrap: "wrap",
                 }}
@@ -2860,12 +2992,117 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: isMobile ? "flex-start" : "center",
+                justifyContent: isMobile ? "space-around" : "flex-start",
                 gap: 10,
-                flexWrap: "wrap",
+                flexWrap: isMobile ? "nowrap" : "wrap",
                 marginTop: 12,
               }}
             >
+              {isMobile ? (
+                /* 모바일: 원형 아이콘 + 하단 라벨 (찜/공유와 동일 디자인) */
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    onClick={handlePlay}
+                    disabled={!isUpcoming && isAddingPlayList}
+                    aria-label={isUpcoming ? "알림받기" : "재생하기"}
+                    style={{
+                      flexShrink: 0,
+                      width: 56,
+                      height: 44,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "none",
+                      border: "none",
+                      color: "#fff",
+                      fontSize: 38,
+                      cursor:
+                        !isUpcoming && isAddingPlayList ? "default" : "pointer",
+                      opacity: !isUpcoming && isAddingPlayList ? 0.6 : 1,
+                    }}
+                  >
+                    {isUpcoming ? (
+                      <img
+                        src="/images/header/alarm.svg"
+                        alt=""
+                        style={{
+                          width: 32,
+                          height: 32,
+                          filter: "brightness(0) invert(1)",
+                        }}
+                      />
+                    ) : (
+                      "▶"
+                    )}
+                  </button>
+                  <span style={{ fontSize: 13, color: "#888" }}>
+                    {isUpcoming
+                      ? isUpcomingNotified
+                        ? "알림설정됨"
+                        : "알림받기"
+                      : "재생"}
+                  </span>
+                </div>
+              ) : null}
+              {isMobile && !isUpcoming ? (
+                /* 모바일: 플레이리스트 추가 (+) */
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    onClick={async () => {
+                      if (isAdultBlocked) {
+                        setShowAdultModal(true);
+                        return;
+                      }
+                      if (!user) {
+                        router.push("/login");
+                        return;
+                      }
+                      if (!mediaItem) return;
+                      await fetchMyCustomPlaylists();
+                      setShowPlaylistPicker(true);
+                    }}
+                    disabled={isAddingPlayList}
+                    aria-label="플레이리스트에 추가"
+                    style={{
+                      flexShrink: 0,
+                      width: 56,
+                      height: 44,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "none",
+                      border: "none",
+                      color: "#fff",
+                      fontSize: 44,
+                      fontWeight: 300,
+                      lineHeight: 1,
+                      cursor: isAddingPlayList ? "default" : "pointer",
+                      opacity: isAddingPlayList ? 0.6 : 1,
+                    }}
+                  >
+                    +
+                  </button>
+                  <span style={{ fontSize: 13, color: "#888" }}>
+                    플레이리스트
+                  </span>
+                </div>
+              ) : null}
+              {!isMobile && (
               <button
                 className="detail-primary-hover"
                 onClick={handlePlay}
@@ -2920,17 +3157,102 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   `▶ 재생하기`
                 )}
               </button>
-              {mediaItem && (
-                <WishlistButton item={mediaItem} mediaType={type} />
               )}
-              {mediaItem && <ShareButton mediaType={type} id={mediaItem.id} />}
+              {isMobile ? (
+                /* 모바일: 아이콘 + 하단 라벨 (넷플릭스 앱 스타일) */
+                <>
+                  {mediaItem && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      <WishlistButton
+                        item={mediaItem}
+                        mediaType={type}
+                        className="detail-hero-action-btn"
+                      />
+                      <span style={{ fontSize: 13, color: "#888" }}>
+                        찜한 목록
+                      </span>
+                    </div>
+                  )}
+                  {mediaItem && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 2,
+                      }}
+                    >
+                      <ShareButton
+                        mediaType={type}
+                        id={mediaItem.id}
+                        className="detail-hero-action-btn"
+                      />
+                      <span style={{ fontSize: 13, color: "#888" }}>공유</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {mediaItem && !isUpcoming && (
+                    <button
+                      type="button"
+                      className="detail-plus-btn"
+                      onClick={async () => {
+                        if (isAdultBlocked) {
+                          setShowAdultModal(true);
+                          return;
+                        }
+                        if (!user) {
+                          router.push("/login");
+                          return;
+                        }
+                        await fetchMyCustomPlaylists();
+                        setShowPlaylistPicker(true);
+                      }}
+                      title="플레이리스트에 추가"
+                      aria-label="플레이리스트에 추가"
+                      style={{
+                        flexShrink: 0,
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        color: "#fff",
+                        fontSize: 22,
+                        fontWeight: 300,
+                        lineHeight: 1,
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  )}
+                  {mediaItem && (
+                    <WishlistButton item={mediaItem} mediaType={type} />
+                  )}
+                  {mediaItem && (
+                    <ShareButton mediaType={type} id={mediaItem.id} />
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* TabNav */}
-      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: `0 ${hPad}px 0 ${isMobile ? 72 : 87}px`, marginTop: 24, overflowX: "auto", scrollbarWidth: "none" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid rgba(255,255,255,0.1)", padding: `0 ${hPad}px 0 ${isMobile ? hPad : 87}px`, marginTop: isMobile ? 8 : 24, overflowX: "auto", scrollbarWidth: "none" }}>
         {tabItems
           // 1. 리뷰 탭이면서 권한이 없는 경우 필터링 (렌더링하지 않음)
           .filter((tab) => {
@@ -2944,6 +3266,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
+                position: "relative",
                 height: 48,
                 padding: "0 14px 0 4px",
                 marginRight: 8,
@@ -2973,7 +3296,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       </div>
 
       {/* Tab content */}
-      <div style={{ paddingBottom: 80, paddingLeft: 47 }}>
+      <div style={{ paddingBottom: isMobile ? 12 : 80, paddingLeft: isMobile ? 0 : 47 }}>
         {activeTab === "episodes" && isTv && renderEpisodesTab()}
         {activeTab === "info" && !isTv && renderStills()}
         {activeTab === "info" && !isTv && renderSynopsis()}
@@ -2984,6 +3307,332 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           renderReviewTab()}
         {activeTab === "related" && renderRelated()}
       </div>
+
+      {/* 플레이리스트 선택 바텀시트 */}
+      {showPlaylistPicker && (
+        <div
+          onClick={() => setShowPlaylistPicker(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999, // 모바일 하단 네비(99996)보다 위
+
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: isMobile ? "flex-end" : "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: isMobile ? "100%" : "min(760px, 90vw)",
+              maxHeight: isMobile ? "60vh" : "76vh",
+              display: "flex",
+              flexDirection: "column",
+              background: "#1b1b22",
+              borderRadius: isMobile ? "16px 16px 0 0" : 12,
+              border: "1px solid rgba(255,255,255,0.1)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#fff" }}>
+                플레이리스트에 추가
+              </h3>
+              <button
+                onClick={() => setShowPlaylistPicker(false)}
+                aria-label="닫기"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#888",
+                  fontSize: 20,
+                  cursor: "pointer",
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              style={{
+                overflowY: "auto",
+                padding: isMobile
+                  ? "8px 0 calc(16px + env(safe-area-inset-bottom))"
+                  : "8px 0 16px",
+              }}
+            >
+              {customPlaylists.length === 0 ? (
+                <div style={{ padding: "28px 20px", textAlign: "center" }}>
+                  <p style={{ margin: "0 0 14px", color: "#888", fontSize: 14 }}>
+                    아직 만든 플레이리스트가 없습니다.
+                  </p>
+                  <button
+                    onClick={() => router.push("/mypage/playlist")}
+                    style={{
+                      height: 36,
+                      padding: "0 16px",
+                      borderRadius: 6,
+                      border: "none",
+                      background: "#e50914",
+                      color: "#fff",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    플레이리스트 만들기
+                  </button>
+                </div>
+              ) : isMobile ? (
+                customPlaylists.map((pl) => {
+                  const alreadyAdded = pl.videoIds?.includes(itemKey);
+                  const isAdding = addingToListId === pl.listId;
+                  return (
+                    <button
+                      key={pl.listId}
+                      disabled={alreadyAdded || isAdding}
+                      onClick={async () => {
+                        setAddingToListId(pl.listId);
+                        try {
+                          await updateCustomPlaylist(pl.listId, {
+                            videoIds: Array.from(
+                              new Set([...(pl.videoIds ?? []), itemKey]),
+                            ),
+                          });
+                          showToast(`"${pl.name}"에 추가되었습니다.`);
+                          setShowPlaylistPicker(false);
+                        } finally {
+                          setAddingToListId(null);
+                        }
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        width: "100%",
+                        padding: "14px 20px",
+                        background: "none",
+                        border: "none",
+                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        cursor: alreadyAdded ? "default" : "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: alreadyAdded ? "#666" : "#fff",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {pl.name}
+                        </p>
+                        <p style={{ margin: "2px 0 0", fontSize: 12, color: "#666" }}>
+                          {(pl.videoIds ?? []).length}개 작품
+                        </p>
+                      </div>
+                      <span
+                        style={{
+                          flexShrink: 0,
+                          fontSize: alreadyAdded ? 13 : 20,
+                          color: alreadyAdded ? "#e50914" : "#888",
+                          fontWeight: alreadyAdded ? 700 : 300,
+                        }}
+                      >
+                        {isAdding ? "…" : alreadyAdded ? "✓ 추가됨" : "+"}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                /* 데스크탑: 마이페이지 플레이리스트 카드 디자인 그리드 */
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: 16,
+                    padding: "12px 20px 20px",
+                  }}
+                >
+                  {customPlaylists.map((pl) => {
+                    const alreadyAdded = pl.videoIds?.includes(itemKey);
+                    const isAdding = addingToListId === pl.listId;
+                    const previewKeys = (pl.videoIds ?? []).slice(0, 4);
+                    const extraCount = (pl.videoIds ?? []).length - 4;
+                    return (
+                      <button
+                        key={pl.listId}
+                        disabled={alreadyAdded || isAdding}
+                        className={alreadyAdded ? "" : "detail-playlist-card"}
+                        onClick={async () => {
+                          setAddingToListId(pl.listId);
+                          try {
+                            await updateCustomPlaylist(pl.listId, {
+                              videoIds: Array.from(
+                                new Set([...(pl.videoIds ?? []), itemKey]),
+                              ),
+                            });
+                            showToast(`"${pl.name}"에 추가되었습니다.`);
+                            setShowPlaylistPicker(false);
+                          } finally {
+                            setAddingToListId(null);
+                          }
+                        }}
+                        style={{
+                          position: "relative",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0,
+                          padding: 14,
+                          border: "1px solid #2a2a2a",
+                          borderRadius: 8,
+                          background: "rgba(255,255,255,0.025)",
+                          cursor: alreadyAdded ? "default" : "pointer",
+                          textAlign: "left",
+                          opacity: alreadyAdded ? 0.55 : 1,
+                        }}
+                      >
+                        {/* 모자이크 (2x2) */}
+                        <div
+                          style={{
+                            position: "relative",
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            aspectRatio: "16 / 10",
+                            overflow: "hidden",
+                            border: "1px solid #252525",
+                            borderRadius: 8,
+                            background: "#101010",
+                          }}
+                        >
+                          {Array.from({ length: 4 }, (_, i) => {
+                            const key = previewKeys[i];
+                            const url = key ? pickerImages[key] : "";
+                            return (
+                              <div
+                                key={i}
+                                style={{
+                                  minWidth: 0,
+                                  overflow: "hidden",
+                                  background: "#080808",
+                                }}
+                              >
+                                {url && (
+                                  <img
+                                    src={url}
+                                    alt=""
+                                    style={{
+                                      width: "100%",
+                                      height: "100%",
+                                      objectFit: "cover",
+                                      display: "block",
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                          {extraCount > 0 && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                right: 14,
+                                bottom: 14,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minWidth: 52,
+                                height: 36,
+                                padding: "0 12px",
+                                borderRadius: 999,
+                                background: "rgba(0,0,0,0.7)",
+                                color: "#fff",
+                                fontWeight: 800,
+                                fontSize: 14,
+                              }}
+                            >
+                              +{extraCount}
+                            </span>
+                          )}
+                          {alreadyAdded && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(0,0,0,0.45)",
+                                color: "#e50914",
+                                fontWeight: 800,
+                                fontSize: 15,
+                              }}
+                            >
+                              ✓ 추가됨
+                            </span>
+                          )}
+                        </div>
+
+                        <h3
+                          style={{
+                            margin: "14px 0 0",
+                            fontSize: 16,
+                            fontWeight: 800,
+                            color: "#fff",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {pl.name}
+                        </h3>
+                        {pl.content && (
+                          <p
+                            style={
+                              {
+                                margin: "5px 0 0",
+                                color: "#d0d0d0",
+                                fontSize: 12,
+                                lineHeight: 1.5,
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 2,
+                                overflow: "hidden",
+                              } as CSSProperties
+                            }
+                          >
+                            {pl.content}
+                          </p>
+                        )}
+                        <p style={{ margin: "10px 0 0", color: "#9a9a9a", fontSize: 12 }}>
+                          {(pl.videoIds ?? []).length}개 작품
+                          {isAdding ? " · 추가 중…" : ""}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stills lightbox */}
       {lightboxSrc && (
