@@ -395,17 +395,23 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
     },
     createMyCustomPlaylist: async (data) => {
         const { user, currentProfile } = useAuthStore.getState();
-        if (!user?.userId || !currentProfile) return;
+        if (!user?.userId || !currentProfile) {
+            throw new Error("로그인 또는 프로필 정보가 없습니다.");
+        }
 
         try {
             const userDocRef = doc(db, "users", user.userId);
             const userDocSnap = await getDoc(userDocRef);
-            if (!userDocSnap.exists()) return;
+            if (!userDocSnap.exists()) {
+                throw new Error("사용자 정보를 찾을 수 없습니다.");
+            }
 
             const userData = userDocSnap.data();
             const profiles = userData.profile || [];
             const profileIndex = profiles.findIndex((p:any) => p.id === currentProfile.id);
-            if (profileIndex === -1) return;
+            if (profileIndex === -1) {
+                throw new Error("현재 프로필 정보를 찾을 수 없습니다.");
+            }
 
             // 1. 프로필 복사본 생성
             const updatedProfiles = [...profiles];
@@ -445,18 +451,26 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
 
         } catch (error) {
             console.error("생성 실패:", error);
+            throw error;
         }
     },
     updateCustomPlaylist: async (listId, updatedData) => {
         const { user, currentProfile } = useAuthStore.getState();
-        if (!user?.userId || !currentProfile) return;
+        if (!user?.userId || !currentProfile) {
+            throw new Error("로그인 또는 프로필 정보가 없습니다.");
+        }
 
         try {
             const docRef = doc(db, "playlists", user.userId);
             const docSnap = await getDoc(docRef);
-            if (!docSnap.exists()) return;
+            if (!docSnap.exists()) {
+                throw new Error("플레이리스트 정보를 찾을 수 없습니다.");
+            }
 
             const allPlaylists = docSnap.data().playlists || [];
+            if (!allPlaylists.some((p: any) => p.listId === listId)) {
+                throw new Error("수정할 플레이리스트를 찾을 수 없습니다.");
+            }
             const nextPlaylists = allPlaylists.map((p: any) => 
                 p.listId === listId ? { ...p, ...updatedData } : p
             );
@@ -467,18 +481,26 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             set({ customPlaylists: nextPlaylists.filter((p: any) => p.profileId === currentProfile.id) });
         } catch (error) {
             console.error("업데이트 실패:", error);
+            throw error;
         }
     },
     deleteCustomPlaylist: async (listId: string) => {
         const { user, currentProfile } = useAuthStore.getState();
-        if (!user?.userId || !currentProfile) return;
+        if (!user?.userId || !currentProfile) {
+            throw new Error("로그인 또는 프로필 정보가 없습니다.");
+        }
 
         try {
             const docRef = doc(db, "playlists", user.userId);
             const docSnap = await getDoc(docRef);
-            if (!docSnap.exists()) return;
+            if (!docSnap.exists()) {
+                throw new Error("플레이리스트 정보를 찾을 수 없습니다.");
+            }
 
             const allPlaylists = docSnap.data().playlists || [];
+            if (!allPlaylists.some((p: any) => p.listId === listId)) {
+                throw new Error("삭제할 플레이리스트를 찾을 수 없습니다.");
+            }
             const nextPlaylists = allPlaylists.filter((p: any) => p.listId !== listId);
 
             await updateDoc(docRef, { playlists: nextPlaylists });
@@ -486,6 +508,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             set({ customPlaylists: nextPlaylists.filter((p: any) => p.profileId === currentProfile.id) });
         } catch (error) {
             console.error("삭제 실패:", error);
+            throw error;
         }
     },
     onAddMyList: async (item) => {
