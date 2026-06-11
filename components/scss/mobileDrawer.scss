@@ -131,7 +131,7 @@
         font-size: 15px;
         font-weight: 500;
         cursor: pointer;
-        transition: color 0.15s;
+        transition: none;
 
         &.active {
             color: #fff;
@@ -169,7 +169,7 @@
             color: rgba(255, 255, 255, 0.8);
             font-size: 15px;
             font-weight: 500;
-            transition: background 0.15s, color 0.15s;
+            transition: none;
 
             &:hover {
                 background: rgba(255, 255, 255, 0.05);
@@ -189,7 +189,7 @@
         font-weight: 500;
         text-align: left;
         cursor: pointer;
-        transition: color 0.15s;
+        transition: none;
 
         &:hover {
             color: #fff;
@@ -218,7 +218,7 @@
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     border-radius: 50%;
-    transition: background 0.15s, color 0.15s;
+    transition: none;
 
     &:hover {
         background: rgba(255, 255, 255, 0.08);
@@ -248,13 +248,13 @@
     font-size: 15px;
     font-weight: 500;
     letter-spacing: 0.2px;
-    transition: background 0.15s, color 0.15s;
+    transition: none;
 
     img {
         flex-shrink: 0;
         filter: brightness(0) invert(1);
         opacity: 0.7;
-        transition: opacity 0.15s;
+        transition: none;
     }
 
     &:hover {
@@ -267,6 +267,91 @@
     }
 
     &.active {
+        color: #fff;
+        position: relative;
+
+        &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 22px;
+            background: g.$main-color;
+            border-radius: 0 2px 2px 0;
+        }
+
+        img {
+            opacity: 1;
+        }
+    }
+}
+
+.mobile-drawer-category {
+    display: flex;
+    flex-direction: column;
+
+    &__toggle {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    &__arrow {
+        margin-left: auto;
+        color: rgba(255, 255, 255, 0.5);
+        transition: none;
+        flex-shrink: 0;
+    }
+
+    &.is-open {
+        .mobile-drawer-category__arrow {
+            transform: rotate(180deg);
+            color: rgba(255, 255, 255, 0.85);
+        }
+    }
+}
+
+.mobile-drawer-submenu {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-drawer-subitem {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px 14px 44px;
+    background: rgba(255, 255, 255, 0.045);
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    transition: none;
+
+    img {
+        flex-shrink: 0;
+        filter: brightness(0) invert(1);
+        opacity: 0.72;
+        transition: none;
+    }
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.075);
+        color: #fff;
+
+        img {
+            opacity: 1;
+        }
+    }
+
+    &.active {
+        background: rgba(255, 255, 255, 0.075);
         color: #fff;
         position: relative;
 

@@ -6,6 +6,9 @@ import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
 import "./scss/splitBanner.scss";
 import SectionTitle from "@/components/common/SectionTitle";
 
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+
 const PANEL_COUNT = 7;
 const TITLE = "넷플릭스 화제작";
 
@@ -88,12 +91,17 @@ export default function SplitBanner() {
   const router = useRouter();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
+
   // 현재 프로필 관람등급에 맞는 배너 선택 (없으면 19+ 기본)
   const rating =
     useAuthStore((s) => s.currentProfile?.settings?.maturityRating) ??
     DEFAULT_PROFILE_SETTINGS.maturityRating;
   const banner =
     BANNERS[rating] ?? BANNERS[DEFAULT_PROFILE_SETTINGS.maturityRating];
+
 
   return (
     <section className="split-banner">
@@ -112,7 +120,7 @@ export default function SplitBanner() {
               }}
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
-              onClick={() => router.push(banner.detailHref)}
+              onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(banner.detailHref); }}
             >
               <div
                 className="split-panel-still"

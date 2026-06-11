@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { mainMenus } from "@/data/mainMenu";
+import { customMenus, mainMenus } from "@/data/mainMenu";
 import { useMenuLabel } from "@/lib/i18n";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { UserProfile } from "@/types/auth";
@@ -15,20 +15,185 @@ interface Props {
   onClose: () => void;
 }
 
+const DEFAULT_HEADER_MENU_PATHS = [
+  "/category",
+  "/mypage/playlist?tab=playlists",
+  "/mypage/playlist?tab=history",
+];
+
+const CATEGORY_MENU = {
+  title: "카테고리",
+  imgUrl: "/images/header/menu/category.png",
+  path: "/category?tab=all",
+};
+
+const allSelectablePool = [...mainMenus, CATEGORY_MENU, ...customMenus];
+
+const normalizeMenuPath = (path: string) =>
+  path === "/mypage/playhist" ? "/mypage/playlist?tab=history" : path;
+
+const uniqueMenuPaths = (paths: string[]) =>
+  Array.from(new Set(paths.map(normalizeMenuPath)));
+
+const isCountableCategoryChild = (path: string) =>
+  path.startsWith("/genre/") || path.startsWith("/mood/");
+
+const normalizeHeaderMenuPaths = (paths: string[]) => {
+  const normalizedPaths = uniqueMenuPaths(paths);
+  const hasCategoryItems = normalizedPaths.some(isCountableCategoryChild);
+  return hasCategoryItems
+    ? normalizedPaths
+    : normalizedPaths.filter((path) => path !== CATEGORY_MENU.path);
+};
+
+type DrawerMenuItem = (typeof allSelectablePool)[number];
+type DrawerMenuRow =
+  | { type: "link"; menu: DrawerMenuItem }
+  | { type: "category"; menu: DrawerMenuItem; children: DrawerMenuItem[] };
+
 export default function MobileDrawer({ isOpen, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const tm = useMenuLabel();
   const { currentProfile, user, onSetProfile, onLogout } = useAuthStore();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [storageRevision, setStorageRevision] = useState(0);
+  const [liveMenuPaths, setLiveMenuPaths] = useState<string[] | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
   const profiles = user?.profile ?? [];
+  const homeMenu = mainMenus.find((menu) => menu.path === "/");
+  const currentUrl = pathname + (typeof window !== "undefined" ? window.location.search : "");
+
+  const drawerMenus = useMemo(() => {
+    void storageRevision;
+
+    const pathsToMenus = (paths: string[]) =>
+      normalizeHeaderMenuPaths(paths)
+        .map((path) => allSelectablePool.find((menu) => menu.path === path))
+        .filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
+
+    if (!isMounted) {
+      return pathsToMenus(DEFAULT_HEADER_MENU_PATHS);
+    }
+
+    if (liveMenuPaths) {
+      return pathsToMenus(liveMenuPaths);
+    }
+
+    if (currentProfile) {
+      return currentProfile.headerMenus?.length
+        ? pathsToMenus(currentProfile.headerMenus)
+        : pathsToMenus(DEFAULT_HEADER_MENU_PATHS);
+    }
+
+    const saved = localStorage.getItem("custom_header_menus");
+    if (saved) {
+      try {
+        return pathsToMenus(JSON.parse(saved) as string[]);
+      } catch (e) {
+        console.error("모바일 메뉴 동기화 실패:", e);
+      }
+    }
+
+    return pathsToMenus(DEFAULT_HEADER_MENU_PATHS);
+  }, [currentProfile, isMounted, liveMenuPaths, storageRevision]);
+
+  const isMenuActive = (menuPath: string) =>
+    menuPath.includes("?") ? currentUrl === menuPath : pathname === menuPath;
+
+  const categoryChildren = drawerMenus.filter((menu) =>
+    isCountableCategoryChild(menu.path),
+  );
+  const hasCategoryDropdown = categoryChildren.length > 0;
+  const categoryParent = hasCategoryDropdown ? CATEGORY_MENU : undefined;
+  const drawerMenuRows = useMemo<DrawerMenuRow[]>(() => {
+    const rows: DrawerMenuRow[] = [];
+    let insertedCategory = false;
+
+    drawerMenus.forEach((menu) => {
+      if (hasCategoryDropdown && isCountableCategoryChild(menu.path)) {
+        if (!insertedCategory && categoryParent) {
+          rows.push({
+            type: "category",
+            menu: categoryParent,
+            children: categoryChildren,
+          });
+          insertedCategory = true;
+        }
+        return;
+      }
+
+      if (
+        hasCategoryDropdown &&
+        menu.path === CATEGORY_MENU.path
+      ) {
+        if (!insertedCategory && categoryParent) {
+          rows.push({
+            type: "category",
+            menu: categoryParent,
+            children: categoryChildren,
+          });
+          insertedCategory = true;
+        }
+        return;
+      }
+
+      rows.push({ type: "link", menu });
+    });
+
+    if (hasCategoryDropdown && !insertedCategory && categoryParent) {
+      rows.push({
+        type: "category",
+        menu: categoryParent,
+        children: categoryChildren,
+      });
+    }
+
+    return rows;
+  }, [categoryChildren, categoryParent, drawerMenus, hasCategoryDropdown]);
+  const isCategoryActive =
+    categoryChildren.some((menu) => isMenuActive(menu.path));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLiveMenuPaths(null);
+  }, [currentProfile?.id]);
+
+  useEffect(() => {
+    const handleCustomMenuStorageUpdate = (event: Event) => {
+      const paths = (event as CustomEvent<{ paths?: string[] }>).detail?.paths;
+      if (Array.isArray(paths)) {
+        setLiveMenuPaths(paths);
+      }
+      setStorageRevision((revision) => revision + 1);
+    };
+
+    window.addEventListener(
+      "customMenuStorageUpdate",
+      handleCustomMenuStorageUpdate,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "customMenuStorageUpdate",
+        handleCustomMenuStorageUpdate,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsProfileModalOpen(false);
     }
     return () => { document.body.style.overflow = ""; };
@@ -114,23 +279,57 @@ export default function MobileDrawer({ isOpen, onClose }: Props) {
         </div>
 
         <nav className="mobile-drawer-nav">
-          {mainMenus.map((menu, index) => {
-            const isActive = menu.path.includes("?")
-              ? pathname + (typeof window !== "undefined" ? window.location.search : "") === menu.path
-              : pathname === menu.path;
-            return (
-              <React.Fragment key={menu.path}>
-                {index === 1 && <div className="mobile-drawer-divider" />}
-                <Link
-                  href={menu.path}
-                  className={`mobile-drawer-item${isActive ? " active" : ""}`}
+          {homeMenu && (
+            <Link
+              href={homeMenu.path}
+              className={`mobile-drawer-item${isMenuActive(homeMenu.path) ? " active" : ""}`}
+            >
+              <Image src={homeMenu.imgUrl} alt="" width={22} height={22} aria-hidden="true" />
+              <span>{tm(homeMenu.title)}</span>
+            </Link>
+          )}
+          <div className="mobile-drawer-divider" />
+          {drawerMenuRows.map((row) =>
+            row.type === "link" ? (
+              <Link
+                key={row.menu.path}
+                href={row.menu.path}
+                className={`mobile-drawer-item${isMenuActive(row.menu.path) ? " active" : ""}`}
+              >
+                <Image src={row.menu.imgUrl} alt="" width={22} height={22} aria-hidden="true" />
+                <span>{tm(row.menu.title)}</span>
+              </Link>
+            ) : (
+              <div key="category-dropdown" className={`mobile-drawer-category${isCategoryOpen ? " is-open" : ""}`}>
+                <button
+                  type="button"
+                  className={`mobile-drawer-item mobile-drawer-category__toggle${isCategoryActive ? " active" : ""}`}
+                  onClick={() => setIsCategoryOpen((open) => !open)}
+                  aria-expanded={isCategoryOpen}
                 >
-                  <Image src={menu.imgUrl} alt="" width={22} height={22} aria-hidden="true" />
-                  <span>{tm(menu.title)}</span>
-                </Link>
-              </React.Fragment>
-            );
-          })}
+                  <Image src={row.menu.imgUrl} alt="" width={22} height={22} aria-hidden="true" />
+                  <span>{tm(row.menu.title)}</span>
+                  <svg className="mobile-drawer-category__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {isCategoryOpen && (
+                  <div className="mobile-drawer-submenu">
+                    {row.children.map((menu) => (
+                      <Link
+                        key={menu.path}
+                        href={menu.path}
+                        className={`mobile-drawer-subitem${isMenuActive(menu.path) ? " active" : ""}`}
+                      >
+                        <Image src={menu.imgUrl} alt="" width={18} height={18} aria-hidden="true" />
+                        <span>{tm(menu.title)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ),
+          )}
           <div className="mobile-drawer-divider" />
           <Link
             href="/menu/custom"

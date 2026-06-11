@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
 import { getInitial, getPosterUrl, getRelativeTime } from "@/types/feedData";
 import "../../scss/feed.scss";
+import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
 
 const renderRatingStars = (rating: number) => (
   <span className="rating-stars" aria-label={`${rating.toFixed(1)}점`}>
@@ -205,7 +206,10 @@ export default function FeedDetailPage() {
               )}
             </Link>
             <div className="post-meta">
-              <h3>{review.author}</h3>
+              <h3>
+                {review.author}
+                <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
+              </h3>
               <div className="post-info">
                 <span className="time">
                   {getRelativeTime(review.createdAt)}

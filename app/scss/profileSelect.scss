@@ -26,6 +26,9 @@
   font-size: clamp(1.85rem, 3.4vw, 3.35rem);
   font-weight: 500;
   text-align: center;
+  @media (max-width: 640px) {
+    font-size: g.$text-16;
+  }
 }
 
 .ps-grid {
@@ -58,6 +61,18 @@
       transform: translateY(-2px);
     }
   }
+
+  @media (max-width: 640px) {
+    gap: 8px; // 요소 간의 간격 축소 (기존 12px)
+
+    // 카드 안의 텍스트 크기들이 너무 크다면 여기서 조정하세요
+    font-size: 14px;
+
+    .ps-avatar {
+      width: 100px; // 적절한 크기로 변경
+      height: 100px;
+    }
+  }
 }
 
 .ps-avatar {
@@ -69,7 +84,9 @@
   border-radius: 5px;
   background: linear-gradient(135deg, #2a2a32, #3a3a48);
   overflow: hidden;
-  transition: border-color 0.16s ease, transform 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    transform 0.16s ease;
 
   img {
     width: 100%;
@@ -125,7 +142,10 @@
   font-size: 0.94rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+  transition:
+    color 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
 
   &:hover,
   &.is-active {
