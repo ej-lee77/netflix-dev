@@ -18,6 +18,7 @@ import {
   getPosterUrl,
 } from "@/types/feedData";
 import { BADGE_LIST } from "@/data/badge";
+import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
 import "@/components/common/wishlistButton.scss";
 import "../scss/feed.scss";
 
@@ -1545,7 +1546,10 @@ export default function FeedPage() {
                         )}
                       </Link>
                       <div className="post-meta">
-                        <h3>{review.author}</h3>
+                        <h3>
+                          {review.author}
+                          <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
+                        </h3>
                         <div className="post-info">
                           <span className="time">
                             {getRelativeTime(review.createdAt)}
