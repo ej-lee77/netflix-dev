@@ -408,7 +408,7 @@ export default function ConnectHero() {
                 <button
                   className="connect-hero__btn-play"
                   type="button"
-                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/detail/${item.mediaType}/${item.id}?play=1`); }}
+                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/watch/${item.mediaType}/${item.id}`); }}
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <polygon points="5 3 19 12 5 21 5 3" />

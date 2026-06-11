@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import "./sectionTitle.scss";
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 type SectionTitleProps = {
     title: string;
@@ -16,6 +20,16 @@ export default function SectionTitle({
     onMoreClick,
     href,
 }: SectionTitleProps) {
+    const { isUnsubscribed } = useSubscriptionGuard();
+    const openModal = useSubscribeModalStore((state) => state.openModal);
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (isUnsubscribed) {
+            e.preventDefault();
+            openModal();
+        }
+    };
+
     return (
         <div className="section-header">
             <div className="section-title-wrap">
@@ -32,8 +46,8 @@ export default function SectionTitle({
 
             {showMore && (
                 href
-                    ? <Link href={href} className="see-all">전체보기 ›</Link>
-                    : <button className="see-all" onClick={onMoreClick}>전체보기 ›</button>
+                    ? <Link href={href} className="see-all" onClick={handleClick}>전체보기 ›</Link>
+                    : <button className="see-all" onClick={isUnsubscribed ? openModal : onMoreClick}>전체보기 ›</button>
             )}
         </div>
     );

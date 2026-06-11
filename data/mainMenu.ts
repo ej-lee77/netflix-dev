@@ -22,9 +22,9 @@ export const mainMenus: mainMenu[] = [
     path: "/mypage/playlist?tab=playlists",
   },
   {
-      title: "시청이력",
-      imgUrl: "/images/header/menu/playhist.svg",
-      path: "/mypage/playlist?tab=history"
+    title: "시청이력",
+    imgUrl: "/images/header/menu/playhist.svg",
+    path: "/mypage/playlist?tab=history"
   },
   {
     title: "영화",
@@ -40,6 +40,16 @@ export const mainMenus: mainMenu[] = [
     title: "애니메이션",
     imgUrl: "/images/header/menu/animation.svg",
     path: "/category?type=animation",
+  },
+  {
+    title: "굿즈샵",
+    imgUrl: "/images/header/menu/shop.svg",
+    path: "/shop"
+  },
+  {
+    title: "피드",
+    imgUrl: "/images/header/menu/feed.svg",
+    path: "/feed",
   },
   // {
   //     title: "커스텀",
