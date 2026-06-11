@@ -333,6 +333,28 @@ export default function Hero() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const currentVideoKeyRef = useRef("");
   const itemsRef = useRef<HeroItem[]>([]);
+  const heroIframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // YT iframe API 핸드셰이크: 이걸 보내야 iframe이 상태 이벤트(postMessage)를 보내줌
+  const subscribeHeroIframe = () => {
+    const win = heroIframeRef.current?.contentWindow;
+    if (!win) return;
+    const target = "https://www.youtube.com";
+    win.postMessage(
+      JSON.stringify({ event: "listening", id: "hero-video", channel: "widget" }),
+      target,
+    );
+    win.postMessage(
+      JSON.stringify({
+        event: "command",
+        func: "addEventListener",
+        args: ["onStateChange"],
+        id: "hero-video",
+        channel: "widget",
+      }),
+      target,
+    );
+  };
   // 모바일(≤600px) 여부: 자동 전환은 모바일에서만 동작
   const [isCompactHero, setIsCompactHero] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -409,6 +431,9 @@ export default function Hero() {
     itemsRef.current = items;
   }, [items]);
 
+  // 같은 영상에서 중복 전환 방지 (끝나기 0.5초 전 선전환용)
+  const advancedKeyRef = useRef("");
+
   useEffect(() => {
     let playbackTimer: number | null = null;
 
@@ -438,14 +463,47 @@ export default function Hero() {
           return;
         }
 
-        if (data.event === "onStateChange") {
-          if (data.info === 1) {
+        const advanceToNext = () => {
+          // 같은 영상에서 한 번만 전환
+          if (advancedKeyRef.current === currentVideoKeyRef.current) return;
+          advancedKeyRef.current = currentVideoKeyRef.current;
+          if (playbackTimer) window.clearTimeout(playbackTimer);
+          playbackTimer = null;
+          const total = itemsRef.current.length;
+          if (total > 1) {
+            setActiveIndex((prev) => (prev + 1) % total);
+          }
+        };
+
+        const handlePlayerState = (state: number) => {
+          if (state === 1) {
             // playing — video is fine, cancel the timer
             if (playbackTimer) window.clearTimeout(playbackTimer);
             playbackTimer = null;
-          } else if (data.info === -1 || data.info === 3) {
+          } else if (state === -1 || state === 3) {
             // unstarted or buffering — (re)start the watchdog
             resetPlaybackTimer();
+          } else if (state === 0) {
+            // ended — 다음 히어로로 전환 (선전환 실패 시 폴백)
+            advanceToNext();
+          }
+        };
+
+        if (data.event === "onStateChange") {
+          handlePlayerState(data.info);
+        } else if (data.event === "infoDelivery" && data.info) {
+          if (typeof data.info.playerState === "number") {
+            handlePlayerState(data.info.playerState);
+          }
+          // 끝나기 1초 전에 미리 전환 → '다시보기' UI 노출 방지
+          const { currentTime, duration } = data.info;
+          if (
+            typeof currentTime === "number" &&
+            typeof duration === "number" &&
+            duration > 0 &&
+            duration - currentTime <= 1
+          ) {
+            advanceToNext();
           }
         }
       } catch {
@@ -530,9 +588,10 @@ export default function Hero() {
     setCurrentVideoKey(activeVideoKey);
     setIsVideoVisible(false);
 
+    // 유튜브 UI가 떠 있는 초반 구간 동안 이미지(포스터)를 먼저 노출
     const timer = window.setTimeout(() => {
       setIsVideoVisible(true);
-    }, 1000);
+    }, 5000);
 
     const cleanupTimer = window.setTimeout(() => {
       setPreviousVideoKey("");
@@ -567,7 +626,8 @@ export default function Hero() {
   }, []);
 
   useEffect(() => {
-    if (!isCompactHero || items.length < 2) return;
+    // 자동 회전: 영상 미리보기가 꺼진 경우에만 (영상이 켜져 있으면 영상 종료가 전환을 담당)
+    if (!isCompactHero || items.length < 2 || autoplayPreview) return;
     const timer = window.setInterval(() => {
       setSlideDirection("left");
       setActiveIndex((prev) => {
@@ -577,7 +637,7 @@ export default function Hero() {
       });
     }, 8000);
     return () => window.clearInterval(timer);
-  }, [isCompactHero, items.length, activeIndex]);
+  }, [isCompactHero, items.length, activeIndex, autoplayPreview]);
 
 
 
@@ -693,10 +753,12 @@ export default function Hero() {
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
   const activeMediaType = activeItem.media_type ?? "movie";
-  const hasPreviewVideo = !isCompactHero && autoplayPreview && (previousVideoKey || currentVideoKey);
+  // 모바일/태블릿에서도 미리보기 영상 재생
+  const hasPreviewVideo = autoplayPreview && (previousVideoKey || currentVideoKey);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
-    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&playlist=${videoKey}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
+    // loop 제거: 영상이 끝나면 onStateChange(0) 이벤트로 다음 히어로로 전환
+    `https://www.youtube.com/embed/${videoKey}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&cc_load_policy=1&cc_lang_pref=ko&origin=${encodeURIComponent(origin)}`;
   const visiblePosters = [-2, -1, 0, 1, 2]
     .map((offset) => {
       const index = (activeIndex + offset + items.length) % items.length;
@@ -755,6 +817,8 @@ export default function Hero() {
           )}
           {currentVideoKey && (
             <iframe
+              ref={heroIframeRef}
+              onLoad={subscribeHeroIframe}
               className={`hero-video${isVideoVisible ? " visible" : ""}`}
               src={getVideoSrc(currentVideoKey)}
               title={`${getTitle(activeItem)} trailer`}

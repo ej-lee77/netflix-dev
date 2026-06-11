@@ -306,6 +306,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [hoveredEpisodeId, setHoveredEpisodeId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const [addingToListId, setAddingToListId] = useState<string | null>(null);
   // 플레이리스트 카드 모자이크용 작품 이미지 캐시 (videoId → 이미지 URL)
   const [pickerImages, setPickerImages] = useState<Record<string, string>>({});
@@ -970,29 +971,132 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               minWidth: 0,
             }}
           >
-            {visibleSeasons.map((season) => {
-              const isSelected = selectSeason === season.season_number;
-              return (
+            {isMobile ? (
+              /* 모바일: 커스텀 시즌 셀렉트 */
+              <div style={{ position: "relative" }}>
                 <button
-                  key={season.id}
-                  onClick={() => handleSeasonSelect(season.season_number)}
+                  onClick={() => setSeasonDropdownOpen((v) => !v)}
                   style={{
-                    background: "transparent",
-                    border: "1px solid #3a3a48",
-                    padding: "8px 18px",
-                    borderRadius: 100,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: "#1b1b22",
+                    border: `1px solid ${seasonDropdownOpen ? "#666" : "#3a3a48"}`,
+                    padding: "8px 14px",
+                    borderRadius: 8,
                     cursor: "pointer",
                     fontSize: 14,
-                    fontWeight: 400,
-                    color: "#888",
-                    whiteSpace: "nowrap",
-                    opacity: isSelected ? 1 : 0.4,
+                    color: "#ddd",
                   }}
                 >
-                  {season.name}
+                  {visibleSeasons.find(
+                    (s) => s.season_number === selectSeason,
+                  )?.name ?? `시즌 ${selectSeason}`}
+                  <span
+                    style={{
+                      display: "inline-block",
+                      fontSize: 10,
+                      color: "#888",
+                      transform: seasonDropdownOpen
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                      transition: "transform 0.18s ease",
+                    }}
+                  >
+                    ▼
+                  </span>
                 </button>
-              );
-            })}
+
+                {seasonDropdownOpen && (
+                  <>
+                    {/* 바깥 클릭 시 닫기 */}
+                    <div
+                      onClick={() => setSeasonDropdownOpen(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        zIndex: 51,
+                        minWidth: 170,
+                        maxHeight: 264,
+                        overflowY: "auto",
+                        background: "#1b1b22",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 10,
+                        boxShadow: "0 14px 40px rgba(0,0,0,0.55)",
+                        padding: "6px 0",
+                      }}
+                    >
+                      {visibleSeasons.map((season) => {
+                        const isSelected =
+                          selectSeason === season.season_number;
+                        return (
+                          <button
+                            key={season.id}
+                            onClick={() => {
+                              handleSeasonSelect(season.season_number);
+                              setSeasonDropdownOpen(false);
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 12,
+                              width: "100%",
+                              padding: "11px 14px",
+                              background: isSelected
+                                ? "rgba(229,9,20,0.1)"
+                                : "none",
+                              border: "none",
+                              cursor: "pointer",
+                              fontSize: 14,
+                              fontWeight: isSelected ? 700 : 400,
+                              color: isSelected ? "#fff" : "#aaa",
+                              textAlign: "left",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {season.name}
+                            {isSelected && (
+                              <span style={{ color: "#e50914", fontSize: 13 }}>
+                                ✓
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              visibleSeasons.map((season) => {
+                const isSelected = selectSeason === season.season_number;
+                return (
+                  <button
+                    key={season.id}
+                    onClick={() => handleSeasonSelect(season.season_number)}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #3a3a48",
+                      padding: "8px 18px",
+                      borderRadius: 100,
+                      cursor: "pointer",
+                      fontSize: 14,
+                      fontWeight: 400,
+                      color: "#888",
+                      whiteSpace: "nowrap",
+                      opacity: isSelected ? 1 : 0.4,
+                    }}
+                  >
+                    {season.name}
+                  </button>
+                );
+              })
+            )}
           </div>
           <button
             style={{

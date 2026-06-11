@@ -568,7 +568,7 @@
   .category-section {
     .section-title-outer {
       padding-left: 20px;
-      padding-right: 12px;
+      padding-right: 0; /* 전체보기(margin-right 20px)가 화면 끝 20px 라인에 오도록 */
     }
 
     .swiper-outer {

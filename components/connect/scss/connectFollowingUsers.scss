@@ -236,6 +236,9 @@
   .connect-following-users__item { width: 86px; }
 }
 @include g.respond(mobile) {
+  /* 섹션 간격 통일 (위 40px, 아래 0) */
+  .connect-following-users { margin: 32px 0 0; }
+
   .connect-following-users__slide,
   .connect-following-users__item { width: 72px; }
   .connect-following-users__avatar-wrap,

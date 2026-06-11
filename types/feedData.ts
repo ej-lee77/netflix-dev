@@ -35,6 +35,18 @@ export interface FeedMediaOption {
   meta: string;
 }
 
+export const parseFeedMediaMeta = (meta: string) => {
+  const parts = meta
+    .split(/\s*·\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return {
+    primary: parts.filter((part) => !part.startsWith("평균")).join(" · "),
+    average: parts.find((part) => part.startsWith("평균")) || "",
+  };
+};
+
 export const REPORT_REASONS = [
   "내용이 부적절해요",
   "스포일러가 포함되어 있어요",
