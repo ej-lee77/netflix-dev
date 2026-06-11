@@ -485,3 +485,13 @@ main {
     transition-delay: 0s !important;
   }
 }
+
+/* ===== 외부 SDK 잔여 iframe 차단 =====
+   Firebase 구글 로그인 SDK(gapi)가 body 끝에 심는 숨김용 iframe(id="I0_..." / ng-non-bindable)이
+   스타일 적용 실패 시 width:100% 인라인 요소로 문서 흐름에 끼어들어
+   푸터 아래 빈 공간을 만들고 해당 영역의 클릭을 가로채는 문제 방지.
+   (인증 기능에는 영향 없음 — 원래 화면에 보이면 안 되는 프록시 프레임) */
+body > iframe[ng-non-bindable],
+body > iframe[aria-hidden="true"][tabindex="-1"] {
+  display: none !important;
+}
