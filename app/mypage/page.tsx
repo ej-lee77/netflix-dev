@@ -410,10 +410,10 @@ export default function MyPage() {
   })();
 
   const iconMap : any = {
-    episode: "▶",
-    friend: "👥",
-    upcoming: "📅",
-    reaction: "♥",
+    episode: "episode",
+    friend: "friend",
+    upcoming: "upcoming",
+    reaction: "reaction",
   };
 
   return (
@@ -605,7 +605,7 @@ export default function MyPage() {
 
                   <div className="mood-summary-box">
                     {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
-                      <p>
+                      <div>
                         <AppIcon name="bulb" size={15} />  
                         <div>
                           주로
@@ -621,7 +621,7 @@ export default function MyPage() {
                           )}
                           의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
                         </div>
-                      </p>
+                      </div>
                     )}                  
                   </div>
                 </div>
@@ -645,7 +645,8 @@ export default function MyPage() {
                   {filteredActivities.map((item, index) => (
                     <div key={item.id || index} className="activity-item">
                       <div className="friend-avatar">
-                        {iconMap[item.type]}
+                        <AppIcon name={iconMap[item.type]} size={15} /> 
+                        {/* <img src={iconMap[item.type]} alt="아이콘" /> */}
                         {/* 친구 활동 알림인 경우 기본 프로필 이미지 등을 표시 */}
                         {/* <div className="avatar-placeholder" /> */}
                       </div>
