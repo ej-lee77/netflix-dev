@@ -74,25 +74,72 @@ function jaccardSimilarity(a: string[], b: string[]): number {
   return union === 0 ? 0 : intersection / union;
 }
 
-async function fetchMediaInfo(id: string): Promise<{ title: string; poster: string; genres: string[] } | null> {
-  try {
-    const [movieRes, tvRes] = await Promise.all([
-      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=ko-KR`),
-      fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=ko-KR`),
-    ]);
-    const [movie, tv] = await Promise.all([movieRes.json(), tvRes.json()]);
-    if (movie.poster_path && movie.title) {
-      const genres = (movie.genres ?? []).slice(0, 4).map((g: any) => g.name as string);
-      return { title: movie.title, poster: `${TMDB_IMG}${movie.poster_path}`, genres };
-    }
-    if (tv.poster_path && tv.name) {
-      const genres = (tv.genres ?? []).slice(0, 4).map((g: any) => g.name as string);
-      return { title: tv.name, poster: `${TMDB_IMG}${tv.poster_path}`, genres };
-    }
-    return null;
-  } catch {
-    return null;
+/** Firestore에 저장된 미디어 id는 "123", 123, "movie-123", {id, mediaType} 등
+ *  형태가 섞여 있을 수 있다. 전부 { id, mediaType? }로 정규화하고,
+ *  유효하지 않으면 null을 반환해 "[object Object]" URL 요청을 원천 차단한다. */
+type RawMediaId =
+  | string
+  | number
+  | { id?: string | number; mediaType?: string; media_type?: string };
+
+function normalizeMediaId(raw: RawMediaId | null | undefined): { id: string; mediaType?: "movie" | "tv" } | null {
+  if (raw == null) return null;
+  if (typeof raw === "string" || typeof raw === "number") {
+    const s = String(raw).trim();
+    const prefixed = s.match(/^(movie|tv)-(\d+)$/);
+    if (prefixed) return { id: prefixed[2], mediaType: prefixed[1] as "movie" | "tv" };
+    return /^\d+$/.test(s) ? { id: s } : null;
   }
+  if (typeof raw === "object") {
+    const rawId = (raw as { id?: string | number }).id;
+    if (rawId == null) return null;
+    const mt = (raw as { mediaType?: string }).mediaType ?? (raw as { media_type?: string }).media_type;
+    return { id: String(rawId), mediaType: mt === "movie" || mt === "tv" ? mt : undefined };
+  }
+  return null;
+}
+
+/** TMDB 단건 조회. 타입을 알면 해당 엔드포인트만, 모르면 movie → (실패 시) tv 순차 조회.
+ *  기존처럼 movie/tv를 동시에 쏘면 둘 중 하나는 반드시 404라 콘솔이 에러로 뒤덮인다.
+ *  동일 id 반복 조회를 막기 위해 세션 단위로 결과(실패 포함)를 캐시한다. */
+const tmdbDetailCache = new Map<string, Promise<any | null>>();
+
+async function fetchTmdbDetail(raw: RawMediaId): Promise<any | null> {
+  const normalized = normalizeMediaId(raw);
+  if (!normalized) return null;
+  const { id, mediaType } = normalized;
+  const cacheKey = `${mediaType ?? "any"}-${id}`;
+  const cached = tmdbDetailCache.get(cacheKey);
+  if (cached) return cached;
+
+  const request = (async () => {
+    const types: Array<"movie" | "tv"> = mediaType ? [mediaType] : ["movie", "tv"];
+    for (const type of types) {
+      try {
+        const res = await fetch(
+          `https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_KEY}&language=ko-KR`,
+        );
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data?.poster_path) return data;
+      } catch {
+        // 네트워크 오류는 다음 타입으로 폴백
+      }
+    }
+    return null;
+  })();
+
+  tmdbDetailCache.set(cacheKey, request);
+  return request;
+}
+
+async function fetchMediaInfo(rawId: RawMediaId): Promise<{ title: string; poster: string; genres: string[] } | null> {
+  const data = await fetchTmdbDetail(rawId);
+  if (!data) return null;
+  const title = data.title ?? data.name;
+  if (!title || !data.poster_path) return null;
+  const genres = (data.genres ?? []).slice(0, 4).map((g: any) => g.name as string);
+  return { title, poster: `${TMDB_IMG}${data.poster_path}`, genres };
 }
 
 const FAVORITE_DESCRIPTIONS = [
@@ -103,21 +150,12 @@ const FAVORITE_DESCRIPTIONS = [
   "가장 여운이 남은 작품",
 ];
 
-async function fetchPoster(id: string): Promise<string> {
-  try {
-    const [movieRes, tvRes] = await Promise.all([
-      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=ko-KR`),
-      fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${TMDB_KEY}&language=ko-KR`),
-    ]);
-    const [movie, tv] = await Promise.all([movieRes.json(), tvRes.json()]);
-    const path = movie.poster_path || tv.poster_path;
-    return path ? `${TMDB_IMG}${path}` : "";
-  } catch {
-    return "";
-  }
+async function fetchPoster(rawId: RawMediaId): Promise<string> {
+  const data = await fetchTmdbDetail(rawId);
+  return data?.poster_path ? `${TMDB_IMG}${data.poster_path}` : "";
 }
 
-async function fetchPostersForIds(mediaIds: string[]): Promise<string[]> {
+async function fetchPostersForIds(mediaIds: RawMediaId[]): Promise<string[]> {
   const results = await Promise.all(mediaIds.slice(0, 6).map(fetchPoster));
   return results.filter(Boolean).slice(0, 4);
 }
@@ -204,7 +242,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
         top.map(async ({ userId, profile, similarity }) => {
           const matchRate = Math.round(similarity * 100);
 
-          const videoIds: string[] = [
+          const videoIds: RawMediaId[] = [
             ...(profile.movies?.watchingVideos ?? []),
             ...(profile.movies?.playlist?.playlistVideos ?? []),
           ];
@@ -313,7 +351,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
       const [playlistResults, cardResults] = await Promise.all([
         Promise.all(
           validEntries.map(async ({ userId, firstProfile }) => {
-            const ids: string[] =
+            const ids: RawMediaId[] =
               firstProfile.movies?.playlist?.playlistVideos?.length
                 ? firstProfile.movies.playlist.playlistVideos
                 : firstProfile.movies?.watchingVideos ?? [];
@@ -325,7 +363,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
         ),
         Promise.all(
           validEntries.map(async ({ userId, firstProfile }) => {
-            const videoIds: string[] = [
+            const videoIds: RawMediaId[] = [
               ...(firstProfile.movies?.watchingVideos ?? []),
               ...(firstProfile.movies?.playlist?.playlistVideos ?? []),
             ];

@@ -568,3 +568,20 @@
     .ranking-card-detail { display: none !important; }
   }
 }
+
+/* ===== 레이아웃 전환: 데스크톱(>1024px) = 펼침형, 태블릿/모바일(<=1024px) = ThemeRow형 =====
+   RankingSection은 두 버전을 모두 렌더하고 여기서 CSS로만 전환한다.
+   (JS 폭 측정에 의존하지 않으므로 메인·커넥트 어느 라우트에서도 항상 동일하게 동작) */
+.ranking-compact-only {
+  display: none;
+}
+
+@include g.respond(tablet) {
+  .ranking-compact-only {
+    display: block;
+  }
+
+  .ranking-section.ranking-desktop-only {
+    display: none;
+  }
+}
