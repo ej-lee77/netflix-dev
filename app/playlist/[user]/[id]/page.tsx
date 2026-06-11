@@ -10,6 +10,7 @@ import { useFollowStore } from "@/store/useFollowStore";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
+import RepBadge from "@/components/common/RepBadge";
 import "../../../scss/playlistDetail.scss";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
@@ -69,7 +70,7 @@ export default function PlaylistPage() {
       try {
         const snap = await getDoc(doc(db, "users", userId));
         const p = snap.exists() ? snap.data().profile?.[0] : null;
-        if (!ignore) setOwner({ name: p?.nickname ?? "유저", img: p?.imgUrl ?? "", badge: "" });
+        if (!ignore) setOwner({ name: p?.nickname ?? "유저", img: p?.imgUrl ?? "", badge: p?.badges?.equippedBadges ?? "" });
       } catch {
         if (!ignore) setOwner({ name: "유저", img: "", badge: "" });
       }
@@ -129,7 +130,7 @@ export default function PlaylistPage() {
           >
             {owner.name}
           </span>
-          <span className="pl-creator-badge">{owner.badge}</span>
+          <RepBadge badge={owner.badge} size="sm" className="pl-creator-badge" />
           {!isSelf && myUserId && (
             <button
               type="button"

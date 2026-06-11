@@ -54,6 +54,7 @@ export interface FeedView extends FeedReview {
   author: string;
   authorImage?: string;
   authorBadgeIds: string[];
+  authorEquippedBadge?: string; // 작성자의 대표 칭호(장착 뱃지) ID
   isMine: boolean;
   isFollowing: boolean;
   mediaId: number;
@@ -295,16 +296,27 @@ const getAuthorImage = async (userId: string, profileId?: number) => {
   }
 };
 
-const getAuthorBadgeIds = async (userId: string, profileId?: number) => {
-  if (SEED_AUTHOR_NAMES[userId]) return [];
+const getAuthorBadges = async (userId: string, profileId?: number) => {
+  if (SEED_AUTHOR_NAMES[userId]) return { equippedBadge: "", badgeIds: [] as string[] };
 
   try {
     const profile = await getAuthorProfile(userId, profileId);
-    const equippedBadgeId = profile?.badges?.equippedBadges;
+    const completedBadgeIds =
+      profile?.badges?.earnedBadges
+        ?.filter((badge) => badge.isComplete)
+        .map((badge) => badge.id) ?? [];
+    const equippedBadgeId = profile?.badges?.equippedBadges ?? "";
 
-    return equippedBadgeId ? [equippedBadgeId] : [];
+    const badgeIds = [
+      ...(equippedBadgeId && completedBadgeIds.includes(equippedBadgeId)
+        ? [equippedBadgeId]
+        : []),
+      ...completedBadgeIds.filter((badgeId) => badgeId !== equippedBadgeId),
+    ].slice(0, 3);
+
+    return { equippedBadge: equippedBadgeId, badgeIds };
   } catch {
-    return [];
+    return { equippedBadge: "", badgeIds: [] as string[] };
   }
 };
 
@@ -412,10 +424,10 @@ const buildFeedView = async (
   const likedUserIds = review.likedUserIds || [];
   const currentProfileId = useAuthStore.getState().currentProfile?.id;
   const currentActorId = currentUserId && currentProfileId ? `${currentUserId}:${currentProfileId}` : currentUserId;
-  const [author, authorImage, authorBadgeIds] = await Promise.all([
+  const [author, authorImage, authorBadges] = await Promise.all([
     getAuthorName(review.userId, review.profileId),
     getAuthorImage(review.userId, review.profileId),
-    getAuthorBadgeIds(review.userId, review.profileId),
+    getAuthorBadges(review.userId, review.profileId),
   ]);
 
   return {
@@ -423,7 +435,8 @@ const buildFeedView = async (
     feedId: review.feedId || "",
     author,
     authorImage,
-    authorBadgeIds,
+    authorBadgeIds: authorBadges.badgeIds,
+    authorEquippedBadge: authorBadges.equippedBadge,
     isMine: Boolean(
       currentUserId &&
       review.userId === currentUserId &&

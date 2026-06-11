@@ -20,6 +20,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { showToast } from "@/store/useToastStore";
 import { auth } from "@/firebase/firebase";
 import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
+import RepBadge from "@/components/common/RepBadge";
 
 interface FeedReviewCardProps {
   review: FeedView;
@@ -445,6 +446,7 @@ export default function FeedReviewCard({
             {review.author}
             <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
           </h3>
+          <RepBadge badge={review.authorEquippedBadge} size="sm" className="feed-author-rep-badge" />
           <div className="post-info">
             <span className="time">{getRelativeTime(review.createdAt)}</span>
             {!review.isPublic && <span className="private-tag">비공개</span>}
