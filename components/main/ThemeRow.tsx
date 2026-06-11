@@ -18,7 +18,7 @@ import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from "../common/SectionTitle";
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
 import { filterHidden } from "@/data/hiddenContent";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
 import { useAuthStore } from "@/store/useAuthStore";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
@@ -56,10 +56,10 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
   const t = useT();
   const router = useRouter();
   const excludedGenres = useExcludedGenres();
-  const maturityCeiling = useMaturityCeiling();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   const currentProfile = useAuthStore((state) => state.currentProfile);
   const autoplayPreview = currentProfile?.settings?.playback?.autoplayPreview ?? true;
-  const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos, certifications, onFetchCertification } = useMovieStore();
+  const { onFetchVideo, onFetchTvVideos, popVideos, tvVideos } = useMovieStore();
   const items = filterHidden(
     filterByMaturity(
       filterByExcludedGenres(rawItems, excludedGenres),
@@ -90,10 +90,9 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
     const fetchVideo = item.mediaType === "movie"
       ? () => onFetchVideo(item.id)
       : () => onFetchTvVideos(item.id);
-    await Promise.all([
-      autoplayPreview ? fetchVideo() : Promise.resolve(),
-      onFetchCertification(item.id, item.mediaType),
-    ]);
+    if (autoplayPreview) {
+      await fetchVideo();
+    }
   };
 
   const handleMouseLeave = () => {

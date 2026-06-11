@@ -14,7 +14,7 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from '../common/SectionTitle';
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
@@ -40,8 +40,9 @@ function StarRating({ score }: { score: number }) {
 
 export default function RecommendList() {
   const t = useT();
-  const { recommended: rawRecommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
+  const { recommended: rawRecommended, onFetchRecommended, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   const maturityCeiling = useMaturityCeiling();
 
   const { isUnsubscribed } = useSubscriptionGuard();

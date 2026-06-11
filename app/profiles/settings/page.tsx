@@ -8,6 +8,7 @@ import { auth } from "@/firebase/firebase";
 import { useConfirmModal } from "@/components/common/ConfirmModal";
 import ProfilePinGate from "@/components/ProfilePinGate";
 import { DEFAULT_PROFILE_SETTINGS, useAuthStore } from "@/store/useAuthStore";
+import { useMovieStore } from "@/store/useMovieStore";
 import type {
   MaturityRating,
   ProfileSettings,
@@ -155,6 +156,62 @@ const isAtLeast19 = (birthDate: string) => {
 
   if (!hasHadBirthdayThisYear) age -= 1;
   return age >= 19;
+};
+
+const prewarmMainMaturityCertifications = async () => {
+  const movieStore = useMovieStore.getState();
+
+  await Promise.allSettled([
+    movieStore.popMovies.length ? Promise.resolve() : movieStore.onFetchPopular(),
+    movieStore.tvs.length ? Promise.resolve() : movieStore.onFetchTvs(),
+    movieStore.netflixOriginals.length
+      ? Promise.resolve()
+      : movieStore.onFetchNetflixOriginals(),
+    movieStore.recommended.length
+      ? Promise.resolve()
+      : movieStore.onFetchRecommended(),
+    movieStore.koreanMovies.length
+      ? Promise.resolve()
+      : movieStore.onFetchKoreanMovies(),
+  ]);
+
+  const latestStore = useMovieStore.getState();
+  const seen = new Set<string>();
+  const candidates = [
+    ...latestStore.popMovies.slice(0, 30).map((item) => ({
+      id: item.id,
+      mediaType: "movie" as const,
+    })),
+    ...latestStore.koreanMovies.slice(0, 30).map((item) => ({
+      id: item.id,
+      mediaType: "movie" as const,
+    })),
+    ...latestStore.tvs.slice(0, 30).map((item) => ({
+      id: item.id,
+      mediaType: "tv" as const,
+    })),
+    ...latestStore.netflixOriginals.slice(0, 30).map((item) => ({
+      id: item.id,
+      mediaType: "tv" as const,
+    })),
+    ...latestStore.recommended.slice(0, 30).map((item) => ({
+      id: item.id,
+      mediaType: item.media_type,
+    })),
+  ].filter((item) => {
+    const key = `${item.mediaType}-${item.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return latestStore.certifications[key] === undefined;
+  });
+
+  await Promise.allSettled(
+    candidates.map((item) =>
+      useMovieStore
+        .getState()
+        .onFetchCertification(item.id, item.mediaType),
+    ),
+  );
 };
 
 const iconPaths = (folder: string, count: number, extension = "png") =>
@@ -382,6 +439,7 @@ function ProfileSettingsContent() {
   const [maturityRating, setMaturityRating] = useState<MaturityRating>(
     profileSetting.maturityRating ?? ratingFromViewAge(profile.viewAge),
   );
+  const [isSavingMaturity, setIsSavingMaturity] = useState(false);
   const [adultBirthDate, setAdultBirthDate] = useState("");
   const [adultVerifyName, setAdultVerifyName] = useState("");
   const [adultVerifyPhone, setAdultVerifyPhone] = useState("");
@@ -555,13 +613,13 @@ function ProfileSettingsContent() {
     }));
   }, [profile.id, profile.settings, profile.viewAge]);
 
-  const updateProfileSettings = (nextSettings: Partial<ProfileSettings>) => {
+  const updateProfileSettings = async (nextSettings: Partial<ProfileSettings>) => {
     const mergedSettings = normalizeProfileSetting({
       ...profileSetting,
       ...nextSettings,
     });
 
-    onUpdateProfile({
+    await onUpdateProfile({
       ...profile,
       viewAge: viewAgeFromRating(mergedSettings.maturityRating),
       settings: mergedSettings,
@@ -570,7 +628,7 @@ function ProfileSettingsContent() {
 
   const saveSubtitleSettings = () => {
     setSavedSubtitle(draftSubtitle);
-    updateProfileSettings({ subtitles: draftSubtitle });
+    void updateProfileSettings({ subtitles: draftSubtitle });
     setActiveModal(null);
   };
 
@@ -588,7 +646,7 @@ function ProfileSettingsContent() {
     setActiveModal(null);
   };
 
-  const saveMaturitySettings = () => {
+  const saveMaturitySettings = async () => {
     if (maturityRating === "19+" && !profileSetting.verifiedAdult) {
       setAdultBirthDate("");
       setAdultVerifyName("");
@@ -600,8 +658,16 @@ function ProfileSettingsContent() {
       return;
     }
 
-    updateProfileSettings({ maturityRating });
-    setActiveModal(null);
+    setIsSavingMaturity(true);
+    try {
+      if (maturityRating !== "19+") {
+        await prewarmMainMaturityCertifications();
+      }
+      await updateProfileSettings({ maturityRating });
+      setActiveModal(null);
+    } finally {
+      setIsSavingMaturity(false);
+    }
   };
 
   const revertMaturitySelection = () => {
@@ -640,7 +706,7 @@ function ProfileSettingsContent() {
     setAdultVerifyError("데모 인증번호는 123456입니다.");
   };
 
-  const submitAdultVerification = (event: React.FormEvent) => {
+  const submitAdultVerification = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!isAdultCodeSent) {
@@ -658,22 +724,27 @@ function ProfileSettingsContent() {
       return;
     }
 
-    updateProfileSettings({
-      maturityRating: "19+",
-      verifiedAdult: true,
-    });
-    setAdultBirthDate("");
-    setAdultVerifyName("");
-    setAdultVerifyPhone("");
-    setAdultVerifyCode("");
-    setIsAdultCodeSent(false);
-    setAdultVerifyError("");
-    setIsAdultVerificationOpen(false);
-    setActiveModal(null);
+    setIsSavingMaturity(true);
+    try {
+      await updateProfileSettings({
+        maturityRating: "19+",
+        verifiedAdult: true,
+      });
+      setAdultBirthDate("");
+      setAdultVerifyName("");
+      setAdultVerifyPhone("");
+      setAdultVerifyCode("");
+      setIsAdultCodeSent(false);
+      setAdultVerifyError("");
+      setIsAdultVerificationOpen(false);
+      setActiveModal(null);
+    } finally {
+      setIsSavingMaturity(false);
+    }
   };
 
   const savePlaybackSettings = () => {
-    updateProfileSettings({
+    void updateProfileSettings({
       playback: {
         autoplayNext: toggles.autoplayNext,
         autoplayPreview: toggles.autoplayPreview,
@@ -1607,7 +1678,7 @@ function ProfileSettingsContent() {
                         style={{ marginTop: 14 }}
                       >
                         <button type="submit" className="is-primary">
-                          인증하고 저장
+                          {isSavingMaturity ? "적용 중" : "인증하고 저장"}
                         </button>
                         <button
                           type="button"
@@ -1628,8 +1699,9 @@ function ProfileSettingsContent() {
                       type="button"
                       className="is-primary"
                       onClick={saveMaturitySettings}
+                      disabled={isSavingMaturity}
                     >
-                      저장
+                      {isSavingMaturity ? "적용 중" : "저장"}
                     </button>
                     <button type="button" onClick={closeModal}>
                       취소
