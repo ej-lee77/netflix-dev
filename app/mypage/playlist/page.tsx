@@ -528,7 +528,7 @@ function ActivityContent() {
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
-    await onRemovePlayList(item.id, item.mediaType);
+    await onRemovePlayList(item.id);
   };
 
   const handleDeleteHistItem = async (item: PlayListItem) => {
@@ -546,6 +546,7 @@ function ActivityContent() {
       settings: {
         ...currentProfile.settings,
         maturityRating: currentProfile.settings?.maturityRating ?? DEFAULT_PROFILE_SETTINGS.maturityRating,
+        verifiedAdult: currentProfile.settings?.verifiedAdult ?? DEFAULT_PROFILE_SETTINGS.verifiedAdult,
         subtitles: currentProfile.settings?.subtitles ?? DEFAULT_PROFILE_SETTINGS.subtitles,
         playback: currentProfile.settings?.playback ?? DEFAULT_PROFILE_SETTINGS.playback,
         hiddenWatchingVideos: [...hiddenWatchingVideos, itemKey],
@@ -1076,7 +1077,7 @@ function ActivityContent() {
         >
           -
         </button>
-        {selectedKeys.length > 0 && (
+        {selectedKeys.length > 0 ? (
           hasNewItems ? (
             <button type="button" className="playlist-add-btn" 
             onClick={() => {
@@ -1087,7 +1088,7 @@ function ActivityContent() {
           ) : (
             <span className="playlist-already-added">이미 추가됨</span>
           )
-        )}
+        ) : (null)}
         <Link href={`/playlist/${user?.userId}/${playlist.listId}`} className="mini-poster">
           <div className="playlist-mosaic">
             {previewItems.map((item) => (
@@ -1141,6 +1142,31 @@ function ActivityContent() {
       </article>
     );
   };
+
+  const renderSelectableHistorySkeleton = () => (
+    <div className="selectable-history selectable-history-skeleton">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <article className="select-card select-card-skeleton" key={index}>
+          <div className="select-card-skeleton__poster" />
+        </article>
+      ))}
+    </div>
+  );
+
+  const renderCustomPlaylistSkeleton = () => (
+    <div className="custom-playlist-grid custom-playlist-grid-skeleton">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <article className="custom-playlist-card custom-playlist-card-skeleton" key={index}>
+          <div className="playlist-mosaic custom-playlist-card-skeleton__mosaic" />
+          <div className="custom-playlist-card-skeleton__body">
+            <div className="custom-playlist-card-skeleton__line custom-playlist-card-skeleton__line--title" />
+            <div className="custom-playlist-card-skeleton__line" />
+            <div className="custom-playlist-card-skeleton__line custom-playlist-card-skeleton__line--short" />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
 
   const renderPlaylists = () => (
     <section className="activity-section">
@@ -1217,7 +1243,9 @@ function ActivityContent() {
       {/* 리스트 본문 */}
       <div className="playlist-content-layout">
         <div className="selectable-history-wrap">
-          {processedList.length > 0 ? (
+          {wishLoading ? (
+            renderSelectableHistorySkeleton()
+          ) : processedList.length > 0 ? (
             <div className="selectable-history">
               {pagedSelectionItems.map((item) => {
                 const key = getItemKey(item);
@@ -1278,7 +1306,9 @@ function ActivityContent() {
         <span>{customPlaylists.length}개</span>
       </div>
 
-      {customPlaylists.length > 0 ? (
+      {wishLoading ? (
+        renderCustomPlaylistSkeleton()
+      ) : customPlaylists.length > 0 ? (
         <div className="custom-playlist-grid">
           {customPlaylists.map(renderPlaylistMosaic)}
         </div>

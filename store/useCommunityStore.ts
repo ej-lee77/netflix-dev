@@ -3,6 +3,28 @@ import { collection, getDocs, arrayUnion, doc, getDoc, writeBatch, runTransactio
 import { db } from '@/firebase/firebase';
 import { ReviewDocument, CommunityStore } from '@/types/community';
 import { useAuthStore } from './useAuthStore';
+import { BadgeList } from '@/types/auth';
+
+export const getReviewCreatedBadge = (currentBadges: BadgeList): BadgeList => {
+  const updatedEarnedBadges = [...currentBadges.earnedBadges];
+  let newEquipped = currentBadges.equippedBadges;
+
+  // 첫 리뷰 등록 뱃지 체크
+  if (!updatedEarnedBadges.some(b => b.id === "social_reviewer")) {
+    updatedEarnedBadges.push({
+      id: "social_reviewer",
+      progress: 1,
+      isComplete: true
+    });
+    if (!newEquipped) newEquipped = "social_reviewer";
+  }
+
+  return {
+    earnedBadges: updatedEarnedBadges,
+    equippedBadges: newEquipped
+  };
+};
+
 
 export const useCommunityStore = create<CommunityStore>((set) => ({
   reviews: [],
@@ -112,42 +134,62 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
   },
 
   addReview: async (newReviewData) => {
-    const { user, currentProfile } = useAuthStore.getState();
-    if (!user?.userId || !currentProfile) return;
+      const { user, currentProfile } = useAuthStore.getState();
+      if (!user?.userId || !currentProfile) return;
 
-    const newReview = {
-      reviewId: crypto.randomUUID(),
-      ...newReviewData,
-      userId: user.userId,
-      profileId: currentProfile.id,
-      nickname: currentProfile.nickname,
-      createdAt: new Date().toISOString(),
-      likesCount: 0,
-      reportsCount: 0,
-    };
+      // 1. 유저 데이터 및 프로필 가져오기 (뱃지 업데이트를 위해 필요)
+      const userDocRef = doc(db, "users", user.userId);
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) return;
 
-    console.log(newReview);
+      const userData = userDocSnap.data();
+      const profiles = userData.profile || [];
+      const profileIndex = profiles.findIndex((p:any) => p.id === currentProfile.id);
+      if (profileIndex === -1) return;
 
-    const batch = writeBatch(db);
-
-    // 1. 유저별 리뷰 문서 업데이트
-    const userDocRef = doc(db, "userReviews", user.userId);
-    batch.set(userDocRef, { reviews: arrayUnion(newReview) }, { merge: true });
-
-    // 2. 비디오별 리뷰 문서 업데이트
-    const videoDocRef = doc(db, "videoReviews", newReviewData.videoId);
-    batch.set(videoDocRef, { reviews: arrayUnion(newReview) }, { merge: true });
-
-    try {
-      await batch.commit(); // 두 작업을 한 번에 처리
+      // 2. 뱃지 업데이트
+      const updatedProfiles = [...profiles];
+      const targetProfile = { ...updatedProfiles[profileIndex] };
       
-      // 상태 갱신
-      set((state) => ({
-        reviews: [newReview, ...state.reviews]
-      }));
-    } catch (error) {
-      console.error("동시 저장 실패:", error);
-    }
+      targetProfile.badges = getReviewCreatedBadge(
+          targetProfile.badges || { earnedBadges: [], equippedBadges: "" }
+      );
+      updatedProfiles[profileIndex] = targetProfile;
+
+      // 3. 리뷰 데이터 구성
+      const newReview = {
+        reviewId: crypto.randomUUID(),
+        ...newReviewData,
+        userId: user.userId,
+        profileId: currentProfile.id,
+        nickname: currentProfile.nickname,
+        createdAt: new Date().toISOString(),
+        likesCount: 0,
+        reportsCount: 0,
+      };// 기존 리뷰 생성 로직 동일
+
+      // 4. Batch 작업 구성
+      const batch = writeBatch(db);
+      
+      // 유저 리뷰 추가
+      const userReviewDocRef = doc(db, "userReviews", user.userId);
+      batch.set(userReviewDocRef, { reviews: arrayUnion(newReview) }, { merge: true });
+      
+      // 비디오 리뷰 추가
+      const videoDocRef = doc(db, "videoReviews", newReviewData.videoId);
+      batch.set(videoDocRef, { reviews: arrayUnion(newReview) }, { merge: true });
+      
+      // 유저 프로필(뱃지 정보) 업데이트
+      batch.update(userDocRef, { profile: updatedProfiles });
+
+      useAuthStore.getState().onInitAuth();
+
+      try {
+          await batch.commit();
+          set((state) => ({ reviews: [newReview, ...state.reviews] }));
+      } catch (error) {
+          console.error("저장 실패:", error);
+      }
   },
   updateReview: async (reviewId, videoId, data) => {
     const { user } = useAuthStore.getState();

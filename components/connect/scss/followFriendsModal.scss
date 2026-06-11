@@ -179,6 +179,24 @@
     flex: 1;
     min-width: 0;
 
+    .name-box{
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 4px;
+
+      span {
+        display: inline-block;
+        padding: 2px 12px;
+        background: rgba(229, 9, 20, 0.15);
+        color: g.$main-color;
+        border: 1px solid g.$main-color;
+        border-radius: 100px;
+        font-size: g.$text-12;
+        font-weight: 600;
+      }
+    }
+
     strong {
       display: block;
       margin-bottom: 2px;
@@ -189,11 +207,12 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
   }
 
   &__match {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     color: #e50914;
     font-size: 0.75rem;
     font-weight: 700;
