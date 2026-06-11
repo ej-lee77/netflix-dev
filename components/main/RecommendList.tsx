@@ -72,6 +72,14 @@ export default function RecommendList() {
   }, [genreFiltered, maturityCeiling]);
   const [activeBackdrop, setActiveBackdrop] = useState<{ id: number; backdropPath: string } | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 600);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     onFetchRecommended();
@@ -127,8 +135,8 @@ export default function RecommendList() {
         grabCursor
         centeredSlides
         loop
-        slidesPerView={3}
-        spaceBetween={16}
+        slidesPerView={isMobile ? 1.4 : 3}
+        spaceBetween={isMobile ? 10 : 16}
         observer={true}
         observeParents={true}
         navigation
@@ -139,11 +147,10 @@ export default function RecommendList() {
         onSlideChange={handleSlideChange}
         className="recommend-swiper"
         breakpoints={{
-          0: { slidesPerView: 1, spaceBetween: 10 },
-          768: { slidesPerView: 3, spaceBetween: 10 },
-          1280: { slidesPerView: 3, spaceBetween: 4 },
-          1920: { slidesPerView: 3, spaceBetween: -3 },
-          2560: { slidesPerView: 5, spaceBetween: 1 },
+          601:  { slidesPerView: 3, spaceBetween: 10, centeredSlides: true },
+          1280: { slidesPerView: 3, spaceBetween: 4,  centeredSlides: true },
+          1920: { slidesPerView: 3, spaceBetween: -3, centeredSlides: true },
+          2560: { slidesPerView: 5, spaceBetween: 1,  centeredSlides: true },
         }}
       >
         {recommended.map((item) => (
@@ -167,7 +174,14 @@ export default function RecommendList() {
 
               {/* 하단 - 정보 영역 */}
               <div className="slide-info">
-                <h3 className="slide-title">{item.title}</h3>
+                <div className="slide-title-row">
+                  <h3 className="slide-title">{item.title}</h3>
+                  {certifications[`${item.media_type}-${item.id}`] && (
+                    <span className="meta-cert">
+                      {certifications[`${item.media_type}-${item.id}`]}
+                    </span>
+                  )}
+                </div>
 
                 <div className="slide-meta">
                   <StarRating score={item.vote_average} />
@@ -183,11 +197,6 @@ export default function RecommendList() {
                         {(item.genre_ids ?? []).slice(0, 2).map(id => GENRE_MAP[id]).filter(Boolean).join('·')}
                       </span>
                     </>
-                  )}
-                  {certifications[`${item.media_type}-${item.id}`] && (
-                    <span className="meta-cert">
-                      {certifications[`${item.media_type}-${item.id}`]}
-                    </span>
                   )}
                 </div>
 

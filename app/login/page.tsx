@@ -13,10 +13,68 @@ import "../scss/login.scss";
 // ─── 상수 ──────────────────────────────────────────────────────────────────────
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-const IMG_BASE = "https://image.tmdb.org/t/p/w342";
+const IMG_BASE = "https://image.tmdb.org/t/p/w780";
 
 const ROW_COUNT = 8;
 const ITEMS_PER_ROW = 14;
+
+// ─── 로그인 배경에 깔 포스터 (직접 고른 작품) ──────────────────────────────────
+// 여기에 넣은 TMDB 영화 id 들의 포스터만 배경 그리드에 사용된다.
+// 부족하면 그리드가 자동으로 반복해서 채우므로 15~20개면 충분하다.
+//
+// ── id 찾는 법 ──────────────────────────────────────────────
+// 작품 상세 주소가 /detail/movie/12345 라면 끝의 숫자 12345 가 그 작품의 id 다.
+// (배경은 영화 포스터만 사용하므로 movie id 만 넣는다.)
+const CURATED_MOVIE_IDS: number[] = [
+  27205,   // 인셉션
+  157336,  // 인터스텔라
+  155,     // 다크 나이트
+  19995,   // 아바타
+  299536,  // 어벤져스: 인피니티 워
+  24428,   // 어벤져스
+  603,     // 매트릭스
+  120,     // 반지의 제왕: 반지 원정대
+  122,     // 반지의 제왕: 왕의 귀환
+  76341,   // 매드 맥스: 분노의 도로
+  680,     // 펄프 픽션
+  278,     // 쇼생크 탈출
+  238,     // 대부
+  13,      // 포레스트 검프
+  597,     // 타이타닉
+  1726,    // 아이언맨
+  286217,  // 마션
+  49026,   // 다크 나이트 라이즈
+  11,      // 스타워즈: 새로운 희망
+  769,     // 좋은 친구들
+  246655, //엑스맨
+  1226863, // 슈퍼마리오
+  687163, //프로젝트 헤일메리
+  671, //해리포터 마법사의 돌
+  803796, //kpop데몬헌터스
+  120, //반지의 제왕
+  129, //센과치히로
+  808,//슈렉
+  1011985, //쿵푸팬더
+  585, //몬스터주식회사
+  62177, //메리다
+  109445, //겨울왕국
+  402431, //위키드
+  411, //나니아연대기
+  82702,//드래곤길들이기
+  8392, //이웃집 토토로
+  1084244, //토이스토리
+  1543993, //순례자
+  1327819, //호퍼스
+  1022789, //인사이드아웃
+  372058, //너의이름은
+  693134, //듄
+  991494, //스폰지밥
+  269149, //주토피아
+  77338, //인터쳐블
+  519182, //슈퍼배드4
+  10625,  //민걸
+  255709, //소원
+];
 
 // ─── 아이콘 ────────────────────────────────────────────────────────────────────
 
@@ -41,20 +99,21 @@ function PosterGrid() {
   useEffect(() => {
     const fetchPosters = async () => {
       try {
-        // 판타지 장르(14) 영화만, 성인 콘텐츠 제외하여 배경 포스터 구성
-        const pages = [1, 2, 3];
+        // 직접 고른 작품(CURATED_MOVIE_IDS) 의 포스터만 사용한다.
+        // id 가 잘못됐거나 포스터가 없는 작품은 자동으로 건너뛴다.
         const results = await Promise.all(
-          pages.map((p) =>
+          CURATED_MOVIE_IDS.map((id) =>
             fetch(
-              `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&language=ko-KR&with_genres=14&include_adult=false&sort_by=popularity.desc&page=${p}`
-            ).then((r) => r.json())
+              `https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_KEY}&language=ko-KR`
+            )
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null)
           )
         );
-        const allMovies: Movie[] = results.flatMap((r) => r.results ?? []);
-        const paths = allMovies
-          .filter((m) => m.poster_path)
-          .map((m) => m.poster_path)
-          .sort(() => Math.random() - 0.5);
+        const paths = results
+          .filter((m): m is Movie => Boolean(m && m.backdrop_path))
+          .map((m) => m.backdrop_path as string)
+          .sort(() => Math.random() - 0.5); // 그리드 안에서 위치를 섞어 자연스럽게 배치
         setPosters(paths);
       } catch (err) {
         console.error("포스터 fetch 실패", err);

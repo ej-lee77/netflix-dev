@@ -42,6 +42,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  const isMobile = vw <= 600;
   const gridCols = vw <= 480 ? 2 : vw <= 768 ? 3 : vw <= 1024 ? 4 : 6;
 
   const person = personDetails[personId];
@@ -69,7 +70,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
   return (
     <div style={{ background: "#141414", minHeight: "100vh", color: "#fff" }}>
       {/* 뒤로가기 */}
-      <div style={{ padding: vw <= 600 ? "80px 16px 0 72px" : vw <= 1024 ? "80px 24px 0 88px" : vw <= 1440 ? "80px 40px 0 120px" : "80px 40px 0", maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "80px 20px 0 20px" : vw <= 1024 ? "80px 24px 0 88px" : vw <= 1440 ? "80px 40px 0 120px" : "80px 40px 0", maxWidth: 1400, margin: "0 auto" }}>
         <button
           type="button"
           className={`app-back-btn`.trim()}
@@ -129,13 +130,13 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
         ) : (
           <>
             {/* 프로필 헤더 */}
-            <div style={{ display: "flex", gap: 40, marginBottom: 56, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: isMobile ? 20 : 40, marginBottom: isMobile ? 32 : 56 }}>
               {/* 프로필 사진 */}
               <div
                 style={{
                   flexShrink: 0,
-                  width: 200,
-                  height: 280,
+                  width: isMobile ? 120 : 200,
+                  height: isMobile ? 170 : 280,
                   borderRadius: 12,
                   overflow: "hidden",
                   background: "#2a2a35",
@@ -167,7 +168,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
               </div>
 
               {/* 기본 정보 */}
-              <div style={{ flex: 1, minWidth: 260, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
                 {person.known_for_department && (
                   <span
                     style={{
@@ -187,7 +188,7 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
 
                 <h1
                   style={{
-                    fontSize: 36,
+                    fontSize: isMobile ? 24 : 36,
                     fontWeight: 900,
                     color: "#fff",
                     margin: 0,
@@ -338,19 +339,19 @@ export default function PersonDetail({ personId }: PersonDetailProps) {
                   gap: 12,
                 }}
               >
-                <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>필모그래피</h2>
+                <h2 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, margin: 0 }}>필모그래피</h2>
                 <div style={{ display: "flex", gap: 8 }}>
                   {(["all", "movie", "tv"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
                       style={{
-                        padding: "8px 18px",
+                        padding: isMobile ? "6px 12px" : "8px 18px",
                         color: `${filter === f ? "#fff" : "#999"}`,
                         border: `1px solid ${filter === f ? "#e50914" : "#3a3a3a"}`,
                         background: `${filter === f ? "#e50914" : "transparent"}`,
                         borderRadius: "100px",
-                        fontSize: 13,
+                        fontSize: isMobile ? 12 : 13,
                         cursor: "pointer",
                         transition: "all 0.2s",
                         fontWeight: filter === f ? 600 : "normal",

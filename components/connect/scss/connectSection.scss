@@ -35,9 +35,11 @@
   }
 }
 @include g.respond(mobile) {
+  // 모바일에서 사이드바가 숨겨지므로(display:none) 오프셋 제거
   .connect-section__inner {
-    width: min(1920px, calc(100vw - 56px));
-    margin-left: 56px;
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 12px;
     padding-right: 12px;
   }
 }
