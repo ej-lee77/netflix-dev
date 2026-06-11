@@ -72,9 +72,9 @@ export default function Release() {
           spaceBetween={12}
           slidesPerView={5.5}
           breakpoints={{
-            0: { slidesPerView: 1.5 },
-            480: { slidesPerView: 2.2 },
-            768: { slidesPerView: 3 },
+            0:    { slidesPerView: 1.5, spaceBetween: 10 },
+            480:  { slidesPerView: 2.2 },
+            768:  { slidesPerView: 3 },
             1024: { slidesPerView: 4 },
             1280: { slidesPerView: 5.5 },
           }}

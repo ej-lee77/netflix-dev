@@ -183,11 +183,20 @@
 @include g.respond(mobile) {
   .release-section {
     .section-title-outer {
-      padding-left: 56px;
+      padding-left: 20px;
     }
 
     .release-swiper-outer {
-      padding-left: 56px;
+      padding-left: 20px;
+    }
+
+    .swiper-button-prev,
+    .swiper-button-next {
+      display: none;
+    }
+
+    .card-image {
+      aspect-ratio: 3 / 4;
     }
 
     .card-info {
