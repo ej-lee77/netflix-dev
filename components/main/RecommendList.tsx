@@ -14,7 +14,10 @@ import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import SectionTitle from '../common/SectionTitle';
 import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres";
-import { filterByMaturity, useMaturityCeiling } from "@/data/maturityFilter";
+import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilter";
+
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 const GENRE_MAP: Record<number, string> = {
   28: '액션', 12: '모험', 16: '애니메이션', 35: '코미디', 80: '범죄',
@@ -37,9 +40,13 @@ function StarRating({ score }: { score: number }) {
 
 export default function RecommendList() {
   const t = useT();
-  const { recommended: rawRecommended, onFetchRecommended, certifications, onFetchCertification } = useMovieStore();
+  const { recommended: rawRecommended, onFetchRecommended, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
-  const maturityCeiling = useMaturityCeiling();
+  const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
+
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
+
   // 제외 장르 작품 숨김 (인덱스 정합성을 위해 이후 로직은 모두 이 목록을 사용)
   const genreFiltered = useMemo(
     () => filterByExcludedGenres(rawRecommended, excludedGenres),
@@ -91,12 +98,14 @@ export default function RecommendList() {
       setActiveIndex(idx);
     }
   };
-  
+
   if (recommended.length === 0) return null;
 
   const sectionBg = activeBackdrop?.backdropPath
     ? `https://image.tmdb.org/t/p/w1280${activeBackdrop.backdropPath}`
     : '';
+
+
 
   return (
     <section className="recommend-section">
@@ -130,11 +139,11 @@ export default function RecommendList() {
         onSlideChange={handleSlideChange}
         className="recommend-swiper"
         breakpoints={{
-          0:    { slidesPerView: 1,  spaceBetween: 10 },
-          768:  { slidesPerView: 2,  spaceBetween: 12 }, // 3장이면 카드 폭 ~300px로 타이틀·버튼이 비좁아 2장으로 조정
-          1280: { slidesPerView: 3,  spaceBetween: 4  },
-          1920: { slidesPerView: 3,  spaceBetween: -3 },
-          2560: { slidesPerView: 5,  spaceBetween: 1  },
+          0: { slidesPerView: 1, spaceBetween: 10 },
+          768: { slidesPerView: 3, spaceBetween: 10 },
+          1280: { slidesPerView: 3, spaceBetween: 4 },
+          1920: { slidesPerView: 3, spaceBetween: -3 },
+          2560: { slidesPerView: 5, spaceBetween: 1 },
         }}
       >
         {recommended.map((item) => (
@@ -190,6 +199,7 @@ export default function RecommendList() {
                   <Link
                     href={`/detail/${item.media_type}/${item.id}?play=1`}
                     className="btn-play"
+                    onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" width="15" height="15" fill="#fff">
                       <polygon points="5 3 19 12 5 21 5 3" />
@@ -199,6 +209,7 @@ export default function RecommendList() {
                   <Link
                     href={`/detail/${item.media_type}/${item.id}`}
                     className="btn-info"
+                    onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
                       <circle cx="12" cy="12" r="10" />

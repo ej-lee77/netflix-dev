@@ -18,6 +18,7 @@ import {
   getPosterUrl,
 } from "@/types/feedData";
 import { BADGE_LIST } from "@/data/badge";
+import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
 import "@/components/common/wishlistButton.scss";
 import "../scss/feed.scss";
 
@@ -438,6 +439,8 @@ export default function FeedPage() {
   }, []);
 
   useEffect(() => {
+    if (!currentUserId) return;
+
     void onHydrateFeeds();
   }, [currentProfile?.id, currentUserId, onHydrateFeeds]);
 
@@ -1481,12 +1484,13 @@ export default function FeedPage() {
               </div>
             )}
           </aside>
-          <div className="feed-main">
-            <div
-              className="feed-tabs"
-              role="tablist"
-              aria-label="피드 게시물 필터"
-            >
+          {currentUserId && (
+            <div className="feed-main">
+              <div
+                className="feed-tabs"
+                role="tablist"
+                aria-label="피드 게시물 필터"
+              >
               <button
                 type="button"
                 role="tab"
@@ -1542,7 +1546,10 @@ export default function FeedPage() {
                         )}
                       </Link>
                       <div className="post-meta">
-                        <h3>{review.author}</h3>
+                        <h3>
+                          {review.author}
+                          <FeedAuthorBadges badgeIds={review.authorBadgeIds} />
+                        </h3>
                         <div className="post-info">
                           <span className="time">
                             {getRelativeTime(review.createdAt)}
@@ -1715,11 +1722,12 @@ export default function FeedPage() {
                 );
               })
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-      {renderWriteModal()}
-      {renderCommentModal()}
+      {currentUserId && renderWriteModal()}
+      {currentUserId && renderCommentModal()}
     </div>
   );
 }

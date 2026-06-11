@@ -431,8 +431,7 @@ function ActivityContent() {
         setSelectedKeys([]);
         setSelectionPage(1);
         setCreatePlaylistOpen(false);
-        
-        console.log("플레이리스트가 성공적으로 생성되었습니다.");
+        showToast("플레이리스트가 생성되었습니다.");
     } catch (error) {
         console.error("생성 중 에러 발생:", error);
         showToast("플레이리스트 저장에 실패했습니다. 다시 시도해주세요.");
@@ -449,13 +448,17 @@ function ActivityContent() {
   };
 
   const handleDeletePlaylist = async (playlistId: string) => {
-      // 1. 스토어(DB)에서 삭제
+    try {
       await deleteCustomPlaylist(playlistId);
 
-      // 2. 만약 수정 중인 모달이 열려있다면 닫기
       if (modifyPlaylistId === playlistId) {
           closeModifyCard();
       }
+      showToast("플레이리스트가 삭제되었습니다.");
+    } catch (error) {
+      console.error("플레이리스트 삭제 중 에러 발생:", error);
+      showToast("플레이리스트 삭제에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const openModifyCard = (playlist: PlaylistDocument) => {
@@ -521,10 +524,14 @@ function ActivityContent() {
           videoIds: modifyItemKeys
       };
 
-      // 스토어 메서드 호출
+    try {
       await updateCustomPlaylist(modifyPlaylistId, updatedData);
-      
       closeModifyCard();
+      showToast("플레이리스트 수정이 완료되었습니다.");
+    } catch (error) {
+      console.error("플레이리스트 수정 중 에러 발생:", error);
+      showToast("플레이리스트 수정에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const handleDeleteWatchingItem = async (item: PlayListItem) => {
@@ -587,7 +594,7 @@ function ActivityContent() {
         }}
       >
         <section
-          className="modify-playlist-modal"
+          className="modify-playlist-modal edit-playlist-modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modify-playlist-title"
@@ -612,77 +619,77 @@ function ActivityContent() {
               </button>
             </div>
 
-            <div className="modify-field-stack">
-              <label>
-                <span>제목</span>
-                <input
-                  type="text"
-                  value={modifyTitle}
-                  onChange={(event) => setModifyTitle(event.target.value)}
-                  placeholder="플레이리스트 제목"
-                />
-              </label>
+            <div className="edit-playlist-body">
+              <div className="modify-field-stack">
+                <label>
+                  <span>제목</span>
+                  <input
+                    type="text"
+                    value={modifyTitle}
+                    onChange={(event) => setModifyTitle(event.target.value)}
+                    placeholder="플레이리스트 제목"
+                  />
+                </label>
 
-              <label>
-                <span>설명</span>
-                <textarea
-                  value={modifyDescription}
-                  onChange={(event) => setModifyDescription(event.target.value)}
-                  placeholder="플레이리스트 설명"
-                />
-              </label>
-            </div>
-
-            <div className="modify-section">
-              <strong>무드 태그</strong>
-              <div className="modify-mood-tags">
-                {PLAYLIST_MOOD_TAGS.map((mood) => (
-                  <button
-                    type="button"
-                    key={mood.path}
-                    className={modifyMoodTags.includes(mood.title) ? "active" : ""}
-                    onClick={() => toggleModifyMoodTag(mood.title)}
-                  >
-                    <img src={mood.imgUrl} alt="" />
-                    {mood.title}
-                  </button>
-                ))}
+                <label>
+                  <span>설명</span>
+                  <textarea
+                    value={modifyDescription}
+                    onChange={(event) => setModifyDescription(event.target.value)}
+                    placeholder="플레이리스트 설명"
+                  />
+                </label>
               </div>
-            </div>
 
-            <div className="modify-section">
-              <strong>피드 공개 여부</strong>
-              <button
-                type="button"
-                className={modifyIsPublic ? "modify-visibility-toggle active" : "modify-visibility-toggle"}
-                onClick={() => setModifyIsPublic((value) => !value)}
-                aria-pressed={modifyIsPublic}
-              >
-                피드 공개
-                {/* {modifyIsPublic ? "피드 공개" : "비공개"} */}
-              </button>
-            </div>
-
-            <div className="modify-section">
-              <strong>추가된 콘텐츠</strong>
-              <div className="modify-content-grid">
-                {selectedModifyItems.map((item) => { // listItems 대신 selectedModifyItems 사용
-                  const key = getItemKey(item);
-                  const isSelected = modifyItemKeys.includes(key);
-
-                  return (
+              <div className="modify-section">
+                <strong>무드 태그</strong>
+                <div className="modify-mood-tags">
+                  {PLAYLIST_MOOD_TAGS.map((mood) => (
                     <button
                       type="button"
-                      key={key}
-                      className={isSelected ? "modify-content-card selected" : "modify-content-card"}
-                      onClick={() => toggleModifyItemKey(key)}
+                      key={mood.path}
+                      className={modifyMoodTags.includes(mood.title) ? "active" : ""}
+                      onClick={() => toggleModifyMoodTag(mood.title)}
                     >
-                      {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
-                      <span>{isSelected ? "✓" : "+"}</span>
-                      {/* <strong>{item.title}</strong> */}
+                      <img src={mood.imgUrl} alt="" />
+                      {mood.title}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+
+              <div className="modify-section">
+                <strong>피드 공개 여부</strong>
+                <button
+                  type="button"
+                  className={modifyIsPublic ? "modify-visibility-toggle active" : "modify-visibility-toggle"}
+                  onClick={() => setModifyIsPublic((value) => !value)}
+                  aria-pressed={modifyIsPublic}
+                >
+                  피드 공개
+                </button>
+              </div>
+
+              <div className="modify-section">
+                <strong>추가된 콘텐츠</strong>
+                <div className="modify-content-grid">
+                  {selectedModifyItems.map((item) => {
+                    const key = getItemKey(item);
+                    const isSelected = modifyItemKeys.includes(key);
+
+                    return (
+                      <button
+                        type="button"
+                        key={key}
+                        className={isSelected ? "modify-content-card selected" : "modify-content-card"}
+                        onClick={() => toggleModifyItemKey(key)}
+                      >
+                        {item.poster_path && <img src={getPosterUrl(item.poster_path)} alt="" />}
+                        <span>{isSelected ? "✓" : "+"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
