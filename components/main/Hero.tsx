@@ -626,7 +626,8 @@ export default function Hero() {
   }, []);
 
   useEffect(() => {
-    if (!isCompactHero || items.length < 2) return;
+    // 자동 회전: 영상 미리보기가 꺼진 경우에만 (영상이 켜져 있으면 영상 종료가 전환을 담당)
+    if (!isCompactHero || items.length < 2 || autoplayPreview) return;
     const timer = window.setInterval(() => {
       setSlideDirection("left");
       setActiveIndex((prev) => {
@@ -636,7 +637,7 @@ export default function Hero() {
       });
     }, 8000);
     return () => window.clearInterval(timer);
-  }, [isCompactHero, items.length, activeIndex]);
+  }, [isCompactHero, items.length, activeIndex, autoplayPreview]);
 
 
 
@@ -752,7 +753,8 @@ export default function Hero() {
 
   const activeBackdrop = backdropUrl(activeItem.backdrop_path);
   const activeMediaType = activeItem.media_type ?? "movie";
-  const hasPreviewVideo = !isCompactHero && autoplayPreview && (previousVideoKey || currentVideoKey);
+  // 모바일/태블릿에서도 미리보기 영상 재생
+  const hasPreviewVideo = autoplayPreview && (previousVideoKey || currentVideoKey);
   const origin = window.location.origin;
   const getVideoSrc = (videoKey: string) =>
     // loop 제거: 영상이 끝나면 onStateChange(0) 이벤트로 다음 히어로로 전환
