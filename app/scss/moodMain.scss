@@ -19,6 +19,7 @@
       rgba(229, 9, 20, 0.1),
       rgba(245, 158, 11, 0.1)
     );
+    margin-top: -56px;
     margin-bottom: 48px;
     position: relative;
     overflow: hidden;
@@ -27,13 +28,17 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 80% 50%, rgba(168, 85, 247, 0.2), transparent 60%);
+      background: radial-gradient(
+        circle at 80% 50%,
+        rgba(168, 85, 247, 0.2),
+        transparent 60%
+      );
     }
 
     .inner {
       position: relative;
       z-index: 1;
-      max-width: 760px;
+      // max-width: 760px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -143,6 +148,11 @@
       transition: transform 0.3s;
     }
 
+    .mood-card-main,
+    .mood-card-copy {
+      display: contents;
+    }
+
     .mood-emoji {
       position: absolute;
       top: 24px;
@@ -243,6 +253,7 @@
 
   @media (max-width: 760px) {
     padding-bottom: 56px;
+    margin-top: 0;
 
     .inner {
       width: min(100%, calc(100% - 32px));
@@ -282,21 +293,48 @@
 
     .mood-card {
       aspect-ratio: auto;
-      min-height: 168px;
-      padding: 22px 18px;
+      min-height: 132px;
+      padding: 16px;
+
+      .mood-card-main {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .mood-card-copy {
+        display: block;
+        min-width: 0;
+        padding-top: 2px;
+      }
 
       .mood-icon-wrap {
-        width: 52px;
-        height: 52px;
-        margin-bottom: 12px;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        margin-bottom: 0;
+
+        img {
+          width: 26px;
+          height: 26px;
+        }
       }
 
       h3 {
-        font-size: g.$text-18;
+        font-size: g.$text-16;
+        margin-bottom: 4px;
+      }
+
+      p {
+        font-size: g.$text-12;
+        line-height: 1.5;
       }
 
       .mood-cta {
-        margin-top: 12px;
+        margin-top: auto;
+        padding-top: 12px;
       }
     }
 
@@ -334,19 +372,50 @@
     }
 
     .mood-card {
-      min-height: 156px;
-      padding: 18px 16px;
+      min-height: 124px;
+      padding: 14px;
+
+      .mood-card-main {
+        gap: 10px;
+
+        .mood-card-copy {
+          h3 {
+            font-size: g.$text-14;
+          }
+        }
+      }
+
+      .mood-icon-wrap {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+
+        img {
+          width: 24px;
+          height: 24px;
+        }
+      }
     }
   }
 }
 
 /* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
 @include g.respond(laptop) {
-  .mood-main-page { padding-left: 80px; }
+  .mood-main-page {
+    padding-left: 80px;
+  }
 }
+
 @include g.respond(tablet) {
-  .mood-main-page { padding-left: 24px; padding-right: 24px; }
+  .mood-main-page {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
+
 @include g.respond(mobile) {
-  .mood-main-page { padding-left: 16px; padding-right: 16px; }
+  .mood-main-page {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
