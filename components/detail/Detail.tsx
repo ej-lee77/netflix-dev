@@ -16,6 +16,7 @@ import type {
 import VideoPlayer from "@/components/common/VideoPlayer";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
+import RepBadge from "@/components/common/RepBadge";
 import { useConfirmModal } from "@/components/common/ConfirmModal";
 import "./detail.module.scss";
 import { isHidden } from "@/data/hiddenContent";
@@ -557,30 +558,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       null)
     : null;
   const activeEpisodeId = selectedEpisode?.id ?? null;
-  // 시청중 항목 (이어보기용)
-  const watchingItem = playList.find(
-    (it) => it.id === mediaId && it.mediaType === type,
-  );
-
-  // 이어보기: 에피소드 목록 로드 후 마지막 시청 회차를 자동 선택
-  useEffect(() => {
-    if (!isTv || selectEpisodeId !== null || episodes.length === 0) return;
-    if (!watchingItem) return;
-    let target = watchingItem.lastEpisodeNumber
-      ? episodes.find(
-          (ep) => ep.episode_number === watchingItem.lastEpisodeNumber,
-        )
-      : undefined;
-    // 회차 번호 기록이 없으면 진행률이 기록된 회차 중 가장 뒷 회차로
-    if (!target && watchingItem.episodeProgress) {
-      const watchedIds = Object.keys(watchingItem.episodeProgress).map(Number);
-      target = [...episodes]
-        .reverse()
-        .find((ep) => watchedIds.includes(ep.id));
-    }
-    if (target) setSelectEpisodeId(target.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTv, episodes, watchingItem]);
   const detailBackdrop =
     imageUrl(mediaItem?.backdrop_path, "original") ||
     imageUrl(selectedEpisode?.still_path, "original") ||
@@ -1800,6 +1777,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     <strong style={{ color: "#fff", fontSize: 15 }}>
                       {review.nickname}
                     </strong>
+                    {review.equippedBadge && (
+                      <span style={{ marginLeft: 8, display: "inline-flex", verticalAlign: "middle" }}>
+                        <RepBadge badge={review.equippedBadge} size="sm" />
+                      </span>
+                    )}
                     <span
                       style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}
                     >
@@ -4005,59 +3987,16 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
       {showPopup && popupVideoKey && (
         <VideoPlayer
-          // 회차가 바뀌면 플레이어를 새로 마운트해 처음부터 재생 (전환 체감)
-          key={`${popupVideoKey}-${isTv ? activeEpisodeId : "movie"}`}
           videoKey={popupVideoKey}
-          title={
-            isTv && selectedEpisode
-              ? `${title} · ${selectedEpisode.episode_number}. ${selectedEpisode.name}`
-              : title
-          }
+          title={title}
           onClose={handleClosePlayer}
-          episodes={
-            isTv
-              ? episodes.map((ep) => ({
-                  id: ep.id,
-                  number: ep.episode_number,
-                  name: ep.name,
-                  stillUrl:
-                    imageUrl(ep.still_path, "w300") ||
-                    imageUrl(mediaItem?.backdrop_path, "w300"),
-                  runtime: ep.runtime ?? null,
-                  progress: watchingItem?.episodeProgress?.[ep.id] ?? 0,
-                }))
-              : undefined
-          }
-          startPct={
-            isTv
-              ? activeEpisodeId
-                ? (watchingItem?.episodeProgress?.[activeEpisodeId] ?? 0)
-                : 0
-              : (watchingItem?.progress ?? 0)
-          }
-          activeEpisodeId={activeEpisodeId}
-          onSelectEpisode={(id) => {
-            setSelectEpisodeId(id);
-            // 회차별로 다른 영상 키 매칭 (트레일러/티저/클립 순환)
-            const idx = episodes.findIndex((ep) => ep.id === id);
-            if (videos && videos.length > 0 && idx >= 0) {
-              const pick = videos[idx % videos.length];
-              if (pick?.key) setPopupVideoKey(pick.key);
-            }
-          }}
           onTimeUpdate={(currentTime, duration) => {
             if (duration <= 0) return;
             const progress = Math.round((currentTime / duration) * 100);
             if (progress === 0) return;
             onUpdateProgress(mediaId, type, progress);
             if (isTv && activeEpisodeId) {
-              onUpdateEpisodeProgress(
-                mediaId,
-                type,
-                activeEpisodeId,
-                progress,
-                selectedEpisode?.episode_number,
-              );
+              onUpdateEpisodeProgress(mediaId, type, activeEpisodeId, progress);
             }
           }}
         />

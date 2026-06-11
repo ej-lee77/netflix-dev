@@ -16,9 +16,11 @@ import {
   getInitial,
   getRelativeTime,
   getPosterUrl,
+  parseFeedMediaMeta,
 } from "@/types/feedData";
 import { BADGE_LIST } from "@/data/badge";
 import FeedAuthorBadges from "@/components/feed/FeedAuthorBadges";
+import AppIcon from "@/components/common/AppIcon";
 import "@/components/common/wishlistButton.scss";
 import "../scss/feed.scss";
 
@@ -1398,28 +1400,31 @@ export default function FeedPage() {
             ) : (
               <div className="feed-profile-card">
                 <div className="feed-profile-card__eyebrow">프로필 정보</div>
-                <div className="feed-profile-card__avatar">
-                  {profileImage ? (
-                    <img src={profileImage} alt="" />
-                  ) : (
-                    getInitial(profileName)
-                  )}
-                </div>
-                <strong>{profileName}</strong>
-                <Link href="/goods" className="feed-profile-badge">
-                  {equippedBadge?.imgUrl && (
-                    <img src={equippedBadge.imgUrl} alt="" />
-                  )}
-                  <span>{equippedBadge?.name ?? "위대한 첫걸음"}</span>
-                </Link>
-                <div className="profile-meta-info">
-                  {/* <span className="feed-profile-level">Lv.0 베이비</span> */}
-                  <p className="follower-info">
-                    팔로워 <span>{followerCount}</span>
-                  </p>
-                  <p className="following-info">
-                    팔로잉 <span>{followingCount}</span>
-                  </p>
+                <div className="feed-profile-identity">
+                  <div className="feed-profile-card__avatar">
+                    {profileImage ? (
+                      <img src={profileImage} alt="" />
+                    ) : (
+                      getInitial(profileName)
+                    )}
+                  </div>
+                  <div className="feed-profile-identity__meta">
+                    <strong>{profileName}</strong>
+                    <Link href="/goods" className="feed-profile-badge">
+                      {equippedBadge?.imgUrl && (
+                        <img src={equippedBadge.imgUrl} alt="" />
+                      )}
+                      <span>{equippedBadge?.name ?? "위대한 첫걸음"}</span>
+                    </Link>
+                    <div className="profile-meta-info">
+                      <p className="follower-info">
+                        팔로워 <span>{followerCount}</span>
+                      </p>
+                      <p className="following-info">
+                        팔로잉 <span>{followingCount}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="feed-profile-stats">
@@ -1444,42 +1449,38 @@ export default function FeedPage() {
                   )}
                 </div>
                 <div className="feed-profile-nav">
-                  <Link href="/mypage/playlist?tab=history">시청이력</Link>
-                  <Link href="/mypage/community?tab=my-feeds">
-                    내가 쓴 피드
-                  </Link>
-                  <div className="edit-profile-area">
-                    <Link href="/settings?tab=profile">프로필 관리</Link>
-                    <button type="button" onClick={handleCopyProfileLink}>
-                      프로필 공유
-                    </button>
-                    <Link
-                      href="/friends"
-                      className="follow-more-btn"
-                      aria-label="팔로워 및 팔로잉 관리로 이동"
-                      title="팔로워 및 팔로잉 관리"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M19.5 2c.5 0 .9.4.9.9v2.7h2.7a.9.9 0 0 1 0 1.8h-2.7v2.7a.9.9 0 0 1-1.8 0V7.4h-2.7a.9.9 0 1 1 0-1.8h2.7V2.9c0-.5.4-.9.9-.9M9.5 13c5.04 0 9.17 3.7 9.5 8.4.02.33-.26.6-.6.6H.6c-.34 0-.62-.27-.6-.6.33-4.7 4.46-8.4 9.5-8.4m0-9a4 4 0 1 1 0 8 4 4 0 0 1 0-8"
-                        ></path>
-                      </svg>
+                  <div className="feed-profile-nav__primary">
+                    <Link href="/mypage/playlist?tab=history">
+                      <AppIcon name="eye" size={20} />
+                      <span>시청 이력</span>
+                    </Link>
+                    <Link href="/mypage/community?tab=my-feeds">
+                      <AppIcon name="film" size={20} />
+                      <span>내 피드</span>
+                    </Link>
+                    <Link href="/settings?tab=profile">
+                      <AppIcon name="gear" size={20} />
+                      <span>프로필</span>
+                    </Link>
+                    <Link href="/friends">
+                      <AppIcon name="friend" size={20} />
+                      <span>친구</span>
                     </Link>
                   </div>
-                  <button
-                    type="button"
-                    className="feed-write-btn"
-                    onClick={() => setWriteModalOpen(true)}
-                  >
-                    게시물 작성
-                  </button>
+                  <div className="edit-profile-area">
+                    <button type="button" onClick={handleCopyProfileLink}>
+                      <AppIcon name="share" size={17} />
+                      <span>프로필 공유</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="feed-write-btn"
+                      onClick={() => setWriteModalOpen(true)}
+                    >
+                      <AppIcon name="clapper" size={17} color="#fff" />
+                      <span>피드 작성</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1519,6 +1520,7 @@ export default function FeedPage() {
                 const shouldBlurSpoiler =
                   review.isSpoiler &&
                   !visibleSpoilerReviewIds.includes(review.feedId);
+                const mediaMeta = parseFeedMediaMeta(review.mediaMeta);
 
                 return (
                   <article
@@ -1560,6 +1562,10 @@ export default function FeedPage() {
                         </div>
                       </div>
                       <div className="review-tags">
+                        <div className="desktop-card-rating">
+                          {renderRatingStars(review.rating)}
+                          <em>{review.rating.toFixed(1)}</em>
+                        </div>
                         {review.isSpoiler && (
                           <span className="spoiler-tag">스포일러</span>
                         )}
@@ -1638,9 +1644,19 @@ export default function FeedPage() {
                       </Link>
                       <div className="review-info">
                         <div className="feed-detail-link">
-                          <h4>{review.mediaTitle}</h4>
-                          <p className="meta">{review.mediaMeta}</p>
-                          <div className="stars">
+                          <div className="feed-review-media-copy">
+                            <h4>{review.mediaTitle}</h4>
+                            <p className="meta meta-primary">
+                              {mediaMeta.primary}
+                            </p>
+                            {mediaMeta.average && (
+                              <p className="meta meta-average">
+                                {mediaMeta.average}
+                              </p>
+                            )}
+                          </div>
+                          <div className="stars mobile-card-rating">
+                            <span className="stars-label">내 별점</span>
                             {renderRatingStars(review.rating)}
                             <em>{review.rating.toFixed(1)} / 5.0</em>
                           </div>
