@@ -300,18 +300,9 @@ const getAuthorBadgeIds = async (userId: string, profileId?: number) => {
 
   try {
     const profile = await getAuthorProfile(userId, profileId);
-    const completedBadgeIds =
-      profile?.badges?.earnedBadges
-        ?.filter((badge) => badge.isComplete)
-        .map((badge) => badge.id) ?? [];
     const equippedBadgeId = profile?.badges?.equippedBadges;
 
-    return [
-      ...(equippedBadgeId && completedBadgeIds.includes(equippedBadgeId)
-        ? [equippedBadgeId]
-        : []),
-      ...completedBadgeIds.filter((badgeId) => badgeId !== equippedBadgeId),
-    ].slice(0, 3);
+    return equippedBadgeId ? [equippedBadgeId] : [];
   } catch {
     return [];
   }

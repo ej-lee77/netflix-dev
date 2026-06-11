@@ -20,7 +20,11 @@ export const HIDDEN_TMDB_IDS: Array<number | string> = [
   "tv-311722",
   "tv-299989",
   "tv-81044",
-  "tv-241002"
+  "tv-241002",
+  "movie-1232221",
+  "tv-207840",
+  "tv-45950",
+
 
 
 

@@ -64,17 +64,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
 
   const [activeId, setActiveId] = useState<number | null>(null);
 
-  // 태블릿/모바일(<=1024px)에서는 ThemeRow와 동일한 디자인/동작으로 렌더
-  const [vw, setVw] = useState(1920);
-
-  useEffect(() => {
-    const onResize = () => setVw(window.innerWidth);
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  const isCompact = vw <= 1024;
+  // (레이아웃 분기는 JS 폭 측정 대신 CSS 미디어쿼리로 처리 — rankingSection.scss 참고)
 
   const swiperRef = useRef<SwiperClass | null>(null);
   const pointerStartRef = useRef({ x: 0, y: 0 });
@@ -113,25 +103,25 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
     }
   }, [activeId, rankingItems]);
 
-  // 태블릿/모바일: 펼침형 카드 대신 다른 행들과 동일한 ThemeRow 디자인으로 동작
-  if (isCompact) {
-    if (!rankingItems.length) return null;
+  // 태블릿/모바일(<=1024px): 펼침형 카드 대신 다른 행들과 동일한 ThemeRow 디자인.
+  // JS 폭 측정(vw state) 대신 두 버전을 모두 렌더하고 CSS(rankingSection.scss)로 전환한다.
+  // → 첫 렌더/SSR/하이드레이션 지연과 무관하게 모든 라우트(메인·커넥트)에서 항상 동일한 레이아웃 보장.
+  const themeItems: ThemeItem[] = rankingItems.map((it) => ({
+    ...it,
+    mediaType: (it.media_type ?? "movie") as "movie" | "tv",
+    genre_ids: it.genre_ids ?? [],
+  }));
 
-    const themeItems: ThemeItem[] = rankingItems.map((it) => ({
-      ...it,
-      mediaType: (it.media_type ?? "movie") as "movie" | "tv",
-      genre_ids: it.genre_ids ?? [],
-    }));
-
-    return (
+  const compactRow = rankingItems.length ? (
+    <div className="ranking-compact-only">
       <ThemeRow
         title={title ?? t("home.top10")}
         items={themeItems}
         href={href ?? "/category"}
         showRank
       />
-    );
-  }
+    </div>
+  ) : null;
 
 
   const selectRankingItem = (id: number, index: number) => {
@@ -200,7 +190,9 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
 
 
   return (
-    <section className="ranking-section">
+    <>
+      {compactRow}
+      <section className="ranking-section ranking-desktop-only">
       <div className="section-title-outer">
         <SectionTitle title={title ?? t("home.top10")} href={href ?? "/category"} showMore={false} />
       </div>
@@ -368,6 +360,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
         </Swiper>
       </div>
 
-    </section>
+      </section>
+    </>
   );
 }
