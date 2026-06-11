@@ -266,7 +266,7 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
                             </>
                           ) : (
                             <>
-                              <Link href={`/detail/${item.mediaType}/${item.id}?play=1`} className="btn-play" onClick={(e) => e.stopPropagation()}>
+                              <Link href={`/watch/${item.mediaType}/${item.id}`} className="btn-play" onClick={(e) => e.stopPropagation()}>
                                 <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                                   <polygon points="5 3 19 12 5 21 5 3" />
                                 </svg>
