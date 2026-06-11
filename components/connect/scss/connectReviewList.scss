@@ -362,12 +362,10 @@
 /* ===== 반응형: 사이드메뉴 오프셋 보정 ===== */
 @include g.respond(tablet) {
   .connect-review-list__inner {
-    width: 100vw;
-    margin-left: 0;
-    padding-left: 24px;
-    padding-right: 24px;
+    width: calc(100vw - 64px);
+    margin-left: 64px;
   }
-  .connect-review-list .section-header { padding-right: 0; }
+  .connect-review-list .section-header { padding-right: 16px; }
 }
 @include g.respond(mobile) {
   // 사이드바 숨김 → 전체 너비 사용 (좌측 20px 기준선 통일)
@@ -434,4 +432,9 @@
   .review-card__movie-text .review-card__predicted-rating {
     font-size: 0.64rem;
   }
+}
+
+/* 대표 칭호 칩 (RisingReviewCard) */
+.review-card .review-card__rep-badge {
+  margin: 4px 0 2px;
 }

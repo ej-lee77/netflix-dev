@@ -243,3 +243,9 @@
   .connect-following-users__skeleton-item { width: 72px; }
   .connect-following-users__skeleton-avatar { width: 72px; height: 72px; }
 }
+
+/* 대표 칭호 칩 (팔로잉 유저 슬라이드) */
+.connect-following-users__rep-badge {
+  margin-top: 5px;
+  max-width: 100%;
+}
