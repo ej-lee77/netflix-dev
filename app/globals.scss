@@ -357,15 +357,20 @@ main {
    nav 폭: desktop/laptop 80px → tablet 64px → mobile 56px */
 @include respond(tablet) {
   .main-page-wrap section .inner {
-    width: min(1920px, calc(100vw - 64px));
-    margin-left: 64px;
-    padding-left: 16px;
-    padding-right: 16px;
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 24px;
+    padding-right: 24px;
   }
   .main-page-wrap section .section-title-outer {
-    width: calc(100vw - 64px);
-    margin-left: 64px;
-    padding-right: 16px;
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  main.has-nav {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
 }
 @include respond(mobile) {
@@ -383,6 +388,104 @@ main {
 
   main.has-nav {
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 601px) and (max-width: $bp-tablet) {
+  .main-page-wrap section .inner,
+  .main-page-wrap section .section-title-outer,
+  .connect-section__inner,
+  .connect-review-list__inner,
+  .connect-friend-reactions__inner,
+  .connect-following-playlists__inner {
+    width: 100vw !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .info-page,
+    .login-page,
+    .menu-custom-page,
+    .mood-main-page,
+    .mypage,
+    .playlist-detail-page,
+    .release-page,
+    .search-page,
+    .wishlist-page,
+    .acset-page,
+    .profile-settings-page
+  ) {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  body :is(
+    .alarm-page,
+    .category-page,
+    .community-page,
+    .contact-page,
+    .custom-page,
+    .error-page,
+    .faq-page,
+    .feed-page,
+    .friends-page,
+    .goods-page,
+    .info-page,
+    .mood-main-page,
+    .mypage,
+    .release-page,
+    .search-page,
+    .wishlist-page
+  ) .inner,
+  body .menu-custom-page__inner,
+  body .acset-container,
+  body .profile-settings-container,
+  body .wishlist-inner {
+    width: 100% !important;
+    max-width: min(100%, 1100px);
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  body :is(
+    .watching-swiper-wrap,
+    .ranking-swiper-wrap,
+    .recommend-swiper,
+    .movie-list-viewport,
+    .original-wrap
+  ) {
+    width: 100vw !important;
+    margin-left: 0 !important;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  body .recommend-section .section-title-outer {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  body .playlist-detail-page .pl-body {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  body footer {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
   }
 }
 

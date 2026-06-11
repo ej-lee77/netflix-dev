@@ -701,6 +701,28 @@ body:has(.category-hover-panel:hover) .category-hover-panel {
     .category-hover-panel {
         left: 64px;
     }
+
+    header h1 {
+        width: auto;
+    }
+
+    header .gnb-menu {
+        padding-right: 4px;
+        gap: 2px;
+
+        li:not(:last-child):not(.gnb-alarm) {
+            display: none;
+        }
+    }
+
+    .sidebar-nav,
+    .category-hover-panel {
+        display: none !important;
+    }
+
+    .mobile-hamburger {
+        display: grid;
+    }
 }
 
 @include g.respond(mobile) {

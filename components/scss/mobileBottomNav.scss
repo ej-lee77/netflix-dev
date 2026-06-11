@@ -4,7 +4,7 @@
     display: none;
 }
 
-@include g.respond(mobile) {
+@include g.respond(tablet) {
     .mobile-bottom-nav {
         display: flex;
         position: fixed;

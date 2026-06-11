@@ -373,7 +373,7 @@
     }
 }
 
-@include g.respond(mobile) {
+@include g.respond(tablet) {
     .mobile-drawer-backdrop {
         display: block;
         pointer-events: none;
