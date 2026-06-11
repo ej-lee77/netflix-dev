@@ -180,7 +180,8 @@
     position: absolute;
     display: inline-block;
     top: 85px;
-    left: 0;
+    left: 50%;
+    transform: translateX(-50%);
   }
 }
 
