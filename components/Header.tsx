@@ -1,6 +1,12 @@
 "use client";
 
-import React, { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -38,7 +44,11 @@ export default function Header() {
   >("enter");
   const profileMenuRef = useRef<HTMLLIElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { isOpen: isSearchOpen, toggle: toggleSearch, close: closeSearch } = useSearchOverlayStore();
+  const {
+    isOpen: isSearchOpen,
+    toggle: toggleSearch,
+    close: closeSearch,
+  } = useSearchOverlayStore();
   // 마우스(hover 가능) 기기에서만 호버로 프로필 메뉴를 연다. 터치 기기는 탭 토글만 사용.
   const [canHover, setCanHover] = useState(false);
 
@@ -54,11 +64,15 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const modeMenuRef = useRef<HTMLUListElement>(null);
-  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [indicator, setIndicator] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
 
   useLayoutEffect(() => {
     if (!modeMenuRef.current) return;
-    const activeLi = modeMenuRef.current.querySelector<HTMLLIElement>("li.active");
+    const activeLi =
+      modeMenuRef.current.querySelector<HTMLLIElement>("li.active");
     if (activeLi) {
       setIndicator({ left: activeLi.offsetLeft, width: activeLi.offsetWidth });
     } else {
@@ -125,7 +139,10 @@ export default function Header() {
 
   const handleProfileMenuLeave = () => {
     if (!canHover) return; // 터치 기기에서는 호버로 닫지 않음
-    hoverTimeoutRef.current = setTimeout(() => setIsProfileMenuOpen(false), 200);
+    hoverTimeoutRef.current = setTimeout(
+      () => setIsProfileMenuOpen(false),
+      200,
+    );
   };
 
   const handleLogout = async () => {
@@ -161,8 +178,9 @@ export default function Header() {
   return (
     <>
       <header
-        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${isSearchOpen ? " search-open" : ""
-          }`}
+        className={`${(isScrolled && (pathname === "/" || pathname?.startsWith("/connect"))) || isSearchOpen ? "scrolled" : ""}${
+          isSearchOpen ? " search-open" : ""
+        }`}
       >
         <div className="flex-item">
           <div className="flex-item gap-6">
@@ -184,7 +202,9 @@ export default function Header() {
                   <Link href="/">{t("header.cinema")}</Link>
                 </li>
                 {canUseConnect && (
-                  <li className={pathname?.startsWith("/connect") ? "active" : ""}>
+                  <li
+                    className={pathname?.startsWith("/connect") ? "active" : ""}
+                  >
                     <Link href="/connect">{t("header.connect")}</Link>
                   </li>
                 )}
@@ -209,23 +229,23 @@ export default function Header() {
                 aria-label={isSearchOpen ? "검색창 닫기" : "검색창 열기"}
                 aria-expanded={isSearchOpen}
               >
-                  {isSearchOpen ? (
-                    <span
-                      className="header-search-toggle__close"
-                      aria-hidden="true"
-                    >
-                      <img src="/images/header/header-search-close.svg" alt="." />
-                    </span>
-                  ) : (
-                    <Image
-                      src="/images/header/search.svg"
-                      alt=""
-                      width={24}
-                      height={24}
-                    />
-                  )}
-                </button>
-              </li>
+                {isSearchOpen ? (
+                  <span
+                    className="header-search-toggle__close"
+                    aria-hidden="true"
+                  >
+                    <img src="/images/header/header-search-close.svg" alt="." />
+                  </span>
+                ) : (
+                  <Image
+                    src="/images/header/search.svg"
+                    alt=""
+                    width={24}
+                    height={24}
+                  />
+                )}
+              </button>
+            </li>
             <li className="gnb-alarm">
               <Link href="/alarm">
                 <Image
@@ -291,8 +311,10 @@ export default function Header() {
                   </span>
                 </button>
 
-                {(
-                  <div className={`profile-dropdown${isProfileMenuOpen ? " open" : ""}`}>
+                {
+                  <div
+                    className={`profile-dropdown${isProfileMenuOpen ? " open" : ""}`}
+                  >
                     <ul className="profile-switch-list">
                       {/* 🌟 이제 profiles가 빈 배열 또는 온전한 프로필 리스트이므로 에러가 나지 않습니다. */}
                       {profiles.map((profile) => (
@@ -354,9 +376,8 @@ export default function Header() {
                       로그아웃
                     </button>
                   </div>
-                )}
+                }
               </li>
-
             )}
             <li>
               <button
@@ -366,26 +387,35 @@ export default function Header() {
                 aria-label="메뉴 열기"
                 aria-expanded={isMobileMenuOpen}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
                   <path d="M3 6h18M3 12h18M3 18h18" />
                 </svg>
               </button>
             </li>
           </ul>
         </div>
-        <HeaderSearchOverlay
-          isOpen={isSearchOpen}
-          onClose={closeSearch}
-        />
+        <HeaderSearchOverlay isOpen={isSearchOpen} onClose={closeSearch} />
       </header>
-
       {/* 사이드메뉴·모바일 드로어는 구독 여부와 무관하게 항상 표시
           (planType 로딩 전/미구독 시 메뉴 전체가 사라지던 문제 수정.
            구독 차단은 콘텐츠 클릭 시 SubscribeModal로 처리됨) */}
       <Suspense fallback={null}>
         <HeaderMenu />
       </Suspense>
-      <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+
+      <MobileDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        onProfileSwitch={runProfileSwitch}
+      />
       {pendingProfile && (
         <ProfilePinGate
           key={pendingProfile.id}

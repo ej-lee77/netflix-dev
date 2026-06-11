@@ -13,6 +13,7 @@ import "./scss/mobileDrawer.scss";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onProfileSwitch?: (profile: UserProfile) => Promise<void>;
 }
 
 const DEFAULT_HEADER_MENU_PATHS = [
@@ -51,7 +52,7 @@ type DrawerMenuRow =
   | { type: "link"; menu: DrawerMenuItem }
   | { type: "category"; menu: DrawerMenuItem; children: DrawerMenuItem[] };
 
-export default function MobileDrawer({ isOpen, onClose }: Props) {
+export default function MobileDrawer({ isOpen, onClose, onProfileSwitch }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const tm = useMenuLabel();
@@ -208,9 +209,13 @@ export default function MobileDrawer({ isOpen, onClose }: Props) {
       setIsProfileModalOpen(false);
       return;
     }
-    onSetProfile(profile);
     setIsProfileModalOpen(false);
     onClose();
+    if (onProfileSwitch) {
+      void onProfileSwitch(profile);
+      return;
+    }
+    onSetProfile(profile);
     router.replace("/");
   };
 
