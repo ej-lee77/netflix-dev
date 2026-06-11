@@ -36,7 +36,7 @@ export default function SubscribeModal({ onClose }: SubscribeModalProps) {
           ✕
         </button>
 
-        <div className="subscribe-modal__icon"><img src="/icons/modalicon.png" alt="modal icon" /></div>
+        <div className="subscribe-modal__icon"><img src="/icons/modal-icon.png" alt="modal icon" /></div>
         <h2 className="subscribe-modal__title">구독이 필요한 서비스입니다</h2>
         <p className="subscribe-modal__desc">
           멤버십을 시작하면 모든 콘텐츠를 무제한으로 <br />즐길 수 있습니다.
