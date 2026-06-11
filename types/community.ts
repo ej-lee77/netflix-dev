@@ -15,6 +15,7 @@ export interface ReviewDocument {
   profileId: number;// 리뷰 작성자 ID
   rating: number;
   mediaInfo? : Movie | TV;
+  equippedBadge?: string; // 작성자의 대표 칭호(장착 뱃지) ID
 }
 
 // 1. 댓글 인터페이스 (Sub-collection용)

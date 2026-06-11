@@ -7,7 +7,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFollowStore } from "@/store/useFollowStore";
 import BackButton from "@/components/common/BackButton";
-import { BADGE_MAP } from "@/data/badge";
+import RepBadge from "@/components/common/RepBadge";
 import Link from "next/link";
 
 type TabType = "all" | "following" | "followers";
@@ -163,7 +163,7 @@ export default function FriendsPage() {
                   <div className="info">
                     <div>
                       <h3>{u.nickname}</h3>
-                      {BADGE_MAP[u.badge] && (<span>{BADGE_MAP[u.badge]}</span>)}
+                      <RepBadge badge={u.badge} size="sm" />
                     </div>
                     <p>시청 {u.watchedCount}편</p>
                   </div>

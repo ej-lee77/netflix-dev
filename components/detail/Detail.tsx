@@ -16,6 +16,7 @@ import type {
 import VideoPlayer from "@/components/common/VideoPlayer";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
+import RepBadge from "@/components/common/RepBadge";
 import { useConfirmModal } from "@/components/common/ConfirmModal";
 import "./detail.module.scss";
 import { isHidden } from "@/data/hiddenContent";
@@ -305,6 +306,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [hoveredEpisodeId, setHoveredEpisodeId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   const [addingToListId, setAddingToListId] = useState<string | null>(null);
   // 플레이리스트 카드 모자이크용 작품 이미지 캐시 (videoId → 이미지 URL)
   const [pickerImages, setPickerImages] = useState<Record<string, string>>({});
@@ -556,30 +558,6 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       null)
     : null;
   const activeEpisodeId = selectedEpisode?.id ?? null;
-  // 시청중 항목 (이어보기용)
-  const watchingItem = playList.find(
-    (it) => it.id === mediaId && it.mediaType === type,
-  );
-
-  // 이어보기: 에피소드 목록 로드 후 마지막 시청 회차를 자동 선택
-  useEffect(() => {
-    if (!isTv || selectEpisodeId !== null || episodes.length === 0) return;
-    if (!watchingItem) return;
-    let target = watchingItem.lastEpisodeNumber
-      ? episodes.find(
-          (ep) => ep.episode_number === watchingItem.lastEpisodeNumber,
-        )
-      : undefined;
-    // 회차 번호 기록이 없으면 진행률이 기록된 회차 중 가장 뒷 회차로
-    if (!target && watchingItem.episodeProgress) {
-      const watchedIds = Object.keys(watchingItem.episodeProgress).map(Number);
-      target = [...episodes]
-        .reverse()
-        .find((ep) => watchedIds.includes(ep.id));
-    }
-    if (target) setSelectEpisodeId(target.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTv, episodes, watchingItem]);
   const detailBackdrop =
     imageUrl(mediaItem?.backdrop_path, "original") ||
     imageUrl(selectedEpisode?.still_path, "original") ||
@@ -993,29 +971,132 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               minWidth: 0,
             }}
           >
-            {visibleSeasons.map((season) => {
-              const isSelected = selectSeason === season.season_number;
-              return (
+            {isMobile ? (
+              /* 모바일: 커스텀 시즌 셀렉트 */
+              <div style={{ position: "relative" }}>
                 <button
-                  key={season.id}
-                  onClick={() => handleSeasonSelect(season.season_number)}
+                  onClick={() => setSeasonDropdownOpen((v) => !v)}
                   style={{
-                    background: "transparent",
-                    border: "1px solid #3a3a48",
-                    padding: "8px 18px",
-                    borderRadius: 100,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: "#1b1b22",
+                    border: `1px solid ${seasonDropdownOpen ? "#666" : "#3a3a48"}`,
+                    padding: "8px 14px",
+                    borderRadius: 8,
                     cursor: "pointer",
                     fontSize: 14,
-                    fontWeight: 400,
-                    color: "#888",
-                    whiteSpace: "nowrap",
-                    opacity: isSelected ? 1 : 0.4,
+                    color: "#ddd",
                   }}
                 >
-                  {season.name}
+                  {visibleSeasons.find(
+                    (s) => s.season_number === selectSeason,
+                  )?.name ?? `시즌 ${selectSeason}`}
+                  <span
+                    style={{
+                      display: "inline-block",
+                      fontSize: 10,
+                      color: "#888",
+                      transform: seasonDropdownOpen
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
+                      transition: "transform 0.18s ease",
+                    }}
+                  >
+                    ▼
+                  </span>
                 </button>
-              );
-            })}
+
+                {seasonDropdownOpen && (
+                  <>
+                    {/* 바깥 클릭 시 닫기 */}
+                    <div
+                      onClick={() => setSeasonDropdownOpen(false)}
+                      style={{ position: "fixed", inset: 0, zIndex: 50 }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 6px)",
+                        left: 0,
+                        zIndex: 51,
+                        minWidth: 170,
+                        maxHeight: 264,
+                        overflowY: "auto",
+                        background: "#1b1b22",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 10,
+                        boxShadow: "0 14px 40px rgba(0,0,0,0.55)",
+                        padding: "6px 0",
+                      }}
+                    >
+                      {visibleSeasons.map((season) => {
+                        const isSelected =
+                          selectSeason === season.season_number;
+                        return (
+                          <button
+                            key={season.id}
+                            onClick={() => {
+                              handleSeasonSelect(season.season_number);
+                              setSeasonDropdownOpen(false);
+                            }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 12,
+                              width: "100%",
+                              padding: "11px 14px",
+                              background: isSelected
+                                ? "rgba(229,9,20,0.1)"
+                                : "none",
+                              border: "none",
+                              cursor: "pointer",
+                              fontSize: 14,
+                              fontWeight: isSelected ? 700 : 400,
+                              color: isSelected ? "#fff" : "#aaa",
+                              textAlign: "left",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {season.name}
+                            {isSelected && (
+                              <span style={{ color: "#e50914", fontSize: 13 }}>
+                                ✓
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              visibleSeasons.map((season) => {
+                const isSelected = selectSeason === season.season_number;
+                return (
+                  <button
+                    key={season.id}
+                    onClick={() => handleSeasonSelect(season.season_number)}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #3a3a48",
+                      padding: "8px 18px",
+                      borderRadius: 100,
+                      cursor: "pointer",
+                      fontSize: 14,
+                      fontWeight: 400,
+                      color: "#888",
+                      whiteSpace: "nowrap",
+                      opacity: isSelected ? 1 : 0.4,
+                    }}
+                  >
+                    {season.name}
+                  </button>
+                );
+              })
+            )}
           </div>
           <button
             style={{
@@ -1696,6 +1777,11 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     <strong style={{ color: "#fff", fontSize: 15 }}>
                       {review.nickname}
                     </strong>
+                    {review.equippedBadge && (
+                      <span style={{ marginLeft: 8, display: "inline-flex", verticalAlign: "middle" }}>
+                        <RepBadge badge={review.equippedBadge} size="sm" />
+                      </span>
+                    )}
                     <span
                       style={{ color: "#e50914", marginLeft: 10, fontSize: 13 }}
                     >
@@ -3901,59 +3987,16 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
       {showPopup && popupVideoKey && (
         <VideoPlayer
-          // 회차가 바뀌면 플레이어를 새로 마운트해 처음부터 재생 (전환 체감)
-          key={`${popupVideoKey}-${isTv ? activeEpisodeId : "movie"}`}
           videoKey={popupVideoKey}
-          title={
-            isTv && selectedEpisode
-              ? `${title} · ${selectedEpisode.episode_number}. ${selectedEpisode.name}`
-              : title
-          }
+          title={title}
           onClose={handleClosePlayer}
-          episodes={
-            isTv
-              ? episodes.map((ep) => ({
-                  id: ep.id,
-                  number: ep.episode_number,
-                  name: ep.name,
-                  stillUrl:
-                    imageUrl(ep.still_path, "w300") ||
-                    imageUrl(mediaItem?.backdrop_path, "w300"),
-                  runtime: ep.runtime ?? null,
-                  progress: watchingItem?.episodeProgress?.[ep.id] ?? 0,
-                }))
-              : undefined
-          }
-          startPct={
-            isTv
-              ? activeEpisodeId
-                ? (watchingItem?.episodeProgress?.[activeEpisodeId] ?? 0)
-                : 0
-              : (watchingItem?.progress ?? 0)
-          }
-          activeEpisodeId={activeEpisodeId}
-          onSelectEpisode={(id) => {
-            setSelectEpisodeId(id);
-            // 회차별로 다른 영상 키 매칭 (트레일러/티저/클립 순환)
-            const idx = episodes.findIndex((ep) => ep.id === id);
-            if (videos && videos.length > 0 && idx >= 0) {
-              const pick = videos[idx % videos.length];
-              if (pick?.key) setPopupVideoKey(pick.key);
-            }
-          }}
           onTimeUpdate={(currentTime, duration) => {
             if (duration <= 0) return;
             const progress = Math.round((currentTime / duration) * 100);
             if (progress === 0) return;
             onUpdateProgress(mediaId, type, progress);
             if (isTv && activeEpisodeId) {
-              onUpdateEpisodeProgress(
-                mediaId,
-                type,
-                activeEpisodeId,
-                progress,
-                selectedEpisode?.episode_number,
-              );
+              onUpdateEpisodeProgress(mediaId, type, activeEpisodeId, progress);
             }
           }}
         />

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useT } from "@/lib/i18n";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useMovieStore } from '@/store/useMovieStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -40,6 +41,7 @@ function StarRating({ score }: { score: number }) {
 
 export default function RecommendList() {
   const t = useT();
+  const router = useRouter();
   const { recommended: rawRecommended, onFetchRecommended, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
   const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
@@ -155,7 +157,19 @@ export default function RecommendList() {
       >
         {recommended.map((item) => (
           <SwiperSlide key={`${item.media_type}-${item.id}`}>
-            <div className="recommend-slide">
+            <div
+              className="recommend-slide"
+              onClick={() => {
+                // 모바일: 카드 탭 → 상세페이지 이동 (버튼이 숨겨져 있으므로)
+                if (!isMobile) return;
+                if (isUnsubscribed) {
+                  openModal();
+                  return;
+                }
+                router.push(`/detail/${item.media_type}/${item.id}`);
+              }}
+              style={isMobile ? { cursor: 'pointer' } : undefined}
+            >
               {/* 상단 - 포스터 영역 */}
               <div className="slide-poster">
                 {item.backdrop_path && (
