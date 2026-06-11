@@ -10,7 +10,7 @@ import SubscribeModal from "@/components/SubscribeModal";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 // 헤더/푸터/배너를 숨길 경로 목록
-const HIDE_LAYOUT_PATHS = ["/signin"];
+const HIDE_LAYOUT_PATHS = ["/signin", "/onboarding"];
 
 export default function ConditionalLayout({
   children,
