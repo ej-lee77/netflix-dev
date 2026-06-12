@@ -216,10 +216,12 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null, // Firestore에서 가져온 순수 데이터
       currentProfile: null, // 현재 선택하여 시청 중인 프로필 (persist가 자동 저장함)
+      hasHydrated: false,
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
       // 1. 앱 초기화 및 로그인 상태 실시간 감지 (Fetch)
       onInitAuth: () => {
-        onAuthStateChanged(auth, async (firebaseUser) => {
+        return onAuthStateChanged(auth, async (firebaseUser) => {
           if (!firebaseUser) {
             // 💡 카카오/네이버 로그인 유저는 Firebase Auth가 없으므로 건드리지 않음
             const currentUser = get().user;
@@ -992,6 +994,9 @@ export const useAuthStore = create<AuthState>()(
       // 💡 [중요] 전체 스토어 상태 중에서 오직 'currentProfile'만 로컬 스토리지에 저장되도록 필터링합니다.
       // 이렇게 해야 유저 정보가 꼬이거나 불필요한 대용량 데이터가 스토리지에 쌓이지 않습니다.
       partialize: (state) => ({ user: state.user, currentProfile: state.currentProfile }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
