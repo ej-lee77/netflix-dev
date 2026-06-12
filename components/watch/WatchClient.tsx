@@ -45,7 +45,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     onFetchRecommended,
   } = useMovieStore();
   const { isWished, onAddWish, onRemoveWish, onLoadWishlist } = useWishlistStore();
-  const { onUpdateProgress } = usePlayListStore();
+  const { onAddPlayList, onUpdateProgress } = usePlayListStore();
   const { user, currentProfile } = useAuthStore();
   const canUseConnect = useCommunityEnabled();
   const { party, messages, createParty, subscribe, join, sendMessage, updatePlayback, updatePlaybackNow, leave } =
@@ -59,6 +59,19 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const [chatText, setChatText] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const lastProgressRef = useRef(-1);
+  // 이 작품을 시청 기록에 1회만 추가하기 위한 가드
+  const recordedRef = useRef(false);
+
+  // 반응형: 뷰포트 너비 추적 (인라인 스타일 분기용)
+  const [vw, setVw] = useState(1280);
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const stack = vw <= 1024; // 플레이어 / 우측 패널 세로 적층
+  const isMobile = vw <= 600;
 
   useEffect(() => {
     onLoadWishlist();
@@ -66,6 +79,9 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
   useEffect(() => {
     if (!mediaId) return;
+    // 작품이 바뀌면 기록/진행률 가드 초기화
+    recordedRef.current = false;
+    lastProgressRef.current = -1;
     onFetchMediaDetail(mediaId, type);
     if (isTv) {
       onFetchTvVideos(mediaId);
@@ -190,7 +206,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     // 정수 진행률이 바뀔 때만 기록 (500ms마다 쓰기 방지)
     if (progress > 0 && progress !== lastProgressRef.current) {
       lastProgressRef.current = progress;
-      onUpdateProgress(mediaId, type, progress);
+      // 최초 재생 시 1회: 시청 기록(watchingVideos + histMovies + 장르·국가 통계 + 뱃지)에 추가
+      if (!recordedRef.current && mediaItem && user && currentProfile) {
+        recordedRef.current = true;
+        (async () => {
+          await onAddPlayList(mediaItem);
+          await onUpdateProgress(mediaId, type, progress);
+        })();
+      } else {
+        onUpdateProgress(mediaId, type, progress);
+      }
     }
     if (isHost) updatePlayback({ positionPct: progress, isPlaying: true });
   };
@@ -279,9 +304,9 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
       </div>
 
       {/* 본문 */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+      <div style={{ display: "flex", flexDirection: stack ? "column" : "row", flexWrap: "wrap", gap: 16 }}>
         {/* 플레이어 */}
-        <div style={{ flex: "1 1 560px", minWidth: 0 }}>
+        <div style={{ flex: stack ? "1 1 auto" : "1 1 560px", width: stack ? "100%" : undefined, minWidth: 0 }}>
           <div
             style={{
               position: "relative",
@@ -352,7 +377,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
             }}
           >
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800 }}>{title}</div>
+              <div style={{ fontSize: isMobile ? 18 : 20, fontWeight: 800 }}>{title}</div>
               <div style={{ fontSize: 13, color: "#9a9a9a", marginTop: 4 }}>
                 {[genreName, year, isTv ? epLabel : ""].filter(Boolean).join(" · ")}
               </div>
@@ -400,7 +425,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         </div>
 
         {/* 우측 패널: 파티면 채팅, 아니면 추천 */}
-        <aside style={{ flex: "1 1 300px", minWidth: 0 }}>
+        <aside style={{ flex: stack ? "1 1 auto" : "1 1 300px", width: stack ? "100%" : undefined, minWidth: 0 }}>
           {isPartyMode ? (
             <div
               style={{
@@ -409,7 +434,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 background: "rgba(255,255,255,0.015)",
                 display: "flex",
                 flexDirection: "column",
-                height: 460,
+                height: isMobile ? 380 : 460,
               }}
             >
               <div
