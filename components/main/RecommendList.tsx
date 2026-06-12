@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useT } from "@/lib/i18n";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useMovieStore } from '@/store/useMovieStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
@@ -19,6 +18,7 @@ import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilt
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const GENRE_MAP: Record<number, string> = {
   28: '액션', 12: '모험', 16: '애니메이션', 35: '코미디', 80: '범죄',
@@ -42,6 +42,7 @@ function StarRating({ score }: { score: number }) {
 export default function RecommendList() {
   const t = useT();
   const router = useRouter();
+  const prefetchRoute = useRoutePrefetch();
   const { recommended: rawRecommended, onFetchRecommended, onFetchCertification } = useMovieStore();
   const excludedGenres = useExcludedGenres();
   const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
@@ -112,7 +113,7 @@ export default function RecommendList() {
   if (recommended.length === 0) return null;
 
   const sectionBg = activeBackdrop?.backdropPath
-    ? `https://image.tmdb.org/t/p/w1280${activeBackdrop.backdropPath}`
+    ? `https://image.tmdb.org/t/p/original${activeBackdrop.backdropPath}`
     : '';
 
 
@@ -139,8 +140,6 @@ export default function RecommendList() {
         loop
         slidesPerView={isMobile ? 1.8 : 3}
         spaceBetween={isMobile ? 10 : 16}
-        observer={true}
-        observeParents={true}
         navigation
         autoplay={{
           delay: 5000,
@@ -155,10 +154,19 @@ export default function RecommendList() {
           2560: { slidesPerView: 5, spaceBetween: 1,  centeredSlides: true },
         }}
       >
-        {recommended.map((item) => (
+        {recommended.map((item) => {
+          const detailHref = `/detail/${item.media_type}/${item.id}`;
+          const watchHref = `/watch/${item.media_type}/${item.id}`;
+
+          return (
           <SwiperSlide key={`${item.media_type}-${item.id}`}>
             <div
               className="recommend-slide"
+              onPointerEnter={() => {
+                prefetchRoute(detailHref);
+                prefetchRoute(watchHref);
+              }}
+              onFocus={() => prefetchRoute(detailHref)}
               onClick={() => {
                 // 모바일: 카드 탭 → 상세페이지 이동 (버튼이 숨겨져 있으므로)
                 if (!isMobile) return;
@@ -166,19 +174,16 @@ export default function RecommendList() {
                   openModal();
                   return;
                 }
-                router.push(`/detail/${item.media_type}/${item.id}`);
+                router.push(detailHref);
               }}
               style={isMobile ? { cursor: 'pointer' } : undefined}
             >
               {/* 상단 - 포스터 영역 */}
               <div className="slide-poster">
                 {item.backdrop_path && (
-                  <Image
+                  <img
                     src={`https://image.tmdb.org/t/p/w1280${item.backdrop_path}`}
                     alt={item.title}
-                    width={1280}
-                    height={720}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1920px) 34vw, 20vw"
                   />
                 )}
                 <span className="slide-platform">
@@ -220,8 +225,10 @@ export default function RecommendList() {
 
                 <div className="slide-actions">
                   <Link
-                    href={`/watch/${item.media_type}/${item.id}`}
+                    href={watchHref}
                     className="btn-play"
+                    onPointerEnter={() => prefetchRoute(watchHref)}
+                    onFocus={() => prefetchRoute(watchHref)}
                     onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" width="15" height="15" fill="#fff">
@@ -230,8 +237,10 @@ export default function RecommendList() {
                     {t("common.play")}
                   </Link>
                   <Link
-                    href={`/detail/${item.media_type}/${item.id}`}
+                    href={detailHref}
                     className="btn-info"
+                    onPointerEnter={() => prefetchRoute(detailHref)}
+                    onFocus={() => prefetchRoute(detailHref)}
                     onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
@@ -247,7 +256,8 @@ export default function RecommendList() {
               </div>
             </div>
           </SwiperSlide>
-        ))}
+          );
+        })}
       </Swiper>
     </section>
   );

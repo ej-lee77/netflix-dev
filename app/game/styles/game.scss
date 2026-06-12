@@ -570,6 +570,46 @@ $ground-h: 64px;
   }
 }
 
+.game-over__point-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 24px;
+  background: $panel-bg;
+  border: 3px solid #0a0612;
+  box-shadow: 0 0 0 2px rgba(255, 200, 0, 0.4), 4px 4px 0 rgba(0, 0, 0, 0.55);
+  min-width: 220px;
+}
+
+.game-over__point-label {
+  font-family: var(--font-netflix), sans-serif;
+  font-size: 11px;
+  color: $nf-sub;
+  letter-spacing: 0.06em;
+}
+
+.game-over__point-value {
+  font-size: 22px;
+  font-weight: 400;
+  color: #ffc800;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.7);
+}
+
+.game-over__point-hint {
+  font-family: var(--font-netflix), sans-serif;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.game-over__point-done {
+  font-family: var(--font-netflix), sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4ade80;
+  margin-top: 2px;
+}
+
 .game-over__actions {
   display: flex;
   gap: 12px;
@@ -622,6 +662,28 @@ $ground-h: 64px;
     &:active {
       transform: translate(2px, 2px);
       box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.45), 1px 1px 0 rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  &--point {
+    background: #ffc800;
+    color: #0a0612;
+    box-shadow: 0 0 0 2px rgba(255, 200, 0, 0.4), 4px 4px 0 rgba(0, 0, 0, 0.6);
+
+    &:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 0 0 0 2px rgba(255, 200, 0, 0.4), 6px 6px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    &:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0 2px rgba(255, 200, 0, 0.4), 1px 1px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+      transform: none;
     }
   }
 

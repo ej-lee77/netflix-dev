@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSearchOverlayStore } from "@/store/useSearchOverlayStore";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import "./scss/mobileBottomNav.scss";
 
 const IconHome = () => (
@@ -50,6 +51,8 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const { open: openSearch, isOpen: isSearchOpen } = useSearchOverlayStore();
+  const prefetchRoute = useRoutePrefetch();
+  const mypageHref = user ? "/mypage" : "/login";
 
   const isHome = pathname === "/";
   const isSearch = pathname?.startsWith("/search");
@@ -63,6 +66,8 @@ export default function MobileBottomNav() {
         href="/"
         className={`mobile-bottom-nav__item${isHome ? " active" : ""}`}
         aria-current={isHome ? "page" : undefined}
+        onPointerEnter={() => prefetchRoute("/")}
+        onFocus={() => prefetchRoute("/")}
       >
         <span className="mobile-bottom-nav__icon"><IconHome /></span>
         <span className="mobile-bottom-nav__label">홈</span>
@@ -82,6 +87,8 @@ export default function MobileBottomNav() {
         href="/connect"
         className={`mobile-bottom-nav__item${isConnect ? " active" : ""}`}
         aria-current={isConnect ? "page" : undefined}
+        onPointerEnter={() => prefetchRoute("/connect")}
+        onFocus={() => prefetchRoute("/connect")}
       >
         <span className="mobile-bottom-nav__icon"><IconConnect /></span>
         <span className="mobile-bottom-nav__label">커넥트</span>
@@ -91,15 +98,19 @@ export default function MobileBottomNav() {
         href="/feed"
         className={`mobile-bottom-nav__item${isFeed ? " active" : ""}`}
         aria-current={isFeed ? "page" : undefined}
+        onPointerEnter={() => prefetchRoute("/feed")}
+        onFocus={() => prefetchRoute("/feed")}
       >
         <span className="mobile-bottom-nav__icon"><IconFeed /></span>
         <span className="mobile-bottom-nav__label">피드</span>
       </Link>
 
       <Link
-        href={user ? "/mypage" : "/login"}
+        href={mypageHref}
         className={`mobile-bottom-nav__item${isMypage ? " active" : ""}`}
         aria-current={isMypage ? "page" : undefined}
+        onPointerEnter={() => prefetchRoute(mypageHref)}
+        onFocus={() => prefetchRoute(mypageHref)}
       >
         <span className="mobile-bottom-nav__icon"><IconMypage /></span>
         <span className="mobile-bottom-nav__label">마이페이지</span>

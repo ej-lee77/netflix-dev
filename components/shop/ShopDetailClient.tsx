@@ -7,6 +7,8 @@ import { useAvailablePoints } from "@/store/usePointStore";
 import { categoryMeta, pts, won } from "@/data/goods";
 import { showToast } from "@/store/useToastStore";
 import ShopTopBar from "./ShopTopBar";
+import CategoryIcon from "./CategoryIcon";
+import GoodsCard from "./GoodsCard";
 import "./scss/shop.scss";
 
 export default function ShopDetailClient({ productId }: { productId: string }) {
@@ -16,6 +18,8 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
   const [option, setOption] = useState<string | undefined>(undefined);
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [sel, setSel] = useState(0);
+  const [broken, setBroken] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadProducts();
@@ -57,6 +61,22 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
   const totalPoints = product.points * qty;
   const canAfford = available >= totalPoints;
 
+  // 갤러리: detailImages → 없으면 thumbUrl → 깨진 이미지 제외
+  const rawGallery =
+    product.detailImages && product.detailImages.length > 0
+      ? product.detailImages
+      : product.thumbUrl
+        ? [product.thumbUrl]
+        : [];
+  const gallery = rawGallery.filter((src) => !broken[src]);
+  const hasImg = gallery.length > 0;
+  const safeSel = Math.min(sel, Math.max(0, gallery.length - 1));
+  const mainSrc = hasImg ? gallery[safeSel] : null;
+  const hasRelated = !!(product.relatedType && product.relatedId);
+  const relatedProducts = products
+    .filter((p) => p.id !== product.id && p.category === product.category)
+    .slice(0, 4);
+
   const ensureValid = () => {
     if (soldOut) {
       showToast("품절된 상품이에요");
@@ -97,8 +117,49 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
         </button>
 
         <div className="shop-detail">
-          <div className="shop-detail__thumb" style={{ background: meta.gradient }}>
-            <span aria-hidden>{meta.emoji}</span>
+          <div className="shop-detail__gallery">
+            <div
+              className="shop-detail__main"
+              style={hasImg ? undefined : { background: meta.gradient }}
+            >
+              {hasImg ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  className="shop-detail__main-img"
+                  src={mainSrc!}
+                  alt={product.name}
+                  onError={() => setBroken((b) => ({ ...b, [mainSrc!]: true }))}
+                />
+              ) : (
+                <CategoryIcon name={meta.iconKey} size={80} className="shop-detail__main-emoji" aria-hidden />
+              )}
+              {product.badge && (
+                <span className={`goods-card__badge goods-card__badge--${product.badge}`}>
+                  {product.badge}
+                </span>
+              )}
+            </div>
+
+            {gallery.length > 1 && (
+              <div className="shop-detail__thumbs">
+                {gallery.map((src, i) => (
+                  <button
+                    key={src}
+                    type="button"
+                    className={`shop-detail__thumb-item${i === safeSel ? " active" : ""}`}
+                    onClick={() => setSel(i)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt=""
+                      loading="lazy"
+                      onError={() => setBroken((b) => ({ ...b, [src]: true }))}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="shop-detail__info">
@@ -109,6 +170,22 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
             <div className="shop-detail__ship">배송비 {won(product.shippingFee)} (실결제)</div>
 
             <p className="shop-detail__desc">{product.description}</p>
+
+            {hasRelated && (
+              <button
+                type="button"
+                className="shop-detail__related"
+                onClick={() => router.push(`/detail/${product.relatedType}/${product.relatedId}`)}
+              >
+                <span className="shop-detail__related-label">관련 작품</span>
+                <span className="shop-detail__related-title">
+                  {product.relatedTitle ?? "보러가기"}
+                </span>
+                <span className="shop-detail__related-arrow" aria-hidden>
+                  →
+                </span>
+              </button>
+            )}
 
             {needOption && (
               <>
@@ -176,6 +253,17 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
             </div>
           </div>
         </div>
+
+        {relatedProducts.length > 0 && (
+          <div className="shop-related">
+            <h3 className="shop-related__title">같은 카테고리 상품</h3>
+            <div className="shop-grid">
+              {relatedProducts.map((p) => (
+                <GoodsCard key={p.id} product={p} affordable={available >= p.points} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
