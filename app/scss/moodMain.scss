@@ -207,6 +207,9 @@
       font-size: g.$text-16;
       font-weight: 700;
       margin-bottom: 10px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
     }
 
     p {

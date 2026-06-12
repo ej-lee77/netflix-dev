@@ -46,7 +46,7 @@ export interface PlayListState{
     onAddMyList: (item: Movie | TV, mediaType?: "movie" | "tv")=>Promise<boolean>,
     onRemoveMyList: (id: number, mediaType: "movie" | "tv")=>Promise<boolean>,
     onLoadMyList: ()=>Promise<void>,
-    onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number)=>void,
+    onUpdateProgress: (id: number, mediaType: "movie" | "tv", progress: number, episodeNumber?: number)=>void,
     onUpdateEpisodeProgress: (id: number, mediaType: "movie" | "tv", episodeId: number, progress: number, episodeNumber?: number)=>void,
     createMyCustomPlaylist: (data: any)=>Promise<void>,
     fetchMyCustomPlaylists: ()=>Promise<void>,
