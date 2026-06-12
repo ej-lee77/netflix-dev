@@ -216,6 +216,14 @@ export default function VideoPlayer({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target?.isContentEditable ||
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT";
+
+      if (isTyping) return;
       if (e.key === "Escape") { onClose(); return; }
       if (e.key === " " || e.key === "k") { e.preventDefault(); doTogglePlay(); }
       if (e.key === "ArrowLeft") seek(-10);
