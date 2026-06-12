@@ -5,6 +5,7 @@ import { BADGE_LIST } from "@/data/badge";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import BackButton from "@/components/common/BackButton";
+import ShopIcon from "@/components/shop/ShopIcon";
 
 const limitedGoods = [
   { id: 1, name: "오리지널 시리즈 포스터 (A2 사이즈)", desc: "시즌2 메인 비주얼 · 액자 별매", price: 3500, stock: 234, type: "LIMITED" as const },
@@ -68,7 +69,9 @@ export default function GoodsPage() {
           </h2>
           <p>뱃지를 모으고 칭호를 획득하세요</p>
           <Link href="/shop" className="goods-hero__cta">
-            🎁 모은 포인트로 굿즈 받기 →
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <ShopIcon name="gift" size={18} /> 모은 포인트로 굿즈 받기 →
+            </span>
           </Link>
         
 
