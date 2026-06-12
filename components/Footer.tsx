@@ -1,40 +1,14 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useAuthStore } from '@/store/useAuthStore'
-import { useLangStore, LANG_LABELS, labelToLang } from '@/store/useLangStore'
-import { useT, type TKey } from '@/lib/i18n'
-import AppIcon from '@/components/common/AppIcon'
-import "./scss/footer.scss"
-
-// 링크는 번역 키로 관리
-const LINK_COLS: { titleKey: TKey; links: TKey[] }[] = [
-  { titleKey: "footer.companyInfo", links: ["footer.audioGuide", "footer.ir", "footer.legal"] },
-  { titleKey: "footer.customerCenter", links: ["footer.center", "footer.cookies"] },
-  { titleKey: "footer.service", links: [ "footer.terms", "footer.company"] },
-  { titleKey: "footer.media", links: ["footer.mediaCenter", "footer.privacy", "footer.contact"] },
-];
-
-// 각 푸터 링크의 목적지.
-//  · 기존 전용 페이지가 있는 항목은 그 페이지로
-//  · 나머지는 항목별 내용을 담은 공통 문서 페이지(/info/[slug])로 연결
-//    (footer.contact 는 로그인 여부에 따라 별도 처리)
-const FOOTER_LINK_HREF: Partial<Record<TKey, string>> = {
-  "footer.center": "/faq",                 // 고객 센터 → FAQ
-  // "footer.jobs": "/faq",                   // 입사 정보 → FAQ
-  // "footer.giftcard": "/plan",              // 기프트카드 → 플랜
-  "footer.audioGuide": "/info/audio-guide", // 화면 해설
-  "footer.ir": "/info/ir",                 // 투자 정보(IR)
-  "footer.legal": "/info/legal",           // 법적 고지
-  "footer.cookies": "/info/cookies",       // 쿠키 설정
-  "footer.terms": "/info/terms",           // 이용 약관
-  "footer.company": "/info/company",       // 회사 정보
-  "footer.mediaCenter": "/info/media-center", // 미디어 센터
-  "footer.privacy": "/info/privacy",       // 개인정보
-};
-const FOOTER_LINK_FALLBACK = "/faq"; // 매핑되지 않은 예외 항목
+import React, { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useLangStore, LANG_LABELS, labelToLang } from "@/store/useLangStore";
+import { useT } from "@/lib/i18n";
+import AppIcon from "@/components/common/AppIcon";
+import { FOOTER_MENU_GROUPS } from "@/data/footerMenu";
+import "./scss/footer.scss";
 
 const BUSINESS_INFO = [
   "넷플릭스서비스코리아 유한회사  통신판매업신고번호: 제2018-서울종로-0426호  전화번호: 00-308-321-0161 (수신자 부담)  대표: 레지널드 숀 톰프슨",
@@ -53,17 +27,15 @@ const LANGUAGES = ["한국어", "English"];
 
 export default function Footer() {
   const [langOpen, setLangOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
   const { user } = useAuthStore();
   const { lang, setLang } = useLangStore();
   const t = useT();
-  // 로그인 전이면 로그인 페이지로, 로그인 후엔 문의 작성 탭으로 이동
   const contactHref = user ? "/contact?tab=inquiry" : "/login";
 
   return (
     <footer>
       <div className="footer-inner">
-
-        {/* 로고 + SNS */}
         <div className="footer-sns-row">
           <Image
             src="/images/logo/Netflix_Logo_RGB.png"
@@ -83,25 +55,41 @@ export default function Footer() {
 
         <hr className="footer-divider" />
 
-        {/* 링크 1열 */}
-        <ul className="footer-links">
-          {LINK_COLS.flatMap(({ links }) => links).map((key) => (
-            <li key={key}>
-              {key === "footer.contact" ? (
-                <Link href={contactHref} className="footer-link">{t(key)}</Link>
-              ) : (
-                <Link
-                  href={FOOTER_LINK_HREF[key] ?? FOOTER_LINK_FALLBACK}
-                  className="footer-link"
+        <div className="footer-menu-groups" aria-label="푸터 메뉴">
+          {FOOTER_MENU_GROUPS.map((group) => {
+            const isOpen = openGroup === group.label;
+            return (
+              <div className="footer-menu-group" key={group.label}>
+                {isOpen && (
+                  <ul className="footer-menu-dropdown">
+                    {group.items.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.label === "문의하기" ? contactHref : item.href}
+                          onClick={() => setOpenGroup(null)}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  className="footer-menu-trigger"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenGroup(isOpen ? null : group.label)}
                 >
-                  {t(key)}
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
+                  <span>{group.label}</span>
+                  <span className={`footer-menu-arrow${isOpen ? " open" : ""}`}>
+                    <AppIcon name="chevron" size={14} color="currentColor" />
+                  </span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
 
-        {/* 사업자 정보 */}
         <div className="footer-biz">
           {BUSINESS_INFO.map((line) => (
             <p key={line}>{line}</p>
@@ -110,7 +98,6 @@ export default function Footer() {
 
         <hr className="footer-divider" />
 
-        {/* 하단 바 */}
         <div className="footer-bottom-bar">
           <div className="footer-copyright">
             <p>© 2026 NETFLIX, Inc. All rights reserved.</p>
@@ -124,7 +111,10 @@ export default function Footer() {
                   <li key={label}>
                     <button
                       className={LANG_LABELS[lang] === label ? "active" : ""}
-                      onClick={() => { setLang(labelToLang(label)); setLangOpen(false); }}
+                      onClick={() => {
+                        setLang(labelToLang(label));
+                        setLangOpen(false);
+                      }}
                     >
                       {label}
                     </button>
@@ -147,8 +137,7 @@ export default function Footer() {
             </button>
           </div>
         </div>
-
       </div>
     </footer>
-  )
+  );
 }

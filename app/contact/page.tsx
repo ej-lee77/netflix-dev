@@ -13,7 +13,7 @@ import { FAQ_CATEGORIES, FAQ_CATEGORY_LABELS } from "@/data/faq";
 import { ContactStatus } from "@/types/contact";
 import FaqAccordion from "@/components/common/FaqAccordion";
 import CustomSelect from "@/components/common/CustomSelect";
-import BackButton from "@/components/common/BackButton";
+import FooterMenuNav from "@/components/common/FooterMenuNav";
 
 type TabType = "faq" | "inquiry" | "history";
 type FilterStatusType = "all" | "pending" | "processing" | "answered";
@@ -36,7 +36,7 @@ function ContactPageContent() {
   const searchParams = useSearchParams();
 
   const { user, currentProfile } = useAuthStore();
-  const { myContacts, loading, submitting, submitContact, fetchMyContacts, deleteContact } =
+  const { myContacts, loading, submitting, submitContact, fetchMyContacts, deleteContact, answerContact } =
     useContactStore();
 
   // 로그인 식별자: 스토어 user 우선, 없으면 Firebase 현재 유저로 보강
@@ -58,6 +58,9 @@ function ContactPageContent() {
 
   // 내역 필터
   const [historyFilter, setHistoryFilter] = useState<FilterStatusType>("all");
+
+  // 펼쳐서 본문/답변을 보여줄 문의 항목 (한 번에 하나만 펼침)
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     const validTabs: TabType[] = ["faq", "inquiry", "history"];
@@ -137,10 +140,32 @@ function ContactPageContent() {
     showToast(ok ? "문의가 삭제되었습니다." : "문의 삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
   };
 
+  // 데모용 답변 문구 — 문의 유형/제목을 반영해 상담원 답변처럼 생성
+  // (실제 운영에서는 상담원이 작성한 답변 본문이 들어오는 자리)
+  const buildDemoAnswer = (categoryLabel: string, title: string) =>
+    `안녕하세요, NETFLIX : CONNECT 고객센터입니다.\n` +
+    `문의해 주신 '${title}' (${categoryLabel}) 건 확인했습니다.\n` +
+    `요청하신 내용은 정상적으로 처리되었으며, 추가로 궁금하신 점이 있으면 언제든 다시 문의해 주세요. 감사합니다.`;
+
+  // 문의에 답변 달기 → 상태가 '답변 완료'로 전환되고 답변 본문이 노출됨
+  // (데모/관리자 동작: 운영 시 관리자 권한 화면으로 이동하거나 제거)
+  const handleAnswerContact = async (h: (typeof myContacts)[number]) => {
+    if (!uid) return;
+    const categoryLabel = FAQ_CATEGORY_LABELS[h.category] ?? h.category;
+    const ok = await answerContact(uid, h.id, buildDemoAnswer(categoryLabel, h.title));
+    if (ok) {
+      setExpandedId(h.id); // 답변이 바로 보이도록 해당 항목을 펼침
+      showToast("답변이 등록되었습니다.");
+    } else {
+      showToast("답변 처리에 실패했어요. 잠시 후 다시 시도해주세요.");
+    }
+  };
+
   return (
     <div className="contact-page">
-      <div className="inner">
-        <BackButton fallback="/mypage" />
+      <div className="footer-menu-page">
+        <FooterMenuNav />
+        <main className="footer-menu-content inner">
         <div className="page-head">
           <h1>고객 센터</h1>
         </div>
@@ -315,34 +340,74 @@ function ContactPageContent() {
                   <div className="history-empty"><p>문의 내역을 불러오는 중이에요...</p></div>
                 ) : filteredHistories.length > 0 ? (
                   <ul className="history-list">
-                    {filteredHistories.map((h) => (
-                      <li key={h.id} className="history-item">
-                        <div className="history-head">
-                          <span className="category-tag">
-                            {FAQ_CATEGORY_LABELS[h.category] ?? h.category}
-                          </span>
-                          <div className="head-right">
-                            <span className={`status ${STATUS_MAP[h.status].className}`}>
-                              {STATUS_MAP[h.status].label}
+                    {filteredHistories.map((h) => {
+                      const isOpen = expandedId === h.id;
+                      const isAnswered = h.status === "answered";
+                      return (
+                        <li
+                          key={h.id}
+                          className={`history-item ${isOpen ? "is-open" : ""}`}
+                          onClick={() => setExpandedId(isOpen ? null : h.id)}
+                        >
+                          <div className="history-head">
+                            <span className="category-tag">
+                              {FAQ_CATEGORY_LABELS[h.category] ?? h.category}
                             </span>
-                            <span className="date">
-                              {new Date(h.createdAt).toLocaleDateString("ko-KR")}
-                            </span>
+                            <div className="head-right">
+                              <span className={`status ${STATUS_MAP[h.status].className}`}>
+                                {STATUS_MAP[h.status].label}
+                              </span>
+                              <span className="date">
+                                {new Date(h.createdAt).toLocaleDateString("ko-KR")}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <h3>{h.title}</h3>
-                        <p>{h.content}</p>
-                        <div className="history-actions">
-                          <button
-                            type="button"
-                            className="history-delete-btn"
-                            onClick={() => handleDeleteContact(h.id)}
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </li>
-                    ))}
+                          <h3>{h.title}</h3>
+                          <p className={isOpen ? "expanded" : ""}>{h.content}</p>
+
+                          {/* 답변 영역 — 답변 완료 상태이고 답변 본문이 있을 때만 노출 */}
+                          {isAnswered && h.answer && (
+                            <div className="history-answer">
+                              <div className="answer-head">
+                                <span className="answer-badge">답변</span>
+                                {h.answeredAt && (
+                                  <span className="answer-date">
+                                    {new Date(h.answeredAt).toLocaleDateString("ko-KR")}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="answer-body">{h.answer}</p>
+                            </div>
+                          )}
+
+                          <div className="history-actions">
+                            {/* 데모/관리자 동작: 답변 대기 상태에서만 노출. 운영 시 관리자 권한 화면으로 분리 */}
+                            {!isAnswered && (
+                              <button
+                                type="button"
+                                className="history-answer-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAnswerContact(h);
+                                }}
+                              >
+                                답변 받기(데모)
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="history-delete-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteContact(h.id);
+                              }}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   // 문의가 아예 없을 때 vs 필터 결과만 없을 때 구분
@@ -369,6 +434,7 @@ function ContactPageContent() {
             )}
           </div>
         )}
+        </main>
       </div>
     </div>
   );
