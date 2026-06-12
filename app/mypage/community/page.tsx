@@ -57,7 +57,8 @@ const sortOptions: { key: SortType; label: string }[] = [
 const getUserId = (user: ReturnType<typeof useAuthStore.getState>["user"]) =>
   user?.userId || (user as { uid?: string } | null)?.uid || "";
 
-const getReviewKey = (review: ReviewDocument) => `${review.videoId}#${review.reviewId}`;
+const getReviewKey = (review: ReviewDocument) =>
+  `${review.videoId}#${review.reviewId}`;
 
 const reviewMoodOptions = allSearchOptions.filter(
   (option) => option.group === "mood",
@@ -149,7 +150,9 @@ function CommunityContent() {
   const initialTab = searchParams.get("tab");
 
   const [activeTab, setActiveTab] = useState<CommunityTab>(
-    initialTab === "my-feeds" || initialTab === "reviews" ? initialTab : "reviews",
+    initialTab === "my-feeds" || initialTab === "reviews"
+      ? initialTab
+      : "reviews",
   );
   const [scopeFilter, setScopeFilter] = useState<ScopeFilterType>("mine");
   const [sortType, setSortType] = useState<SortType>("recent");
@@ -279,7 +282,9 @@ function CommunityContent() {
             keyword && editSelectedReviewTags.length > 0
               ? keywordOptions.filter((item) =>
                   new Set(
-                    tagOptions.map((option) => `${option.mediaType}-${option.id}`),
+                    tagOptions.map(
+                      (option) => `${option.mediaType}-${option.id}`,
+                    ),
                   ).has(`${item.mediaType}-${item.id}`),
                 )
               : [...keywordOptions, ...tagOptions];
@@ -387,9 +392,17 @@ function CommunityContent() {
     setEditSelectedMedia(null);
   };
 
-  const handleSubmitFeedEdit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitFeedEdit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
-    if (!editingFeed || !editSelectedMedia || editRating <= 0 || !editContent.trim()) return;
+    if (
+      !editingFeed ||
+      !editSelectedMedia ||
+      editRating <= 0 ||
+      !editContent.trim()
+    )
+      return;
 
     await onUpdateFeed({
       ...editingFeed,
@@ -500,7 +513,6 @@ function CommunityContent() {
           </div>
         ) : (
           <div className="tab-content-panel">
-            
             {/* 3. 섹션 타이틀 및 총 개수 표시
             <div className="section-title-row">
               <h2>{currentTabLabel}</h2>
@@ -525,7 +537,7 @@ function CommunityContent() {
               </div>
             )} */}
 
-              {/* <div className="community-sort">
+            {/* <div className="community-sort">
                 <button type="button" className="sort-btn" onClick={() => setSortOpen((open) => !open)}>
                   {currentSortLabel}
                   <svg
@@ -566,9 +578,9 @@ function CommunityContent() {
             <div className="main-content-area">
               {activeTab === "reviews" && (
                 <>
-                  <Review 
-                    // sortType={sortType} 
-                    // scopeFilter={scopeFilter || "mine"} 
+                  <Review
+                  // sortType={sortType}
+                  // scopeFilter={scopeFilter || "mine"}
                   />
                 </>
               )}
