@@ -74,7 +74,7 @@ export default function MyPage() {
     };
     loadHistory();
   }, [playHist]);
-  console.log(historyItems, playHist);
+  // console.log(historyItems, playHist);
 
   // 2. 영화 상세 정보 보완
   const [enrichedReviews, setEnrichedReviews] = useState<any[]>([]);

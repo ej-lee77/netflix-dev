@@ -18,7 +18,7 @@ export default function CancelPage() {
 
   const handleCancel = async () => {
     const uid = user?.userId ?? auth.currentUser?.uid;
-    console.log("uid:", uid);
+    // console.log("uid:", uid);
     if (!uid) {
       setError("로그인 정보를 확인할 수 없습니다.");
       return;
