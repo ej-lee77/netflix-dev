@@ -32,6 +32,9 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const partyIdParam = searchParams.get("party");
+  // 상세 페이지에서 특정 시즌/회차로 진입할 때 사용
+  const seasonParam = Number(searchParams.get("season")) || 1;
+  const epParam = searchParams.get("ep");
   const isTv = type === "tv";
   const itemKey = `${type}-${mediaId}`;
 
@@ -49,7 +52,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   } = useMovieStore();
   const { isWished, onAddWish, onRemoveWish, onLoadWishlist } =
     useWishlistStore();
-  const { onUpdateProgress } = usePlayListStore();
+  const { onAddPlayList, onUpdateProgress } = usePlayListStore();
   const { user, currentProfile } = useAuthStore();
   const canUseConnect = useCommunityEnabled();
   const {
@@ -70,10 +73,17 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const myProfileImage =
     currentProfile?.imgUrl || "/images/profile/image/default_icons/17.png";
 
-  const [epIndex, setEpIndex] = useState(0);
+  const requestedEpisode = Number(epParam);
+  const initialEpisodeIndex =
+    Number.isFinite(requestedEpisode) && requestedEpisode > 0
+      ? requestedEpisode - 1
+      : 0;
+  const [epIndex, setEpIndex] = useState(initialEpisodeIndex);
   const [chatText, setChatText] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const lastProgressRef = useRef(-1);
+  // 이 작품을 시청 기록에 1회만 추가하기 위한 가드
+  const recordedRef = useRef(false);
 
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isPlayerHovered, setIsPlayerHovered] = useState(false);
@@ -104,10 +114,13 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
   useEffect(() => {
     if (!mediaId) return;
+    // 작품이 바뀌면 기록/진행률 가드 초기화
+    recordedRef.current = false;
+    lastProgressRef.current = -1;
     onFetchMediaDetail(mediaId, type);
     if (isTv) {
       onFetchTvVideos(mediaId);
-      onFetchEpisodes(mediaId, 1);
+      onFetchEpisodes(mediaId, seasonParam);
     } else {
       onFetchVideo(mediaId);
     }
@@ -115,12 +128,14 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     mediaId,
     type,
     isTv,
+    seasonParam,
     onFetchMediaDetail,
     onFetchTvVideos,
     onFetchVideo,
     onFetchEpisodes,
   ]);
 
+  // 상세에서 ?ep= 로 진입하면 해당 회차를 선택
   useEffect(() => {
     if (recommended.length === 0) onFetchRecommended();
   }, [recommended.length, onFetchRecommended]);
@@ -272,7 +287,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     const progress = Math.round((ct / dur) * 100);
     if (progress > 0 && progress !== lastProgressRef.current) {
       lastProgressRef.current = progress;
-      onUpdateProgress(mediaId, type, progress);
+      // 최초 재생 시 1회: 시청 기록(watchingVideos + histMovies + 장르·국가 통계 + 뱃지)에 추가
+      if (!recordedRef.current && mediaItem && user && currentProfile) {
+        recordedRef.current = true;
+        (async () => {
+          await onAddPlayList(mediaItem);
+          await onUpdateProgress(mediaId, type, progress);
+        })();
+      } else {
+        onUpdateProgress(mediaId, type, progress);
+      }
     }
     if (isHost) updatePlayback({ positionPct: progress, isPlaying: true });
   };
