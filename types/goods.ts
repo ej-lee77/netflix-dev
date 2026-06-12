@@ -5,6 +5,9 @@ export type GoodsCategory = "apparel" | "figure" | "poster" | "stationery" | "li
 
 export type GoodsBadge = "NEW" | "BEST" | "LIMITED" | null;
 
+// 주문 배송 단계: 주문완료 → 배송중 → 배송완료, 또는 주문취소
+export type OrderStatus = "ordered" | "shipping" | "delivered" | "canceled";
+
 export interface GoodsProduct {
   id: string;
   name: string;
@@ -60,5 +63,7 @@ export interface GoodsOrder {
   shipping: ShippingInfo;
   payLabel: string; // 배송비 결제 수단
   payStatus: string; // "결제완료" 등
+  orderStatus?: OrderStatus; // 배송 단계 (없으면 createdAt 기준으로 추정)
+  canceledAt?: number; // 주문취소 시각 (취소 흐름 단계 진행 기준)
   createdAt: number;
 }

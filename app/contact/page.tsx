@@ -90,7 +90,7 @@ function ContactPageContent() {
     const items = activeCategory?.items ?? [];
     const kw = faqKeyword.trim();
     if (!kw) return items;
-    return items.filter((f : any) => f.q.includes(kw) || f.a.includes(kw));
+    return items.filter((f: any) => f.q.includes(kw) || f.a.includes(kw));
   }, [activeCategory, faqKeyword]);
 
   // 문의 등록

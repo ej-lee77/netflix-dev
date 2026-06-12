@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { categoryMeta, pts, won } from "@/data/goods";
+import { showToast } from "@/store/useToastStore";
 import ShopTopBar from "./ShopTopBar";
 import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
@@ -38,6 +39,11 @@ export default function ShopOrdersClient() {
     loadProducts();
   }, [loadOrders, loadProducts]);
 
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 2000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="shop-page">
       <div className="shop-shell">
@@ -54,12 +60,13 @@ export default function ShopOrdersClient() {
             </button>
           </div>
         ) : (
-          orders.map((o) => (
-            <div className="order-card" key={o.orderId}>
-              <div className="order-card__head">
-                <span className="order-card__date">{formatDate(o.createdAt)}</span>
-                <span className="order-card__status">{o.payStatus}</span>
-              </div>
+          orders.map((o) => {
+            const canceled = o.orderStatus === "canceled";
+            const stages = canceled ? CANCEL_STAGES : ORDER_STAGES;
+            const startTs = canceled ? o.canceledAt ?? o.createdAt : o.createdAt;
+            const activeIdx = stageIndex(startTs, now);
+            const canCancel = !canceled && activeIdx < 2; // 배송완료 전까지만 취소 가능
+            const rightLabel = canceled ? "주문취소" : o.payStatus;
 
               {o.items.map((it, i) => {
                 const meta = categoryMeta(it.category);
@@ -72,18 +79,24 @@ export default function ShopOrdersClient() {
                       <div className="order-item__meta">
                         {it.option ? `${it.option} · ` : ""}수량 {it.qty}개
                       </div>
+                      <div className="order-item__info">
+                        <div className="order-item__name">{it.name}</div>
+                        <div className="order-item__meta">
+                          {it.option ? `${it.option} · ` : ""}수량 {it.qty}개
+                        </div>
+                      </div>
+                      <div className="order-item__price">{pts(it.points * it.qty)}</div>
                     </div>
-                    <div className="order-item__price">{pts(it.points * it.qty)}</div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-              <div className="order-card__total">
-                <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
-                <b>{won(o.shippingFee)}</b>
+                <div className="order-card__total">
+                  <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
+                  <b>{won(o.shippingFee)}</b>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
