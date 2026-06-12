@@ -257,8 +257,13 @@ function NotifItem({ notif }: { notif: Notif }) {
   const content = (
     <>
       <div className={`notif-icon ${notif.type}`}>
-        <AppIcon name={iconMap[notif.type]} size={15} /> 
+        <AppIcon name={iconMap[notif.type]} size={15} />
       </div>
+      {notif.thumb && (
+        <div className="notif-thumb">
+          <img src={`https://image.tmdb.org/t/p/w200${notif.thumb}`} alt="" />
+        </div>
+      )}
       <div className="notif-body">
         <div className="text">
           <strong>{notif.title}</strong>
@@ -267,11 +272,6 @@ function NotifItem({ notif }: { notif: Notif }) {
         </div>
         <span className="time">{notif.time}</span>
       </div>
-      {notif.thumb && (
-        <div className="notif-thumb">
-          <img src={`https://image.tmdb.org/t/p/w200${notif.thumb}`} alt="" />
-        </div>
-      )}
       {notif.cta && <button className="notif-cta">{notif.cta}</button>}
     </>
   );
