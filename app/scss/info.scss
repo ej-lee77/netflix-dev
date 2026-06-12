@@ -45,8 +45,8 @@
 
     h2 {
       font-size: g.$text-32;
-      font-weight: 800;
-      margin-bottom: 12px;
+      font-weight: 700;
+      margin-bottom: 32px;
     }
 
     .info-intro {
@@ -122,9 +122,9 @@
     }
 
     .info-link {
-      color: g.$main-color;
+      color: #ffffff;
       text-decoration: none;
-      font-weight: 600;
+      font-weight: 700;
 
       &:hover {
         text-decoration: underline;
@@ -152,7 +152,7 @@
 /* 태블릿: 본문을 화면 폭에 맞추고 타이포·간격을 한 단계 축소 */
 @include g.respond(tablet) {
   .info-page {
-    padding: 28px 0 64px;
+    padding: 40px 0 64px;
     padding-left: 64px;
 
     .inner {
@@ -166,6 +166,7 @@
 
       h2 {
         font-size: g.$text-24;
+        margin-bottom: 24px;
       }
 
       .info-intro {
@@ -186,7 +187,7 @@
 /* 모바일: 단일 칼럼, 여백·폰트 최소화, 브레드크럼 줄바꿈 허용 */
 @include g.respond(mobile) {
   .info-page {
-    padding: 20px 0 56px;
+    padding: 40px 0 56px;
     padding-left: 56px;
     padding-right: 4px;
 
