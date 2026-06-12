@@ -64,11 +64,11 @@ export default function GameBanner() {
               </p>
             </div>
 
-            {/* 도트 스프라이트 연출: 도깨비를 쫓는(쫓기는) 루미 */}
+            {/* 도트 스프라이트 연출: 루미를 쫓는 도깨비들 */}
             <div className="game-banner__visual" aria-hidden="true">
-              <span className="game-banner__demon game-banner__demon--small" />
-              <span className="game-banner__demon game-banner__demon--medium" />
               <span className="game-banner__rumi" />
+              <span className="game-banner__demon game-banner__demon--medium" />
+              <span className="game-banner__demon game-banner__demon--small" />
             </div>
           </div>
         </button>
