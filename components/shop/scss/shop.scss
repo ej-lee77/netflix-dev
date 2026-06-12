@@ -1351,3 +1351,107 @@
     color: #fff;
   }
 }
+
+/* ── 반품·환불 흐름 (반품신청 → 회수중 → 환불완료) ───────── */
+.order-card__status.is-returned {
+  color: #f0a83a;
+  background: rgba(240, 168, 58, 0.14);
+}
+
+.order-steps.is-return-flow {
+  .order-step.is-done {
+    color: #fff;
+    background: rgba(240, 168, 58, 0.16);
+    border-color: rgba(240, 168, 58, 0.5);
+  }
+
+  .order-step.is-current {
+    background: #e0922f;
+    border-color: #e0922f;
+    color: #fff;
+  }
+}
+
+.order-return-btn {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: rgba(240, 168, 58, 0.7);
+    color: #f0a83a;
+  }
+}
+
+/* ── 반품 사유 선택 패널 ──────────────────────────────── */
+.order-return-form {
+  margin: 4px 0 14px;
+  padding: 14px;
+  border: 1px solid rgba(240, 168, 58, 0.35);
+  border-radius: 10px;
+  background: rgba(240, 168, 58, 0.06);
+}
+
+.order-return-form__label {
+  display: block;
+  font-size: 12px;
+  color: #9a9a9a;
+  margin-bottom: 6px;
+}
+
+.order-return-form__select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+
+  &:focus {
+    border-color: rgba(240, 168, 58, 0.6);
+  }
+
+  option {
+    color: #111; /* 일부 브라우저 드롭다운 가독성 */
+  }
+}
+
+.order-return-form__note {
+  margin: 10px 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #c7903f;
+}
+
+.order-return-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 취소/반품 완료 안내 (사유·포인트 환원) */
+.order-refund-note {
+  margin: 2px 0 14px;
+  font-size: 12px;
+  color: #9a9a9a;
+}
+
+/* ── 굿즈샵으로 돌아가기 링크 (장바구니/교환내역 상단바) ── */
+.shop-topbar__home {
+  font-weight: 600;
+  margin-right: 2px;
+
+  &:hover {
+    border-color: rgba(229, 9, 20, 0.55);
+    color: #fff;
+  }
+}
