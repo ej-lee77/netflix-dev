@@ -87,11 +87,12 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const [epIndex, setEpIndex] = useState(initialEpisodeIndex);
   const [chatText, setChatText] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const isSendingChatRef = useRef(false);
   const lastProgressRef = useRef(-1);
   // 이 작품을 시청 기록에 1회만 추가하기 위한 가드
   const recordedRef = useRef(false);
 
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(() => !!partyIdParam);
   const [isPlayerHovered, setIsPlayerHovered] = useState(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
 
@@ -304,14 +305,21 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   };
 
   const handleSendChat = async () => {
-    if (!chatText.trim()) return;
-    await sendMessage(chatText, {
-      userId,
-      profileId,
-      nickname,
-      badge: myBadge,
-    });
+    const text = chatText.trim();
+    if (!text || isSendingChatRef.current) return;
+
+    isSendingChatRef.current = true;
     setChatText("");
+    try {
+      await sendMessage(text, {
+        userId,
+        profileId,
+        nickname,
+        badge: myBadge,
+      });
+    } finally {
+      isSendingChatRef.current = false;
+    }
   };
 
   const handleTimeUpdate = (ct: number, dur: number) => {
@@ -402,21 +410,32 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         }}
       >
         {isPartyMode ? (
-          <button
-            type="button"
-            onClick={isHost ? handleDeleteParty : handleLeaveParty}
-            style={btn({
-              background: isHost
-                ? "rgba(229,9,20,0.12)"
-                : "rgba(255,255,255,0.06)",
-              border: isHost
-                ? "1px solid rgba(229,9,20,0.42)"
-                : "1px solid #333",
-              color: isHost ? "#ff7c83" : "#eee",
-            })}
-          >
-            {isHost ? "파티 종료하기" : "← 파티 나가기"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isHost && (
+              <button
+                type="button"
+                onClick={handleLeaveParty}
+                style={btn({ background: "rgba(255,255,255,0.06)" })}
+              >
+                ← 파티 나가기
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={isHost ? handleDeleteParty : handleLeaveParty}
+              style={btn({
+                background: isHost
+                  ? "rgba(229,9,20,0.12)"
+                  : "rgba(255,255,255,0.06)",
+                border: isHost
+                  ? "1px solid rgba(229,9,20,0.42)"
+                  : "1px solid #333",
+                color: isHost ? "#ff7c83" : "#eee",
+              })}
+            >
+              {isHost ? "파티 종료하기" : "← 파티 나가기"}
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -465,7 +484,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         className="watch-body"
         style={{
           display: "flex",
-          gap: "clamp(10px, 1.5vw, 18px)",
+          gap: 0,
           alignItems: "stretch",
           flex: 1,
           minHeight: 0,
@@ -566,42 +585,6 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 </div>
               )}
             </div>
-
-            {/* 채팅창 여닫이 화살표 버튼 */}
-            {(isPartyMode || !isChatOpen) && (
-              <button
-                className="watch-chat-toggle"
-                type="button"
-                aria-label={isChatOpen ? "채팅창 닫기" : "채팅창 열기"}
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "rgba(12,12,12,0.92)",
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  borderRight: "none",
-                  color: "#fff",
-                  borderRadius: "8px 0px 0px 8px",
-                  width: 36,
-                  height: 72,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 28,
-                  fontWeight: 300,
-                  cursor: "pointer",
-                  zIndex: 20,
-                  opacity: isPlayerHovered || !isChatOpen ? 1 : 0.55,
-                  boxShadow: "-8px 0 22px rgba(0,0,0,0.4)",
-                  transition:
-                    "opacity 0.2s ease, background 0.2s, border-color 0.2s, transform 0.2s",
-                }}
-              >
-                {isChatOpen ? "›" : "‹"}
-              </button>
-            )}
 
             {/* 에피소드 리스트 팝업 레이어 (오른쪽 아래 정렬) */}
             {isTv && isEpPopupOpen && (
@@ -853,6 +836,47 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
           </div>
         </div>
 
+        <button
+          className="watch-chat-toggle"
+          data-panel-open={isChatOpen}
+          data-panel-kind={isPartyMode ? "chat" : "recommendations"}
+          type="button"
+          aria-label={
+            isPartyMode
+              ? isChatOpen
+                ? "채팅창 닫기"
+                : "채팅창 열기"
+              : isChatOpen
+                ? "추천 작품 닫기"
+                : "추천 작품 열기"
+          }
+          onClick={() => setIsChatOpen((isOpen) => !isOpen)}
+          style={{
+            alignSelf: "center",
+            flexShrink: 0,
+            background: "rgba(12,12,12,0.92)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            borderRight: "none",
+            color: "#fff",
+            borderRadius: "8px 0px 0px 8px",
+            width: 36,
+            height: 72,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 28,
+            fontWeight: 300,
+            cursor: "pointer",
+            zIndex: 50,
+            opacity: isPlayerHovered || !isChatOpen ? 1 : 0.55,
+            boxShadow: "-8px 0 22px rgba(0,0,0,0.4)",
+            transition:
+              "opacity 0.2s ease, background 0.2s, border-color 0.2s",
+          }}
+        >
+          {isChatOpen ? "›" : "‹"}
+        </button>
+
         {/* 우측 패널 (채팅창 너비를 320px -> 380px로 변경) */}
         <aside
           className="watch-chat-panel"
@@ -898,7 +922,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     <span style={{ fontSize: 12, color: "#888" }}>
                       {party?.participants?.length ?? 1}명 참여 중
                     </span>
-                    {isHost && (
+                    {isHost && party?.accessMode === "invite" && (
                       <button
                         type="button"
                         onClick={() => setIsPartyModalOpen(true)}
@@ -1069,15 +1093,30 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   display: "flex",
                   gap: 8,
                   flexShrink: 0,
+                  pointerEvents: "auto",
+                  userSelect: "text",
                 }}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
               >
                 <input
                   value={chatText}
                   onChange={(e) => setChatText(e.target.value)}
                   onKeyDown={(e) => {
                     e.stopPropagation();
-                    if (e.key === "Enter") handleSendChat();
+                    if (
+                      e.key === "Enter" &&
+                      !e.nativeEvent.isComposing
+                    ) {
+                      e.preventDefault();
+                      void handleSendChat();
+                    }
                   }}
+                  onKeyUp={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   placeholder="메시지 입력…"
                   style={{
                     flex: 1,
@@ -1088,6 +1127,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     padding: "8px 10px",
                     fontSize: 13,
                     outline: "none",
+                    pointerEvents: "auto",
+                    userSelect: "text",
                   }}
                 />
                 <button
@@ -1115,16 +1156,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 overflowY: "auto",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ marginBottom: 10 }}>
                 <span style={{ fontSize: 18, fontWeight: 700 }}>추천 작품</span>
-                <button
-                  type="button"
-                  onClick={() => setIsChatOpen(false)}
-                  style={{ background: "none", border: "none", color: "#888", cursor: "pointer", padding: 4, lineHeight: 1, fontSize: 18 }}
-                  aria-label="추천 작품 닫기"
-                >
-                  ✕
-                </button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {related.length === 0 && (

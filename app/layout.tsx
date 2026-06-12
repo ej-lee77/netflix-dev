@@ -7,6 +7,7 @@ import AuthProvider from "@/components/AuthProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import ScrollToTop from "@/components/common/ScrollToTop";
 import ConnectAIWrapper from "@/components/connect/ConnectAIWrapper";
+import IntroVideo from "@/components/common/IntroVideo";
 
 const netflixSans = localFont({
   src: [
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body className={netflixSans.variable}>
         {/* ... */}
+        <IntroVideo />
         <AuthProvider>
           <Suspense fallback={null}>
             <ScrollToTop />
