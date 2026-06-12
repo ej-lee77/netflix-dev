@@ -128,11 +128,11 @@ const genreMapEn: Record<number, string> = {
   10768: "War & Politics",
 };
 
-function posterUrl(path: string | null, size = "w342") {
+function posterUrl(path: string | null, size = "w780") {
   return path ? `${IMG_BASE}${size}${path}` : "";
 }
 
-function backdropUrl(path: string | null, size = "w1280") {
+function backdropUrl(path: string | null, size = "original") {
   return path ? `${IMG_BASE}${size}${path}` : "";
 }
 
@@ -158,6 +158,24 @@ function getStars(rating: number) {
   return "★".repeat(count) + "☆".repeat(5 - count);
 }
 
+// 케이팝 데몬 헌터스 고정 항목 (TMDB movie/803796)
+const PINNED_ITEMS: { id: number; mediaType: MediaType }[] = [
+  { id: 803796, mediaType: "movie" },
+];
+
+async function fetchItemById(id: number, mediaType: MediaType): Promise<HeroItem | null> {
+  if (!TMDB_KEY) return null;
+
+  const params = new URLSearchParams({ api_key: TMDB_KEY, language: getTmdbLang() });
+  const res = await fetch(`${TMDB_BASE}/${mediaType}/${id}?${params.toString()}`);
+  if (!res.ok) return null;
+
+  const data = (await res.json()) as HeroItem;
+  if (!data.backdrop_path || !data.poster_path || !data.overview) return null;
+
+  return { ...data, media_type: mediaType, genre_ids: data.genre_ids ?? [], logoUrl: "", videoKey: "" };
+}
+
 async function fetchHeroItems() {
   if (!TMDB_KEY) {
     throw new Error("TMDB API key is missing.");
@@ -181,9 +199,10 @@ async function fetchHeroItems() {
     "first_air_date.gte": "2026-01-01",
   });
 
-  const [movieRes, tvRes] = await Promise.all([
+  const [movieRes, tvRes, ...pinnedResults] = await Promise.all([
     fetch(`${TMDB_BASE}/discover/movie?${movieParams.toString()}`),
     fetch(`${TMDB_BASE}/discover/tv?${tvParams.toString()}`),
+    ...PINNED_ITEMS.map(({ id, mediaType }) => fetchItemById(id, mediaType)),
   ]);
 
   if (!movieRes.ok || !tvRes.ok) {
@@ -220,7 +239,18 @@ async function fetchHeroItems() {
     if (tvs[i]) combined.push(tvs[i]);
   }
 
-  const candidates = combined.slice(0, 8);
+  // 고정 항목(케이팝 데몬 헌터스 등)을 히어로 첫 번째 후보로 추가 (중복 제거)
+  const pinnedIds = new Set<number>();
+  const pinned: HeroItem[] = [];
+  for (const item of pinnedResults) {
+    if (item && validItem(item)) {
+      pinned.push({ ...item, logoUrl: "" });
+      pinnedIds.add(item.id);
+    }
+  }
+
+  const rest = combined.filter((item) => !pinnedIds.has(item.id));
+  const candidates = [...pinned, ...rest].slice(0, 8);
 
   const [logos, videos] = await Promise.all([
     Promise.all(candidates.map(fetchHeroLogo)),
@@ -311,7 +341,7 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
     logos.find((l) => l.iso_639_1 === null) ??
     logos[0];
 
-  return logo ? `${IMG_BASE}w500${logo.file_path}` : "";
+  return logo ? `${IMG_BASE}original${logo.file_path}` : "";
 }
 
 export default function Hero() {
