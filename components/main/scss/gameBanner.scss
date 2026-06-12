@@ -315,7 +315,7 @@
   .game-banner__eyebrow { font-size: 9px; }
   .game-banner__desc { font-size: 12px; }
 
-  /* 모바일: 스프라이트 연출은 우측 하단에 작게 */
+  /* 모바일: 루미만 우측 하단에 작게 */
   .game-banner__visual {
     position: absolute;
     right: 10px;
@@ -323,13 +323,14 @@
     height: auto;
     gap: 8px;
 
-    .game-banner__rumi { display: none; }
+    .game-banner__demon--small,
+    .game-banner__demon--medium {
+      display: none;
+    }
 
-    .game-banner__demon--medium { display: none; }
-
-    .game-banner__demon--small {
-      --bw: 44px;
-      height: 50px;
+    .game-banner__rumi {
+      --bw: 52px;
+      height: 67px;
     }
   }
 
