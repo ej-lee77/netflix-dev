@@ -497,6 +497,7 @@
 .contact-page .history-item .history-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 12px;
 
   .history-delete-btn {
@@ -518,6 +519,80 @@
       border-color: #888;
       background: rgba(255, 255, 255, 0.08);
     }
+  }
+
+  /* 데모/관리자: 답변 달기 트리거 */
+  .history-answer-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+    color: #b3b3b3;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+/* 펼친 항목: 본문 전체 노출 (line-clamp 해제) */
+.contact-page .history-item p.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* 내 문의 내역 — 답변 패널 */
+.contact-page .history-item .history-answer {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: g.$radius-md;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #2a2a2a;
+  border-left: 2px solid g.$main-color;
+  animation: contactFade 0.2s ease;
+
+  .answer-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .answer-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    background: rgba(229, 9, 20, 0.15);
+    color: g.$main-color;
+    font-size: g.$text-12;
+    font-weight: 700;
+  }
+
+  .answer-date {
+    font-size: g.$text-12;
+    color: g.$g-color;
+  }
+
+  .answer-body {
+    font-size: g.$text-13;
+    color: g.$w-color;
+    line-height: 1.6;
+    white-space: pre-line; // 답변 본문의 줄바꿈 유지
+    // 본문 p 의 line-clamp 영향 차단
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
 

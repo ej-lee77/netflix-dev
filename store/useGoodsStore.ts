@@ -58,6 +58,7 @@ interface GoodsState {
   createOrder: (shipping: ShippingInfo, payLabel: string) => Promise<CreateOrderResult | null>;
   loadOrders: () => Promise<void>;
   cancelOrder: (orderId: string) => Promise<boolean>;
+  requestReturn: (orderId: string, reason: string) => Promise<boolean>;
 }
 
 async function persistCart(items: CartItem[]) {
@@ -67,6 +68,26 @@ async function persistCart(items: CartItem[]) {
     await setDoc(doc(db, "goodsCarts", id), { items, updatedAt: Date.now() });
   } catch (e) {
     console.error("[goods] 장바구니 저장 실패:", e);
+  }
+}
+
+// 주문 취소/반품 시 사용했던 포인트를 되돌려준다.
+// 사용 포인트(pointsUsed) 누적값을 그만큼 줄이면 보유 포인트(적립 − 사용)가 회복된다.
+async function restoreUsedPoints(amount: number) {
+  if (!amount || amount <= 0) return;
+  const id = uid();
+  if (!id) return;
+  try {
+    const userRef = doc(db, "users", id);
+    const snap = await getDoc(userRef);
+    const curUsed = snap.exists() ? Number(snap.data().pointsUsed ?? 0) : 0;
+    const newUsed = Math.max(0, curUsed - amount);
+    await updateDoc(userRef, { pointsUsed: newUsed }).catch(async () => {
+      await setDoc(userRef, { pointsUsed: newUsed }, { merge: true });
+    });
+    usePointStore.getState().bumpUsed(-amount); // 보유 포인트 즉시 회복
+  } catch (e) {
+    console.error("[goods] 포인트 환원 실패:", e);
   }
 }
 
@@ -217,11 +238,18 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
 
   cancelOrder: async (orderId) => {
     try {
+      // 이미 취소/반품된 주문이면 중복 환원 방지
+      const order = get().orders.find((o) => o.orderId === orderId);
+      const alreadyClosed =
+        order?.orderStatus === "canceled" || order?.orderStatus === "returned";
+
       const canceledAt = Date.now();
       await updateDoc(doc(db, "goodsOrders", orderId), {
         orderStatus: "canceled" as OrderStatus,
         canceledAt,
       });
+      // 사용한 포인트 환원
+      if (order && !alreadyClosed) await restoreUsedPoints(order.pointsUsed);
       // 로컬 상태도 즉시 반영
       set((s) => ({
         orders: s.orders.map((o) =>
@@ -233,6 +261,36 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
       return true;
     } catch (e) {
       console.error("[goods] 주문 취소 실패:", e);
+      return false;
+    }
+  },
+
+  requestReturn: async (orderId, reason) => {
+    try {
+      // 이미 취소/반품된 주문이면 중복 환원 방지
+      const order = get().orders.find((o) => o.orderId === orderId);
+      const alreadyClosed =
+        order?.orderStatus === "canceled" || order?.orderStatus === "returned";
+
+      const returnedAt = Date.now();
+      await updateDoc(doc(db, "goodsOrders", orderId), {
+        orderStatus: "returned" as OrderStatus,
+        returnedAt,
+        returnReason: reason,
+      });
+      // 사용한 포인트 환원
+      if (order && !alreadyClosed) await restoreUsedPoints(order.pointsUsed);
+      // 로컬 상태도 즉시 반영
+      set((s) => ({
+        orders: s.orders.map((o) =>
+          o.orderId === orderId
+            ? { ...o, orderStatus: "returned" as OrderStatus, returnedAt, returnReason: reason }
+            : o,
+        ),
+      }));
+      return true;
+    } catch (e) {
+      console.error("[goods] 반품·환불 신청 실패:", e);
       return false;
     }
   },

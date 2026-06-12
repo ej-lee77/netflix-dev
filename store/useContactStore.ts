@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { addDoc, collection, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import { ContactDocument, ContactStore } from "@/types/contact";
 
@@ -101,6 +101,37 @@ export const useContactStore = create<ContactStore>((set, get) => ({
       return true;
     } catch (error) {
       console.error("문의 삭제 실패:", error);
+      return false;
+    }
+  },
+
+  // 4. 문의에 답변 달기 — answer/answeredAt 기록 + status 를 answered 로 전환
+  //    (운영 환경에서는 상담원/관리자 권한에서 호출하는 동작)
+  answerContact: async (userId, contactId, answer) => {
+    if (!userId || !contactId || !answer.trim()) return false;
+    try {
+      const answeredAt = new Date().toISOString();
+
+      await updateDoc(
+        doc(db, CONTACTS_COLLECTION, userId, ITEMS_SUBCOLLECTION, contactId),
+        {
+          status: "answered",
+          answer: answer.trim(),
+          answeredAt,
+        },
+      );
+
+      // 낙관적 갱신: 해당 문의의 상태/답변을 즉시 반영 → 뱃지가 '답변 완료'로 전환
+      set((state) => ({
+        myContacts: state.myContacts.map((c) =>
+          c.id === contactId
+            ? { ...c, status: "answered", answer: answer.trim(), answeredAt }
+            : c,
+        ),
+      }));
+      return true;
+    } catch (error) {
+      console.error("답변 처리 실패:", error);
       return false;
     }
   },
