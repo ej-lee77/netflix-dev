@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 import "./globals.scss";
 
 import AuthProvider from "@/components/AuthProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import ScrollToTop from "@/components/common/ScrollToTop";
 import ConnectAIWrapper from "@/components/connect/ConnectAIWrapper";
 
 const netflixSans = localFont({
@@ -36,6 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={netflixSans.variable}>
         {/* ... */}
         <AuthProvider>
+          <Suspense fallback={null}>
+            <ScrollToTop />
+          </Suspense>
           <ConditionalLayout>
             {children}
           </ConditionalLayout>

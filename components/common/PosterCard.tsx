@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import "./posterCard.scss";
 
 const GENRE_MAP: Record<number, string> = {
@@ -51,6 +52,7 @@ export default function PosterCard({
   overview,
   genreIds = [],
 }: PosterCardProps) {
+  const prefetchRoute = useRoutePrefetch();
   const detailHref = `/detail/${mediaType}/${id}`;
   const score = typeof voteAverage === "number" ? voteAverage : 0;
   const imagePath = backdropPath || posterPath;
@@ -61,7 +63,12 @@ export default function PosterCard({
     .join(" · ");
 
   return (
-    <Link href={detailHref} className="poster-card">
+    <Link
+      href={detailHref}
+      className="poster-card"
+      onPointerEnter={() => prefetchRoute(detailHref)}
+      onFocus={() => prefetchRoute(detailHref)}
+    >
       <div className="poster">
         {posterPath ? (
           <img

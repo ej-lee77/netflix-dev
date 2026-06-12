@@ -22,6 +22,7 @@ import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilt
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -35,9 +36,12 @@ interface MediaListProps {
   category: "movie" | "tv" | "netflix";
 }
 
+const HOVER_VIDEO_DELAY_MS = 900;
+
 export default function CategoryList({ category }: MediaListProps) {
   const t = useT();
   const router = useRouter();
+  const prefetchRoute = useRoutePrefetch();
   const {
     popMovies,
     popVideos,
@@ -173,13 +177,15 @@ export default function CategoryList({ category }: MediaListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, maturityCeiling, excludedList.length]);
 
-  const handleMouseEnter = async (id: number, fetchVideo: () => Promise<void>) => {
+  const handleMouseEnter = (id: number, fetchVideo: () => Promise<void>) => {
     setHover(id);
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
-    videoTimer.current = setTimeout(() => setVideoReady(id), 1500);
     if (autoplayPreview) {
-      await fetchVideo();
+      videoTimer.current = setTimeout(() => {
+        setVideoReady(id);
+        void fetchVideo();
+      }, HOVER_VIDEO_DELAY_MS);
     }
   };
 
@@ -188,6 +194,12 @@ export default function CategoryList({ category }: MediaListProps) {
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoTimer.current) clearTimeout(videoTimer.current);
+    };
+  }, []);
 
   return (
     <section className="category-section">
@@ -213,6 +225,9 @@ export default function CategoryList({ category }: MediaListProps) {
           className="media-swiper"
         >
           {currentList.map((item, index) => {
+            const mediaType = category === "netflix" ? "tv" : category;
+            const detailHref = `/detail/${mediaType}/${item.id}`;
+            const watchHref = `/watch/${mediaType}/${item.id}`;
             const trailer = item.videos?.find((v) => v.type === "Trailer" || v.type === "Teaser");
             const trailerKey = trailer?.key || null;
 
@@ -220,9 +235,14 @@ export default function CategoryList({ category }: MediaListProps) {
               <SwiperSlide key={item.id} className="category-slide">
                 <li
                   className="category-item"
-                  onMouseEnter={() => handleMouseEnter(item.id, item.fetchVideo)}
+                  onMouseEnter={() => {
+                    prefetchRoute(detailHref);
+                    prefetchRoute(watchHref);
+                    handleMouseEnter(item.id, item.fetchVideo);
+                  }}
                   onMouseLeave={handleMouseLeave}
-                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(`/detail/${category === "netflix" ? "tv" : category}/${item.id}`); }}
+                  onFocus={() => prefetchRoute(detailHref)}
+                  onClick={() => { if (isUnsubscribed) { openModal(); return; } router.push(detailHref); }}
                 >
                   {/* 기본 포스터 */}
                   <div className="img-box">
@@ -309,15 +329,20 @@ export default function CategoryList({ category }: MediaListProps) {
                             재생하기
                           </button> */}
 
-                          <Link className="btn-play" href={`/watch/${category === "netflix" ? "tv" : category}/${item.id}`}
+                          <Link className="btn-play" href={watchHref}
+                            onPointerEnter={() => prefetchRoute(watchHref)}
+                            onFocus={() => prefetchRoute(watchHref)}
                             onClick={(e) => { e.stopPropagation(); if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
                             재생하기
                           </Link>
-                          <Link href={`/detail/${category === "netflix" ? "tv" : category}/${item.id}`}
-                            className="btn-detail" onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
+                          <Link href={detailHref}
+                            className="btn-detail"
+                            onPointerEnter={() => prefetchRoute(detailHref)}
+                            onFocus={() => prefetchRoute(detailHref)}
+                            onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}>
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="10" />
                               <line x1="12" y1="16" x2="12" y2="12" />
