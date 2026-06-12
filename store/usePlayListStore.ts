@@ -560,7 +560,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
 
             set({ myList: targetProfile.movies?.playlist?.playlistVideos });
 
-            console.log("프로필 데이터 보존하며 성공적으로 업데이트");
+            // console.log("프로필 데이터 보존하며 성공적으로 업데이트");
             return true;
         } catch (err) {
             console.error("업데이트 실패:", err);
@@ -615,7 +615,7 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
                 myList: state.myList.filter((item) => item !== itemKey)
             }));
 
-            console.log("기존 프로필 정보 보존하며 삭제 완료");
+            // console.log("기존 프로필 정보 보존하며 삭제 완료");
             return true;
         } catch (err) {
             console.error("삭제 실패:", err);

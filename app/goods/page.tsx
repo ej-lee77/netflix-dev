@@ -6,6 +6,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import BackButton from "@/components/common/BackButton";
 import ShopIcon from "@/components/shop/ShopIcon";
+import { useAvailablePoints } from "@/store/usePointStore";
+import { pts } from "@/data/goods";
 
 const limitedGoods = [
   { id: 1, name: "오리지널 시리즈 포스터 (A2 사이즈)", desc: "시즌2 메인 비주얼 · 액자 별매", price: 3500, stock: 234, type: "LIMITED" as const },
@@ -23,6 +25,7 @@ const events = [
 
 export default function GoodsPage() {
   const { user, currentProfile, equipBadge } = useAuthStore();
+  const { available } = useAvailablePoints();
 
   const displayBadges = useMemo(() => {    
     // 1. 데이터가 없을 경우 처리
@@ -86,6 +89,10 @@ export default function GoodsPage() {
               <div className="label">대표 칭호</div>
               <div className="matche">{matchedBadge ? matchedBadge.name : "없음"}</div>
               {/* <div className="hint">대표: 한국영화 마니아</div> */}
+            </div>
+            <div className="stat-card">
+              <div className="label">보유 포인트</div>
+              <div className="num-point">{pts(available)}</div>
             </div>
           </div>
         </div>
