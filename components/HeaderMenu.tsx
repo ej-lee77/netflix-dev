@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMenuLabel } from "@/lib/i18n";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const CATEGORY_MENU = {
   title: "카테고리",
@@ -51,6 +52,7 @@ export default function HeaderMenu() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tm = useMenuLabel();
+  const prefetchRoute = useRoutePrefetch();
   const currentProfile = useAuthStore((state) => state.currentProfile);
   const [storageRevision, setStorageRevision] = useState(0);
   const [liveMenuPaths, setLiveMenuPaths] = useState<string[] | null>(null);
@@ -186,7 +188,11 @@ export default function HeaderMenu() {
             <div
               className={`sb-icon ${isMenuActive(homeMenu.path) ? "active" : ""}`}
             >
-              <Link href={homeMenu.path}>
+              <Link
+                href={homeMenu.path}
+                onPointerEnter={() => prefetchRoute(homeMenu.path)}
+                onFocus={() => prefetchRoute(homeMenu.path)}
+              >
                 <Image
                   src={homeMenu.imgUrl}
                   alt={homeMenu.title}
@@ -225,7 +231,11 @@ export default function HeaderMenu() {
                     isCategoryActive ? "active" : ""
                   }`}
                 >
-                  <Link href={menu.path}>
+                  <Link
+                    href={menu.path}
+                    onPointerEnter={() => prefetchRoute(menu.path)}
+                    onFocus={() => prefetchRoute(menu.path)}
+                  >
                     <Image
                       src={menu.imgUrl}
                       alt={menu.title}
@@ -245,7 +255,11 @@ export default function HeaderMenu() {
                 key={menu.path}
                 className={`sb-icon ${isActive ? "active" : ""}`}
               >
-                <Link href={menu.path}>
+                <Link
+                  href={menu.path}
+                  onPointerEnter={() => prefetchRoute(menu.path)}
+                  onFocus={() => prefetchRoute(menu.path)}
+                >
                   <Image
                     src={menu.imgUrl}
                     alt={menu.title}
@@ -263,7 +277,11 @@ export default function HeaderMenu() {
           <div
             className={`sb-icon ${pathname === "/menu/custom" ? "active" : ""}`}
           >
-            <Link href="/menu/custom">
+            <Link
+              href="/menu/custom"
+              onPointerEnter={() => prefetchRoute("/menu/custom")}
+              onFocus={() => prefetchRoute("/menu/custom")}
+            >
               <Image
                 src="/images/header/menu/custom.svg"
                 alt="설정"
@@ -300,7 +318,11 @@ export default function HeaderMenu() {
                 key={childMenu.path}
                 className={`category-hover-icon ${isActive ? "active" : ""}`}
               >
-                <Link href={childMenu.path}>
+                <Link
+                  href={childMenu.path}
+                  onPointerEnter={() => prefetchRoute(childMenu.path)}
+                  onFocus={() => prefetchRoute(childMenu.path)}
+                >
                   <Image
                     src={childMenu.imgUrl}
                     alt={childMenu.title}
