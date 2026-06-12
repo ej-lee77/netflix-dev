@@ -193,6 +193,13 @@
   align-items: center;
   justify-content: center;
   font-size: 52px;
+  overflow: hidden;
+}
+.goods-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .goods-card__badge {
   position: absolute;
@@ -254,7 +261,13 @@
     gap: 22px;
   }
 }
-.shop-detail__thumb {
+.shop-detail__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.shop-detail__main {
+  position: relative;
   aspect-ratio: 1 / 1;
   border-radius: 16px;
   display: flex;
@@ -262,6 +275,43 @@
   justify-content: center;
   font-size: 120px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.shop-detail__main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shop-detail__thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.shop-detail__thumb-item {
+  width: 66px;
+  height: 66px;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: #1a1a1a;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, opacity 0.15s;
+  opacity: 0.7;
+}
+.shop-detail__thumb-item:hover {
+  opacity: 1;
+}
+.shop-detail__thumb-item.active {
+  border-color: #e50914;
+  opacity: 1;
+}
+.shop-detail__thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .shop-detail__cat {
   font-size: 13px;
@@ -289,6 +339,48 @@
   padding: 16px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.shop-detail__related {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: #eee;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.shop-detail__related:hover {
+  border-color: rgba(229, 9, 20, 0.6);
+  background: rgba(229, 9, 20, 0.08);
+}
+.shop-detail__related-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #e50914;
+  background: rgba(229, 9, 20, 0.12);
+  padding: 4px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.shop-detail__related-title {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shop-detail__related-arrow {
+  font-size: 16px;
+  color: #9a9a9a;
+  flex-shrink: 0;
 }
 .shop-field-label {
   font-size: 13px;

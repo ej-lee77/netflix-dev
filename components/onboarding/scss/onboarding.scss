@@ -139,7 +139,12 @@
   background: rgba(229, 9, 20, 0.14);
   color: #fff;
 }
-.onboarding-mood__emoji { font-size: 26px; }
+.onboarding-mood__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+}
 
 /* 포스터 그리드 */
 .onboarding-posters {

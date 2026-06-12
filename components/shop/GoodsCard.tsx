@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { GoodsProduct } from "@/types/goods";
 import { categoryMeta, pts, won } from "@/data/goods";
@@ -14,6 +15,8 @@ export default function GoodsCard({
   const router = useRouter();
   const meta = categoryMeta(product.category);
   const soldOut = product.stock <= 0;
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!product.thumbUrl && !imgError;
 
   return (
     <button
@@ -21,8 +24,24 @@ export default function GoodsCard({
       className="goods-card"
       onClick={() => router.push(`/shop/${product.id}`)}
     >
-      <div className="goods-card__thumb" style={{ background: meta.gradient }}>
-        <span aria-hidden>{meta.emoji}</span>
+      <div
+        className="goods-card__thumb"
+        style={showImg ? undefined : { background: meta.gradient }}
+      >
+        {showImg ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            className="goods-card__img"
+            src={product.thumbUrl}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <span className="goods-card__emoji" aria-hidden>
+            {meta.emoji}
+          </span>
+        )}
         {product.badge && (
           <span className={`goods-card__badge goods-card__badge--${product.badge}`}>
             {product.badge}
