@@ -41,7 +41,7 @@
   &:focus-visible {
     border-color: rgba(255, 255, 255, 0.34);
     box-shadow: 0 24px 54px rgba(0, 0, 0, 0.42);
-    transform: translateY(-4px);
+    // transform: translateY(-4px);
 
     .cwp-thumb {
       background-size: 104%;
@@ -287,5 +287,4 @@
     width: 30px;
     height: 30px;
   }
-
 }

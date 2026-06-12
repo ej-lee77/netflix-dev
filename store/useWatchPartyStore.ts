@@ -174,8 +174,15 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
     set({ partyId, messages: [] });
 
     unsubParty = onSnapshot(doc(db, "watchParties", partyId), (snap) => {
-      if (snap.exists()) set({ party: snap.data() as PartyDoc });
-      else set({ party: null });
+      if (!snap.exists()) {
+        set({ party: null });
+        return;
+      }
+
+      const party = snap.data() as PartyDoc;
+      void enrichPartyHost(party).then((enrichedParty) => {
+        if (get().partyId === partyId) set({ party: enrichedParty });
+      });
     });
 
     unsubMessages = onSnapshot(
