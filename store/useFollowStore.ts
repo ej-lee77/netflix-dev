@@ -31,6 +31,7 @@ export interface SimilarUser {
   matchRate: number;
   followersCount: number;
   tags: string[];
+  genreStats: Record<string, number>;
   favoriteMovie: {
     title: string;
     poster: string;
@@ -277,6 +278,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
             matchRate,
             followersCount: profile.community?.followers?.length ?? 0,
             tags,
+            genreStats: profile.movies?.genreStats ?? {},
             favoriteMovie,
           } as SimilarUser;
         })
@@ -311,7 +313,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
     const findDummy = (id: string) => dummyPlaylists.find((p) => p.userId === id);
     const dummyUsers: FollowUser[] = dummyIds.map((id) => {
       const d = findDummy(id);
-      return { userId: id, nickname: d?.nickname ?? "유저", imgUrl: d?.posters?.[0] ?? "", badge: d?.badge ?? "" };
+      return { userId: id, nickname: d?.nickname ?? "유저", imgUrl: d?.imgUrl ?? "", badge: d?.badge ?? "" };
     });
     const dummyPls = dummyIds.reduce<FollowingPlaylist[]>((acc, id) => {
       const d = findDummy(id);
@@ -326,10 +328,11 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
         userId: id,
         nickname: d?.nickname ?? "유저",
         badge: d?.badge ?? "",
-        imgUrl: d?.posters?.[0] ?? "",
+        imgUrl: d?.imgUrl ?? "",
         matchRate: 0,
         followersCount: 0,
         tags: d?.tags ?? [],
+        genreStats: d?.genreStats ?? {},
         favoriteMovie: { title: d?.name ?? "", poster: d?.posters?.[0] ?? "", description: d?.content ?? "" },
       };
     });
@@ -398,6 +401,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
               matchRate: 0,
               followersCount: firstProfile.community?.followers?.length ?? 0,
               tags,
+              genreStats: firstProfile.movies?.genreStats ?? {},
               favoriteMovie,
             } as SimilarUser;
           })

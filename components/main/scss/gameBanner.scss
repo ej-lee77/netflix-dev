@@ -55,7 +55,7 @@
   background-size: auto 130%;
   background-position: left 30%;
   image-rendering: pixelated;
-  opacity: 0.55;
+  opacity: 0.8;
 
   &::after {
     content: "";
@@ -63,9 +63,9 @@
     inset: 0;
     background: linear-gradient(
       to right,
-      rgba(7, 3, 15, 0.94) 0%,
-      rgba(7, 3, 15, 0.72) 45%,
-      rgba(7, 3, 15, 0.25) 100%
+      rgba(7, 3, 15, 0.82) 0%,
+      rgba(7, 3, 15, 0.5) 45%,
+      rgba(7, 3, 15, 0.1) 100%
     );
   }
 }

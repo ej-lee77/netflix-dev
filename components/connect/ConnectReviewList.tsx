@@ -15,16 +15,15 @@ import { SimilarUser, useFollowStore } from "@/store/useFollowStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { dummyPlaylists } from "@/data/dummyPlaylist";
 
-// "나와 취향이 비슷한 유저" = "추천 플레이리스트" 제작자(dummy-*)와 동일 유저로 통일.
-// → 카드의 팔로우 버튼이 곧 그 플레이리스트 주인을 팔로우하게 되고, 팔로잉 목록에도 반영됨.
 const DUMMY_USERS: SimilarUser[] = dummyPlaylists.map((d, i) => ({
     userId: d.userId,
     nickname: d.nickname,
     badge: d.badge,
-    imgUrl: d.posters[0] ?? "",
+    imgUrl: d.imgUrl ?? "",
     matchRate: Math.max(78, 96 - i * 2),
     followersCount: 0,
     tags: d.tags,
+    genreStats: d.genreStats ?? {},
     favoriteMovie: {
         title: d.featuredMovieTitle,
         poster: d.posters[0] ?? "",
@@ -37,15 +36,19 @@ export default function ConnectReviewList() {
     const roRef = useRef<ResizeObserver | null>(null);
     const [swiperKey, setSwiperKey] = useState(0);
     const { currentProfile } = useAuthStore();
-    const { isLoadingSimilar, fetchSimilarUsers } = useFollowStore();
+    const { similarUsers, isLoadingSimilar, fetchSimilarUsers } = useFollowStore();
 
     useEffect(() => {
         fetchSimilarUsers();
     }, [currentProfile?.id]);
 
     const displayUsers = useMemo<SimilarUser[]>(() => {
-        return DUMMY_USERS.slice(0, 10);
-    }, []);
+        const real = similarUsers.filter((u) => u.favoriteMovie.title && Object.keys(u.genreStats ?? {}).length > 0);
+        if (real.length >= 10) return real.slice(0, 10);
+        const realIds = new Set(real.map((u) => u.userId));
+        const padding = DUMMY_USERS.filter((u) => !realIds.has(u.userId));
+        return [...real, ...padding].slice(0, 10);
+    }, [similarUsers]);
 
     useEffect(() => {
         const id = setTimeout(() => setSwiperKey((k) => k + 1), 100);
