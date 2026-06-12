@@ -198,7 +198,7 @@ export default function PlaylistPage() {
         {/* 작품 목록 */}
         <div className={view === "grid" ? "pl-works pl-works--grid" : "pl-works pl-works--list"}>
           {items.map((item) => {
-            console.log(item.poster_path)
+            // console.log(item.poster_path)
             return(
             <Link
               key={`${item.mediaType}-${item.id}`}

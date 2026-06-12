@@ -70,7 +70,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const movieId = Number(id);
         const { popVideos } = get();
 
-        console.log(movieId)
+        // console.log(movieId)
         if (popVideos[movieId]) return;
 
         const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
@@ -95,7 +95,7 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const tvId = Number(id);
         const { tvVideos } = get();
 
-        console.log("티비아이디", tvId);
+        // console.log("티비아이디", tvId);
         if (tvVideos[tvId]) return;
 
         const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/videos?api_key=${TMDB_KEY}&language=en-US`);
