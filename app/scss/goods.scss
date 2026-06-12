@@ -110,6 +110,18 @@
       margin-bottom: 4px;
     }
 
+    .num-point{
+      font-size: g.$text-32;
+      font-weight: 600;
+      color: #ffcf3f;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      height: 80%;
+      justify-content: center;
+    }
+
     .label {
       font-size: g.$text-13;
       color: g.$g-color;

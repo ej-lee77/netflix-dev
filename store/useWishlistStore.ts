@@ -130,7 +130,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
                 wishlist: [newItem, ...get().wishlist.filter((w) => w.id !== item.id)],
             });
 
-            console.log("프로필 내 위시리스트 성공적으로 업데이트 (Key:", itemKey, ")");
+            // console.log("프로필 내 위시리스트 성공적으로 업데이트 (Key:", itemKey, ")");
         } catch (err) {
             console.error("위시리스트 업데이트 실패:", err);
         }
@@ -185,7 +185,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
                 wishlist: get().wishlist.filter((w) => w.id !== item.id),
             });
 
-            console.log("프로필 내 위시리스트 성공적으로 제거 (Key:", itemKey, ")");
+            // console.log("프로필 내 위시리스트 성공적으로 제거 (Key:", itemKey, ")");
         } catch (err) {
             console.error("위시리스트 제거 실패:", err);
         }
@@ -230,7 +230,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
             const items = results.filter((r): r is WishItem => r !== null);
 
             set({ wishlist: items });
-            console.log("프로필 내 위시리스트 로드 성공");
+            // console.log("프로필 내 위시리스트 로드 성공");
         } catch (err) {
             console.error("[찜 목록 불러오기 실패]:", err);
         }

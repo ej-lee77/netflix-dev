@@ -75,17 +75,39 @@ async function persistCart(items: CartItem[]) {
 // 사용 포인트(pointsUsed) 누적값을 그만큼 줄이면 보유 포인트(적립 − 사용)가 회복된다.
 async function restoreUsedPoints(amount: number) {
   if (!amount || amount <= 0) return;
-  const id = uid();
-  if (!id) return;
+  
+  const userId = uid(); // 현재 로그인한 유저의 ID
+  const currentProfile = useAuthStore.getState().currentProfile;
+  const profileId = currentProfile?.id;
+  
+  if (!userId || !profileId) return;
+
   try {
-    const userRef = doc(db, "users", id);
+    const userRef = doc(db, "users", userId);
     const snap = await getDoc(userRef);
-    const curUsed = snap.exists() ? Number(snap.data().pointsUsed ?? 0) : 0;
-    const newUsed = Math.max(0, curUsed - amount);
-    await updateDoc(userRef, { pointsUsed: newUsed }).catch(async () => {
-      await setDoc(userRef, { pointsUsed: newUsed }, { merge: true });
+    
+    if (!snap.exists()) return;
+
+    const userData = snap.data();
+    const profiles = userData.profile || [];
+
+    // 1. 프로필 배열을 순회하며 pointsUsed 업데이트
+    const updatedProfiles = profiles.map((p: any) => {
+      if (p.id === profileId) {
+        const curUsed = Number(p.pointsUsed ?? 0);
+        return { 
+          ...p, 
+          pointsUsed: Math.max(0, curUsed - amount) 
+        };
+      }
+      return p;
     });
-    usePointStore.getState().bumpUsed(-amount); // 보유 포인트 즉시 회복
+
+    // 2. 업데이트된 전체 배열을 Firestore에 반영
+    await updateDoc(userRef, { profile: updatedProfiles });
+
+    // 3. Zustand 상태 즉시 반영 (포인트 회복)
+    usePointStore.getState().bumpUsed(-amount);
   } catch (e) {
     console.error("[goods] 포인트 환원 실패:", e);
   }
@@ -158,11 +180,16 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
   },
 
   createOrder: async (shipping, payLabel) => {
-    const id = uid();
-    if (!id) return null;
+    const userId = uid();
+    const currentProfile = useAuthStore.getState().currentProfile;
+    const profileId = currentProfile?.id;
+    
+    if (!userId || !profileId) return null;
+    
     const { cart, products } = get();
     if (cart.length === 0) return null;
 
+    // ... items 생성 및 포인트 계산 로직은 동일 ...
     const items: OrderItem[] = cart.map((c) => {
       const p = products.find((pp) => pp.id === c.productId);
       const item: OrderItem = {
@@ -174,26 +201,36 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
         shippingFee: p?.shippingFee ?? 0,
       };
       if (p?.thumbUrl) item.thumbUrl = p.thumbUrl;
-      // 옵션이 있을 때만 필드 추가 (undefined 저장 방지)
       if (c.option) item.option = c.option;
       return item;
     });
 
     const pointsUsed = items.reduce((s, it) => s + it.points * it.qty, 0);
-    const shippingFee = items.reduce((s, it) => s + it.shippingFee, 0); // 라인당 1회
+    const shippingFee = items.reduce((s, it) => s + it.shippingFee, 0);
 
     try {
-      const userRef = doc(db, "users", id);
+      const userRef = doc(db, "users", userId);
       const snap = await getDoc(userRef);
-      const curUsed = snap.exists() ? Number(snap.data().pointsUsed ?? 0) : 0;
+      if (!snap.exists()) return { ok: false, reason: "error" };
 
-      // 적립(뱃지) − 사용 = 보유 포인트. 보유 < 필요 시 교환 불가.
-      const earned = earnedBadgePoints(useAuthStore.getState().currentProfile?.badges?.earnedBadges);
+      const userData = snap.data();
+      const profiles = userData.profile || [];
+      
+      // 현재 프로필 찾기
+      const targetProfile = profiles.find((p: any) => p.id === profileId);
+      if (!targetProfile) return { ok: false, reason: "error" };
+
+      const curUsed = Number(targetProfile.pointsUsed ?? 0);
+
+      // 포인트 검증 로직
+      const earned = earnedBadgePoints(currentProfile?.badges?.earnedBadges);
       const available = earned - curUsed;
       if (pointsUsed > available) return { ok: false, reason: "insufficient" };
 
+      // 1. 주문 생성
       const ref = await addDoc(collection(db, "goodsOrders"), {
-        uid: id,
+        uid: userId,
+        profileId: profileId, // 주문에 프로필 정보 포함 권장
         items,
         pointsUsed,
         shippingFee,
@@ -204,13 +241,19 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
         createdAt: Date.now(),
       });
 
-      const newUsed = curUsed + pointsUsed;
-      await updateDoc(userRef, { pointsUsed: newUsed }).catch(async () => {
-        await setDoc(userRef, { pointsUsed: newUsed }, { merge: true });
-      });
-      usePointStore.getState().bumpUsed(pointsUsed);
+      // 2. 프로필 배열 업데이트 (불변성 유지)
+      const updatedProfiles = profiles.map((p: any) =>
+        p.id === profileId 
+          ? { ...p, pointsUsed: curUsed + pointsUsed } 
+          : p
+      );
 
+      // 3. Firestore 반영
+      await updateDoc(userRef, { profile: updatedProfiles });
+      
+      usePointStore.getState().bumpUsed(pointsUsed);
       await get().clearCart();
+
       return { ok: true, orderId: ref.id, pointsUsed, shippingFee };
     } catch (e) {
       console.error("[goods] 주문 생성 실패:", e);
