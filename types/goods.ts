@@ -39,6 +39,7 @@ export interface OrderItem {
   option?: string;
   category: GoodsCategory;
   shippingFee: number; // 개당(라인당) 배송비
+  thumbUrl?: string;
 }
 
 export interface ShippingInfo {
