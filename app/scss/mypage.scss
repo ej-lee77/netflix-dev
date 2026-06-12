@@ -182,6 +182,22 @@
       font-weight: 600;
     }
 
+    /* 플랜 칩 + 포인트 칩을 한 줄에 동일 높이·간격으로 정렬 */
+    .profile-chips {
+      display: flex;
+      align-items: stretch; // 두 칩 높이 통일
+      flex-wrap: wrap;
+      gap: 10px; // 칩 사이 간격
+      margin-top: 4px;
+
+      .plan-badge,
+      .point-entry-chip {
+        margin: 0; // 개별 margin-top 제거 → gap만 적용
+        min-height: 36px;
+        box-sizing: border-box;
+      }
+    }
+
     .plan-badge-empty {
       color: #888;
       border: 1px dashed #3a3a3a;
@@ -649,6 +665,12 @@
       font-size: g.$text-20;
       position: relative;
       padding: 5px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
     }
 
     h4 {

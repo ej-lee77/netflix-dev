@@ -456,19 +456,21 @@ export default function MyPage() {
               )} */}
             </div>
             <p className="email">{user?.email || "guest@example.com"}</p>
-            {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
-            {planLabel ? (
-              // 구독 중일 때
-              <span className="plan-badge">
-                ★ {planLabel}{nextDate ? ` · 다음 결제 ${nextDate}` : ""}
-              </span>
-            ) : (
-              // 구독 중이 아닐 때
-              <Link href="/plan" className="plan-badge plan-badge-empty">
-                구독하고 무제한으로 즐기세요 →
-              </Link>
-            )}
-            <PointChip className="mypage-point-chip" />
+            <div className="profile-chips">
+              {/* 플랜 정보 뱃지 — planLabel 없으면 렌더링 안 함 */}
+              {planLabel ? (
+                // 구독 중일 때
+                <span className="plan-badge">
+                  ★ {planLabel}{nextDate ? ` · 다음 결제 ${nextDate}` : ""}
+                </span>
+              ) : (
+                // 구독 중이 아닐 때
+                <Link href="/plan" className="plan-badge plan-badge-empty">
+                  구독하고 무제한으로 즐기세요 →
+                </Link>
+              )}
+              <PointChip className="mypage-point-chip" />
+            </div>
           </div>
 
           <div className="profile-stats">
@@ -753,7 +755,7 @@ export default function MyPage() {
                   title={b.title}
                 >
                   <div className="badge-icon">
-                    <img src={b.imgUrl} alt={b.name} style={{ width: '100%', height: 'auto' }} />
+                    <img src={b.imgUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     {b.isEquipped && <span className="equipped-badge-tag">장착됨</span>}
                   </div>
                   <h4>{b.name}</h4>

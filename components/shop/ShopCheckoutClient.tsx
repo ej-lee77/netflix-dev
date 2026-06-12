@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { useAvailablePoints } from "@/store/usePointStore";
@@ -11,19 +9,10 @@ import { pts, won } from "@/data/goods";
 import { showToast } from "@/store/useToastStore";
 import type { PayInfo } from "@/types/auth";
 import type { ShippingInfo as Ship } from "@/types/goods";
+import StepPayment from "@/app/signin/components/StepPayment";
 import ShopTopBar from "./ShopTopBar";
+import "@/app/signin/signin.scss";
 import "./scss/shop.scss";
-
-// 멤버십 결제 페이지(app/payment)의 결제수단 라벨 로직 재사용
-function payLabelOf(payInfo: PayInfo | null): string {
-  if (!payInfo?.pay) return "등록된 결제 수단 없음";
-  if (payInfo.pay === "card") return `카드 ****-${payInfo.num}`;
-  if (payInfo.pay === "kakao") return "카카오페이";
-  if (payInfo.pay === "naver") return "네이버페이";
-  if (payInfo.pay === "transfer") return `계좌이체 (${payInfo.bank})`;
-  if (payInfo.pay === "phone") return `휴대폰 결제 (${payInfo.bank})`;
-  return "-";
-}
 
 export default function ShopCheckoutClient() {
   const router = useRouter();
@@ -31,8 +20,6 @@ export default function ShopCheckoutClient() {
   const { products, cart, cartLoaded, loadProducts, loadCart, createOrder } = useGoodsStore();
   const { available } = useAvailablePoints();
 
-  const [payInfo, setPayInfo] = useState<PayInfo | null>(null);
-  const [payLoaded, setPayLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<Ship>({
     name: "",
@@ -47,20 +34,6 @@ export default function ShopCheckoutClient() {
     loadProducts();
     if (!cartLoaded) loadCart();
   }, [loadProducts, loadCart, cartLoaded]);
-
-  // 가입 시 등록한 결제 수단 재사용 (배송비 결제에 사용)
-  useEffect(() => {
-    const uid = user?.userId ?? auth.currentUser?.uid;
-    if (!uid) {
-      setPayLoaded(true);
-      return;
-    }
-    getDoc(doc(db, "users", uid))
-      .then((snap) => {
-        if (snap.exists()) setPayInfo((snap.data().payment as PayInfo) ?? null);
-      })
-      .finally(() => setPayLoaded(true));
-  }, [user?.userId]);
 
   useEffect(() => {
     if (currentProfile?.nickname)
@@ -82,10 +55,9 @@ export default function ShopCheckoutClient() {
   const set = (k: keyof Ship) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const hasPay = !!payInfo?.pay;
-  const payLabel = payLabelOf(payInfo);
-
-  const handlePay = async () => {
+  // StepPayment(가입 결제 UI)에서 결제수단을 고르고 "결제하고 교환"을 누르면 호출됨.
+  // 구독 결제수단을 덮어쓰지 않고, 선택한 결제수단 라벨로 굿즈 주문만 생성한다.
+  const handleShopPay = async (_payInfo: PayInfo, payLabel: string) => {
     if (busy) return;
     if (lines.length === 0) {
       showToast("교환할 상품이 없어요");
@@ -99,11 +71,6 @@ export default function ShopCheckoutClient() {
       showToast("배송 정보를 모두 입력해 주세요");
       return;
     }
-    if (!hasPay) {
-      showToast("배송비 결제 수단을 먼저 등록해 주세요");
-      router.push("/payment");
-      return;
-    }
     setBusy(true);
     const res = await createOrder(form, payLabel);
     setBusy(false);
@@ -114,7 +81,7 @@ export default function ShopCheckoutClient() {
     router.push(`/shop/complete?order=${res.orderId}&used=${res.pointsUsed}&ship=${res.shippingFee}`);
   };
 
-  if (!cartLoaded || !payLoaded) {
+  if (!cartLoaded) {
     return (
       <div className="shop-page">
         <div className="shop-shell">
@@ -195,27 +162,6 @@ export default function ShopCheckoutClient() {
               </div>
             </section>
 
-            {/* 배송비 결제 수단 (멤버십 결제수단 재사용) */}
-            <section className="checkout-section">
-              <h3 className="checkout-section__title">배송비 결제 수단</h3>
-              {hasPay ? (
-                <div className="checkout-pay">
-                  <span className="checkout-pay__icon">💳</span>
-                  <span>{payLabel}</span>
-                </div>
-              ) : (
-                <>
-                  <p style={{ color: "#9a9a9a", fontSize: 13, marginBottom: 12 }}>
-                    등록된 결제 수단이 없어요. 멤버십 결제 수단을 등록하면 배송비 결제에 그대로 사용돼요.
-                  </p>
-                  <button className="shop-btn shop-btn--ghost" onClick={() => router.push("/payment")}>
-                    결제 수단 등록하기
-                  </button>
-                </>
-              )}
-              <p className="point-hint">굿즈값은 포인트로 충당되고, 실제 결제는 배송비만 진행돼요.</p>
-            </section>
-
             {/* 교환 상품 */}
             <section className="checkout-section">
               <h3 className="checkout-section__title">교환 상품 ({lines.length})</h3>
@@ -228,6 +174,38 @@ export default function ShopCheckoutClient() {
                   <span>{pts(product!.points * item.qty)}</span>
                 </div>
               ))}
+            </section>
+
+            {/* 배송비 결제 수단 — 가입 결제 UI(StepPayment) 재사용 */}
+            <section className="checkout-section">
+              <h3 className="checkout-section__title">배송비 결제 수단</h3>
+              {enough ? (
+                <StepPayment
+                  hideTitle
+                  hidePlanSummary
+                  hideAmountBox
+                  hideAgree
+                  noticeText="굿즈값은 포인트로 충당되고, 실제 결제는 배송비만 진행돼요. (1회성 결제)"
+                  currentPayInfo={null}
+                  submitLabel={busy ? "처리 중…" : `배송비 ${won(shippingTotal)} 결제하고 교환`}
+                  amountLabel="배송비"
+                  plan={{
+                    name: "배송비",
+                    billing: "monthly",
+                    monthlyPrice: shippingTotal,
+                    annualTotal: shippingTotal,
+                    annualDiscount: 0,
+                  }}
+                  onBack={() => router.push("/shop/cart")}
+                  onComplete={() => {}}
+                  onPaySubmit={handleShopPay}
+                />
+              ) : (
+                <div className="checkout-pay">
+                  <span className="checkout-pay__icon">⚠️</span>
+                  <span>보유 포인트가 부족해 교환할 수 없어요.</span>
+                </div>
+              )}
             </section>
           </div>
 
@@ -245,13 +223,9 @@ export default function ShopCheckoutClient() {
               <span>실제 결제금액</span>
               <b>{won(shippingTotal)}</b>
             </div>
-            <button
-              className="shop-btn shop-btn--primary shop-btn--block"
-              onClick={handlePay}
-              disabled={busy || !enough}
-            >
-              {busy ? "처리 중…" : !enough ? "포인트가 부족해요" : `배송비 ${won(shippingTotal)} 결제하고 교환`}
-            </button>
+            <p className="point-hint" style={{ marginTop: 12 }}>
+              결제 수단을 선택하고 결제하면 교환이 완료돼요.
+            </p>
           </aside>
         </div>
       </div>
