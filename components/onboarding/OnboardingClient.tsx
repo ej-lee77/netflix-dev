@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore, normalizeProfileSettings } from "@/store/useAuthStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import { GENRE_SLUG_META } from "@/data/excludedGenres";
 import "./scss/onboarding.scss";
@@ -95,7 +95,8 @@ export default function OnboardingClient() {
         await onUpdateProfile({
           ...currentProfile,
           settings: {
-            ...currentProfile.settings,
+            // settings 가 undefined 여도 필수 필드를 기본값으로 채워 완전한 ProfileSettings 보장
+            ...normalizeProfileSettings(currentProfile.settings),
             favoriteGenres: genres,
             favoriteMoods: moods,
             favoriteTitles: titles,
@@ -115,12 +116,12 @@ export default function OnboardingClient() {
   return (
     <div className="onboarding-page">
       <div className="onboarding-shell">
-        <header className="onboarding-head">
+        <div className="onboarding-head">
           <div className="onboarding-brand">NETFLIX</div>
           <button className="onboarding-skip" onClick={() => persist(false)}>
             건너뛰기
           </button>
-        </header>
+        </div>
 
         <div className="onboarding-progress">
           {STEPS.map((label, i) => (
@@ -194,7 +195,7 @@ export default function OnboardingClient() {
           </section>
         )}
 
-        <footer className="onboarding-foot">
+        <div className="onboarding-foot">
           {step > 0 ? (
             <button className="onboarding-btn ghost" onClick={() => setStep((s) => s - 1)}>
               이전
@@ -219,7 +220,7 @@ export default function OnboardingClient() {
               {saving ? "저장 중…" : "시작하기"}
             </button>
           )}
-        </footer>
+        </div>
       </div>
     </div>
   );
