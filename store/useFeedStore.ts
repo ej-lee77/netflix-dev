@@ -588,7 +588,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const sortedReviews = myReviews.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      console.log(sortedReviews)
+      // console.log(sortedReviews)
       set({ feeds: sortedReviews, isLoading: false });
 
     } catch (error) {
