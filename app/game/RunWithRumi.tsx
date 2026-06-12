@@ -27,6 +27,7 @@ import { useGameLoop } from "./hooks/useGameLoop";
 import { useCollision, type Box } from "./hooks/useCollision";
 import { useScore } from "./hooks/useScore";
 import { gameSound } from "./lib/sound";
+import { usePointStore } from "@/store/usePointStore";
 
 import "./styles/game.scss";
 
@@ -94,6 +95,7 @@ export default function RunWithRumi({ embedded = false }: RunWithRumiProps) {
   const { check } = useCollision();
   const { displayScore, bestScore, getScore, addTime, addBonus, commit, reset } =
     useScore();
+  const { addGamePoints } = usePointStore();
 
   // ─── DOM refs ────────────────────────────────────────────────────────────
   const stageRef = useRef<HTMLDivElement>(null);
@@ -252,11 +254,11 @@ export default function RunWithRumi({ embedded = false }: RunWithRumiProps) {
   // ─── 메인 게임 루프 ──────────────────────────────────────────────────────
   useGameLoop((dt) => {
     elapsedRef.current += dt;
-    addTime(dt); // 1초 생존 = 1점
 
     const now = elapsedRef.current;
     const multiplier = difficultyMultiplier(now);
     const isInvincible = invincibleUntilRef.current > now;
+    addTime(dt * (isInvincible ? INVINCIBLE_SPEED_MULT : 1));
     const speed = BASE_SPEED * multiplier * (isInvincible ? INVINCIBLE_SPEED_MULT : 1);
 
     // 1) 플레이어 물리 (점프/중력)
@@ -279,7 +281,7 @@ export default function RunWithRumi({ embedded = false }: RunWithRumiProps) {
     // 2) 무적 상태 갱신
     const invLeft = Math.max(0, invincibleUntilRef.current - now);
     setInvincibleLeft((prev) =>
-      Math.abs(prev - invLeft) > 0.05 ? invLeft : prev,
+      invLeft === 0 || Math.abs(prev - invLeft) > 0.05 ? invLeft : prev,
     );
     if (invLeft <= 0 && invincibleUntilRef.current > 0) {
       invincibleUntilRef.current = 0;
@@ -449,6 +451,7 @@ export default function RunWithRumi({ embedded = false }: RunWithRumiProps) {
             best={bestScore}
             isNewBest={isNewBest}
             onRestart={startGame}
+            onClaimPoints={addGamePoints}
           />
         )}
       </div>
