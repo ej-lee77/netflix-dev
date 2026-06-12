@@ -152,6 +152,7 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
         category: p?.category ?? "lifestyle",
         shippingFee: p?.shippingFee ?? 0,
       };
+      if (p?.thumbUrl) item.thumbUrl = p.thumbUrl;
       // 옵션이 있을 때만 필드 추가 (undefined 저장 방지)
       if (c.option) item.option = c.option;
       return item;
