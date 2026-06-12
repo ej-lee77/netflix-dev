@@ -62,27 +62,12 @@ export default function GoodsPage() {
         {/* 히어로 */}
         <div className="goods-hero">
           <div className="hero-eyebrow">REWARDS</div>
-          <h1>
+          <h2 className="hero-title">
             시청할수록 모이는<br />
             나만의 컬렉션
-          </h1>
+          </h2>
           <p>뱃지를 모으고 칭호를 획득하세요</p>
-          <Link
-            href="/shop"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              marginTop: "14px",
-              padding: "12px 20px",
-              borderRadius: "10px",
-              background: "#e50914",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "14px",
-              textDecoration: "none",
-            }}
-          >
+          <Link href="/shop" className="goods-hero__cta">
             🎁 모은 포인트로 굿즈 받기 →
           </Link>
         

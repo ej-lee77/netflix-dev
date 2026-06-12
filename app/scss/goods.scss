@@ -34,7 +34,7 @@
       margin-bottom: 12px;
     }
 
-    h1 {
+    .hero-title {
       position: relative;
       font-size: g.$text-32;
       font-weight: 800;
@@ -51,6 +51,31 @@
       position: relative;
       font-size: g.$text-14;
       color: g.$g-color;
+    }
+
+    /* 포인트 굿즈 교환 CTA — ::before 오버레이 위로 올려 클릭 가능하게 */
+    .goods-hero__cta {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      background: #e50914;
+      color: #fff;
+      font-weight: 700;
+      font-size: g.$text-14;
+      text-decoration: none;
+      transition: filter 0.2s, transform 0.1s;
+
+      &:hover {
+        filter: brightness(1.08);
+      }
+      &:active {
+        transform: translateY(1px);
+      }
     }
   }
 
