@@ -7,7 +7,7 @@ import { useGoodsStore } from "@/store/useGoodsStore";
 import { useAvailablePoints } from "@/store/usePointStore";
 import { pts } from "@/data/goods";
 
-export default function ShopTopBar({ title, hidePoints }: { title: string; hidePoints?: boolean }) {
+export default function ShopTopBar({ title, hidePoints, showShopHome }: { title: string; hidePoints?: boolean; showShopHome?: boolean }) {
   const { cart, cartLoaded, loadCart } = useGoodsStore();
   const { available } = useAvailablePoints();
 
@@ -24,6 +24,11 @@ export default function ShopTopBar({ title, hidePoints }: { title: string; hideP
         <h2 className="shop-topbar__title">{title}</h2>
       </div>
       <div className="shop-topbar__actions">
+        {showShopHome && (
+          <Link href="/shop" className="shop-topbar__link shop-topbar__home">
+            ‹ 굿즈샵
+          </Link>
+        )}
         {!hidePoints && (
           <span className="shop-point-chip" title="보유 포인트 (적립 − 사용)">
             {pts(available)}
