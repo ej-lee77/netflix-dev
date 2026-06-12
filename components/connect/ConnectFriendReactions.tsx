@@ -68,54 +68,67 @@ export default function ConnectFriendReactions() {
               861: { spaceBetween: 24 },
             }}
           >
-            {visibleFeeds.map((item) => (
-              <SwiperSlide className="connect-friend-reactions__slide" key={item.feedId}>
-                <Link
-                  href={`/feed/${item.feedId}`}
-                  className="connect-friend-reactions__card-link"
-                  onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
-                >
-                  <article className="connect-friend-reactions__card">
-                    <div className="connect-friend-reactions__glow" />
+            {visibleFeeds.map((item) => {
+              const filledStars = Math.round(item.rating / 2);
+              return (
+                <SwiperSlide className="connect-friend-reactions__slide" key={item.feedId}>
+                  <Link
+                    href={`/feed/${item.feedId}`}
+                    className="connect-friend-reactions__card-link"
+                    onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
+                  >
+                    <article className="connect-friend-reactions__card">
+                      {/* 상단: 아바타 + 닉네임 / 별점 */}
+                      <div className="cfr-top">
+                        <div className="cfr-user">
+                          {item.authorImage ? (
+                            <img className="cfr-avatar" src={item.authorImage} alt="" aria-hidden="true" />
+                          ) : (
+                            <span className="cfr-avatar cfr-avatar--initial" aria-hidden="true">
+                              {item.author.charAt(0)}
+                            </span>
+                          )}
+                          <span className="cfr-nickname">{item.author}</span>
+                        </div>
+                        <span className="cfr-stars" aria-label={`${filledStars}점`}>
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <span key={i} className={i < filledStars ? "star filled" : "star empty"}>★</span>
+                          ))}
+                        </span>
+                      </div>
 
-                    <div className="connect-friend-reactions__poster">
-                      <img
-                        src={getPosterUrl(item.mediaPoster)}
-                        alt={`${item.mediaTitle} 포스터`}
-                      />
-                    </div>
-
-                    <div className="connect-friend-reactions__content">
-                      <div className="connect-friend-reactions__user">
-                        {item.authorImage ? (
-                          <img
-                            className="connect-friend-reactions__avatar"
-                            src={item.authorImage}
-                            alt=""
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <span className="connect-friend-reactions__avatar connect-friend-reactions__avatar--initial" aria-hidden="true">
-                            {item.author.charAt(0)}
-                          </span>
-                        )}
-                        <div className="connect-friend-reactions__user-info">
-                          <strong>{item.author}</strong>
-                          <span>{getRelativeTime(item.createdAt)}</span>
+                      {/* 중단: 포스터 + 제목 + 리뷰 */}
+                      <div className="cfr-body">
+                        <div className="cfr-poster">
+                          <img src={getPosterUrl(item.mediaPoster)} alt={`${item.mediaTitle} 포스터`} />
+                        </div>
+                        <div className="cfr-text">
+                          <p className="cfr-title">{item.mediaTitle}</p>
+                          <p className="cfr-review">{item.content}</p>
                         </div>
                       </div>
-                      <p className="connect-friend-reactions__predicted">
-                        ★{item.rating.toFixed(1)}
-                      </p>
-                      <h3>{item.mediaTitle}</h3>
-                      <p className="connect-friend-reactions__review">
-                        {item.content}
-                      </p>
-                    </div>
-                  </article>
-                </Link>
-              </SwiperSlide>
-            ))}
+
+                      {/* 하단: 좋아요 / 댓글 수 */}
+                      <div className="cfr-footer">
+                        <span className="cfr-stat">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
+                            <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                          </svg>
+                          {item.likesCount ?? 0}
+                        </span>
+                        <span className="cfr-stat">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          </svg>
+                          {(item.comments as unknown as number) ?? 0}
+                        </span>
+                      </div>
+                    </article>
+                  </Link>
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
         </div>
       </div>
