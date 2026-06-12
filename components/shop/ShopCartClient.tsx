@@ -1,28 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { useAvailablePoints } from "@/store/usePointStore";
 import { categoryMeta, pts, won } from "@/data/goods";
-import CategoryIcon from "./CategoryIcon";
 import ShopTopBar from "./ShopTopBar";
+import ShopIcon from "./ShopIcon";
+import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
-
-function CartThumb({ thumbUrl, gradient, iconKey }: { thumbUrl?: string; gradient: string; iconKey: string }) {
-  const [imgError, setImgError] = useState(false);
-  const showImg = !!thumbUrl && !imgError;
-  return (
-    <div className="cart-row__thumb" style={showImg ? undefined : { background: gradient }}>
-      {showImg ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={thumbUrl} alt="" className="goods-card__img" onError={() => setImgError(true)} />
-      ) : (
-        <CategoryIcon name={iconKey} size={28} aria-hidden />
-      )}
-    </div>
-  );
-}
 
 export default function ShopCartClient() {
   const router = useRouter();
@@ -51,7 +37,7 @@ export default function ShopCartClient() {
     return (
       <div className="shop-page">
         <div className="shop-shell">
-          <ShopTopBar title="장바구니" />
+          <ShopTopBar title="장바구니" showShopHome />
           <div className="shop-loading">불러오는 중…</div>
         </div>
       </div>
@@ -61,11 +47,11 @@ export default function ShopCartClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="장바구니" />
+        <ShopTopBar title="장바구니" showShopHome />
 
         {lines.length === 0 ? (
           <div className="shop-empty">
-            <div className="shop-empty__emoji">🛒</div>
+            <div className="shop-empty__emoji"><ShopIcon name="cart" size={48} /></div>
             <div className="shop-empty__msg">장바구니가 비어 있어요.</div>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
               굿즈 보러 가기
@@ -78,7 +64,9 @@ export default function ShopCartClient() {
                 const meta = categoryMeta(product!.category);
                 return (
                   <div className="cart-row" key={`${item.productId}-${item.option ?? ""}`}>
-                    <CartThumb thumbUrl={product!.thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
+                    <div className="cart-row__thumb" style={{ background: meta.gradient }}>
+                      <CategoryIcon name={meta.iconKey} size={28} />
+                    </div>
                     <div className="cart-row__info">
                       <div className="cart-row__name">{product!.name}</div>
                       {item.option && (

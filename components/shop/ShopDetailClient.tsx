@@ -8,6 +8,7 @@ import { categoryMeta, pts, won } from "@/data/goods";
 import { showToast } from "@/store/useToastStore";
 import ShopTopBar from "./ShopTopBar";
 import CategoryIcon from "./CategoryIcon";
+import ShopIcon from "./ShopIcon";
 import GoodsCard from "./GoodsCard";
 import "./scss/shop.scss";
 
@@ -44,7 +45,7 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
         <div className="shop-shell">
           <ShopTopBar title="굿즈샵" />
           <div className="shop-empty">
-            <div className="shop-empty__emoji">🔍</div>
+            <div className="shop-empty__emoji"><ShopIcon name="search" size={48} /></div>
             <div className="shop-empty__msg">상품을 찾을 수 없어요.</div>
             <button className="shop-btn shop-btn--ghost" onClick={() => router.push("/shop")}>
               굿즈샵으로

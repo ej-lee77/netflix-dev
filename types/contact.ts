@@ -16,6 +16,9 @@ export interface ContactDocument {
 
   status: ContactStatus; // 처리 상태 (등록 시 항상 pending)
   createdAt: string; // 작성 시각 (ISO 문자열, 정렬용)
+
+  answer?: string; // 상담원 답변 본문 (답변 완료 시에만 존재)
+  answeredAt?: string; // 답변 등록 시각 (ISO 문자열)
 }
 
 // 문의 등록 시 입력으로 받는 값 (id/status/createdAt 은 스토어에서 채움)
@@ -34,4 +37,11 @@ export interface ContactStore {
 
   // 내 문의 삭제 (contacts/{userId}/items/{contactId})
   deleteContact: (userId: string, contactId: string) => Promise<boolean>;
+
+  // 문의에 답변 달기 → 해당 문서에 answer/answeredAt 기록 + status 를 answered 로 전환
+  answerContact: (
+    userId: string,
+    contactId: string,
+    answer: string,
+  ) => Promise<boolean>;
 }
