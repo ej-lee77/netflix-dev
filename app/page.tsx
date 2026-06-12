@@ -443,6 +443,10 @@ export default function Home() {
             ) : null
           )
       }
+      {/* RUN WITH RUMI 게임 프로모션 배너 */}
+      <LazyRender>
+        <GameBanner />
+      </LazyRender>
       {/* 중간 랭킹: 한국 시리즈 TOP 10 */}
       {koreanSeries.length > 0 && (
         <LazyRender>
@@ -485,10 +489,6 @@ export default function Home() {
           <RankingSection title={t("home.koreanVariety")} items={koreanMovieRanking} />
         </LazyRender>
       )}
-      {/* RUN WITH RUMI 게임 프로모션 배너 (홈 최하단) */}
-      <LazyRender>
-        <GameBanner />
-      </LazyRender>
       <TopButton />
     </div>
   );
