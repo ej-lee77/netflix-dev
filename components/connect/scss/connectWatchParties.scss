@@ -8,6 +8,7 @@
   &__inner {
     width: calc(100vw - #{g.$main-menu-width});
     padding-right: 0;
+    position: relative;
   }
 }
 
@@ -20,39 +21,47 @@
   // 👈 [주의/원복] 리스트는 무조건 visible이어야 카드가 우측 화면 밖으로 쭉 나열됩니다!
   overflow: visible !important;
   padding: 6px 0 20px;
+
+  .swiper-wrapper {
+    align-items: stretch;
+  }
 }
 
 .cwp-slide {
   height: auto;
+  display: flex;
   // TSX 파일에서 slidesPerView={"auto"} 설정과 맞물려 각 카드의 고정 크기를 완벽하게 유지시킵니다.
   width: clamp(330px, 20vw, 380px) !important;
 
   .cwp-card {
     height: 100%;
+    width: 100%;
   }
 }
 
-.cwp-nav {
+.cwp-edge-nav {
   position: absolute;
-  top: 47%;
-  transform: translateY(-50%);
-  border: none;
-  background: none;
-  color: #fff;
-  z-index: 30;
+  top: calc(50% + 26px);
   width: 44px;
   height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-top: -22px;
+  transform: none;
+  padding: 0;
+  background: none;
+  border: none;
+  color: g.$w-color;
+  z-index: 150;
   opacity: 0;
-  transition:
-    opacity 0.2s ease,
-    color 0.2s ease;
-  cursor: pointer;
+  transition: opacity 0.2s ease;
 
-  &:hover {
-    opacity: 0.7 !important;
+  &::after {
+    display: none;
+  }
+
+  .swiper-navigation-icon {
+    display: block;
+    // width: 11px;
+    // height: 20px;
   }
 
   &:disabled {
@@ -61,26 +70,25 @@
   }
 }
 
-.cwp-nav .swiper-navigation-icon {
-  display: block;
-  width: 11px;
-  height: 20px;
+.cwp-edge-nav--prev {
+  left: calc(#{g.$main-menu-width});
+  //left: 20px;
+
+  .swiper-navigation-icon {
+    transform: rotate(180deg);
+  }
 }
 
-.cwp-nav__icon--prev {
-  transform: rotate(180deg);
+.cwp-edge-nav--next {
+  right: 20px;
 }
 
-.cwp-nav--prev {
-  left: calc(#{g.$main-menu-width} + 8px);
-}
-
-.cwp-nav--next {
-  right: 0;
-}
-
-.connect-watch-parties:hover .cwp-nav:not(:disabled) {
+.connect-watch-parties:hover .cwp-edge-nav:not(:disabled) {
   opacity: 1;
+
+  &:hover {
+    opacity: 0.7;
+  }
 }
 
 /* --- 아래 카드 컴포넌트 세부 스타일은 기존과 동일 (유지) --- */
@@ -331,8 +339,12 @@
     padding-right: 24px;
   }
 
-  .cwp-nav--prev {
+  .cwp-edge-nav--prev {
     left: 0;
+  }
+
+  .cwp-edge-nav {
+    top: calc(50% + 22px);
   }
 }
 
@@ -348,7 +360,7 @@
     padding-bottom: 12px;
   }
 
-  .cwp-nav {
+  .cwp-edge-nav {
     display: none;
   }
   .cwp-card {
