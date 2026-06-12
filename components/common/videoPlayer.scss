@@ -401,7 +401,7 @@ input[type="range"].vp-vol-range {
 .vp-subtitle-window {
   position: absolute;
   left: 50%;
-  bottom: 112px;
+  bottom: 148px; /* 하단 그라디언트/컨트롤 영역 위로 띄움 */
   z-index: 3;
   transform: translateX(-50%);
   max-width: 84%;
@@ -409,6 +409,12 @@ input[type="range"].vp-vol-range {
   border-radius: 6px;
   text-align: center;
   pointer-events: none;
+  transition: bottom 0.25s ease;
+
+  /* 컨트롤바 표시 중엔 더 위로 피함 */
+  &--lifted {
+    bottom: 190px;
+  }
 }
 
 .vp-subtitle-text {
@@ -424,8 +430,23 @@ input[type="range"].vp-vol-range {
 
 @include g.respond(mobile) {
   .vp-subtitle-window {
-    bottom: 86px;
+    bottom: 104px;
     max-width: 92%;
+
+    &--lifted {
+      bottom: 138px;
+    }
+  }
+}
+
+/* 자막 기능 비활성 (한국어 자막 없는 영상) */
+.vp-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+
+  &:hover {
+    background: none;
+    transform: none;
   }
 }
 
@@ -481,6 +502,38 @@ input[type="range"].vp-vol-range {
   gap: 12px;
   scrollbar-width: thin;
   scrollbar-color: rgba(229, 9, 20, 0.7) transparent;
+}
+
+/* 자막 미리보기 */
+.vp-sub-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.vp-sub-preview__text {
+  display: inline;
+  padding: 2px 10px;
+  border-radius: 4px;
+  line-height: 1.5;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.vp-sub-panel__notice {
+  margin: 0;
+  font-size: 11px;
+  color: #ffcf3f;
+  line-height: 1.4;
+  padding: 6px 8px;
+  background: rgba(255, 207, 63, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 207, 63, 0.2);
 }
 
 .vp-sub-panel__row {

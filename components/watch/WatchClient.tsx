@@ -91,7 +91,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   // 이 작품을 시청 기록에 1회만 추가하기 위한 가드
   const recordedRef = useRef(false);
 
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isPlayerHovered, setIsPlayerHovered] = useState(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
 
@@ -319,15 +319,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     const progress = Math.round((ct / dur) * 100);
     if (progress > 0 && progress !== lastProgressRef.current) {
       lastProgressRef.current = progress;
+      const epNum = type === "tv" ? (currentEp?.episode_number ?? undefined) : undefined;
       // 최초 재생 시 1회: 시청 기록(watchingVideos + histMovies + 장르·국가 통계 + 뱃지)에 추가
       if (!recordedRef.current && mediaItem && user && currentProfile) {
         recordedRef.current = true;
         (async () => {
           await onAddPlayList(mediaItem);
-          await onUpdateProgress(mediaId, type, progress);
+          await onUpdateProgress(mediaId, type, progress, epNum);
         })();
       } else {
-        onUpdateProgress(mediaId, type, progress);
+        onUpdateProgress(mediaId, type, progress, epNum);
       }
     }
     if (isPartyMode) {
@@ -567,7 +568,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
             </div>
 
             {/* 채팅창 여닫이 화살표 버튼 */}
-            {isPartyMode && (
+            {(isPartyMode || !isChatOpen) && (
               <button
                 className="watch-chat-toggle"
                 type="button"
@@ -857,14 +858,10 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
           className="watch-chat-panel"
           data-open={isChatOpen}
           style={{
-            flex: isChatOpen ? "0 1 clamp(280px, 24vw, 360px)" : "0 0 0px",
-            minWidth: 0,
-            overflow: "hidden",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            opacity: isChatOpen ? 1 : 0,
             display: "flex",
             flexDirection: "column",
             height: "100%",
+            overflow: "hidden",
           }}
         >
           {isPartyMode ? (
@@ -1118,8 +1115,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 overflowY: "auto",
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>
-                추천 작품
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <span style={{ fontSize: 18, fontWeight: 700 }}>추천 작품</span>
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(false)}
+                  style={{ background: "none", border: "none", color: "#888", cursor: "pointer", padding: 4, lineHeight: 1, fontSize: 18 }}
+                  aria-label="추천 작품 닫기"
+                >
+                  ✕
+                </button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {related.length === 0 && (
@@ -1138,54 +1143,78 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     }
                     style={{
                       display: "flex",
-                      gap: 10,
-                      alignItems: "center",
+                      flexDirection: "column",
                       textAlign: "left",
                       background: "transparent",
                       border: "1px solid #222",
-                      borderRadius: 8,
-                      padding: 6,
+                      borderRadius: 10,
+                      padding: 0,
                       cursor: "pointer",
                       color: "#eee",
+                      overflow: "hidden",
                     }}
                   >
                     <span
                       style={{
-                        width: 64,
-                        height: 38,
-                        borderRadius: 4,
+                        display: "block",
+                        position: "relative",
+                        width: "100%",
+                        aspectRatio: "16 / 9",
                         background: imageUrl(
                           item.backdrop_path || item.poster_path,
                         )
                           ? `#111 url(${imageUrl(item.backdrop_path || item.poster_path)}) center/cover`
                           : "#1a1a1a",
-                        flexShrink: 0,
                       }}
-                    />
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span
-                        style={{
-                          display: "block",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {item.title || item.name}
-                      </span>
-                      <span
-                        style={{
-                          display: "block",
-                          fontSize: 11,
-                          color: "#888",
-                        }}
-                      >
+                    >
+                      <span style={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#fff",
+                        background: "rgba(0,0,0,0.65)",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        borderRadius: 5,
+                        padding: "3px 8px",
+                        backdropFilter: "blur(4px)",
+                      }}>
                         {item.media_type === "tv" ? "시리즈" : "영화"}
                       </span>
                     </span>
-                    <span style={{ color: "#666", fontSize: 14 }}>›</span>
+                    <span style={{ padding: "8px 10px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                          <span
+                            style={{
+                              fontSize: 17,
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              minWidth: 0,
+                            }}
+                          >
+                            {item.title || item.name}
+                          </span>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: "#ccc",
+                            background: "rgba(255,255,255,0.1)",
+                            border: "1px solid rgba(255,255,255,0.22)",
+                            borderRadius: 3,
+                            padding: "1px 5px",
+                            flexShrink: 0,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {item.adult ? "청불" : "15+"}
+                          </span>
+                        </span>
+                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>›</span>
+                      </span>
+                    </span>
                   </button>
                 ))}
               </div>

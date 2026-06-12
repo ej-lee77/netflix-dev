@@ -645,7 +645,16 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             set({ myList: [] }); // 에러 시 초기화
         }
     },
-    onUpdateProgress: async (id, mediaType, progress) => {
+    onUpdateProgress: async (id, mediaType, progress, episodeNumber) => {
+        // 즉시 Zustand 인메모리 업데이트 (UI 즉각 반영)
+        set((state) => ({
+            playList: state.playList.map((item) =>
+                item.id === id && item.mediaType === mediaType
+                    ? { ...item, progress, ...(episodeNumber != null ? { lastEpisodeNumber: episodeNumber } : {}) }
+                    : item
+            ),
+        }));
+
         const authState = useAuthStore.getState();
         const userId = authState.user?.userId;
         const currentProfile = authState.currentProfile;
@@ -661,9 +670,9 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
             const targetProfile = { ...profiles[profileIndex] };
 
             // 1. progress 업데이트 또는 100% 시 삭제 필터링
-            let updatedList = (targetProfile.movies?.watchingVideos || []).map((item: any) => 
-                item.id === id && item.mediaType === mediaType 
-                    ? { ...item, progress } 
+            let updatedList = (targetProfile.movies?.watchingVideos || []).map((item: any) =>
+                item.id === id && item.mediaType === mediaType
+                    ? { ...item, progress, ...(episodeNumber != null ? { lastEpisodeNumber: episodeNumber } : {}) }
                     : item
             );
 
