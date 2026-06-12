@@ -12,6 +12,7 @@ import type { ShippingInfo as Ship } from "@/types/goods";
 import StepPayment from "@/app/signin/components/StepPayment";
 import ShopTopBar from "./ShopTopBar";
 import AddressSearch from "./AddressSearch";
+import ShopIcon from "./ShopIcon";
 import "@/app/signin/signin.scss";
 import "./scss/shop.scss";
 
@@ -103,7 +104,7 @@ export default function ShopCheckoutClient() {
         <div className="shop-shell">
           <ShopTopBar title="교환/결제" />
           <div className="shop-empty">
-            <div className="shop-empty__emoji">🛒</div>
+            <div className="shop-empty__emoji"><ShopIcon name="cart" size={48} /></div>
             <div className="shop-empty__msg">교환할 상품이 없어요.</div>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
               굿즈 보러 가기
@@ -214,7 +215,7 @@ export default function ShopCheckoutClient() {
                 />
               ) : (
                 <div className="checkout-pay">
-                  <span className="checkout-pay__icon">⚠️</span>
+                  <span className="checkout-pay__icon"><ShopIcon name="warning" size={18} /></span>
                   <span>보유 포인트가 부족해 교환할 수 없어요.</span>
                 </div>
               )}

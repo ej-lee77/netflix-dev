@@ -249,10 +249,7 @@
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    &::-webkit-scrollbar { display: none; }
   }
 }
 
@@ -283,72 +280,16 @@
   font-weight: 600;
 }
 
-.shop-sort-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-
 .shop-sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.05) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #cfcfcf;
+  color: #eee;
   border-radius: 8px;
-  padding: 7px 14px;
+  padding: 8px 32px 8px 12px;
   font-size: 13px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  white-space: nowrap;
-
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.08);
-  }
-}
-
-.shop-sort-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-}
-
-.shop-sort-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 11;
-  background: #1e1e1e;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  overflow: hidden;
-  min-width: 140px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-.shop-sort-option {
-  display: block;
-  width: 100%;
-  padding: 11px 16px;
-  font-size: 13px;
-  color: #cfcfcf;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background 0.1s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: #fff;
-  }
-
-  &.active {
-    color: #fff;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.05);
-  }
 }
 
 /* ===== 상품 그리드 / 카드 ===== */
@@ -756,8 +697,8 @@
 }
 
 .cart-row__thumb {
-  width: 100px;
-  height: 100px;
+  width: 76px;
+  height: 76px;
   border-radius: 10px;
   flex-shrink: 0;
   display: flex;
@@ -765,7 +706,6 @@
   justify-content: center;
   font-size: 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: hidden;
 }
 
 .cart-row__info {
@@ -860,6 +800,9 @@
 
 .shop-empty__emoji {
   font-size: 44px;
+  display: flex;
+  justify-content: center;
+  color: #6f6f6f;
 }
 
 .shop-empty__msg {
@@ -932,6 +875,7 @@
   align-items: center;
   justify-content: center;
   font-size: 16px;
+  color: #ff6b6b;
 }
 
 /* ===== 주문 완료 ===== */
@@ -1026,8 +970,8 @@
 }
 
 .order-item__thumb {
-  width: 72px;
-  height: 72px;
+  width: 46px;
+  height: 46px;
   border-radius: 8px;
   flex-shrink: 0;
   display: flex;
@@ -1035,7 +979,6 @@
   justify-content: center;
   font-size: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: hidden;
 }
 
 .order-item__info {
@@ -1281,7 +1224,6 @@
   color: #ffcf3f;
   font-weight: 700;
 }
-
 /* ── 주소 검색(다음 우편번호) ─────────────────────────── */
 .checkout-zip {
   display: flex;
@@ -1338,7 +1280,7 @@
   border-radius: 999px;
 
   /* 단계 사이 연결선 */
-  &+.order-step::before {
+  & + .order-step::before {
     content: "";
     position: absolute;
     left: -9px;
