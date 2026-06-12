@@ -27,6 +27,21 @@ function stageIndex(startTs: number, now: number) {
   return 0;
 }
 
+function OrderThumb({ thumbUrl, gradient, iconKey }: { thumbUrl?: string; gradient: string; iconKey: string }) {
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!thumbUrl && !imgError;
+  return (
+    <div className="order-item__thumb" style={showImg ? undefined : { background: gradient }}>
+      {showImg ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={thumbUrl} alt="" className="goods-card__img" onError={() => setImgError(true)} />
+      ) : (
+        <CategoryIcon name={iconKey} size={28} />
+      )}
+    </div>
+  );
+}
+
 function formatDate(ts: number) {
   const d = new Date(ts);
   const p = (n: number) => n.toString().padStart(2, "0");
@@ -111,25 +126,20 @@ export default function ShopOrdersClient() {
                       <div className="order-item__thumb" style={{ background: meta.gradient }}>
                         <CategoryIcon name={meta.iconKey} size={28} />
                       </div>
-                      <div className="order-item__info">
-                        <div className="order-item__name">{it.name}</div>
-                        <div className="order-item__meta">
-                          {it.option ? `${it.option} · ` : ""}수량 {it.qty}개
-                        </div>
-                      </div>
                       <div className="order-item__price">{pts(it.points * it.qty)}</div>
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
 
-                <div className="order-card__total">
-                  <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
-                  <b>{won(o.shippingFee)}</b>
-                </div>
+              <div className="order-card__total">
+                <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
+                <b>{won(o.shippingFee)}</b>
               </div>
-            );
-          })
-        )}
+            </div>
+          );
+        })
+      )}
       </div>
     </div>
   );
