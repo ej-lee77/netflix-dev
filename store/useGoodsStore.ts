@@ -23,6 +23,7 @@ import type {
   OrderItem,
   ShippingInfo,
   GoodsOrder,
+  OrderStatus,
 } from "@/types/goods";
 
 function uid(): string | null {
@@ -56,6 +57,7 @@ interface GoodsState {
 
   createOrder: (shipping: ShippingInfo, payLabel: string) => Promise<CreateOrderResult | null>;
   loadOrders: () => Promise<void>;
+  cancelOrder: (orderId: string) => Promise<boolean>;
 }
 
 async function persistCart(items: CartItem[]) {
@@ -176,6 +178,7 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
         shipping,
         payLabel,
         payStatus: "결제완료",
+        orderStatus: "ordered" as OrderStatus,
         createdAt: Date.now(),
       });
 
@@ -208,6 +211,28 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
     } catch (e) {
       console.error("[goods] 주문내역 불러오기 실패:", e);
       set({ orders: [], ordersLoaded: true });
+    }
+  },
+
+  cancelOrder: async (orderId) => {
+    try {
+      const canceledAt = Date.now();
+      await updateDoc(doc(db, "goodsOrders", orderId), {
+        orderStatus: "canceled" as OrderStatus,
+        canceledAt,
+      });
+      // 로컬 상태도 즉시 반영
+      set((s) => ({
+        orders: s.orders.map((o) =>
+          o.orderId === orderId
+            ? { ...o, orderStatus: "canceled" as OrderStatus, canceledAt }
+            : o,
+        ),
+      }));
+      return true;
+    } catch (e) {
+      console.error("[goods] 주문 취소 실패:", e);
+      return false;
     }
   },
 }));

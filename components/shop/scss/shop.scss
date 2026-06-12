@@ -249,7 +249,10 @@
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    &::-webkit-scrollbar { display: none; }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 }
 
@@ -1219,4 +1222,132 @@
   font-size: 12px;
   color: #ffcf3f;
   font-weight: 700;
+}
+
+/* ── 주소 검색(다음 우편번호) ─────────────────────────── */
+.checkout-zip {
+  display: flex;
+  gap: 8px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.checkout-zip__btn,
+.address-search-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: rgba(229, 9, 20, 0.6);
+    background: rgba(229, 9, 20, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+/* ── 주문 배송 단계 스테퍼 ────────────────────────────── */
+.order-steps {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.order-step {
+  position: relative;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6f6f6f;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 12px;
+  border-radius: 999px;
+
+  /* 단계 사이 연결선 */
+  &+.order-step::before {
+    content: "";
+    position: absolute;
+    left: -9px;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-50%);
+  }
+
+  /* 현재 단계까지 도달(완료) */
+  &.is-done {
+    color: #fff;
+    background: rgba(229, 9, 20, 0.16);
+    border-color: rgba(229, 9, 20, 0.5);
+  }
+
+  /* 현재 단계 강조 */
+  &.is-current {
+    background: #e50914;
+    border-color: #e50914;
+    color: #fff;
+  }
+
+  /* 주문취소 종료 상태 */
+  &.is-canceled {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.12);
+    border-color: rgba(255, 107, 107, 0.4);
+  }
+}
+
+.order-cancel-btn {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cfcfcf;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: rgba(255, 107, 107, 0.6);
+    color: #ff6b6b;
+  }
+}
+
+/* ── 오른쪽 상태 뱃지: 주문취소(빨강) ─────────────────── */
+.order-card__status.is-canceled {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.12);
+}
+
+/* ── 취소 흐름 스테퍼(취소신청 → 환불배송 → 취소완료) 색상 ── */
+.order-steps.is-cancel-flow {
+  .order-step.is-done {
+    color: #fff;
+    background: rgba(255, 107, 107, 0.16);
+    border-color: rgba(255, 107, 107, 0.5);
+  }
+
+  .order-step.is-current {
+    background: #d64545;
+    border-color: #d64545;
+    color: #fff;
+  }
 }
