@@ -50,7 +50,7 @@ function formatDate(ts: number) {
 
 export default function ShopOrdersClient() {
   const router = useRouter();
-  const { orders, ordersLoaded, loadOrders, cancelOrder } = useGoodsStore();
+  const { orders, ordersLoaded, loadOrders, cancelOrder, products } = useGoodsStore();
 
   // 새로고침 없이 단계가 자동으로 넘어가도록 주기적으로 현재 시각을 갱신
   const [now, setNow] = useState(() => Date.now());
@@ -121,24 +121,25 @@ export default function ShopOrdersClient() {
 
                 {o.items.map((it, i) => {
                   const meta = categoryMeta(it.category);
+                   const thumbUrl = it.thumbUrl ?? products.find((p) => p.id === it.productId)?.thumbUrl;
                   return (
                     <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
-                      <div className="order-item__thumb" style={{ background: meta.gradient }}>
+                      <OrderThumb thumbUrl={thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
+                      {/* <div className="order-item__thumb" style={{ background: meta.gradient }}>
                         <CategoryIcon name={meta.iconKey} size={28} />
-                      </div>
+                      </div> */}
                       <div className="order-item__price">{pts(it.points * it.qty)}</div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-              <div className="order-card__total">
-                <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
-                <b>{won(o.shippingFee)}</b>
+                <div className="order-card__total">
+                  <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
+                  <b>{won(o.shippingFee)}</b>
+                </div>
               </div>
-            </div>
-          );
-        })
+            );
+          })
       )}
       </div>
     </div>
