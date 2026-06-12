@@ -106,7 +106,11 @@ function ProfileSelectContent() {
       done = typeof window !== "undefined" && !!localStorage.getItem(`onboarded:${profile.id}`);
     } catch {}
     const noTaste = !s?.favoriteGenres?.length && !s?.favoriteMoods?.length;
-    router.replace(noTaste && !done ? "/onboarding" : "/");
+    const dest = noTaste && !done ? "/onboarding" : "/";
+    // 오버레이 페이드아웃 후 이동
+    setSwitchOverlayPhase("exit");
+    await new Promise((resolve) => window.setTimeout(resolve, 720));
+    router.replace(dest);
   };
 
   const handleSelect = (profile: UserProfile) => {

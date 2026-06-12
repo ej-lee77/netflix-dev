@@ -11,7 +11,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 // 헤더/푸터/배너를 숨길 경로 목록
-const HIDE_LAYOUT_PATHS = ["/signin", "/onboarding"];
+const HIDE_LAYOUT_PATHS = ["/signin", "/onboarding", "/profiles"];
 const FULLSCREEN_PATHS = ["/watch"];
 
 export default function ConditionalLayout({
@@ -36,9 +36,11 @@ export default function ConditionalLayout({
           isFullscreenPage ? "fullscreen-page" : hideLayout ? undefined : "has-nav"
         }
       >
-        {children}
+        <div key={pathname} style={{ animation: "pageFadeIn 0.8s ease both" }}>
+          {children}
+        </div>
       </main>
-      {!isFullscreenPage && <Footer />}
+      {!isFullscreenPage && !hideLayout && <Footer />}
       {showChrome && <LoginBanner />}
       {showChrome && <MobileBottomNav />}
       <Toaster />

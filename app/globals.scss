@@ -259,6 +259,16 @@ $section-gap: 40px;
   }
 }
 
+@keyframes mainPageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 * {
   margin: 0;
   padding: 0;
