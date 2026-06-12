@@ -29,6 +29,9 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const partyIdParam = searchParams.get("party");
+  // 상세 페이지에서 특정 시즌/회차로 진입할 때 사용
+  const seasonParam = Number(searchParams.get("season")) || 1;
+  const epParam = searchParams.get("ep");
   const isTv = type === "tv";
   const itemKey = `${type}-${mediaId}`;
 
@@ -85,11 +88,18 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     onFetchMediaDetail(mediaId, type);
     if (isTv) {
       onFetchTvVideos(mediaId);
-      onFetchEpisodes(mediaId, 1);
+      onFetchEpisodes(mediaId, seasonParam);
     } else {
       onFetchVideo(mediaId);
     }
-  }, [mediaId, type, isTv, onFetchMediaDetail, onFetchTvVideos, onFetchVideo, onFetchEpisodes]);
+  }, [mediaId, type, isTv, seasonParam, onFetchMediaDetail, onFetchTvVideos, onFetchVideo, onFetchEpisodes]);
+
+  // 상세에서 ?ep= 로 진입하면 해당 회차를 선택
+  useEffect(() => {
+    if (!epParam || episodes.length === 0) return;
+    const idx = episodes.findIndex((e: any) => String(e.episode_number) === String(epParam));
+    if (idx >= 0) setEpIndex(idx);
+  }, [epParam, episodes]);
 
   useEffect(() => {
     if (recommended.length === 0) onFetchRecommended();

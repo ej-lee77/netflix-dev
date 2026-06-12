@@ -707,8 +707,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     setIsAddingPlayList(true);
     try {
       await onAddPlayList(mediaItem);
-      await onInitAuth();
-      await openVideo();
+      router.push(`/watch/${type}/${mediaId}`);
     } finally {
       setIsAddingPlayList(false);
     }
@@ -1150,7 +1149,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   }
                   setSelectEpisodeId(ep.id);
                   await onAddPlayList(mediaItem!);
-                  await openVideo();
+                  router.push(`/watch/${type}/${mediaId}?season=${selectSeason}&ep=${ep.episode_number}`);
                 }}
                 onMouseEnter={() => setHoveredEpisodeId(ep.id)}
                 onMouseLeave={() => setHoveredEpisodeId(null)}
