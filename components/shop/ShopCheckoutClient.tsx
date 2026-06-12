@@ -16,7 +16,7 @@ import "./scss/shop.scss";
 
 export default function ShopCheckoutClient() {
   const router = useRouter();
-  const { user, currentProfile } = useAuthStore();
+  const { currentProfile } = useAuthStore();
   const { products, cart, cartLoaded, loadProducts, loadCart, createOrder } = useGoodsStore();
   const { available } = useAvailablePoints();
 
