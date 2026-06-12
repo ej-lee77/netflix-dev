@@ -1,6 +1,60 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import { useAuthStore } from "@/store/useAuthStore";
+import type { SubtitleSettings } from "@/types/auth";
 import "./videoPlayer.scss";
+
+/** 커스텀 자막 큐 */
+interface SubtitleCue {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   프로필 자막 커스텀 설정 → 유튜브 captions 모듈 displaySettings 매핑
+   (비공식 API라 try/catch 로 감싸 베스트에포트로 적용)
+   ────────────────────────────────────────────────────────────── */
+
+/** 유튜브 fontFamily 코드: 2=명조(serif) 3=고정폭 4=고딕(sans) 5=라운드(casual) */
+const YT_FONT_MAP: Record<SubtitleSettings["font"], number> = {
+  block: 3,
+  gothic: 4,
+  serif: 2,
+  round: 5,
+};
+
+const YT_SIZE_MAP: Record<SubtitleSettings["size"], number> = {
+  small: -1,
+  medium: 0,
+  large: 2,
+};
+
+function buildCaptionDisplaySettings(s: SubtitleSettings) {
+  const bgColor =
+    s.background === "none" ? "#080808" : s.background === "black" ? "#080808" : "#FFFFFF";
+  const winColor =
+    s.window === "none" ? "#080808" : s.window === "black" ? "#080808" : "#FFFFFF";
+  return {
+    fontSizeIncrement: YT_SIZE_MAP[s.size],
+    fontFamily: YT_FONT_MAP[s.font],
+    charEdgeStyle:
+      s.shadow === "drop" ? "dropShadow" : s.shadow === "outline" ? "uniform" : "none",
+    color: s.background === "white" ? "#000000" : "#FFFFFF",
+    textOpacity: 1,
+    background: bgColor,
+    backgroundOpacity: s.background === "none" ? 0 : 0.75,
+    windowColor: winColor,
+    windowOpacity: s.window === "none" ? 0 : 0.6,
+  };
+}
 
 declare global {
   interface Window {
@@ -81,6 +135,103 @@ export default function VideoPlayer({
 
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [ccOn, setCcOn] = useState(true); // 유튜브 자막 (cc_load_policy 기본 켜짐)
+
+  // ── 커스텀 자막 (서버 프록시로 받아와 직접 렌더링 → 완전한 스타일 커스텀) ──
+  const cuesRef = useRef<SubtitleCue[]>([]);
+  const cueIdxRef = useRef(0);
+  const [customSubs, setCustomSubs] = useState(false);
+  const [cueText, setCueText] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+    cuesRef.current = [];
+    cueIdxRef.current = 0;
+    setCustomSubs(false);
+    setCueText("");
+
+    fetch(`/api/subtitles?v=${encodeURIComponent(videoKey)}&lang=ko`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (ignore || !d.cues?.length) return;
+        cuesRef.current = d.cues;
+        setCustomSubs(true);
+        // 이중 표시 방지: 유튜브 자체 자막 숨김
+        try {
+          playerRef.current?.unloadModule?.("captions");
+          playerRef.current?.unloadModule?.("cc");
+        } catch {
+          /* 무시 */
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      ignore = true;
+    };
+  }, [videoKey]);
+
+  // 프로필 자막 커스텀 설정
+  const subtitleSettings = useAuthStore(
+    (s) => s.currentProfile?.settings?.subtitles,
+  );
+  const currentProfile = useAuthStore((s) => s.currentProfile);
+  const onUpdateProfile = useAuthStore((s) => s.onUpdateProfile);
+
+  // 플레이어 내 자막 설정 패널
+  const [showSubSettings, setShowSubSettings] = useState(false);
+  const showSubSettingsRef = useRef(showSubSettings);
+  showSubSettingsRef.current = showSubSettings;
+  const [liveSubs, setLiveSubs] = useState<SubtitleSettings | null>(null);
+
+  /** 적용 우선순위: 패널에서 방금 바꾼 값 > 프로필 저장값 > 기본값 */
+  const effectiveSubs: SubtitleSettings = useMemo(
+    () => ({
+      size: "medium",
+      font: "gothic",
+      shadow: "drop",
+      shadowColor: "black",
+      background: "none",
+      window: "none",
+      ...(subtitleSettings ?? {}),
+      ...(liveSubs ?? {}),
+    }),
+    [subtitleSettings, liveSubs],
+  );
+
+  const subtitleSettingsRef = useRef(effectiveSubs);
+  subtitleSettingsRef.current = effectiveSubs;
+
+  /** 패널에서 변경 → 즉시 미리보기 + 프로필에 저장 (설정 페이지와 동기화) */
+  const updateSubSetting = (patch: Partial<SubtitleSettings>) => {
+    const next = { ...effectiveSubs, ...patch };
+    setLiveSubs(next);
+    if (currentProfile?.settings) {
+      void onUpdateProfile?.({
+        ...currentProfile,
+        settings: { ...currentProfile.settings, subtitles: next },
+      });
+    }
+  };
+
+  /** 프로필 자막 설정을 유튜브 자막에 적용 (베스트에포트) */
+  const applyCaptionStyle = useCallback(() => {
+    const p = playerRef.current;
+    const s = subtitleSettingsRef.current;
+    if (!p || !s) return;
+    try {
+      p.setOption?.("captions", "fontSize", YT_SIZE_MAP[s.size]);
+      // 유튜브 내부 스키마를 읽어와 병합 (키 누락으로 무시되는 것 방지)
+      const current = p.getOption?.("captions", "displaySettings") ?? {};
+      p.setOption?.("captions", "displaySettings", {
+        ...current,
+        ...buildCaptionDisplaySettings(s),
+      });
+      // 주의: reload 를 호출하면 적용한 스타일이 초기화되므로 호출하지 않음
+    } catch {
+      /* 비공식 API — 실패해도 재생엔 영향 없음 */
+    }
+  }, []);
   const [volume, setVolume] = useState(80);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -116,8 +267,9 @@ export default function VideoPlayer({
     setShowControls(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
-      // 회차 패널이 열려있는 동안엔 컨트롤을 숨기지 않음
-      if (!showEpisodesRef.current) setShowControls(false);
+      // 회차/자막설정 패널이 열려있는 동안엔 컨트롤을 숨기지 않음
+      if (!showEpisodesRef.current && !showSubSettingsRef.current)
+        setShowControls(false);
     }, 3000);
   }, []);
   resetHideTimerRef.current = resetHideTimer;
@@ -149,7 +301,20 @@ export default function VideoPlayer({
           setDuration(d);
           onTimeUpdateRef.current?.(ct, d);
         }
-      }, 500);
+
+        // 커스텀 자막: 현재 시각에 해당하는 큐 찾기
+        const cues = cuesRef.current;
+        if (cues.length) {
+          let i = cueIdxRef.current;
+          // 뒤로 시킹한 경우 인덱스 리셋
+          if (i >= cues.length || (i > 0 && ct < cues[i - 1].start)) i = 0;
+          while (i < cues.length && cues[i].end < ct) i += 1;
+          cueIdxRef.current = i;
+          const cue = cues[i];
+          const text = cue && cue.start <= ct && ct <= cue.end ? cue.text : "";
+          setCueText((prev) => (prev === text ? prev : text));
+        }
+      }, 250);
     };
 
     const createPlayer = () => {
@@ -168,12 +333,31 @@ export default function VideoPlayer({
           fs: 0,
           disablekb: 1,
           playsinline: 1,
+          // 유튜브 자막: 기본 켜짐 + 한국어 우선
+          cc_load_policy: 1,
+          cc_lang_pref: "ko",
         },
         events: {
           onReady: (e: any) => {
             playerRef.current = e.target;
             e.target.setVolume(80);
             e.target.playVideo();
+            // 자막 모듈 로드 후 처리 (모듈 준비 시점이 달라 2회 시도)
+            // - 커스텀 자막이 있으면 유튜브 자막 숨김, 없으면 스타일 적용 폴백
+            const syncCaptions = () => {
+              if (cuesRef.current.length) {
+                try {
+                  playerRef.current?.unloadModule?.("captions");
+                  playerRef.current?.unloadModule?.("cc");
+                } catch {
+                  /* 무시 */
+                }
+              } else {
+                applyCaptionStyle();
+              }
+            };
+            setTimeout(syncCaptions, 900);
+            setTimeout(syncCaptions, 2500);
           },
           onStateChange: (e: any) => {
             setPlaying(e.data === window.YT.PlayerState.PLAYING);
@@ -290,6 +474,97 @@ export default function VideoPlayer({
     else { playerRef.current.playVideo?.(); triggerFeedback("play"); broadcastLocal(true); }
   };
 
+  // 자막 설정이 바뀌면 즉시 반영 (유튜브 자막 폴백용)
+  useEffect(() => {
+    if (ccOn && !customSubs) applyCaptionStyle();
+  }, [effectiveSubs, ccOn, customSubs, applyCaptionStyle]);
+
+  /** 커스텀 자막 오버레이 스타일 (자막 설정 100% 반영) */
+  const subtitleStyle = useMemo(() => {
+    const s = effectiveSubs;
+    const size = s.size;
+    const font = s.font;
+    const shadow = s.shadow;
+    const shadowColor =
+      s.shadowColor === "white"
+        ? "rgba(255,255,255,0.9)"
+        : "rgba(0,0,0,0.9)";
+    const background = s.background;
+    const subWindow = s.window;
+
+    const fontSize = {
+      small: "clamp(14px, 1.7vw, 19px)",
+      medium: "clamp(17px, 2.2vw, 25px)",
+      large: "clamp(21px, 3vw, 33px)",
+    }[size];
+
+    const fontFamily = {
+      block: "'Arial Black', 'AppleSDGothicNeo-Heavy', var(--font-netflix), sans-serif",
+      gothic: "var(--font-netflix), 'Apple SD Gothic Neo', sans-serif",
+      serif: "'Noto Serif KR', 'Nanum Myeongjo', serif",
+      round: "'Arial Rounded MT Bold', 'BM JUA', var(--font-netflix), sans-serif",
+    }[font];
+
+    const textShadow =
+      shadow === "drop"
+        ? `2px 2px 5px ${shadowColor}`
+        : shadow === "outline"
+          ? `-1.5px 0 ${shadowColor}, 0 1.5px ${shadowColor}, 1.5px 0 ${shadowColor}, 0 -1.5px ${shadowColor}`
+          : "none";
+
+    const text: CSSProperties = {
+      fontSize,
+      fontFamily,
+      textShadow,
+      fontWeight: font === "block" ? 900 : 600,
+      color: background === "white" ? "#000" : "#fff",
+      background:
+        background === "none"
+          ? "transparent"
+          : background === "black"
+            ? "rgba(8,8,8,0.78)"
+            : "rgba(255,255,255,0.88)",
+    };
+
+    const window_: CSSProperties = {
+      background:
+        subWindow === "none"
+          ? "transparent"
+          : subWindow === "black"
+            ? "rgba(8,8,8,0.55)"
+            : "rgba(255,255,255,0.45)",
+    };
+
+    return { text, window: window_ };
+  }, [effectiveSubs]);
+
+  /** 자막 켜기/끄기 (커스텀 자막이 있으면 오버레이 토글, 없으면 유튜브 자막 토글) */
+  const doToggleCaptions = () => {
+    if (cuesRef.current.length) {
+      setCcOn((v) => !v);
+      return;
+    }
+    const p = playerRef.current;
+    if (!p) return;
+    if (ccOn) {
+      p.unloadModule?.("captions"); // html5 플레이어
+      p.unloadModule?.("cc"); // 레거시
+      setCcOn(false);
+    } else {
+      p.loadModule?.("captions");
+      p.loadModule?.("cc");
+      try {
+        // 한국어 트랙 우선 선택 (없으면 유튜브 기본값)
+        p.setOption?.("captions", "track", { languageCode: "ko" });
+      } catch {
+        /* 트랙 없음 — 무시 */
+      }
+      // 다시 켤 때 커스텀 스타일 재적용
+      setTimeout(applyCaptionStyle, 300);
+      setCcOn(true);
+    }
+  };
+
   const doToggleMute = () => {
     if (muted) {
       setMuted(false);
@@ -392,6 +667,15 @@ export default function VideoPlayer({
         onClick={() => { resetHideTimer(); doTogglePlay(); }}
       />
 
+      {/* 커스텀 자막 오버레이 (프로필 자막 설정 반영) */}
+      {customSubs && ccOn && cueText && (
+        <div className="vp-subtitle-window" style={subtitleStyle.window}>
+          <span className="vp-subtitle-text" style={subtitleStyle.text}>
+            {cueText}
+          </span>
+        </div>
+      )}
+
       {/* 재생/일시정지 피드백 아이콘 */}
       {feedback && (
         <div className={`vp-feedback vp-feedback--${feedback}`}>
@@ -485,6 +769,37 @@ export default function VideoPlayer({
             </div>
 
             <div className="vp-right-btns">
+              {/* 자막 설정 패널 토글 */}
+              <button
+                className={`vp-btn vp-sub-settings-btn${showSubSettings ? " active" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSubSettings((v) => !v);
+                  resetHideTimer();
+                }}
+                title="자막 설정"
+                aria-expanded={showSubSettings}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+
+              {/* 자막 토글 */}
+              <button
+                className={`vp-btn vp-cc-btn${ccOn ? " active" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  doToggleCaptions();
+                  resetHideTimer();
+                }}
+                title={ccOn ? "자막 끄기" : "자막 켜기"}
+                aria-pressed={ccOn}
+              >
+                <span className="vp-cc-label">CC</span>
+              </button>
+
               {/* 회차 목록 */}
               {episodes && episodes.length > 0 && (
                 <button
@@ -558,6 +873,55 @@ export default function VideoPlayer({
           </div>
         </div>
       </div>
+
+      {/* 자막 설정 패널 */}
+      {showSubSettings && (
+        <aside className="vp-sub-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="vp-sub-panel__head">
+            <h4>자막 설정</h4>
+            <button
+              className="vp-btn"
+              onClick={() => setShowSubSettings(false)}
+              aria-label="자막 설정 닫기"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div className="vp-sub-panel__body">
+            {(
+              [
+                ["크기", "size", [["small", "작게"], ["medium", "보통"], ["large", "크게"]]],
+                ["폰트", "font", [["block", "블록"], ["gothic", "고딕"], ["serif", "명조"], ["round", "라운드"]]],
+                ["그림자", "shadow", [["none", "없음"], ["drop", "드롭"], ["outline", "외곽선"]]],
+                ["그림자 색", "shadowColor", [["black", "검정"], ["white", "흰색"]]],
+                ["자막 배경", "background", [["none", "없음"], ["black", "검정"], ["white", "흰색"]]],
+                ["윈도우", "window", [["none", "없음"], ["black", "검정"], ["white", "흰색"]]],
+              ] as [string, keyof SubtitleSettings, [string, string][]][]
+            ).map(([label, key, options]) => (
+              <div className="vp-sub-panel__row" key={key}>
+                <span className="vp-sub-panel__label">{label}</span>
+                <div className="vp-sub-panel__chips">
+                  {options.map(([value, text]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`vp-sub-panel__chip${effectiveSubs[key] === value ? " active" : ""}`}
+                      onClick={() =>
+                        updateSubSetting({ [key]: value } as Partial<SubtitleSettings>)
+                      }
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      )}
 
       {/* 회차 목록 패널 */}
       {episodes && episodes.length > 0 && showEpisodes && (

@@ -11,8 +11,13 @@ export interface GoodsProduct {
   category: GoodsCategory;
   points: number; // 교환에 필요한 포인트
   shippingFee: number; // 배송비 (실제 결제 금액, KRW)
-  themeTitle?: string; // 연관 작품/테마
+  themeTitle?: string; // 컬렉션/라인 라벨
   badge?: GoodsBadge;
+  thumbUrl?: string; // 카드용 대표 썸네일 (없으면 카테고리 placeholder)
+  detailImages?: string[]; // 상세 갤러리 (없으면 thumbUrl, 그것도 없으면 placeholder)
+  relatedTitle?: string; // 연관 작품명 (상세 표시용)
+  relatedType?: "movie" | "tv"; // 연관 작품 타입 (/detail/{type}/{id})
+  relatedId?: number; // 연관 작품 TMDB id
   optionLabel?: string; // "사이즈" | "색상" 등
   options?: string[]; // 선택 옵션 목록 (없으면 단일 상품)
   description: string;
