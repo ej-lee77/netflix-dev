@@ -14,12 +14,17 @@ import {
   orderBy,
   limit,
   arrayUnion,
+  getDocs,
+  deleteDoc,
   type Unsubscribe,
 } from "firebase/firestore";
+
+export type PartyAccessMode = "open" | "invite";
 
 export interface PartyDoc {
   partyId: string;
   hostId: string;
+  hostActorId?: string;
   hostNickname: string;
   hostProfileId?: number;
   hostImgUrl?: string;
@@ -27,11 +32,17 @@ export interface PartyDoc {
   type: "movie" | "tv";
   mediaId: number;
   title: string;
+  partyName?: string;
+  accessMode?: PartyAccessMode;
+  invitedUserIds?: string[];
+  invitedProfileIds?: string[];
+  partyPassword?: string;
   posterPath?: string;
   backdropPath?: string;
   isPlaying: boolean;
   positionPct: number; // 0~100 (호스트 진행 위치)
   updatedAt: number;
+  playbackUpdatedBy?: string;
   participants: string[];
   createdAt: number;
 }
@@ -39,6 +50,8 @@ export interface PartyDoc {
 export interface PartyMessage {
   id: string;
   userId: string;
+  profileId?: number;
+  actorId?: string;
   nickname: string;
   badge?: string;
   text: string;
@@ -59,6 +72,7 @@ interface WatchPartyState {
   messages: PartyMessage[];
   isHost: boolean;
   openParties: PartyDoc[];
+  invitedParties: PartyDoc[];
   createParty: (args: {
     type: "movie" | "tv";
     mediaId: number;
@@ -66,12 +80,33 @@ interface WatchPartyState {
     posterPath?: string;
     backdropPath?: string;
     host: PartyUser;
+    partyName?: string;
+    invitedProfileIds?: string[];
+    partyPassword?: string;
   }) => Promise<string | null>;
   subscribe: (partyId: string) => void;
-  join: (partyId: string, user: PartyUser) => Promise<void>;
+  join: (
+    partyId: string,
+    user: PartyUser,
+    partyPassword?: string | null,
+  ) => Promise<boolean>;
+  updateInvitedProfiles: (
+    partyId: string,
+    actorIds: string[],
+    requester: PartyUser,
+  ) => Promise<boolean>;
+  verifyPartyPassword: (
+    partyId: string,
+    partyPassword: string,
+  ) => Promise<PartyDoc | null>;
+  deleteParty: (
+    partyId: string,
+    requester: PartyUser,
+  ) => Promise<boolean>;
+  loadInvitedParties: (userId: string, profileId?: number) => Promise<void>;
   sendMessage: (text: string, user: PartyUser) => Promise<void>;
-  updatePlayback: (data: { positionPct: number; isPlaying: boolean }) => Promise<void>;
-  updatePlaybackNow: (data: { positionPct: number; isPlaying: boolean }) => Promise<void>;
+  updatePlayback: (data: { positionPct: number; isPlaying: boolean; userId?: string }) => Promise<void>;
+  updatePlaybackNow: (data: { positionPct: number; isPlaying: boolean; userId?: string }) => Promise<void>;
   subscribeOpenParties: () => void;
   unsubscribeOpenParties: () => void;
   leave: () => void;
@@ -85,6 +120,58 @@ let lastNowPush = 0;
 
 function randomCode() {
   return Math.random().toString(36).slice(2, 8);
+}
+
+export function getWatchPartyActorId(
+  userId: string,
+  profileId?: number | null,
+) {
+  return profileId == null ? userId : `${userId}:${profileId}`;
+}
+
+function getActorUserId(actorId: string) {
+  return actorId.split(":")[0] ?? actorId;
+}
+
+export function isWatchPartyHost(
+  party: PartyDoc,
+  userId: string,
+  profileId?: number | null,
+) {
+  const actorId = getWatchPartyActorId(userId, profileId);
+  const hostActorId =
+    party.hostActorId ??
+    getWatchPartyActorId(party.hostId, party.hostProfileId);
+
+  return hostActorId === actorId;
+}
+
+export function canProfileAccessWatchParty(
+  party: PartyDoc,
+  userId: string,
+  profileId?: number | null,
+  partyPassword?: string | null,
+) {
+  if (party.accessMode !== "invite") return true;
+  if (
+    partyPassword &&
+    partyPassword === party.partyPassword
+  ) {
+    return true;
+  }
+  if (isWatchPartyHost(party, userId, profileId)) return true;
+
+  const actorId = getWatchPartyActorId(userId, profileId);
+  if (party.invitedProfileIds) {
+    return party.invitedProfileIds.includes(actorId);
+  }
+
+  // Legacy parties without profile ownership keep their account-level access.
+  if (party.hostProfileId == null) {
+    return (party.invitedUserIds ?? []).includes(userId);
+  }
+
+  return false;
 }
 
 function normalizeProfileImage(imgUrl?: string | null) {
@@ -113,17 +200,24 @@ async function enrichPartyHost(party: PartyDoc): Promise<PartyDoc> {
     if (!Array.isArray(profiles) || profiles.length === 0) return party;
 
     const hostProfile =
-      profiles.find((profile) => profile.id === party.hostProfileId) ??
-      profiles.find((profile) => profile.nickname === party.hostNickname) ??
-      profiles[0];
+      party.hostProfileId == null
+        ? profiles.find(
+            (profile) => profile.nickname === party.hostNickname,
+          ) ?? profiles[0]
+        : profiles.find(
+            (profile) =>
+              String(profile.id) === String(party.hostProfileId),
+          );
+    if (!hostProfile) return party;
 
     return {
       ...party,
       hostProfileId: hostProfile.id ?? party.hostProfileId,
       hostImgUrl:
-        normalizeProfileImage(hostProfile.imgUrl) || party.hostImgUrl || "",
+        normalizeProfileImage(party.hostImgUrl) ||
+        normalizeProfileImage(hostProfile.imgUrl),
       hostBadge:
-        hostProfile.badges?.equippedBadges ?? party.hostBadge ?? "",
+        party.hostBadge || hostProfile.badges?.equippedBadges || "",
     };
   } catch (error) {
     console.error("[watchParty] host profile load failed:", error);
@@ -137,14 +231,26 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
   messages: [],
   isHost: false,
   openParties: [],
+  invitedParties: [],
 
-  createParty: async ({ type, mediaId, title, posterPath, backdropPath, host }) => {
+  createParty: async ({
+    type,
+    mediaId,
+    title,
+    posterPath,
+    backdropPath,
+    host,
+    partyName,
+    invitedProfileIds = [],
+    partyPassword,
+  }) => {
     try {
       const partyId = randomCode();
       const now = Date.now();
       const data: PartyDoc = {
         partyId,
         hostId: host.userId,
+        hostActorId: getWatchPartyActorId(host.userId, host.profileId),
         hostNickname: host.nickname,
         hostProfileId: host.profileId,
         hostImgUrl: host.imgUrl ?? "",
@@ -152,12 +258,19 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
         type,
         mediaId,
         title,
+        partyName: partyName?.trim() || `${title} 같이보기`,
+        accessMode: partyPassword ? "invite" : "open",
+        invitedUserIds: [
+          ...new Set(invitedProfileIds.map(getActorUserId)),
+        ],
+        invitedProfileIds,
+        partyPassword: partyPassword ?? "",
         posterPath: posterPath ?? "",
         backdropPath: backdropPath ?? "",
         isPlaying: true,
         positionPct: 0,
         updatedAt: now,
-        participants: [host.userId],
+        participants: [getWatchPartyActorId(host.userId, host.profileId)],
         createdAt: now,
       };
       await setDoc(doc(db, "watchParties", partyId), data);
@@ -197,13 +310,148 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
     );
   },
 
-  join: async (partyId, user) => {
+  join: async (partyId, user, partyPassword) => {
     try {
-      await updateDoc(doc(db, "watchParties", partyId), {
-        participants: arrayUnion(user.userId),
-      });
+      const partySnap = await getDoc(doc(db, "watchParties", partyId));
+      if (!partySnap.exists()) return false;
+      const party = partySnap.data() as PartyDoc;
+      const canEnter = canProfileAccessWatchParty(
+        party,
+        user.userId,
+        user.profileId,
+        partyPassword,
+      );
+      if (!canEnter) return false;
+
+      try {
+        await updateDoc(doc(db, "watchParties", partyId), {
+          participants: arrayUnion(
+            getWatchPartyActorId(user.userId, user.profileId),
+          ),
+        });
+      } catch (error) {
+        console.warn(
+          "[watchParty] participant count update skipped:",
+          error,
+        );
+      }
+      return true;
     } catch (e) {
       console.error("[watchParty] join 실패:", e);
+      return false;
+    }
+  },
+
+  updateInvitedProfiles: async (partyId, actorIds, requester) => {
+    const uniqueActorIds = [...new Set(actorIds)].filter(Boolean);
+    try {
+      const partySnap = await getDoc(doc(db, "watchParties", partyId));
+      if (
+        !partySnap.exists() ||
+        !isWatchPartyHost(
+          partySnap.data() as PartyDoc,
+          requester.userId,
+          requester.profileId,
+        )
+      ) {
+        return false;
+      }
+      const party = partySnap.data() as PartyDoc;
+      const mergedActorIds = [
+        ...new Set([
+          ...(party.invitedProfileIds ?? []),
+          ...uniqueActorIds,
+        ]),
+      ];
+      const mergedUserIds = [
+        ...new Set([
+          ...(party.invitedUserIds ?? []),
+          ...mergedActorIds.map(getActorUserId),
+        ]),
+      ];
+      await updateDoc(doc(db, "watchParties", partyId), {
+        accessMode: "invite",
+        invitedUserIds: mergedUserIds,
+        invitedProfileIds: mergedActorIds,
+      });
+      return true;
+    } catch (e) {
+      console.error("[watchParty] updateInvitedProfiles failed:", e);
+      return false;
+    }
+  },
+
+  verifyPartyPassword: async (partyId, partyPassword) => {
+    if (!partyId || !partyPassword) return null;
+
+    try {
+      const partyRef = doc(db, "watchParties", partyId);
+      const partySnap = await getDoc(partyRef);
+      if (!partySnap.exists()) return null;
+
+      const party = partySnap.data() as PartyDoc;
+      if (party.accessMode !== "invite") return null;
+      if (partyPassword !== party.partyPassword) return null;
+
+      return enrichPartyHost(party);
+    } catch (error) {
+      console.error("[watchParty] password verification failed:", error);
+      return null;
+    }
+  },
+
+  deleteParty: async (partyId, requester) => {
+    if (!partyId || !requester.userId) return false;
+
+    try {
+      const partyRef = doc(db, "watchParties", partyId);
+      const partySnap = await getDoc(partyRef);
+      if (
+        !partySnap.exists() ||
+        !isWatchPartyHost(
+          partySnap.data() as PartyDoc,
+          requester.userId,
+          requester.profileId,
+        )
+      ) {
+        return false;
+      }
+
+      await deleteDoc(partyRef);
+      if (get().partyId === partyId) get().leave();
+      return true;
+    } catch (error) {
+      console.error("[watchParty] deleteParty failed:", error);
+      return false;
+    }
+  },
+
+  loadInvitedParties: async (userId, profileId) => {
+    if (!userId) {
+      set({ invitedParties: [] });
+      return;
+    }
+    try {
+      const snap = await getDocs(
+        query(collection(db, "watchParties"), orderBy("createdAt", "desc"), limit(50)),
+      );
+      const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+      const actorId = getWatchPartyActorId(userId, profileId);
+      const invited = snap.docs
+        .map((item) => item.data() as PartyDoc)
+        .filter(
+          (party) =>
+            (party.createdAt ?? 0) >= cutoff &&
+            party.accessMode === "invite" &&
+            (party.invitedProfileIds
+              ? party.invitedProfileIds.includes(actorId)
+              : party.hostProfileId == null &&
+                (party.invitedUserIds ?? []).includes(userId)),
+        );
+      set({ invitedParties: await Promise.all(invited.map(enrichPartyHost)) });
+    } catch (e) {
+      console.error("[watchParty] invited parties load failed:", e);
+      set({ invitedParties: [] });
     }
   },
 
@@ -214,6 +462,8 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
     try {
       await addDoc(collection(db, "watchParties", partyId, "messages"), {
         userId: user.userId,
+        actorId: getWatchPartyActorId(user.userId, user.profileId),
+        ...(user.profileId == null ? {} : { profileId: user.profileId }),
         nickname: user.nickname,
         badge: user.badge ?? "",
         text: trimmed,
@@ -224,7 +474,7 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
     }
   },
 
-  updatePlayback: async ({ positionPct, isPlaying }) => {
+  updatePlayback: async ({ positionPct, isPlaying, userId }) => {
     const { partyId } = get();
     if (!partyId) return;
     // 너무 잦은 쓰기 방지: 3초에 한 번만 동기화
@@ -236,13 +486,14 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
         positionPct: Math.round(positionPct),
         isPlaying,
         updatedAt: now,
+        playbackUpdatedBy: userId ?? "",
       });
     } catch (e) {
       console.error("[watchParty] updatePlayback 실패:", e);
     }
   },
 
-  updatePlaybackNow: async ({ positionPct, isPlaying }) => {
+  updatePlaybackNow: async ({ positionPct, isPlaying, userId }) => {
     const { partyId } = get();
     if (!partyId) return;
     // 즉시 동기화(재생/정지/탐색). 드래그 연타 방지로 0.5초 스로틀
@@ -255,6 +506,7 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
         positionPct: Math.round(positionPct),
         isPlaying,
         updatedAt: now,
+        playbackUpdatedBy: userId ?? "",
       });
     } catch (e) {
       console.error("[watchParty] updatePlaybackNow 실패:", e);
