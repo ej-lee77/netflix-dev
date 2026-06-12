@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { useAvailablePoints } from "@/store/usePointStore";
 import { pts } from "@/data/goods";
 
-export default function ShopTopBar({ title }: { title: string }) {
+export default function ShopTopBar({ title, hidePoints }: { title: string; hidePoints?: boolean }) {
   const { cart, cartLoaded, loadCart } = useGoodsStore();
   const { available } = useAvailablePoints();
 
@@ -19,13 +20,15 @@ export default function ShopTopBar({ title }: { title: string }) {
   return (
     <div className="shop-topbar">
       <div className="shop-topbar__brand">
-        <b>NETFLIX</b>
+        <Image src="/images/logo-icon.svg" alt="Netflix" width={28} height={28} className="shop-topbar__logo" />
         <h2 className="shop-topbar__title">{title}</h2>
       </div>
       <div className="shop-topbar__actions">
-        <span className="shop-point-chip" title="보유 포인트 (적립 − 사용)">
-          {pts(available)}
-        </span>
+        {!hidePoints && (
+          <span className="shop-point-chip" title="보유 포인트 (적립 − 사용)">
+            {pts(available)}
+          </span>
+        )}
         <Link href="/shop/orders" className="shop-topbar__link">
           교환내역
         </Link>
