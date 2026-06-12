@@ -15,6 +15,7 @@ import RepBadge from "@/components/common/RepBadge";
 import WatchPartyModal from "@/components/watch/WatchPartyModal";
 import { useAuthStore } from "@/store/useAuthStore";
 import "swiper/css";
+import "swiper/css/navigation";
 import "./scss/connectWatchParties.scss";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
@@ -107,7 +108,10 @@ export default function ConnectWatchParties() {
               watchOverflow
               observer
               observeParents
-              allowTouchMove={canSlide}
+              allowTouchMove
+              simulateTouch
+              grabCursor={canSlide}
+              touchStartPreventDefault={false}
               slidesPerView={"auto"}
               slidesPerGroup={1}
               spaceBetween={CARD_GAP}
@@ -116,6 +120,9 @@ export default function ConnectWatchParties() {
                 requestAnimationFrame(() => updateNavigation(swiper));
               }}
               onSlideChange={updateNavigation}
+              onActiveIndexChange={updateNavigation}
+              onTransitionEnd={updateNavigation}
+              onTouchEnd={updateNavigation}
               onResize={updateNavigation}
               onSlidesUpdated={updateNavigation}
             >
@@ -187,9 +194,18 @@ export default function ConnectWatchParties() {
                         <h3 className="cwp-title">
                           {party.partyName || party.title}
                         </h3>
-                        {party.partyName && party.partyName !== party.title && (
-                          <p className="cwp-media-title">{party.title}</p>
-                        )}
+                        <p
+                          className="cwp-media-title"
+                          aria-hidden={
+                            !party.partyName ||
+                            party.partyName === party.title
+                          }
+                        >
+                          {party.partyName &&
+                          party.partyName !== party.title
+                            ? party.title
+                            : "\u00A0"}
+                        </p>
 
                         <div className="cwp-meta">
                           <div className="cwp-host-block">
@@ -234,13 +250,13 @@ export default function ConnectWatchParties() {
           <>
             <button
               type="button"
-              className="cwp-nav cwp-nav--prev"
+              className="swiper-button-prev cwp-edge-nav cwp-edge-nav--prev"
               onClick={() => swiperRef.current?.slidePrev()}
               disabled={isBeginning}
               aria-label="이전 파티 보기"
             >
               <svg
-                className="swiper-navigation-icon cwp-nav__icon--prev"
+                className="swiper-navigation-icon"
                 width="11"
                 height="20"
                 viewBox="0 0 11 20"
@@ -255,7 +271,7 @@ export default function ConnectWatchParties() {
             </button>
             <button
               type="button"
-              className="cwp-nav cwp-nav--next"
+              className="swiper-button-next cwp-edge-nav cwp-edge-nav--next"
               onClick={() => swiperRef.current?.slideNext()}
               disabled={isEnd}
               aria-label="다음 파티 보기"

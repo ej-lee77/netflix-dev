@@ -357,6 +357,9 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
         return false;
       }
       const party = partySnap.data() as PartyDoc;
+      if (party.accessMode !== "invite") {
+        return false;
+      }
       const mergedActorIds = [
         ...new Set([
           ...(party.invitedProfileIds ?? []),
