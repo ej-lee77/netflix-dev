@@ -34,6 +34,7 @@ import {
   removeUpcomingAlarm,
 } from "@/lib/upcomingNotifications";
 import AppIcon from "../common/AppIcon";
+import WatchPartyModal from "@/components/watch/WatchPartyModal";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -319,6 +320,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   // 케데헌 이스터에그: 탭 라인 위 루미 클릭 → 게임 모달
   const [showGameModal, setShowGameModal] = useState(false);
+  const [showWatchPartyModal, setShowWatchPartyModal] = useState(false);
   const [addingToListId, setAddingToListId] = useState<string | null>(null);
   // 플레이리스트 카드 모자이크용 작품 이미지 캐시 (videoId → 이미지 URL)
   const [pickerImages, setPickerImages] = useState<Record<string, string>>({});
@@ -721,6 +723,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     } finally {
       setIsAddingPlayList(false);
     }
+  };
+
+  const handleOpenWatchParty = () => {
+    if (!user || !currentProfile) {
+      showToast("로그인 후 프로필을 선택해 주세요.");
+      router.push("/login");
+      return;
+    }
+    setShowWatchPartyModal(true);
   };
 
   const handleNotifyUpcoming = async () => {
@@ -2802,6 +2813,18 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   return (
     <div style={{ background: "#141414", minHeight: "100vh", marginTop: -56 }}>
       {confirmModal}
+      {showWatchPartyModal && mediaItem && (
+        <WatchPartyModal
+          media={{
+            type,
+            mediaId,
+            title: title || "같이보기",
+            posterPath: mediaItem.poster_path,
+            backdropPath: mediaItem.backdrop_path,
+          }}
+          onClose={() => setShowWatchPartyModal(false)}
+        />
+      )}
       {/* Hero + Info Section (shared background) */}
       <div style={{ position: "relative" }}>
         {detailBackdrop && (
@@ -3240,6 +3263,30 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   </span>
                 </div>
               ) : null}
+              {isMobile && mediaItem && !isUpcoming && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="detail-hero-action-btn detail-party-btn"
+                    onClick={handleOpenWatchParty}
+                    aria-label="넷플릭스 파티 만들기"
+                    title="넷플릭스 파티 만들기"
+                  >
+                    <img
+                      src="/images/detail/review/netflix-party-icon.svg"
+                      alt=""
+                    />
+                  </button>
+                  <span style={{ fontSize: 13, color: "#888" }}>같이보기</span>
+                </div>
+              )}
               {!isMobile && (
               <button
                 className="detail-primary-hover"
@@ -3374,6 +3421,20 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                       }}
                     >
                       +
+                    </button>
+                  )}
+                  {mediaItem && !isUpcoming && (
+                    <button
+                      type="button"
+                      className="detail-plus-btn detail-party-btn"
+                      onClick={handleOpenWatchParty}
+                      title="넷플릭스 파티 만들기"
+                      aria-label="넷플릭스 파티 만들기"
+                    >
+                      <img
+                        src="/images/detail/review/netflix-party-icon.svg"
+                        alt=""
+                      />
                     </button>
                   )}
                   {mediaItem && (

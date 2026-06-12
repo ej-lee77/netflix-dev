@@ -111,31 +111,80 @@
 }
 
 @keyframes kpopRumiSprite {
-  from { background-position-x: 0; }
-  to { background-position-x: calc(var(--rw) * -6); }
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: calc(var(--rw) * -6);
+  }
 }
 
 /* 불규칙한 좌우 배회 (구간마다 거리·방향이 다름, 전환 시 좌우반전) */
 @keyframes kpopRumiPatrol {
-  0% { left: 2%; transform: scaleX(1); }
-  15% { left: 36%; transform: scaleX(1); }
-  15.01% { left: 36%; transform: scaleX(-1); }
-  24% { left: 21%; transform: scaleX(-1); }
-  24.01% { left: 21%; transform: scaleX(1); }
-  42% { left: 60%; transform: scaleX(1); }
-  42.01% { left: 60%; transform: scaleX(-1); }
-  53% { left: 44%; transform: scaleX(-1); }
-  53.01% { left: 44%; transform: scaleX(1); }
-  70% { left: 86%; transform: scaleX(1); }
-  70.01% { left: 86%; transform: scaleX(-1); }
-  84% { left: 55%; transform: scaleX(-1); }
-  99.99% { left: 2%; transform: scaleX(-1); }
-  100% { left: 2%; transform: scaleX(1); }
+  0% {
+    left: 2%;
+    transform: scaleX(1);
+  }
+  15% {
+    left: 36%;
+    transform: scaleX(1);
+  }
+  15.01% {
+    left: 36%;
+    transform: scaleX(-1);
+  }
+  24% {
+    left: 21%;
+    transform: scaleX(-1);
+  }
+  24.01% {
+    left: 21%;
+    transform: scaleX(1);
+  }
+  42% {
+    left: 60%;
+    transform: scaleX(1);
+  }
+  42.01% {
+    left: 60%;
+    transform: scaleX(-1);
+  }
+  53% {
+    left: 44%;
+    transform: scaleX(-1);
+  }
+  53.01% {
+    left: 44%;
+    transform: scaleX(1);
+  }
+  70% {
+    left: 86%;
+    transform: scaleX(1);
+  }
+  70.01% {
+    left: 86%;
+    transform: scaleX(-1);
+  }
+  84% {
+    left: 55%;
+    transform: scaleX(-1);
+  }
+  99.99% {
+    left: 2%;
+    transform: scaleX(-1);
+  }
+  100% {
+    left: 2%;
+    transform: scaleX(1);
+  }
 }
 
 /* 플레이리스트 선택 카드 호버 */
 :global(.detail-playlist-card) {
-  transition: border-color 0.15s, background-color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    transform 0.15s;
 
   &:hover {
     border-color: #e50914 !important;
@@ -150,6 +199,31 @@
 
   &:hover {
     transform: scale(1.08);
+  }
+}
+
+:global(.detail-party-btn) {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  cursor: pointer;
+
+  img {
+    width: 14px;
+    height: 14px;
+    filter: brightness(0) invert(1);
+  }
+
+  &:hover {
+    // border-color: rgba(229, 9, 20, 0.75);
+    // background: rgba(229, 9, 20, 0.14);
   }
 }
 
@@ -194,17 +268,20 @@
   //     rgba(229, 9, 20, 0.4),
   //     rgba(229, 9, 20, 0.9));
 
-  background: linear-gradient(180deg,
-      rgba(229, 9, 20, 0.3) 0%,
-      rgba(229, 9, 20, 0.8) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(229, 9, 20, 0.3) 0%,
+    rgba(229, 9, 20, 0.8) 100%
+  );
   border-radius: 999px;
   transition: all 0.2s ease;
 }
 
 :global(.detail-review-textarea::-webkit-scrollbar-thumb:hover) {
   //background: #f6121d;
-  background: linear-gradient(to bottom,
-      rgba(246, 18, 29, 0.6),
-      rgba(246, 18, 29, 1));
+  background: linear-gradient(
+    to bottom,
+    rgba(246, 18, 29, 0.6),
+    rgba(246, 18, 29, 1)
+  );
 }
-
