@@ -282,7 +282,7 @@ export default function LoginPage() {
 
           <form className="login-form" onSubmit={handleEmailLogin} noValidate>
             <div className="form-field">
-              <label htmlFor="login-email" className="form-label">이메일</label>
+              <label htmlFor="login-email" className="form-label">이메일 <span>delexi4121@fixscal.com</span></label>
               <input
                 id="login-email"
                 type="email"
@@ -292,13 +292,13 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
-              <div className="demo-ac">
+              {/* <div className="demo-ac">
                 <span>ID : delexi4121@fixscal.com</span>
-              </div>
+              </div> */}
             </div>
 
             <div className="form-field">
-              <label htmlFor="login-password" className="form-label">비밀번호</label>
+              <label htmlFor="login-password" className="form-label">비밀번호 <span>ezen123456</span></label>
               <div className="input-wrap">
                 <input
                   id="login-password"
@@ -318,9 +318,9 @@ export default function LoginPage() {
                   {showPassword ? <EyeOpenIcon /> : <EyeOffIcon />}
                 </button>
               </div>
-              <div className="demo-ac">
+              {/* <div className="demo-ac">
                 <span>PW : ezen123456</span>
-              </div>
+              </div> */}
             </div>
 
             <div className="form-options">

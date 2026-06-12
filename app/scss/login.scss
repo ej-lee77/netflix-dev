@@ -175,20 +175,18 @@
   flex-direction: column;
   gap: 6px;
   position: relative;
-
-  .demo-ac{
-    position: absolute;
-    display: inline-block;
-    top: 85px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
 }
 
 .form-label {
   font-size: g.$text-13;
   font-weight: 500;
   color: #a0a0a0;
+
+  span{
+    color: #555555;
+    margin-left: 10px;
+    font-weight: 400;
+  }
 }
 
 .input-wrap {
