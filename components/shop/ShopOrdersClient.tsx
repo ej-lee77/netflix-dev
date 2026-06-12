@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { categoryMeta, pts, won } from "@/data/goods";
 import ShopTopBar from "./ShopTopBar";
+import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
 
 function formatDate(ts: number) {
@@ -49,7 +50,7 @@ export default function ShopOrdersClient() {
                 return (
                   <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
                     <div className="order-item__thumb" style={{ background: meta.gradient }}>
-                      {meta.emoji}
+                      <CategoryIcon name={meta.iconKey} size={28} />
                     </div>
                     <div className="order-item__info">
                       <div className="order-item__name">{it.name}</div>
