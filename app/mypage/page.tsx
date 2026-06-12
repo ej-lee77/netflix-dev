@@ -753,7 +753,7 @@ export default function MyPage() {
                   title={b.title}
                 >
                   <div className="badge-icon">
-                    <img src={b.imgUrl} alt={b.name} style={{ width: '100%', height: 'auto' }} />
+                    <img src={b.imgUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                     {b.isEquipped && <span className="equipped-badge-tag">장착됨</span>}
                   </div>
                   <h4>{b.name}</h4>
