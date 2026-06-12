@@ -11,6 +11,7 @@ const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
 
 export interface FollowUser {
   userId: string;
+  profileId?: number;
   nickname: string;
   imgUrl: string;
   badge?: string; // 장착 뱃지(대표 칭호) ID
@@ -355,6 +356,7 @@ export const useFollowStore = create<FollowState>()((set, get) => ({
       // 2단계: 더미 + 실제 유저 목록 표시
       const users: FollowUser[] = validEntries.map(({ userId, firstProfile }) => ({
         userId,
+        profileId: firstProfile.id,
         nickname: firstProfile.nickname ?? "유저",
         imgUrl: firstProfile.imgUrl ?? "",
         badge: firstProfile.badges?.equippedBadges ?? "",
