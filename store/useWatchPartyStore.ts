@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { db } from "@/firebase/firebase";
 import {
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   onSnapshot,
@@ -20,6 +21,9 @@ export interface PartyDoc {
   partyId: string;
   hostId: string;
   hostNickname: string;
+  hostProfileId?: number;
+  hostImgUrl?: string;
+  hostBadge?: string;
   type: "movie" | "tv";
   mediaId: number;
   title: string;
@@ -44,6 +48,8 @@ export interface PartyMessage {
 interface PartyUser {
   userId: string;
   nickname: string;
+  profileId?: number;
+  imgUrl?: string;
   badge?: string;
 }
 
@@ -81,6 +87,50 @@ function randomCode() {
   return Math.random().toString(36).slice(2, 8);
 }
 
+function normalizeProfileImage(imgUrl?: string | null) {
+  if (!imgUrl) return "";
+  if (imgUrl.startsWith("/images/profile/default_icons/")) {
+    return imgUrl.replace(
+      "/images/profile/default_icons/",
+      "/images/profile/image/default_icons/",
+    );
+  }
+  if (
+    imgUrl.startsWith("/images/profile/") &&
+    !imgUrl.startsWith("/images/profile/image/")
+  ) {
+    return imgUrl.replace("/images/profile/", "/images/profile/image/");
+  }
+  return imgUrl;
+}
+
+async function enrichPartyHost(party: PartyDoc): Promise<PartyDoc> {
+  try {
+    const userSnap = await getDoc(doc(db, "users", party.hostId));
+    if (!userSnap.exists()) return party;
+
+    const profiles = userSnap.data().profile;
+    if (!Array.isArray(profiles) || profiles.length === 0) return party;
+
+    const hostProfile =
+      profiles.find((profile) => profile.id === party.hostProfileId) ??
+      profiles.find((profile) => profile.nickname === party.hostNickname) ??
+      profiles[0];
+
+    return {
+      ...party,
+      hostProfileId: hostProfile.id ?? party.hostProfileId,
+      hostImgUrl:
+        normalizeProfileImage(hostProfile.imgUrl) || party.hostImgUrl || "",
+      hostBadge:
+        hostProfile.badges?.equippedBadges ?? party.hostBadge ?? "",
+    };
+  } catch (error) {
+    console.error("[watchParty] host profile load failed:", error);
+    return party;
+  }
+}
+
 export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
   partyId: null,
   party: null,
@@ -96,6 +146,9 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
         partyId,
         hostId: host.userId,
         hostNickname: host.nickname,
+        hostProfileId: host.profileId,
+        hostImgUrl: host.imgUrl ?? "",
+        hostBadge: host.badge ?? "",
         type,
         mediaId,
         title,
@@ -208,8 +261,12 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
     }
     unsubOpen = onSnapshot(
       query(collection(db, "watchParties"), orderBy("createdAt", "desc"), limit(20)),
-      (snap) => {
-        const list = snap.docs.map((d) => d.data() as PartyDoc);
+      async (snap) => {
+        const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+        const recentParties = snap.docs
+          .map((d) => d.data() as PartyDoc)
+          .filter((party) => (party.createdAt ?? 0) >= cutoff);
+        const list = await Promise.all(recentParties.map(enrichPartyHost));
         set({ openParties: list });
       },
       (e) => console.error("[watchParty] openParties 구독 실패:", e),
