@@ -13,7 +13,7 @@ import { FAQ_CATEGORIES, FAQ_CATEGORY_LABELS } from "@/data/faq";
 import { ContactStatus } from "@/types/contact";
 import FaqAccordion from "@/components/common/FaqAccordion";
 import CustomSelect from "@/components/common/CustomSelect";
-import BackButton from "@/components/common/BackButton";
+import FooterMenuNav from "@/components/common/FooterMenuNav";
 
 type TabType = "faq" | "inquiry" | "history";
 type FilterStatusType = "all" | "pending" | "processing" | "answered";
@@ -139,8 +139,9 @@ function ContactPageContent() {
 
   return (
     <div className="contact-page">
-      <div className="inner">
-        <BackButton fallback="/mypage" />
+      <div className="footer-menu-page">
+        <FooterMenuNav />
+        <main className="footer-menu-content inner">
         <div className="page-head">
           <h1>고객 센터</h1>
         </div>
@@ -369,6 +370,7 @@ function ContactPageContent() {
             )}
           </div>
         )}
+        </main>
       </div>
     </div>
   );
