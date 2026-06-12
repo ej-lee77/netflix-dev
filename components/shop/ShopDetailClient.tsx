@@ -7,6 +7,8 @@ import { useAvailablePoints } from "@/store/usePointStore";
 import { categoryMeta, pts, won } from "@/data/goods";
 import { showToast } from "@/store/useToastStore";
 import ShopTopBar from "./ShopTopBar";
+import CategoryIcon from "./CategoryIcon";
+import GoodsCard from "./GoodsCard";
 import "./scss/shop.scss";
 
 export default function ShopDetailClient({ productId }: { productId: string }) {
@@ -71,6 +73,9 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
   const safeSel = Math.min(sel, Math.max(0, gallery.length - 1));
   const mainSrc = hasImg ? gallery[safeSel] : null;
   const hasRelated = !!(product.relatedType && product.relatedId);
+  const relatedProducts = products
+    .filter((p) => p.id !== product.id && p.category === product.category)
+    .slice(0, 4);
 
   const ensureValid = () => {
     if (soldOut) {
@@ -126,9 +131,7 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
                   onError={() => setBroken((b) => ({ ...b, [mainSrc!]: true }))}
                 />
               ) : (
-                <span className="shop-detail__main-emoji" aria-hidden>
-                  {meta.emoji}
-                </span>
+                <CategoryIcon name={meta.iconKey} size={80} className="shop-detail__main-emoji" aria-hidden />
               )}
               {product.badge && (
                 <span className={`goods-card__badge goods-card__badge--${product.badge}`}>
@@ -250,6 +253,17 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
             </div>
           </div>
         </div>
+
+        {relatedProducts.length > 0 && (
+          <div className="shop-related">
+            <h3 className="shop-related__title">같은 카테고리 상품</h3>
+            <div className="shop-grid">
+              {relatedProducts.map((p) => (
+                <GoodsCard key={p.id} product={p} affordable={available >= p.points} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
