@@ -22,6 +22,7 @@ import "./scss/header.scss";
 import HeaderSearchOverlay from "./HeaderSearchOverlay";
 import { useT } from "@/lib/i18n";
 import { useSubscriptionGuard } from "@/lib/subscription";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const AUTH_PATHS = ["/login", "/signin", "/forgot-password", "/payment"];
 
@@ -29,6 +30,7 @@ export default function Header() {
   const t = useT();
   const pathname = usePathname();
   const router = useRouter();
+  const prefetchRoute = useRoutePrefetch();
   // 커넥트 모드: isCommunity 플래그 기반 (12세 이하 프로필은 자동 비활성)
   const canUseConnect = useCommunityEnabled();
   const { user, currentProfile, onLogout, onSetProfile } = useAuthStore();
@@ -175,6 +177,26 @@ export default function Header() {
 
   const { isUnsubscribed } = useSubscriptionGuard();
 
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const routes = [
+        "/",
+        "/category",
+        "/feed",
+        "/shop",
+        "/alarm",
+        user ? "/mypage" : "/login",
+        "/profiles",
+        "/settings",
+      ];
+
+      if (canUseConnect) routes.push("/connect");
+      routes.forEach(prefetchRoute);
+    }, 1200);
+
+    return () => window.clearTimeout(id);
+  }, [canUseConnect, prefetchRoute, user]);
+
   return (
     <>
       <header
@@ -184,7 +206,11 @@ export default function Header() {
         <div className="flex-item">
           <div className="flex-item gap-6">
             <h1>
-              <Link href="/">
+              <Link
+                href="/"
+                onPointerEnter={() => prefetchRoute("/")}
+                onFocus={() => prefetchRoute("/")}
+              >
                 <Image
                   src="/images/logo-icon.svg"
                   alt="Netflix"
@@ -198,13 +224,25 @@ export default function Header() {
             {(pathname === "/" || pathname?.startsWith("/connect")) && (
               <ul ref={modeMenuRef} className="mode-menu flex-item gap-4">
                 <li className={pathname === "/" ? "active" : ""}>
-                  <Link href="/">{t("header.cinema")}</Link>
+                  <Link
+                    href="/"
+                    onPointerEnter={() => prefetchRoute("/")}
+                    onFocus={() => prefetchRoute("/")}
+                  >
+                    {t("header.cinema")}
+                  </Link>
                 </li>
                 {canUseConnect && (
                   <li
                     className={pathname?.startsWith("/connect") ? "active" : ""}
                   >
-                    <Link href="/connect">{t("header.connect")}</Link>
+                    <Link
+                      href="/connect"
+                      onPointerEnter={() => prefetchRoute("/connect")}
+                      onFocus={() => prefetchRoute("/connect")}
+                    >
+                      {t("header.connect")}
+                    </Link>
                   </li>
                 )}
                 {indicator && (
@@ -247,7 +285,11 @@ export default function Header() {
             )}
             {!isUnsubscribed && (
               <li className="gnb-alarm">
-                <Link href="/alarm">
+                <Link
+                  href="/alarm"
+                  onPointerEnter={() => prefetchRoute("/alarm")}
+                  onFocus={() => prefetchRoute("/alarm")}
+                >
                   <Image
                     src="/images/header/alarm.svg"
                     alt="알림"
@@ -346,6 +388,8 @@ export default function Header() {
                       <li>
                         <Link
                           href="/mypage"
+                          onPointerEnter={() => prefetchRoute("/mypage")}
+                          onFocus={() => prefetchRoute("/mypage")}
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
                           {t("header.mypage")}
@@ -354,6 +398,8 @@ export default function Header() {
                       <li>
                         <Link
                           href="/profiles"
+                          onPointerEnter={() => prefetchRoute("/profiles")}
+                          onFocus={() => prefetchRoute("/profiles")}
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
                           프로필 전환
@@ -362,6 +408,8 @@ export default function Header() {
                       <li>
                         <Link
                           href="/settings"
+                          onPointerEnter={() => prefetchRoute("/settings")}
+                          onFocus={() => prefetchRoute("/settings")}
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
                           설정
