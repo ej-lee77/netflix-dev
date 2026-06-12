@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore, normalizeProfileSettings } from "@/store/useAuthStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import { GENRE_SLUG_META } from "@/data/excludedGenres";
 import "./scss/onboarding.scss";
@@ -95,7 +95,8 @@ export default function OnboardingClient() {
         await onUpdateProfile({
           ...currentProfile,
           settings: {
-            ...currentProfile.settings,
+            // settings 가 undefined 여도 필수 필드를 기본값으로 채워 완전한 ProfileSettings 보장
+            ...normalizeProfileSettings(currentProfile.settings),
             favoriteGenres: genres,
             favoriteMoods: moods,
             favoriteTitles: titles,
