@@ -1,24 +1,89 @@
 @use "../../../app/globals.scss" as g;
 
 .connect-watch-parties {
+  position: relative;
   margin-top: 20px;
-}
+  overflow: hidden; // 👈 [추가] 브라우저 전체 창에 가로 스크롤바가 생기는 것을 원천 차단합니다.
 
-.cwp-list {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: clamp(330px, 28vw, 380px);
-  gap: 18px;
-  overflow-x: auto;
-  padding: 6px 2px 18px;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-
-  &::-webkit-scrollbar {
-    display: none;
+  &__inner {
+    width: calc(100vw - #{g.$main-menu-width});
+    padding-right: 0;
   }
 }
 
+.cwp-swiper-shell {
+  position: relative;
+}
+
+.cwp-list {
+  width: 100%;
+  // 👈 [주의/원복] 리스트는 무조건 visible이어야 카드가 우측 화면 밖으로 쭉 나열됩니다!
+  overflow: visible !important;
+  padding: 6px 0 20px;
+}
+
+.cwp-slide {
+  height: auto;
+  // TSX 파일에서 slidesPerView={"auto"} 설정과 맞물려 각 카드의 고정 크기를 완벽하게 유지시킵니다.
+  width: clamp(330px, 20vw, 380px) !important;
+
+  .cwp-card {
+    height: 100%;
+  }
+}
+
+.cwp-nav {
+  position: absolute;
+  top: 47%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #fff;
+  z-index: 30;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.7 !important;
+  }
+
+  &:disabled {
+    opacity: 0 !important;
+    pointer-events: none;
+  }
+}
+
+.cwp-nav .swiper-navigation-icon {
+  display: block;
+  width: 11px;
+  height: 20px;
+}
+
+.cwp-nav__icon--prev {
+  transform: rotate(180deg);
+}
+
+.cwp-nav--prev {
+  left: calc(#{g.$main-menu-width} + 8px);
+}
+
+.cwp-nav--next {
+  right: 0;
+}
+
+.connect-watch-parties:hover .cwp-nav:not(:disabled) {
+  opacity: 1;
+}
+
+/* --- 아래 카드 컴포넌트 세부 스타일은 기존과 동일 (유지) --- */
 .cwp-card {
   position: relative;
   min-width: 0;
@@ -41,7 +106,6 @@
   &:focus-visible {
     border-color: rgba(255, 255, 255, 0.34);
     box-shadow: 0 24px 54px rgba(0, 0, 0, 0.42);
-    // transform: translateY(-4px);
 
     .cwp-thumb {
       background-size: 104%;
@@ -50,7 +114,6 @@
     .cwp-enter {
       color: #fff;
       background: rgba(0, 0, 0, 0.72);
-
       span {
         transform: translateX(3px);
       }
@@ -92,7 +155,8 @@
 }
 
 .cwp-status,
-.cwp-enter {
+.cwp-enter,
+.cwp-lock {
   position: absolute;
   display: inline-flex;
   align-items: center;
@@ -102,6 +166,22 @@
   backdrop-filter: blur(10px);
   font-size: 11px;
   font-weight: 800;
+}
+
+.cwp-lock {
+  top: 9px;
+  right: 9px;
+  gap: 5px;
+  padding: 5px 7px;
+  color: rgba(255, 255, 255, 0.9);
+
+  svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
 }
 
 .cwp-status {
@@ -131,7 +211,6 @@
   transition:
     color 0.2s ease,
     background 0.2s ease;
-
   span {
     transition: transform 0.2s ease;
   }
@@ -140,7 +219,6 @@
 .cwp-body {
   padding: 12px 13px 13px;
 }
-
 .cwp-kicker {
   display: block;
   margin-bottom: 5px;
@@ -157,6 +235,15 @@
   font-size: 15px;
   font-weight: 900;
   line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cwp-media-title {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -237,8 +324,15 @@
 }
 
 @include g.respond(tablet) {
-  .cwp-list {
-    grid-auto-columns: clamp(290px, 42vw, 340px);
+  .connect-watch-parties__inner {
+    width: 100vw;
+    margin-left: 0;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .cwp-nav--prev {
+    left: 0;
   }
 }
 
@@ -246,43 +340,40 @@
   .connect-watch-parties {
     margin-top: 12px;
   }
-
+  .connect-watch-parties__inner {
+    padding-left: 20px;
+    padding-right: 12px;
+  }
   .cwp-list {
-    grid-auto-columns: min(82vw, 310px);
-    gap: 12px;
     padding-bottom: 12px;
   }
 
+  .cwp-nav {
+    display: none;
+  }
   .cwp-card {
     border-radius: 8px;
   }
-
   .cwp-thumb {
     aspect-ratio: 16 / 9;
   }
-
   .cwp-body {
     padding: 14px;
   }
-
   .cwp-title {
     font-size: 16px;
   }
-
   .cwp-meta {
     align-items: flex-end;
     margin-top: 13px;
     padding-top: 12px;
   }
-
   .cwp-host {
     gap: 7px;
   }
-
   .cwp-host .rep-badge {
     max-width: 140px;
   }
-
   .cwp-host__avatar {
     width: 30px;
     height: 30px;
