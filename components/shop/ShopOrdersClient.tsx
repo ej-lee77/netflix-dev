@@ -1,12 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { categoryMeta, pts, won } from "@/data/goods";
 import ShopTopBar from "./ShopTopBar";
 import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
+
+function OrderThumb({ thumbUrl, gradient, iconKey }: { thumbUrl?: string; gradient: string; iconKey: string }) {
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!thumbUrl && !imgError;
+  return (
+    <div className="order-item__thumb" style={showImg ? undefined : { background: gradient }}>
+      {showImg ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={thumbUrl} alt="" className="goods-card__img" onError={() => setImgError(true)} />
+      ) : (
+        <CategoryIcon name={iconKey} size={28} />
+      )}
+    </div>
+  );
+}
 
 function formatDate(ts: number) {
   const d = new Date(ts);
@@ -16,11 +31,12 @@ function formatDate(ts: number) {
 
 export default function ShopOrdersClient() {
   const router = useRouter();
-  const { orders, ordersLoaded, loadOrders } = useGoodsStore();
+  const { orders, ordersLoaded, loadOrders, products, loadProducts } = useGoodsStore();
 
   useEffect(() => {
     loadOrders();
-  }, [loadOrders]);
+    loadProducts();
+  }, [loadOrders, loadProducts]);
 
   return (
     <div className="shop-page">
@@ -47,11 +63,10 @@ export default function ShopOrdersClient() {
 
               {o.items.map((it, i) => {
                 const meta = categoryMeta(it.category);
+                const thumbUrl = it.thumbUrl ?? products.find((p) => p.id === it.productId)?.thumbUrl;
                 return (
                   <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
-                    <div className="order-item__thumb" style={{ background: meta.gradient }}>
-                      <CategoryIcon name={meta.iconKey} size={28} />
-                    </div>
+                    <OrderThumb thumbUrl={thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
                     <div className="order-item__info">
                       <div className="order-item__name">{it.name}</div>
                       <div className="order-item__meta">
