@@ -7,6 +7,7 @@ import { categoryMeta, pts, won } from "@/data/goods";
 import { showToast } from "@/store/useToastStore";
 import ShopTopBar from "./ShopTopBar";
 import CategoryIcon from "./CategoryIcon";
+import ShopIcon from "./ShopIcon";
 import "./scss/shop.scss";
 
 // 왼쪽 3단계 스테퍼 라벨 — 결제완료(정상) 흐름과 주문취소 흐름
@@ -49,14 +50,14 @@ function formatDate(ts: number) {
 
 export default function ShopOrdersClient() {
   const router = useRouter();
-  const { orders, ordersLoaded, loadOrders, products, loadProducts, cancelOrder } = useGoodsStore();
+  const { orders, ordersLoaded, loadOrders, cancelOrder } = useGoodsStore();
+
   // 새로고침 없이 단계가 자동으로 넘어가도록 주기적으로 현재 시각을 갱신
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     loadOrders();
-    loadProducts();
-  }, [loadOrders, loadProducts]);
+  }, [loadOrders]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 2000);
@@ -68,37 +69,62 @@ export default function ShopOrdersClient() {
       <div className="shop-shell">
         <ShopTopBar title="교환내역" />
 
-      {!ordersLoaded ? (
-        <div className="shop-loading">불러오는 중…</div>
-      ) : orders.length === 0 ? (
-        <div className="shop-empty">
-          <div className="shop-empty__emoji">📦</div>
-          <div className="shop-empty__msg">아직 교환 내역이 없어요.</div>
-          <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
-            굿즈 보러 가기
-          </button>
-        </div>
-      ) : (
-        orders.map((o) => {
-          const canceled = o.orderStatus === "canceled";
-          // 필요한 변수 선언들...
-          
-          // map 내부에서 return을 명시해주거나 소괄호로 바로 감싸야 합니다.
-          return (
-            <div className="order-card" key={o.orderId}>
-              {/* 주문 정보 헤더 영역 등 (필요 시 추가) */}
-              
-              {o.items.map((it, i) => {
-                const meta = categoryMeta(it.category);
-                const thumbUrl = it.thumbUrl ?? products.find((p) => p.id === it.productId)?.thumbUrl;
-                
-                return (
-                  <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
-                    <OrderThumb thumbUrl={thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
-                    <div className="order-item__info">
-                      <div className="order-item__name">{it.name}</div>
-                      <div className="order-item__meta">
-                        {it.option ? `${it.option} · ` : ""}수량 {it.qty}개
+        {!ordersLoaded ? (
+          <div className="shop-loading">불러오는 중…</div>
+        ) : orders.length === 0 ? (
+          <div className="shop-empty">
+            <div className="shop-empty__emoji"><ShopIcon name="box" size={48} /></div>
+            <div className="shop-empty__msg">아직 교환 내역이 없어요.</div>
+            <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
+              굿즈 보러 가기
+            </button>
+          </div>
+        ) : (
+          orders.map((o) => {
+            const canceled = o.orderStatus === "canceled";
+            const stages = canceled ? CANCEL_STAGES : ORDER_STAGES;
+            const startTs = canceled ? o.canceledAt ?? o.createdAt : o.createdAt;
+            const activeIdx = stageIndex(startTs, now);
+            const canCancel = !canceled && activeIdx < 2; // 배송완료 전까지만 취소 가능
+            const rightLabel = canceled ? "주문취소" : o.payStatus;
+
+            const handleCancel = async () => {
+              const ok = await cancelOrder(o.orderId);
+              showToast(ok ? "주문이 취소되었어요" : "주문 취소에 실패했어요");
+            };
+
+            return (
+              <div className="order-card" key={o.orderId}>
+                <div className="order-card__head">
+                  <span className="order-card__date">{formatDate(o.createdAt)}</span>
+                  <span className={`order-card__status${canceled ? " is-canceled" : ""}`}>
+                    {rightLabel}
+                  </span>
+                </div>
+
+                {/* 왼쪽 3단계 스테퍼 — 결제완료: 주문완료·주문배송·배송완료 / 주문취소: 취소신청·환불배송·취소완료 */}
+                <div className={`order-steps${canceled ? " is-cancel-flow" : ""}`}>
+                  {stages.map((label, i) => (
+                    <span
+                      key={label}
+                      className={`order-step${i <= activeIdx ? " is-done" : ""}${i === activeIdx ? " is-current" : ""}`}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                  {canCancel && (
+                    <button type="button" className="order-cancel-btn" onClick={handleCancel}>
+                      주문 취소
+                    </button>
+                  )}
+                </div>
+
+                {o.items.map((it, i) => {
+                  const meta = categoryMeta(it.category);
+                  return (
+                    <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
+                      <div className="order-item__thumb" style={{ background: meta.gradient }}>
+                        <CategoryIcon name={meta.iconKey} size={28} />
                       </div>
                       <div className="order-item__price">{pts(it.points * it.qty)}</div>
                     </div>
