@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { SimilarUser, useFollowStore } from "@/store/useFollowStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import RepBadge from "@/components/common/RepBadge";
+import TasteAnalysisModal from "./TasteAnalysisModal";
 
 type Props = {
     user: SimilarUser;
@@ -13,6 +14,7 @@ type Props = {
 export default function RisingReviewCard({ user }: Props) {
     const [posterFailed, setPosterFailed] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showAnalysis, setShowAnalysis] = useState(false);
     const { currentProfile } = useAuthStore();
     const { follow, unfollow } = useFollowStore();
     const router = useRouter();
@@ -55,11 +57,10 @@ export default function RisingReviewCard({ user }: Props) {
                         )}
 
                         <div>
-                            <h3>{user.nickname}</h3>
-                            <RepBadge badge={user.badge} size="sm" className="review-card__rep-badge" />
-                            {user.followersCount > 0 && (
-                                <p className="review-card__followers">팔로워 {user.followersCount}명</p>
+                            {user.badge && (
+                                <RepBadge badge={user.badge} size="sm" className="review-card__rep-badge" />
                             )}
+                            <h3>{user.nickname}</h3>
                             {user.matchRate > 0 && (
                                 <p>취향 매칭률 {user.matchRate}%</p>
                             )}
@@ -76,13 +77,6 @@ export default function RisingReviewCard({ user }: Props) {
                     </button>
                 </div>
 
-                {user.tags.length > 0 && (
-                    <div className="review-card__tags">
-                        {user.tags.map((tag) => (
-                            <span key={tag}>{tag}</span>
-                        ))}
-                    </div>
-                )}
 
                 <div className="review-card__movie-row">
                     {user.favoriteMovie.title && (
@@ -114,16 +108,25 @@ export default function RisingReviewCard({ user }: Props) {
                         </div>
                     )}
 
-                    <div className="review-card__analysis-badge">
+                    <button
+                        className="review-card__analysis-badge"
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowAnalysis(true); }}
+                        aria-label="취향 분석 보기"
+                    >
                         <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
                             <rect x="2" y="14" width="4" height="8" rx="1" />
                             <rect x="9" y="9" width="4" height="13" rx="1" />
                             <rect x="16" y="4" width="4" height="18" rx="1" />
                         </svg>
                         취향분석
-                    </div>
+                    </button>
                 </div>
             </div>
+
+        {showAnalysis && (
+            <TasteAnalysisModal user={user} onClose={() => setShowAnalysis(false)} />
+        )}
         </div>
     );
 }
