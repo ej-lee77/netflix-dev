@@ -1444,3 +1444,14 @@
   font-size: 12px;
   color: #9a9a9a;
 }
+
+/* ── 굿즈샵으로 돌아가기 링크 (장바구니/교환내역 상단바) ── */
+.shop-topbar__home {
+  font-weight: 600;
+  margin-right: 2px;
+
+  &:hover {
+    border-color: rgba(229, 9, 20, 0.55);
+    color: #fff;
+  }
+}

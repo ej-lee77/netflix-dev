@@ -66,7 +66,7 @@ export default function ShopOrdersClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="교환내역" />
+        <ShopTopBar title="교환내역" showShopHome />
 
         {!ordersLoaded ? (
           <div className="shop-loading">불러오는 중…</div>

@@ -37,7 +37,7 @@ export default function ShopCartClient() {
     return (
       <div className="shop-page">
         <div className="shop-shell">
-          <ShopTopBar title="장바구니" />
+          <ShopTopBar title="장바구니" showShopHome />
           <div className="shop-loading">불러오는 중…</div>
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function ShopCartClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="장바구니" />
+        <ShopTopBar title="장바구니" showShopHome />
 
         {lines.length === 0 ? (
           <div className="shop-empty">
