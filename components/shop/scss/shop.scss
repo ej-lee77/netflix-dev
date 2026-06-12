@@ -280,16 +280,72 @@
   font-weight: 600;
 }
 
+.shop-sort-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .shop-sort {
-  appearance: none;
-  -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.05) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #eee;
+  color: #cfcfcf;
   border-radius: 8px;
-  padding: 8px 32px 8px 12px;
+  padding: 7px 14px;
   font-size: 13px;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.shop-sort-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.shop-sort-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 11;
+  background: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.shop-sort-option {
+  display: block;
+  width: 100%;
+  padding: 11px 16px;
+  font-size: 13px;
+  color: #cfcfcf;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+  }
+
+  &.active {
+    color: #fff;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+  }
 }
 
 /* ===== 상품 그리드 / 카드 ===== */
@@ -1406,22 +1462,62 @@
   margin-bottom: 6px;
 }
 
-.order-return-form__select {
+/* 컨테이너 위치 잡기 */
+.order-return-form__select-wrap {
+  position: relative;
   width: 100%;
+}
+
+/* 기존 select와 동일한 외형을 만들거나 더 예쁘게 스타일링 */
+.order-return-form__select {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cfcfcf;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
   border-radius: 8px;
-  color: #fff;
-  padding: 10px 12px;
-  font-size: 14px;
-  outline: none;
+  font-size: 13px;
 
   &:focus {
     border-color: rgba(240, 168, 58, 0.6);
   }
+}
 
-  option {
-    color: #111; /* 일부 브라우저 드롭다운 가독성 */
+/* 옵션 리스트 위치 고정 */
+.order-return-form__options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: #1e1e1e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 10;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.order-return-form__options li {
+  padding: 10px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+  }
+
+  &.selected {
+    color: #fff;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
   }
 }
 
