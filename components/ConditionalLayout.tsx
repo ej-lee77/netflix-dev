@@ -11,6 +11,7 @@ import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 // 헤더/푸터/배너를 숨길 경로 목록
 const HIDE_LAYOUT_PATHS = ["/signin", "/onboarding"];
+const FULLSCREEN_PATHS = ["/watch"];
 
 export default function ConditionalLayout({
   children,
@@ -19,15 +20,24 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
   const hideLayout = HIDE_LAYOUT_PATHS.some((path) => pathname.startsWith(path));
+  const isFullscreenPage = FULLSCREEN_PATHS.some((path) =>
+    pathname.startsWith(path),
+  );
   const { isOpen, closeModal } = useSubscribeModalStore();
 
   return (
     <>
-      {!hideLayout && <Header />}
-      <main className={hideLayout ? undefined : "has-nav"}>{children}</main>
-      <Footer />
-      {!hideLayout && <LoginBanner />}
-      {!hideLayout && <MobileBottomNav />}
+      {!hideLayout && !isFullscreenPage && <Header />}
+      <main
+        className={
+          isFullscreenPage ? "fullscreen-page" : hideLayout ? undefined : "has-nav"
+        }
+      >
+        {children}
+      </main>
+      {!isFullscreenPage && <Footer />}
+      {!hideLayout && !isFullscreenPage && <LoginBanner />}
+      {!hideLayout && !isFullscreenPage && <MobileBottomNav />}
       <Toaster />
       {isOpen && <SubscribeModal onClose={closeModal} />}
     </>
