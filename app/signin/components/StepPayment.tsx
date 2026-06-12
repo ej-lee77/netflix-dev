@@ -29,6 +29,11 @@ interface StepPaymentProps {
   submitLabel?: string;
   amountLabel?: string;
   hideTitle?: boolean; // 타이틀 숨김 여부
+  // ── 외부(굿즈 배송비 등) 1회성 결제용 — 구독 로직 없이 선택한 결제수단만 전달 ──
+  onPaySubmit?: (payInfo: PayInfo, payLabel: string) => void | Promise<void>;
+  hideAmountBox?: boolean; // 결제 금액 박스 숨김 (외부에서 요약을 따로 보여줄 때)
+  hideAgree?: boolean;     // 자동결제 동의 영역 숨김 (1회성 결제)
+  noticeText?: string;     // 안내 문구 교체 ("" 이면 숨김)
 }
 
 // ─── 은행 목록 ────────────────────────────────────────────────────────────────
@@ -45,7 +50,7 @@ const fmt = (n: number) => n.toLocaleString("ko-KR");
 
 // ─── 컴포넌트 ──────────────────────────────────────────────────────────────────
 
-export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, hideTitle, submitLabel = "결제하기", amountLabel = "결제 금액" }: StepPaymentProps) {
+export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary, currentPayInfo, hideTitle, submitLabel = "결제하기", amountLabel = "결제 금액", onPaySubmit, hideAmountBox, hideAgree, noticeText }: StepPaymentProps) {
   const router = useRouter();
   const { onLogin } = useAuthStore();
 
@@ -137,6 +142,32 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
         return;
       }
     }
+    // ── 외부(굿즈 배송비 등) 1회성 결제: 구독 로직 없이 선택한 결제수단만 넘김 ──
+    if (onPaySubmit) {
+      setError("");
+      setIsLoading(true);
+      try {
+        const last4 = cardNumber.replace(/\s/g, "").slice(-4);
+        const payLabel =
+          activeTab === "card" ? `카드 ****-${last4}`
+            : activeTab === "quick" ? (selectedQuickPay === "kakao" ? "카카오페이" : "네이버페이")
+              : activeTab === "transfer" ? `계좌이체 (${selectedBank})`
+                : `휴대폰 결제 (${carrier})`;
+        const payInfo: PayInfo =
+          activeTab === "card" ? { pay: "card", bank: "", num: last4, payDate: `${expiry}-${cvc}`, nextDate: "" }
+            : activeTab === "quick" ? { pay: selectedQuickPay, bank: "", num: "", payDate: "", nextDate: "" }
+              : activeTab === "transfer" ? { pay: "transfer", bank: selectedBank, num: "", payDate: "", nextDate: "" }
+                : { pay: "phone", bank: carrier, num: phoneNumber.replace(/-/g, ""), payDate: "", nextDate: "" };
+        await onPaySubmit(payInfo, payLabel);
+      } catch (err) {
+        console.error(err);
+        setError("결제에 실패했습니다. 다시 시도해주세요.");
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     // 같은 결제수단 체크 
     if (currentPayInfo) {
       const isSameCard = activeTab === "card" &&
@@ -434,6 +465,7 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
       )}
 
       {/* ── 결제 금액 요약 ────────────────────────────────────────────────── */}
+      {!hideAmountBox && (
       <div className="payment-amount-box">
         <div className="payment-amount-row">
           <span className="payment-amount-label">플랜</span>
@@ -461,11 +493,13 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
           </span>
         </div>
       </div>
+      )}
 
       {/* 에러 */}
       {error && <div className="signin-error" role="alert">{error}</div>}
 
       {/* 동의 체크 */}
+      {!hideAgree && (
       <div className="payment-agree-list">
         <div
           className="payment-agree-item"
@@ -486,11 +520,14 @@ export default function StepPayment({ plan, onBack, onComplete, hidePlanSummary,
           <span className="payment-agree-text">결제 정보 안전하게 저장 (다음 결제부터 간편하게)</span>
         </div>
       </div>
+      )}
       {/* 안내 문구 */}
-      <p className="payment-notice">
-        결제 후 즉시 모든 기능을 이용할 수 있어요. 구독은 언제든지 설정에서 해지할 수 있으며,
-        해지 시 현재 구독 기간 만료일까지 서비스를 이용할 수 있습니다.
-      </p>
+      {noticeText !== "" && (
+        <p className="payment-notice">
+          {noticeText ??
+            "결제 후 즉시 모든 기능을 이용할 수 있어요. 구독은 언제든지 설정에서 해지할 수 있으며, 해지 시 현재 구독 기간 만료일까지 서비스를 이용할 수 있습니다."}
+        </p>
+      )}
 
       {/* ── 버튼 ──────────────────────────────────────────────────────────── */}
       <button

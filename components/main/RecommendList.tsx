@@ -137,7 +137,7 @@ export default function RecommendList() {
         grabCursor
         centeredSlides
         loop
-        slidesPerView={isMobile ? 1.4 : 3}
+        slidesPerView={isMobile ? 1.8 : 3}
         spaceBetween={isMobile ? 10 : 16}
         observer={true}
         observeParents={true}

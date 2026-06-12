@@ -576,9 +576,20 @@
       padding-right: 12px;
     }
 
+    /* 코너 로고 축소 */
+    .img-box .netflix-corner-logo {
+      width: 28px;
+      height: 28px;
+
+      .logo-box img {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
     /* 오리지널 뱃지 축소 */
-    .netflix-original-badge {
-      padding: 18px 6px 9px;
+    .img-box .netflix-original-badge {
+      padding: 16px 6px 8px;
 
       .badge-logo {
         height: 16px;
@@ -586,6 +597,7 @@
 
       .badge-text {
         font-size: 9px;
+        transform: scaleY(1.3);
       }
     }
   }

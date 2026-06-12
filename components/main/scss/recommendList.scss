@@ -88,53 +88,39 @@
   /* 좌우 슬라이드는 작게, 가운데(active)만 크게 */
   .swiper-slide {
     transition: transform 0.4s ease, opacity 0.4s ease;
-    transform: scale(0.92);
-    opacity: 0.9;
+    transform: scale(0.82);
+    opacity: 0.75;
   }
 
   .swiper-slide-active {
-    transform: scale(1);
+    transform: scale(1.06);
     opacity: 1;
     z-index: 2;
   }
 
-  /* 슬라이드 한 장 - 세로 분할 (포스터 + 정보) */
+  /* 슬라이드 한 장 - 이미지 풀카드 + 하단 오버레이 */
   .recommend-slide {
     position: relative;
-    aspect-ratio: 2 / 1.8;
-    max-height: clamp(420px, 30vw, 520px);
+    aspect-ratio: 16 / 13;
+    max-height: clamp(500px, 38vw, 640px);
     border-radius: 5px;
     overflow: hidden;
-    background-color: rgba(20, 20, 20, 0.55);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
     border: 1px solid rgba(g.$w-color, 0.08);
   }
 
-  /* 상단 - 포스터/백드롭 영역 (45%) */
+  /* 이미지가 카드 전체를 채움 */
   .slide-poster {
-    position: relative;
-    flex: 0 0 45%;
-    overflow: hidden;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-    }
-
-    /* 하단 그라디언트로 정보 영역과 자연스럽게 연결 */
-    &::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 50%;
-      background: linear-gradient(to top, rgba(20, 20, 20, 0.92) 0%, transparent 100%);
-      pointer-events: none;
     }
   }
 
@@ -153,14 +139,18 @@
     z-index: 1;
   }
 
-  /* 하단 정보 영역 - 랭킹 active 패널과 동일한 레이아웃 */
+  /* 하단 정보 오버레이 */
   .slide-info {
-    flex: 1;
-    background: rgba(20, 20, 20, 0.92);
-    padding: clamp(10px, 1.1vw, 16px) clamp(20px, 2.4vw, 40px);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    background: linear-gradient(to top, rgba(10, 10, 10, 0.96) 0%, rgba(10, 10, 10, 0.6) 70%, transparent 100%);
+    padding: clamp(28px, 3vw, 48px) clamp(20px, 2.4vw, 40px) clamp(14px, 1.4vw, 22px);
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end;
     gap: clamp(4px, 0.45vw, 6px);
     overflow: hidden;
   }
@@ -267,8 +257,8 @@
     font-size: g.$text-14;
     line-height: 1.72;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 
   /* 버튼 영역 - 랭킹 .ranking-detail-actions 기준 */
@@ -285,7 +275,7 @@
     display: flex;
     align-items: center;
     border-radius: 4px;
-    font-size: g.$text-16;
+    font-size: g.$text-13;
     font-weight: 700;
     letter-spacing: 0.3px;
     color: g.$w-color;
@@ -293,9 +283,9 @@
   }
 
   .btn-play {
-    gap: 8px;
-    height: 46px;
-    padding: 0 22px;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
     background: g.$main-color;
 
     &:hover {
@@ -305,9 +295,9 @@
   }
 
   .btn-info {
-    gap: 7px;
-    height: 46px;
-    padding: 0 18px;
+    gap: 5px;
+    height: 36px;
+    padding: 0 12px;
     background: rgba(g.$w-color, 0.10);
     border: 1px solid rgba(g.$w-color, 0.25);
     backdrop-filter: blur(4px);
@@ -336,25 +326,6 @@
   }
 }
 
-/* ~1920px: 설명 1줄 (카드 높이 부족) */
-@media (max-width: 1920px) {
-  .recommend-section {
-    .slide-overview {
-      -webkit-line-clamp: 1;
-      line-clamp: 1;
-    }
-  }
-}
-
-/* 1921px+: 공간 확보되면 2줄 */
-@media (min-width: 1921px) {
-  .recommend-section {
-    .slide-overview {
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-    }
-  }
-}
 
 
 /* 배경 페이드 인 애니메이션 */
@@ -430,7 +401,7 @@
     /* 카드: 이미지가 전체 영역을 채우고 정보는 하단에 오버레이 */
     .swiper-slide { height: auto; }
     .recommend-slide {
-      aspect-ratio: 3 / 4;
+      aspect-ratio: 3 / 3.2;
       max-height: none;
       height: 100%;
     }
@@ -450,10 +421,11 @@
       }
     }
     .slide-info {
-      position: relative;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
       z-index: 1;
-      flex: none;
-      margin-top: auto;
       justify-content: flex-end;
       gap: 5px;
       padding: 28px 14px 14px;
