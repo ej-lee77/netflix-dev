@@ -15,7 +15,9 @@ export type FamilyMember = "엄마" | "아빠" | "아들" | "딸";
 export interface AuthState {
   user: UserDocument | null;
   currentProfile: UserProfile | null;
-  onInitAuth: () => void;
+  hasHydrated: boolean;
+  setHasHydrated: (hasHydrated: boolean) => void;
+  onInitAuth: () => (() => void) | void;
   onLogin: (user: UserDocument) => void;
   onKakaoLogin: () => Promise<{ isNewUser: boolean } | false>;
   onNaverLogin: () => Promise<{ isNewUser: boolean } | false>;

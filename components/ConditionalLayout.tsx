@@ -7,6 +7,7 @@ import LoginBanner from "@/components/LoginBanner";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import Toaster from "@/components/common/Toaster";
 import SubscribeModal from "@/components/SubscribeModal";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 // 헤더/푸터/배너를 숨길 경로 목록
@@ -23,11 +24,13 @@ export default function ConditionalLayout({
   const isFullscreenPage = FULLSCREEN_PATHS.some((path) =>
     pathname.startsWith(path),
   );
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const showChrome = hasHydrated && !hideLayout && !isFullscreenPage;
   const { isOpen, closeModal } = useSubscribeModalStore();
 
   return (
     <>
-      {!hideLayout && !isFullscreenPage && <Header />}
+      {showChrome && <Header />}
       <main
         className={
           isFullscreenPage ? "fullscreen-page" : hideLayout ? undefined : "has-nav"
@@ -36,8 +39,8 @@ export default function ConditionalLayout({
         {children}
       </main>
       {!isFullscreenPage && <Footer />}
-      {!hideLayout && !isFullscreenPage && <LoginBanner />}
-      {!hideLayout && !isFullscreenPage && <MobileBottomNav />}
+      {showChrome && <LoginBanner />}
+      {showChrome && <MobileBottomNav />}
       <Toaster />
       {isOpen && <SubscribeModal onClose={closeModal} />}
     </>

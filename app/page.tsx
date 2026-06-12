@@ -1,12 +1,11 @@
 "use client";
 import { useT } from "@/lib/i18n";
 import { getTmdbLang } from "@/lib/i18n";
-import CategoryList from "@/components/main/CategoryList";
 import type { ThemeItem } from "@/components/main/ThemeRow";
 import { getNetflixOriginalIdSet } from "@/lib/netflix";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
-import RankingSection, { type RankingItem } from "@/components/main/RankingSection";
-import { useEffect, useRef, useState } from "react";
+import type { RankingItem } from "@/components/main/RankingSection";
+import { useEffect, useRef, useState, type SetStateAction } from "react";
 import Hero from "@/components/main/Hero";
 import MoodBanner from "@/components/main/MoodBanner";
 import GameBanner from "@/components/main/GameBanner";
@@ -17,7 +16,12 @@ import dynamic from "next/dynamic";
 
 const ThemeRow = dynamic(() => import("@/components/main/ThemeRow"), {
   ssr: false,
-  loading: () => <ThemeRowSkeleton />,
+});
+const RankingSection = dynamic(() => import("@/components/main/RankingSection"), {
+  ssr: false,
+});
+const CategoryList = dynamic(() => import("@/components/main/CategoryList"), {
+  ssr: false,
 });
 const WatchingList = dynamic(() => import("@/components/main/WatchingList"), { ssr: false });
 const RecommendList = dynamic(() => import("@/components/main/RecommendList"), { ssr: false });
@@ -104,6 +108,11 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
   },
 ];
 
+let cachedThemeRows: ThemeItem[][] | null = null;
+let cachedThemeLoading = true;
+let cachedKoreanSeries: RankingItem[] | null = null;
+let cachedKoreanMovieRanking: RankingItem[] | null = null;
+
 async function fetchCert(id: number, mediaType: "movie" | "tv"): Promise<string> {
   const usMovieToKr: Record<string, string> = { "G": "전체관람가", "PG": "전체관람가", "PG-13": "15", "R": "19", "NC-17": "19" };
   const usTvToKr: Record<string, string> = { "TV-Y": "전체관람가", "TV-Y7": "전체관람가", "TV-G": "전체관람가", "TV-PG": "12", "TV-14": "15", "TV-MA": "19" };
@@ -184,11 +193,30 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
 
 export default function Home() {
   const t = useT();
-  const [themeRows, setThemeRows] = useState<ThemeItem[][]>([]);
-  const [themeLoading, setThemeLoading] = useState(true);
-  const [koreanSeries, setKoreanSeries] = useState<RankingItem[]>([]);
-  const [koreanMovieRanking, setKoreanMovieRanking] = useState<RankingItem[]>([]);
+  const [themeRows, setThemeRowsState] = useState<ThemeItem[][]>(() => cachedThemeRows ?? []);
+  const [themeLoading, setThemeLoadingState] = useState(() => cachedThemeLoading);
+  const [koreanSeries, setKoreanSeriesState] = useState<RankingItem[]>(() => cachedKoreanSeries ?? []);
+  const [koreanMovieRanking, setKoreanMovieRankingState] = useState<RankingItem[]>(() => cachedKoreanMovieRanking ?? []);
   const netflixIdsRef = useRef<Set<number>>(new Set());
+  const setThemeRows = (value: SetStateAction<ThemeItem[][]>) => {
+    setThemeRowsState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      cachedThemeRows = next;
+      return next;
+    });
+  };
+  const setThemeLoading = (value: boolean) => {
+    cachedThemeLoading = value;
+    setThemeLoadingState(value);
+  };
+  const setKoreanSeries = (value: RankingItem[]) => {
+    cachedKoreanSeries = value;
+    setKoreanSeriesState(value);
+  };
+  const setKoreanMovieRanking = (value: RankingItem[]) => {
+    cachedKoreanMovieRanking = value;
+    setKoreanMovieRankingState(value);
+  };
 
   // 선호 장르: 메인 상단에 "내가 선호하는 OO" 줄을 일반 테마보다 먼저 노출
   const favoriteGenres = useFavoriteGenres();
@@ -200,34 +228,37 @@ export default function Home() {
       return;
     }
     let ignore = false;
+    const cancelDeferred = deferWork(() => {
 
-    const configs = favoriteGenres
-      .map((slug) => {
-        const meta = GENRE_SLUG_META[slug];
-        if (!meta) return null;
-        return {
-          title: `내가 선호하는 ${meta.title}`,
-          href: `/genre/${slug}`,
-          apiUrl: `https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=${meta.movieId}&sort_by=popularity.desc&vote_count.gte=50`,
-          mediaType: "movie" as const,
-        };
-      })
-      .filter((c): c is { title: string; href: string; apiUrl: string; mediaType: "movie" } => c !== null);
+      const configs = favoriteGenres
+        .map((slug) => {
+          const meta = GENRE_SLUG_META[slug];
+          if (!meta) return null;
+          return {
+            title: `내가 선호하는 ${meta.title}`,
+            href: `/genre/${slug}`,
+            apiUrl: `https://api.themoviedb.org/3/discover/movie?language=ko-KR&with_genres=${meta.movieId}&sort_by=popularity.desc&vote_count.gte=50`,
+            mediaType: "movie" as const,
+          };
+        })
+        .filter((c): c is { title: string; href: string; apiUrl: string; mediaType: "movie" } => c !== null);
 
-    Promise.all(configs.map((c) => fetchThemeItems(c.apiUrl, c.mediaType))).then((rows) => {
-      if (ignore) return;
-      const usedIds = new Set<number>();
-      const built = configs.map((c, i) => {
-        const items = (rows[i] ?? []).filter((item) =>
-          usedIds.has(item.id) ? false : (usedIds.add(item.id), true),
-        );
-        return { title: c.title, href: c.href, items };
+      Promise.all(configs.map((c) => fetchThemeItems(c.apiUrl, c.mediaType))).then((rows) => {
+        if (ignore) return;
+        const usedIds = new Set<number>();
+        const built = configs.map((c, i) => {
+          const items = (rows[i] ?? []).filter((item) =>
+            usedIds.has(item.id) ? false : (usedIds.add(item.id), true),
+          );
+          return { title: c.title, href: c.href, items };
+        });
+        setFavoriteRows(built);
       });
-      setFavoriteRows(built);
     });
 
     return () => {
       ignore = true;
+      cancelDeferred();
     };
   }, [favoriteGenres]);
 
@@ -381,7 +412,9 @@ export default function Home() {
       });
     };
 
-    fetchInitial();
+    cancelDeferred = deferWork(() => {
+      void fetchInitial();
+    });
 
     return () => {
       ignore = true;
@@ -397,21 +430,27 @@ export default function Home() {
       {/* 기분 배너 */}
       <MoodBanner />
       {/* 시청중 */}
-      <WatchingList />
+      <LazyRender rootMargin="200px 0px">
+        <WatchingList />
+      </LazyRender>
       {/* 넷플릭스 오리지널 시리즈 + 하단 조각 배너 */}
       {/* <NetflixOriginal /> */}
       {/* 넷플릭스 시리즈 */}
-      <CategoryList category="netflix" />
+      <LazyRender rootMargin="200px 0px">
+        <CategoryList category="netflix" />
+      </LazyRender>
       {/* 신작 */}
       {/* <NewMovieList /> */}
       {/* 급상승 */}
       {/* <RisingMovieList /> */}
       {/* 추천 */}
-      <RecommendList />
+      <LazyRender rootMargin="200px 0px">
+        <RecommendList />
+      </LazyRender>
       {/* 선호 장르 우선 추천 — 일반 테마 줄보다 먼저 노출 */}
       {favoriteRows.map((row) =>
         row.items.length > 0 ? (
-          <LazyRender key={`fav-${row.title}`} fallback={<ThemeRowSkeleton />}>
+          <LazyRender key={`fav-${row.title}`}>
             <ThemeRow title={row.title} items={row.items} href={row.href} />
           </LazyRender>
         ) : null,
@@ -422,7 +461,7 @@ export default function Home() {
         ? THEME_CONFIGS.slice(0, SPLIT_BANNER_AFTER).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(0, SPLIT_BANNER_AFTER).map((config, i) =>
             themeRows[i]?.length > 0 ? (
-              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+              <LazyRender key={config.title}>
                 <ThemeRow title={config.title} items={themeRows[i]} href={config.href} />
               </LazyRender>
             ) : null
@@ -437,7 +476,7 @@ export default function Home() {
         ? THEME_CONFIGS.slice(SPLIT_BANNER_AFTER, THEME_SPLIT).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(SPLIT_BANNER_AFTER, THEME_SPLIT).map((config, i) =>
             themeRows[SPLIT_BANNER_AFTER + i]?.length > 0 ? (
-              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+              <LazyRender key={config.title}>
                 <ThemeRow title={config.title} items={themeRows[SPLIT_BANNER_AFTER + i]} href={config.href} />
               </LazyRender>
             ) : null
@@ -462,7 +501,7 @@ export default function Home() {
         ? THEME_CONFIGS.slice(THEME_SPLIT, RELEASE_AFTER).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(THEME_SPLIT, RELEASE_AFTER).map((config, i) =>
             themeRows[THEME_SPLIT + i]?.length > 0 ? (
-              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+              <LazyRender key={config.title}>
                 <ThemeRow title={config.title} items={themeRows[THEME_SPLIT + i]} href={config.href} />
               </LazyRender>
             ) : null
@@ -477,7 +516,7 @@ export default function Home() {
         ? THEME_CONFIGS.slice(RELEASE_AFTER).map((config) => <ThemeRowSkeleton key={config.title} />)
         : THEME_CONFIGS.slice(RELEASE_AFTER).map((config, i) =>
             themeRows[RELEASE_AFTER + i]?.length > 0 ? (
-              <LazyRender key={config.title} fallback={<ThemeRowSkeleton />}>
+              <LazyRender key={config.title}>
                 <ThemeRow title={config.title} items={themeRows[RELEASE_AFTER + i]} href={config.href} />
               </LazyRender>
             ) : null
