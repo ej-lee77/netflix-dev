@@ -6,6 +6,8 @@ import { useGoodsStore } from "@/store/useGoodsStore";
 import { useAvailablePoints } from "@/store/usePointStore";
 import { categoryMeta, pts, won } from "@/data/goods";
 import ShopTopBar from "./ShopTopBar";
+import ShopIcon from "./ShopIcon";
+import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
 
 export default function ShopCartClient() {
@@ -49,7 +51,7 @@ export default function ShopCartClient() {
 
         {lines.length === 0 ? (
           <div className="shop-empty">
-            <div className="shop-empty__emoji">🛒</div>
+            <div className="shop-empty__emoji"><ShopIcon name="cart" size={48} /></div>
             <div className="shop-empty__msg">장바구니가 비어 있어요.</div>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
               굿즈 보러 가기
@@ -63,7 +65,7 @@ export default function ShopCartClient() {
                 return (
                   <div className="cart-row" key={`${item.productId}-${item.option ?? ""}`}>
                     <div className="cart-row__thumb" style={{ background: meta.gradient }}>
-                      {meta.emoji}
+                      <CategoryIcon name={meta.iconKey} size={28} />
                     </div>
                     <div className="cart-row__info">
                       <div className="cart-row__name">{product!.name}</div>

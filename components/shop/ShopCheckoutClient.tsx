@@ -11,6 +11,8 @@ import type { PayInfo } from "@/types/auth";
 import type { ShippingInfo as Ship } from "@/types/goods";
 import StepPayment from "@/app/signin/components/StepPayment";
 import ShopTopBar from "./ShopTopBar";
+import AddressSearch from "./AddressSearch";
+import ShopIcon from "./ShopIcon";
 import "@/app/signin/signin.scss";
 import "./scss/shop.scss";
 
@@ -55,6 +57,10 @@ export default function ShopCheckoutClient() {
   const set = (k: keyof Ship) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  // 주소 검색(다음 우편번호) 결과를 우편번호·기본주소에 자동 입력
+  const applyAddress = ({ zipcode, address }: { zipcode: string; address: string }) =>
+    setForm((f) => ({ ...f, zipcode, address }));
+
   // StepPayment(가입 결제 UI)에서 결제수단을 고르고 "결제하고 교환"을 누르면 호출됨.
   // 구독 결제수단을 덮어쓰지 않고, 선택한 결제수단 라벨로 굿즈 주문만 생성한다.
   const handleShopPay = async (_payInfo: PayInfo, payLabel: string) => {
@@ -98,7 +104,7 @@ export default function ShopCheckoutClient() {
         <div className="shop-shell">
           <ShopTopBar title="교환/결제" />
           <div className="shop-empty">
-            <div className="shop-empty__emoji">🛒</div>
+            <div className="shop-empty__emoji"><ShopIcon name="cart" size={48} /></div>
             <div className="shop-empty__msg">교환할 상품이 없어요.</div>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
               굿즈 보러 가기
@@ -129,11 +135,18 @@ export default function ShopCheckoutClient() {
               </div>
               <div className="checkout-field">
                 <label>우편번호</label>
-                <input value={form.zipcode} onChange={set("zipcode")} placeholder="우편번호" />
+                <div className="checkout-zip">
+                  <input
+                    value={form.zipcode}
+                    readOnly
+                    placeholder="주소 검색을 눌러주세요"
+                  />
+                  <AddressSearch className="checkout-zip__btn" onSelect={applyAddress} />
+                </div>
               </div>
               <div className="checkout-field">
                 <label>주소</label>
-                <input value={form.address} onChange={set("address")} placeholder="기본 주소" />
+                <input value={form.address} readOnly placeholder="기본 주소 (자동 입력)" />
               </div>
               <div className="checkout-field">
                 <label>상세주소</label>
@@ -202,7 +215,7 @@ export default function ShopCheckoutClient() {
                 />
               ) : (
                 <div className="checkout-pay">
-                  <span className="checkout-pay__icon">⚠️</span>
+                  <span className="checkout-pay__icon"><ShopIcon name="warning" size={18} /></span>
                   <span>보유 포인트가 부족해 교환할 수 없어요.</span>
                 </div>
               )}

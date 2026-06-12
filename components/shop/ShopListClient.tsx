@@ -12,11 +12,18 @@ import "./scss/shop.scss";
 
 type SortKey = "recommend" | "pointLow" | "pointHigh";
 
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "recommend", label: "추천순" },
+  { key: "pointLow", label: "포인트 낮은순" },
+  { key: "pointHigh", label: "포인트 높은순" },
+];
+
 export default function ShopListClient() {
   const { products, loadProducts } = useGoodsStore();
   const { available } = useAvailablePoints();
   const [cat, setCat] = useState<GoodsCategory | "all">("all");
   const [sort, setSort] = useState<SortKey>("recommend");
+  const [sortOpen, setSortOpen] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -75,15 +82,33 @@ export default function ShopListClient() {
               </button>
             ))}
           </div>
-          <select
-            className="shop-sort"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-          >
-            <option value="recommend">추천순</option>
-            <option value="pointLow">포인트 낮은순</option>
-            <option value="pointHigh">포인트 높은순</option>
-          </select>
+          <div className="shop-sort-wrap">
+            <button
+              className="shop-sort"
+              onClick={() => setSortOpen((o) => !o)}
+            >
+              {SORT_OPTIONS.find((o) => o.key === sort)?.label}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 0.15s", transform: sortOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {sortOpen && (
+              <>
+                <div className="shop-sort-backdrop" onClick={() => setSortOpen(false)} />
+                <div className="shop-sort-dropdown">
+                  {SORT_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      className={`shop-sort-option${sort === o.key ? " active" : ""}`}
+                      onClick={() => { setSort(o.key); setSortOpen(false); }}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {list.length === 0 ? (

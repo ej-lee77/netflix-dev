@@ -7,13 +7,18 @@ import { useMovieStore } from "@/store/useMovieStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { usePlayListStore } from "@/store/usePlayListStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useWatchPartyStore } from "@/store/useWatchPartyStore";
+import {
+  getWatchPartyActorId,
+  isWatchPartyHost,
+  useWatchPartyStore,
+} from "@/store/useWatchPartyStore";
 import { useCommunityEnabled } from "@/data/maturityFilter";
 import { showToast } from "@/store/useToastStore";
 import VideoPlayer, {
   type PlayerEpisode,
 } from "@/components/common/VideoPlayer";
 import RepBadge from "@/components/common/RepBadge";
+import WatchPartyModal from "@/components/watch/WatchPartyModal";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 function imageUrl(path?: string | null, size = "w342") {
@@ -32,6 +37,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const partyIdParam = searchParams.get("party");
+  const partyPasswordParam = searchParams.get("code");
   // 상세 페이지에서 특정 시즌/회차로 진입할 때 사용
   const seasonParam = Number(searchParams.get("season")) || 1;
   const epParam = searchParams.get("ep");
@@ -58,20 +64,20 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const {
     party,
     messages,
-    createParty,
     subscribe,
     join,
     sendMessage,
     updatePlayback,
     updatePlaybackNow,
+    deleteParty,
     leave,
   } = useWatchPartyStore();
 
   const userId = user?.userId || (user as any)?.uid || "guest";
   const nickname = currentProfile?.nickname || "나";
   const myBadge = currentProfile?.badges?.equippedBadges || "";
-  const myProfileImage =
-    currentProfile?.imgUrl || "/images/profile/image/default_icons/17.png";
+  const profileId = currentProfile?.id;
+  const actorId = getWatchPartyActorId(userId, profileId);
 
   const requestedEpisode = Number(epParam);
   const initialEpisodeIndex =
@@ -85,8 +91,9 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   // 이 작품을 시청 기록에 1회만 추가하기 위한 가드
   const recordedRef = useRef(false);
 
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isPlayerHovered, setIsPlayerHovered] = useState(false);
+  const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
 
   // 에피소드 팝업창 열림/닫힘 상태 관리
   const [isEpPopupOpen, setIsEpPopupOpen] = useState(false);
@@ -182,13 +189,43 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const wished = isWished(itemKey);
 
   const isPartyMode = !!partyIdParam;
-  const isHost = !!party && party.hostId === userId;
+  const isHost =
+    !!party && isWatchPartyHost(party, userId, profileId);
 
   useEffect(() => {
     if (partyIdParam && party && !isHost) {
-      join(partyIdParam, { userId, nickname, badge: myBadge });
+      void join(
+        partyIdParam,
+        {
+          userId,
+          profileId,
+          nickname,
+          badge: myBadge,
+        },
+        partyPasswordParam,
+      ).then(
+        (canEnter) => {
+          if (!canEnter) {
+            showToast("초대받은 사용자만 입장할 수 있는 파티예요.");
+            router.replace(`/detail/${type}/${mediaId}`);
+          }
+        },
+      );
     }
-  }, [partyIdParam, party, isHost, join, userId, nickname, myBadge]);
+  }, [
+    partyIdParam,
+    partyPasswordParam,
+    party,
+    isHost,
+    join,
+    userId,
+    profileId,
+    nickname,
+    myBadge,
+    router,
+    type,
+    mediaId,
+  ]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -239,44 +276,41 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     }
   };
 
-  const handleStartParty = async () => {
-    const pid = await createParty({
-      type,
-      mediaId,
-      title,
-      posterPath: mediaItem?.poster_path ?? "",
-      backdropPath: mediaItem?.backdrop_path ?? "",
-      host: {
-        userId,
-        nickname,
-        profileId: currentProfile?.id,
-        imgUrl: myProfileImage,
-        badge: myBadge,
-      },
-    });
-    if (pid) router.push(`/watch/${type}/${mediaId}?party=${pid}`);
-    else showToast("파티 생성에 실패했어요");
-  };
-
-  const handleInvite = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/watch/${type}/${mediaId}?party=${partyIdParam}`,
-      );
-      showToast("초대 링크를 복사했어요");
-    } catch {
-      showToast("초대 링크 복사에 실패했어요");
-    }
-  };
-
   const handleLeaveParty = () => {
     leave();
     router.push(`/watch/${type}/${mediaId}`);
   };
 
+  const handleDeleteParty = async () => {
+    if (!partyIdParam || !currentProfile) return;
+    const confirmed = window.confirm(
+      "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
+    );
+    if (!confirmed) return;
+
+    const deleted = await deleteParty(partyIdParam, {
+      userId,
+      profileId,
+      nickname,
+      badge: myBadge,
+    });
+    if (!deleted) {
+      showToast("파티를 종료하지 못했습니다.");
+      return;
+    }
+
+    showToast("파티가 종료되었습니다.");
+    router.replace("/connect");
+  };
+
   const handleSendChat = async () => {
     if (!chatText.trim()) return;
-    await sendMessage(chatText, { userId, nickname, badge: myBadge });
+    await sendMessage(chatText, {
+      userId,
+      profileId,
+      nickname,
+      badge: myBadge,
+    });
     setChatText("");
   };
 
@@ -285,18 +319,21 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     const progress = Math.round((ct / dur) * 100);
     if (progress > 0 && progress !== lastProgressRef.current) {
       lastProgressRef.current = progress;
+      const epNum = type === "tv" ? (currentEp?.episode_number ?? undefined) : undefined;
       // 최초 재생 시 1회: 시청 기록(watchingVideos + histMovies + 장르·국가 통계 + 뱃지)에 추가
       if (!recordedRef.current && mediaItem && user && currentProfile) {
         recordedRef.current = true;
         (async () => {
           await onAddPlayList(mediaItem);
-          await onUpdateProgress(mediaId, type, progress);
+          await onUpdateProgress(mediaId, type, progress, epNum);
         })();
       } else {
-        onUpdateProgress(mediaId, type, progress);
+        onUpdateProgress(mediaId, type, progress, epNum);
       }
     }
-    if (isHost) updatePlayback({ positionPct: progress, isPlaying: true });
+    if (isPartyMode) {
+      updatePlayback({ positionPct: progress, isPlaying: true, userId });
+    }
   };
 
   const startPct =
@@ -338,6 +375,20 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         boxSizing: "border-box",
       }}
     >
+      {isPartyModalOpen && (
+        <WatchPartyModal
+          mode={isPartyMode ? "invite" : "create"}
+          media={{
+            type,
+            mediaId,
+            title,
+            posterPath: mediaItem?.poster_path,
+            backdropPath: mediaItem?.backdrop_path,
+          }}
+          party={party}
+          onClose={() => setIsPartyModalOpen(false)}
+        />
+      )}
       {/* 상단 바 */}
       <div
         className="watch-topbar"
@@ -353,10 +404,18 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         {isPartyMode ? (
           <button
             type="button"
-            onClick={handleLeaveParty}
-            style={btn({ background: "rgba(255,255,255,0.06)" })}
+            onClick={isHost ? handleDeleteParty : handleLeaveParty}
+            style={btn({
+              background: isHost
+                ? "rgba(229,9,20,0.12)"
+                : "rgba(255,255,255,0.06)",
+              border: isHost
+                ? "1px solid rgba(229,9,20,0.42)"
+                : "1px solid #333",
+              color: isHost ? "#ff7c83" : "#eee",
+            })}
           >
-            ← 파티 나가기
+            {isHost ? "파티 종료하기" : "← 파티 나가기"}
           </button>
         ) : (
           <button
@@ -372,7 +431,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
           className="watch-topbar__title"
           style={{ color: "#888", fontSize: 13, textAlign: "center" }}
         >
-          {title}
+          {party?.partyName || title}
           {isTv && currentEp
             ? ` · ${currentEp.episode_number ?? epIndex + 1}화`
             : ""}
@@ -382,22 +441,11 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         </span>
 
         {isPartyMode ? (
-          <button
-            type="button"
-            onClick={handleInvite}
-            style={btn({
-              background: "rgba(229,9,20,0.14)",
-              border: "1px solid rgba(229,9,20,0.5)",
-              color: "#ff6b73",
-              fontWeight: 600,
-            })}
-          >
-            초대 링크 복사
-          </button>
+          <span style={{ width: 120 }} aria-hidden="true" />
         ) : canUseConnect ? (
           <button
             type="button"
-            onClick={handleStartParty}
+            onClick={() => setIsPartyModalOpen(true)}
             style={btn({
               background: "rgba(229,9,20,0.14)",
               border: "1px solid rgba(229,9,20,0.5)",
@@ -474,10 +522,14 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   }}
                   startPct={startPct}
                   onLocalControl={
-                    isHost ? (s) => updatePlaybackNow(s) : undefined
+                    isPartyMode
+                      ? (state) => updatePlaybackNow({ ...state, userId })
+                      : undefined
                   }
                   remoteControl={
-                    isPartyMode && !isHost && party
+                    isPartyMode &&
+                    party &&
+                    party.playbackUpdatedBy !== userId
                       ? {
                           positionPct: party.positionPct,
                           isPlaying: party.isPlaying,
@@ -516,7 +568,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
             </div>
 
             {/* 채팅창 여닫이 화살표 버튼 */}
-            {isPartyMode && (
+            {(isPartyMode || !isChatOpen) && (
               <button
                 className="watch-chat-toggle"
                 type="button"
@@ -806,14 +858,10 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
           className="watch-chat-panel"
           data-open={isChatOpen}
           style={{
-            flex: isChatOpen ? "0 1 clamp(280px, 24vw, 360px)" : "0 0 0px",
-            minWidth: 0,
-            overflow: "hidden",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            opacity: isChatOpen ? 1 : 0,
             display: "flex",
             flexDirection: "column",
             height: "100%",
+            overflow: "hidden",
           }}
         >
           {isPartyMode ? (
@@ -846,9 +894,25 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   }}
                 >
                   <span>실시간 채팅</span>
-                  <span style={{ fontSize: 12, color: "#888" }}>
-                    {party?.participants?.length ?? 1}명 참여 중
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, color: "#888" }}>
+                      {party?.participants?.length ?? 1}명 참여 중
+                    </span>
+                    {isHost && (
+                      <button
+                        type="button"
+                        onClick={() => setIsPartyModalOpen(true)}
+                        style={btn({
+                          padding: "5px 8px",
+                          borderColor: "rgba(229,9,20,0.45)",
+                          color: "#ff7c83",
+                          fontSize: 11,
+                        })}
+                      >
+                        초대하기
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div
                   className="watch-party-host"
@@ -866,7 +930,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 >
                   <Image
                     src={
-                      (isHost ? myProfileImage : party?.hostImgUrl) ||
+                      party?.hostImgUrl ||
                       "/images/profile/image/default_icons/17.png"
                     }
                     alt=""
@@ -902,12 +966,11 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {party?.hostNickname ||
-                        (isHost ? nickname : "파티 호스트")}
+                      {party?.hostNickname || "파티 호스트"}
                     </div>
                   </div>
                   <RepBadge
-                    badge={party?.hostBadge || (isHost ? myBadge : "")}
+                    badge={party?.hostBadge}
                     size="sm"
                   />
                 </div>
@@ -950,7 +1013,9 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   </div>
                 </div>
                 {messages.map((m) => {
-                  const mine = m.userId === userId;
+                  const mine =
+                    (m.actorId ??
+                      getWatchPartyActorId(m.userId, m.profileId)) === actorId;
                   return (
                     <div
                       key={m.id}
@@ -1050,8 +1115,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 overflowY: "auto",
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>
-                추천 작품
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <span style={{ fontSize: 18, fontWeight: 700 }}>추천 작품</span>
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(false)}
+                  style={{ background: "none", border: "none", color: "#888", cursor: "pointer", padding: 4, lineHeight: 1, fontSize: 18 }}
+                  aria-label="추천 작품 닫기"
+                >
+                  ✕
+                </button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {related.length === 0 && (
@@ -1070,54 +1143,78 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     }
                     style={{
                       display: "flex",
-                      gap: 10,
-                      alignItems: "center",
+                      flexDirection: "column",
                       textAlign: "left",
                       background: "transparent",
                       border: "1px solid #222",
-                      borderRadius: 8,
-                      padding: 6,
+                      borderRadius: 10,
+                      padding: 0,
                       cursor: "pointer",
                       color: "#eee",
+                      overflow: "hidden",
                     }}
                   >
                     <span
                       style={{
-                        width: 64,
-                        height: 38,
-                        borderRadius: 4,
+                        display: "block",
+                        position: "relative",
+                        width: "100%",
+                        aspectRatio: "16 / 9",
                         background: imageUrl(
                           item.backdrop_path || item.poster_path,
                         )
                           ? `#111 url(${imageUrl(item.backdrop_path || item.poster_path)}) center/cover`
                           : "#1a1a1a",
-                        flexShrink: 0,
                       }}
-                    />
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span
-                        style={{
-                          display: "block",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {item.title || item.name}
-                      </span>
-                      <span
-                        style={{
-                          display: "block",
-                          fontSize: 11,
-                          color: "#888",
-                        }}
-                      >
+                    >
+                      <span style={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#fff",
+                        background: "rgba(0,0,0,0.65)",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        borderRadius: 5,
+                        padding: "3px 8px",
+                        backdropFilter: "blur(4px)",
+                      }}>
                         {item.media_type === "tv" ? "시리즈" : "영화"}
                       </span>
                     </span>
-                    <span style={{ color: "#666", fontSize: 14 }}>›</span>
+                    <span style={{ padding: "8px 10px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                          <span
+                            style={{
+                              fontSize: 17,
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              minWidth: 0,
+                            }}
+                          >
+                            {item.title || item.name}
+                          </span>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: "#ccc",
+                            background: "rgba(255,255,255,0.1)",
+                            border: "1px solid rgba(255,255,255,0.22)",
+                            borderRadius: 3,
+                            padding: "1px 5px",
+                            flexShrink: 0,
+                            whiteSpace: "nowrap",
+                          }}>
+                            {item.adult ? "청불" : "15+"}
+                          </span>
+                        </span>
+                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>›</span>
+                      </span>
+                    </span>
                   </button>
                 ))}
               </div>
