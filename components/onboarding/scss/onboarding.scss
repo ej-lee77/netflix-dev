@@ -213,7 +213,7 @@
   gap: 12px;
   padding: 14px 0 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(to top, #0a0a0a 70%, rgba(10, 10, 10, 0));
+  background: linear-gradient(to top, #0a0a0a 80%, rgba(10, 10, 10, 0));
 }
 .onboarding-btn {
   border: 1px solid transparent;
@@ -235,3 +235,20 @@
   color: #eee;
 }
 .onboarding-btn.ghost:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* ===== 모바일·태블릿(≤1024px): 상단 '건너뛰기' 고정 =====
+   좁은 화면에서는 칩/포스터가 여러 줄로 늘어나 페이지가 길어지는데,
+   상단 헤더는 일반 흐름이라 스크롤하면 '건너뛰기'가 화면 위로 사라진다.
+   하단 푸터의 '다음/시작하기'를 sticky 로 둔 것과 동일한 의도로,
+   헤더를 상단에 고정해 어느 단계·스크롤 위치에서도 브랜드/건너뛰기가 항상 보이게 한다. */
+@media (max-width: 1024px) {
+  .onboarding-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    /* 페이지 좌우 padding(20px)만큼 풀블리드로 넓혀 스크롤되는 칩/포스터를 가린다 */
+    margin: 0 -20px 22px;
+    padding: 6px 20px 12px;
+    background: linear-gradient(to bottom, #0a0a0a 72%, rgba(10, 10, 10, 0));
+  }
+}
