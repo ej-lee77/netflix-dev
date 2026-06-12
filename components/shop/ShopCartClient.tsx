@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGoodsStore } from "@/store/useGoodsStore";
 import { useAvailablePoints } from "@/store/usePointStore";
@@ -9,6 +9,21 @@ import ShopTopBar from "./ShopTopBar";
 import ShopIcon from "./ShopIcon";
 import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
+
+function CartThumb({ thumbUrl, gradient, iconKey }: { thumbUrl?: string; gradient: string; iconKey: string }) {
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!thumbUrl && !imgError;
+  return (
+    <div className="cart-row__thumb" style={showImg ? undefined : { background: gradient }}>
+      {showImg ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={thumbUrl} alt="" className="goods-card__img" onError={() => setImgError(true)} />
+      ) : (
+        <CategoryIcon name={iconKey} size={28} aria-hidden />
+      )}
+    </div>
+  );
+}
 
 export default function ShopCartClient() {
   const router = useRouter();
@@ -64,9 +79,10 @@ export default function ShopCartClient() {
                 const meta = categoryMeta(product!.category);
                 return (
                   <div className="cart-row" key={`${item.productId}-${item.option ?? ""}`}>
-                    <div className="cart-row__thumb" style={{ background: meta.gradient }}>
+                    <CartThumb thumbUrl={product!.thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
+                    {/* <div className="cart-row__thumb" style={{ background: meta.gradient }}>
                       <CategoryIcon name={meta.iconKey} size={28} />
-                    </div>
+                    </div> */}
                     <div className="cart-row__info">
                       <div className="cart-row__name">{product!.name}</div>
                       {item.option && (

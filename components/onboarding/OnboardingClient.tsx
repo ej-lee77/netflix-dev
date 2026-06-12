@@ -116,12 +116,12 @@ export default function OnboardingClient() {
   return (
     <div className="onboarding-page">
       <div className="onboarding-shell">
-        <header className="onboarding-head">
+        <div className="onboarding-head">
           <div className="onboarding-brand">NETFLIX</div>
           <button className="onboarding-skip" onClick={() => persist(false)}>
             건너뛰기
           </button>
-        </header>
+        </div>
 
         <div className="onboarding-progress">
           {STEPS.map((label, i) => (
@@ -195,7 +195,7 @@ export default function OnboardingClient() {
           </section>
         )}
 
-        <footer className="onboarding-foot">
+        <div className="onboarding-foot">
           {step > 0 ? (
             <button className="onboarding-btn ghost" onClick={() => setStep((s) => s - 1)}>
               이전
@@ -220,7 +220,7 @@ export default function OnboardingClient() {
               {saving ? "저장 중…" : "시작하기"}
             </button>
           )}
-        </footer>
+        </div>
       </div>
     </div>
   );
