@@ -43,9 +43,24 @@ function formatDate(ts: number) {
   return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+function OrderThumb({ thumbUrl, gradient, iconKey }: { thumbUrl?: string; gradient: string; iconKey: string }) {
+  const [imgError, setImgError] = useState(false);
+  const showImg = !!thumbUrl && !imgError;
+  return (
+    <div className="order-item__thumb" style={showImg ? undefined : { background: gradient }}>
+      {showImg ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={thumbUrl} alt="" className="goods-card__img" onError={() => setImgError(true)} />
+      ) : (
+        <CategoryIcon name={iconKey} size={28} />
+      )}
+    </div>
+  );
+}
+
 export default function ShopOrdersClient() {
   const router = useRouter();
-  const { orders, ordersLoaded, loadOrders, cancelOrder, requestReturn } = useGoodsStore();
+  const { orders, ordersLoaded, loadOrders, cancelOrder, requestReturn, products } = useGoodsStore();
 
   // 새로고침 없이 단계가 자동으로 넘어가도록 주기적으로 현재 시각을 갱신
   const [now, setNow] = useState(() => Date.now());
@@ -53,6 +68,7 @@ export default function ShopOrdersClient() {
   // 반품 사유 입력 패널: 열린 주문 id + 선택한 사유
   const [returnFor, setReturnFor] = useState<string | null>(null);
   const [reason, setReason] = useState<string>(RETURN_REASONS[0]);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -154,17 +170,41 @@ export default function ShopOrdersClient() {
                 {isReturnOpen && (
                   <div className="order-return-form">
                     <label className="order-return-form__label">반품 사유</label>
-                    <select
-                      className="order-return-form__select"
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                    >
-                      {RETURN_REASONS.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="order-return-form__select-wrap">
+                      {/* 기존 클래스명을 유지한 트리거 버튼 */}
+                      <button
+                        type="button"
+                        className="order-return-form__select"
+                        onClick={() => setIsOpen(!isOpen)}
+                        aria-haspopup="listbox"
+                        aria-expanded={isOpen}
+                      >
+                        {reason || "사유를 선택하세요"}
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 0.15s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </button>
+
+                      {/* 옵션 리스트 */}
+                      {isOpen && (
+                        <ul className="order-return-form__options" role="listbox">
+                          {RETURN_REASONS.map((r) => (
+                            <li
+                              key={r}
+                              role="option"
+                              aria-selected={reason === r}
+                              onClick={() => {
+                                setReason(r);
+                                setIsOpen(false);
+                              }}
+                              className={reason === r ? "selected" : ""}
+                            >
+                              {r}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                     <p className="order-return-form__note">
                       단순 변심은 반품·환불 대상이 아니에요. 승인 시 사용한 {pts(o.pointsUsed)}가 환원됩니다.
                     </p>
@@ -189,11 +229,13 @@ export default function ShopOrdersClient() {
 
                 {o.items.map((it, i) => {
                   const meta = categoryMeta(it.category);
+                   const thumbUrl = it.thumbUrl ?? products.find((p) => p.id === it.productId)?.thumbUrl;
                   return (
                     <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
-                      <div className="order-item__thumb" style={{ background: meta.gradient }}>
+                      <OrderThumb thumbUrl={thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
+                      {/* <div className="order-item__thumb" style={{ background: meta.gradient }}>
                         <CategoryIcon name={meta.iconKey} size={28} />
-                      </div>
+                      </div> */}
                       <div className="order-item__info">
                         <div className="order-item__name">{it.name}</div>
                         <div className="order-item__meta">
