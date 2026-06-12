@@ -6,16 +6,17 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useMovieStore } from "@/store/useMovieStore";
 import { GENRE_SLUG_META } from "@/data/excludedGenres";
 import "./scss/onboarding.scss";
+import AppIcon, { type AppIconName } from "@/components/common/AppIcon";
 
-const MOODS: { slug: string; label: string; emoji: string }[] = [
-  { slug: "chill", label: "잔잔한", emoji: "🍵" },
-  { slug: "dark", label: "어두운", emoji: "🌑" },
-  { slug: "emotional", label: "감성적인", emoji: "💧" },
-  { slug: "exciting", label: "신나는", emoji: "⚡" },
-  { slug: "funny", label: "유쾌한", emoji: "😆" },
-  { slug: "romantic", label: "낭만적인", emoji: "💗" },
-  { slug: "scary", label: "무서운", emoji: "👻" },
-  { slug: "thoughtful", label: "심오한", emoji: "🧩" },
+const MOODS: { slug: string; label: string; icon: AppIconName }[] = [
+  { slug: "chill", label: "잔잔한", icon: "mood-chill" },
+  { slug: "dark", label: "어두운", icon: "mood-dark" },
+  { slug: "emotional", label: "감성적인", icon: "mood-emotional" },
+  { slug: "exciting", label: "신나는", icon: "mood-exciting" },
+  { slug: "funny", label: "유쾌한", icon: "mood-funny" },
+  { slug: "romantic", label: "낭만적인", icon: "mood-romantic" },
+  { slug: "scary", label: "무서운", icon: "mood-scary" },
+  { slug: "thoughtful", label: "심오한", icon: "mood-thoughtful" },
 ];
 
 const GENRES = Object.entries(GENRE_SLUG_META).map(([slug, m]) => ({
@@ -158,7 +159,9 @@ export default function OnboardingClient() {
                   className={`onboarding-mood${moods.includes(m.slug) ? " active" : ""}`}
                   onClick={() => toggle(moods, setMoods, m.slug)}
                 >
-                  <span className="onboarding-mood__emoji">{m.emoji}</span>
+                  <span className="onboarding-mood__icon">
+                    <AppIcon name={m.icon} size={30} />
+                  </span>
                   <span>{m.label}</span>
                 </button>
               ))}
