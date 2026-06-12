@@ -9,6 +9,7 @@ import RankingSection, { type RankingItem } from "@/components/main/RankingSecti
 import { useEffect, useRef, useState } from "react";
 import Hero from "@/components/main/Hero";
 import MoodBanner from "@/components/main/MoodBanner";
+import GameBanner from "@/components/main/GameBanner";
 import { GENRE_SLUG_META, useFavoriteGenres } from "@/data/excludedGenres";
 import TopButton from "@/components/common/TopButton";
 import LazyRender from "@/components/common/LazyRender";
@@ -484,6 +485,10 @@ export default function Home() {
           <RankingSection title={t("home.koreanVariety")} items={koreanMovieRanking} />
         </LazyRender>
       )}
+      {/* RUN WITH RUMI 게임 프로모션 배너 (홈 최하단) */}
+      <LazyRender>
+        <GameBanner />
+      </LazyRender>
       <TopButton />
     </div>
   );
