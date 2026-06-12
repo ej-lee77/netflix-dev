@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useT } from "@/lib/i18n";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useMovieStore } from '@/store/useMovieStore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
@@ -112,7 +111,7 @@ export default function RecommendList() {
   if (recommended.length === 0) return null;
 
   const sectionBg = activeBackdrop?.backdropPath
-    ? `https://image.tmdb.org/t/p/w1280${activeBackdrop.backdropPath}`
+    ? `https://image.tmdb.org/t/p/original${activeBackdrop.backdropPath}`
     : '';
 
 
@@ -173,12 +172,9 @@ export default function RecommendList() {
               {/* 상단 - 포스터 영역 */}
               <div className="slide-poster">
                 {item.backdrop_path && (
-                  <Image
+                  <img
                     src={`https://image.tmdb.org/t/p/w1280${item.backdrop_path}`}
                     alt={item.title}
-                    width={1280}
-                    height={720}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1920px) 34vw, 20vw"
                   />
                 )}
                 <span className="slide-platform">
