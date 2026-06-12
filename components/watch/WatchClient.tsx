@@ -87,6 +87,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const [epIndex, setEpIndex] = useState(initialEpisodeIndex);
   const [chatText, setChatText] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const isSendingChatRef = useRef(false);
   const lastProgressRef = useRef(-1);
   // 이 작품을 시청 기록에 1회만 추가하기 위한 가드
   const recordedRef = useRef(false);
@@ -304,14 +305,21 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   };
 
   const handleSendChat = async () => {
-    if (!chatText.trim()) return;
-    await sendMessage(chatText, {
-      userId,
-      profileId,
-      nickname,
-      badge: myBadge,
-    });
+    const text = chatText.trim();
+    if (!text || isSendingChatRef.current) return;
+
+    isSendingChatRef.current = true;
     setChatText("");
+    try {
+      await sendMessage(text, {
+        userId,
+        profileId,
+        nickname,
+        badge: myBadge,
+      });
+    } finally {
+      isSendingChatRef.current = false;
+    }
   };
 
   const handleTimeUpdate = (ct: number, dur: number) => {
@@ -401,21 +409,32 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         }}
       >
         {isPartyMode ? (
-          <button
-            type="button"
-            onClick={isHost ? handleDeleteParty : handleLeaveParty}
-            style={btn({
-              background: isHost
-                ? "rgba(229,9,20,0.12)"
-                : "rgba(255,255,255,0.06)",
-              border: isHost
-                ? "1px solid rgba(229,9,20,0.42)"
-                : "1px solid #333",
-              color: isHost ? "#ff7c83" : "#eee",
-            })}
-          >
-            {isHost ? "파티 종료하기" : "← 파티 나가기"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isHost && (
+              <button
+                type="button"
+                onClick={handleLeaveParty}
+                style={btn({ background: "rgba(255,255,255,0.06)" })}
+              >
+                ← 파티 나가기
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={isHost ? handleDeleteParty : handleLeaveParty}
+              style={btn({
+                background: isHost
+                  ? "rgba(229,9,20,0.12)"
+                  : "rgba(255,255,255,0.06)",
+                border: isHost
+                  ? "1px solid rgba(229,9,20,0.42)"
+                  : "1px solid #333",
+                color: isHost ? "#ff7c83" : "#eee",
+              })}
+            >
+              {isHost ? "파티 종료하기" : "← 파티 나가기"}
+            </button>
+          </div>
         ) : (
           <button
             type="button"
@@ -901,7 +920,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     <span style={{ fontSize: 12, color: "#888" }}>
                       {party?.participants?.length ?? 1}명 참여 중
                     </span>
-                    {isHost && (
+                    {isHost && party?.accessMode === "invite" && (
                       <button
                         type="button"
                         onClick={() => setIsPartyModalOpen(true)}
@@ -1072,15 +1091,30 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   display: "flex",
                   gap: 8,
                   flexShrink: 0,
+                  pointerEvents: "auto",
+                  userSelect: "text",
                 }}
+                onPointerDown={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
               >
                 <input
                   value={chatText}
                   onChange={(e) => setChatText(e.target.value)}
                   onKeyDown={(e) => {
                     e.stopPropagation();
-                    if (e.key === "Enter") handleSendChat();
+                    if (
+                      e.key === "Enter" &&
+                      !e.nativeEvent.isComposing
+                    ) {
+                      e.preventDefault();
+                      void handleSendChat();
+                    }
                   }}
+                  onKeyUp={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                   placeholder="메시지 입력…"
                   style={{
                     flex: 1,
@@ -1091,6 +1125,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     padding: "8px 10px",
                     fontSize: 13,
                     outline: "none",
+                    pointerEvents: "auto",
+                    userSelect: "text",
                   }}
                 />
                 <button
