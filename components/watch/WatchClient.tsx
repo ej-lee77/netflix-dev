@@ -223,9 +223,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
       await onAddWish(wishlistItem);
       const added = useWishlistStore.getState().isWished(itemKey);
       showToast(
-        added
-          ? "내 위시리스트에 추가했어요."
-          : "위시리스트 추가에 실패했어요.",
+        added ? "내 위시리스트에 추가했어요." : "위시리스트 추가에 실패했어요.",
       );
     }
   };
@@ -317,6 +315,10 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     fontSize: 13,
     cursor: "pointer",
     transition: "all 0.2s",
+    // --- 내부 아이콘 정중앙 정렬 ---
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     ...extra,
   });
 
@@ -725,23 +727,75 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   에피소드 보기
                 </button>
               )}
+              {/* 위시리스트 버튼 */}
               <button
                 type="button"
                 onClick={handleWish}
+                aria-label={
+                  wished ? "위시리스트에서 삭제" : "위시리스트에 추가"
+                }
+                aria-pressed={wished}
+                title={wished ? "위시리스트에서 삭제" : "위시리스트에 추가"}
                 style={btn(
-                  wished
-                    ? {
-                        background: "rgba(229,9,20,0.14)",
-                        border: "1px solid rgba(229,9,20,0.5)",
-                        color: "#ff6b73",
-                      }
-                    : {},
+                  // 공통 크기 및 패딩 스타일
+                  {
+                    padding: 8,
+                    width: 38,
+                    height: 38,
+                    boxSizing: "border-box", // 패딩이 크기에 영향을 주지 않도록 추가
+                  },
                 )}
               >
-                {wished ? "♥ 찜 완료" : "+ 찜"}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 30 30"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{ flexShrink: 0 }} // 아이콘 크기 고정
+                >
+                  <path
+                    fill={wished ? "currentColor" : "none"}
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M5.60549 7.60371C6.63378 6.61891 8.02827 6.06567 9.48229 6.06567C10.9363 6.06567 12.3308 6.61891 13.3591 7.60371L14.9657 9.14157L16.5724 7.60371C17.0782 7.10199 17.6833 6.70179 18.3523 6.42648C19.0213 6.15117 19.7408 6.00625 20.4689 6.0002C21.197 5.99414 21.9191 6.12705 22.593 6.39117C23.2669 6.65531 23.8791 7.04537 24.3939 7.5386C24.9088 8.03183 25.316 8.61835 25.5917 9.26394C25.8674 9.90953 26.0062 10.6013 25.9998 11.2988C25.9935 11.9963 25.8423 12.6855 25.5548 13.3265C25.2674 13.9674 24.8497 14.547 24.326 15.0316L14.9657 24L5.60549 15.0316C4.5775 14.0465 4 12.7106 4 11.3177C4 9.92473 4.5775 8.58882 5.60549 7.60371Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
-              <button type="button" onClick={handleShare} style={btn()}>
-                공유
+
+              {/* 공유 버튼 */}
+              <button
+                type="button"
+                onClick={handleShare}
+                title="공유하기"
+                aria-label="공유하기"
+                style={btn({
+                  // --- 공유 버튼에도 동일한 크기 및 패딩 적용 ---
+                  padding: 8,
+                  width: 38,
+                  height: 38,
+                  boxSizing: "border-box", // 패딩이 크기에 영향을 주지 않도록 추가
+                  // ------------------------------------------
+                })}
+              >
+                <Image
+                  src={"/images/header/menu/share.svg"}
+                  alt=""
+                  width={20}
+                  height={20}
+                  unoptimized
+                  style={{
+                    width: 20,
+                    height: 20,
+                    // borderRadius, objectFit은 아이콘 자체 스타일이므로 유지
+                    borderRadius: 8,
+                    objectFit: "cover",
+                    flexShrink: 0,
+                  }}
+                />
               </button>
             </div>
           </div>
@@ -752,9 +806,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
           className="watch-chat-panel"
           data-open={isChatOpen}
           style={{
-            flex: isChatOpen
-              ? "0 1 clamp(280px, 24vw, 360px)"
-              : "0 0 0px",
+            flex: isChatOpen ? "0 1 clamp(280px, 24vw, 360px)" : "0 0 0px",
             minWidth: 0,
             overflow: "hidden",
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -814,8 +866,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                 >
                   <Image
                     src={
-                      party?.hostImgUrl ||
-                      (isHost ? myProfileImage : "") ||
+                      (isHost ? myProfileImage : party?.hostImgUrl) ||
                       "/images/profile/image/default_icons/17.png"
                     }
                     alt=""
@@ -851,7 +902,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {party?.hostNickname || (isHost ? nickname : "파티 호스트")}
+                      {party?.hostNickname ||
+                        (isHost ? nickname : "파티 호스트")}
                     </div>
                   </div>
                   <RepBadge
@@ -958,6 +1010,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   value={chatText}
                   onChange={(e) => setChatText(e.target.value)}
                   onKeyDown={(e) => {
+                    e.stopPropagation();
                     if (e.key === "Enter") handleSendChat();
                   }}
                   placeholder="메시지 입력…"
