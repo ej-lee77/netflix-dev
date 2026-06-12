@@ -9,6 +9,23 @@ import ShopTopBar from "./ShopTopBar";
 import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
 
+// 왼쪽 3단계 스테퍼 라벨 — 결제완료(정상) 흐름과 주문취소 흐름
+const ORDER_STAGES = ["주문완료", "주문배송", "배송완료"];
+const CANCEL_STAGES = ["취소신청", "환불배송", "취소완료"];
+
+// ▼ 시연 속도 조절: 각 단계로 넘어가는 시간(ms).
+//   빠른 시연(기본): [0, 10_000, 20_000]  (10초 → 주문배송, 20초 → 배송완료)
+//   실제감(1·2분):   [0, 60_000, 120_000]
+const STEP_MS = [0, 10_000, 20_000];
+
+// 시작 시각으로부터 경과 시간으로 현재 단계(0~2)를 계산
+function stageIndex(startTs: number, now: number) {
+  const t = now - startTs;
+  if (t >= STEP_MS[2]) return 2;
+  if (t >= STEP_MS[1]) return 1;
+  return 0;
+}
+
 function OrderThumb({ thumbUrl, gradient, iconKey }: { thumbUrl?: string; gradient: string; iconKey: string }) {
   const [imgError, setImgError] = useState(false);
   const showImg = !!thumbUrl && !imgError;
@@ -32,7 +49,9 @@ function formatDate(ts: number) {
 
 export default function ShopOrdersClient() {
   const router = useRouter();
-  const { orders, ordersLoaded, loadOrders, products, loadProducts } = useGoodsStore();
+  const { orders, ordersLoaded, loadOrders, products, loadProducts, cancelOrder } = useGoodsStore();
+  // 새로고침 없이 단계가 자동으로 넘어가도록 주기적으로 현재 시각을 갱신
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     loadOrders();
@@ -49,28 +68,30 @@ export default function ShopOrdersClient() {
       <div className="shop-shell">
         <ShopTopBar title="교환내역" />
 
-        {!ordersLoaded ? (
-          <div className="shop-loading">불러오는 중…</div>
-        ) : orders.length === 0 ? (
-          <div className="shop-empty">
-            <div className="shop-empty__emoji">📦</div>
-            <div className="shop-empty__msg">아직 교환 내역이 없어요.</div>
-            <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
-              굿즈 보러 가기
-            </button>
-          </div>
-        ) : (
-          orders.map((o) => {
-            const canceled = o.orderStatus === "canceled";
-            const stages = canceled ? CANCEL_STAGES : ORDER_STAGES;
-            const startTs = canceled ? o.canceledAt ?? o.createdAt : o.createdAt;
-            const activeIdx = stageIndex(startTs, now);
-            const canCancel = !canceled && activeIdx < 2; // 배송완료 전까지만 취소 가능
-            const rightLabel = canceled ? "주문취소" : o.payStatus;
-
+      {!ordersLoaded ? (
+        <div className="shop-loading">불러오는 중…</div>
+      ) : orders.length === 0 ? (
+        <div className="shop-empty">
+          <div className="shop-empty__emoji">📦</div>
+          <div className="shop-empty__msg">아직 교환 내역이 없어요.</div>
+          <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
+            굿즈 보러 가기
+          </button>
+        </div>
+      ) : (
+        orders.map((o) => {
+          const canceled = o.orderStatus === "canceled";
+          // 필요한 변수 선언들...
+          
+          // map 내부에서 return을 명시해주거나 소괄호로 바로 감싸야 합니다.
+          return (
+            <div className="order-card" key={o.orderId}>
+              {/* 주문 정보 헤더 영역 등 (필요 시 추가) */}
+              
               {o.items.map((it, i) => {
                 const meta = categoryMeta(it.category);
                 const thumbUrl = it.thumbUrl ?? products.find((p) => p.id === it.productId)?.thumbUrl;
+                
                 return (
                   <div className="order-item" key={`${it.productId}-${it.option ?? ""}-${i}`}>
                     <OrderThumb thumbUrl={thumbUrl} gradient={meta.gradient} iconKey={meta.iconKey} />
@@ -79,25 +100,20 @@ export default function ShopOrdersClient() {
                       <div className="order-item__meta">
                         {it.option ? `${it.option} · ` : ""}수량 {it.qty}개
                       </div>
-                      <div className="order-item__info">
-                        <div className="order-item__name">{it.name}</div>
-                        <div className="order-item__meta">
-                          {it.option ? `${it.option} · ` : ""}수량 {it.qty}개
-                        </div>
-                      </div>
                       <div className="order-item__price">{pts(it.points * it.qty)}</div>
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
 
-                <div className="order-card__total">
-                  <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
-                  <b>{won(o.shippingFee)}</b>
-                </div>
+              <div className="order-card__total">
+                <span>{pts(o.pointsUsed)} 사용 · 배송비 결제</span>
+                <b>{won(o.shippingFee)}</b>
               </div>
-            );
-          })
-        )}
+            </div>
+          );
+        })
+      )}
       </div>
     </div>
   );
