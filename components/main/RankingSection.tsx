@@ -25,6 +25,7 @@ import { useMaturityFiltered } from "@/data/maturityFilter";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 export interface RankingItem {
   id: number;
@@ -56,6 +57,7 @@ interface RankingSectionProps {
 
 export default function RankingSection({ title, items: externalItems, href }: RankingSectionProps = {}) {
   const t = useT();
+  const prefetchRoute = useRoutePrefetch();
   const { koreanMovies, onFetchKoreanMovies } = useMovieStore();
   const excludedGenres = useExcludedGenres();
 
@@ -175,17 +177,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
   const handlePointerEnd = () => { };
 
   if (!rankingItems.length) {
-    return (
-      <section className="ranking-section">
-        <SectionTitle title='방구석 TOP 10' subTitle='오늘 많이 보는 작품을 확인해보세요' showMore={false} />
-
-        <div className="ranking-skeleton-row">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div className="ranking-skeleton-card" key={index} />
-          ))}
-        </div>
-      </section>
-    );
+    return null;
   }
 
 
@@ -235,9 +227,6 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
           touchStartPreventDefault={false}
           slidesPerView="auto"
           spaceBetween={18}
-          watchSlidesProgress
-          observer
-          observeParents
           className="ranking-swiper"
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
@@ -253,6 +242,9 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
           }}
         >
           {rankingItems.map((movie: RankingItem, index: number) => {
+            const mediaType = movie.media_type ?? "movie";
+            const detailHref = `/detail/${mediaType}/${movie.id}`;
+            const watchHref = `/watch/${mediaType}/${movie.id}`;
             const isActive = movie.id === activeId;
             const cardRoleProps = isActive
               ? {}
@@ -273,6 +265,11 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
                 <div
                   className={`ranking-card ${isActive ? "active" : ""}`}
                   onPointerDown={handlePointerDown}
+                  onPointerEnter={() => {
+                    prefetchRoute(detailHref);
+                    prefetchRoute(watchHref);
+                  }}
+                  onFocus={() => prefetchRoute(detailHref)}
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerEnd}
                   onPointerCancel={handlePointerEnd}
@@ -324,8 +321,10 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
 
                     <span className="ranking-detail-actions">
                       <Link
-                        href={`/watch/${movie.media_type ?? "movie"}/${movie.id}`}
+                        href={watchHref}
                         className="ranking-btn-play"
+                        onPointerEnter={() => prefetchRoute(watchHref)}
+                        onFocus={() => prefetchRoute(watchHref)}
                         onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                       >
                         <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
@@ -334,8 +333,10 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
                         {t("common.play")}
                       </Link>
                       <Link
-                        href={`/detail/${movie.media_type ?? "movie"}/${movie.id}`}
+                        href={detailHref}
                         className="ranking-btn-info"
+                        onPointerEnter={() => prefetchRoute(detailHref)}
+                        onFocus={() => prefetchRoute(detailHref)}
                         onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
                       >
                         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" style={{ fill: "none", stroke: "#fff", strokeWidth: 2, strokeLinecap: "round" }}>

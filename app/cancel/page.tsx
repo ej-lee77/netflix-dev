@@ -7,8 +7,6 @@ import { auth, db } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import "@/app/signin/signin.scss";
 import "./cancel.scss";  // ← 추가
-import BackButton from "@/components/common/BackButton";
-
 type Step = 1 | 2;
 
 export default function CancelPage() {

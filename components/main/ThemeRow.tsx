@@ -23,6 +23,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션", 12: "모험", 16: "애니메이션", 35: "코미디", 80: "범죄",
@@ -52,9 +53,12 @@ interface ThemeRowProps {
   showRank?: boolean; // 포스터 위에 순위 숫자(1,2,3...) 표시 (랭킹 섹션용)
 }
 
+const HOVER_VIDEO_DELAY_MS = 900;
+
 export default function ThemeRow({ title, items: rawItems, href, showRank = false }: ThemeRowProps) {
   const t = useT();
   const router = useRouter();
+  const prefetchRoute = useRoutePrefetch();
   const excludedGenres = useExcludedGenres();
   const { ceiling: maturityCeiling, certifications } = useMaturityFilterSnapshot();
   const currentProfile = useAuthStore((state) => state.currentProfile);
@@ -92,16 +96,18 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
     setRightEdgeIndex(swiper.activeIndex + Math.floor(spv) - 1);
   };
 
-  const handleMouseEnter = async (item: ThemeItem) => {
+  const handleMouseEnter = (item: ThemeItem) => {
     setHover(item.id);
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
-    videoTimer.current = setTimeout(() => setVideoReady(item.id), 1500);
     const fetchVideo = item.mediaType === "movie"
       ? () => onFetchVideo(item.id)
       : () => onFetchTvVideos(item.id);
     if (autoplayPreview) {
-      await fetchVideo();
+      videoTimer.current = setTimeout(() => {
+        setVideoReady(item.id);
+        void fetchVideo();
+      }, HOVER_VIDEO_DELAY_MS);
     }
   };
 
@@ -110,6 +116,12 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
     setVideoReady(null);
     if (videoTimer.current) clearTimeout(videoTimer.current);
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoTimer.current) clearTimeout(videoTimer.current);
+    };
+  }, []);
 
   const { isUnsubscribed } = useSubscriptionGuard();
   const openModal = useSubscribeModalStore((state) => state.openModal);
@@ -146,6 +158,8 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
           onClick={() => { if (isUnsubscribed) openModal(); }}
         >
           {items.map((item, index) => {
+            const detailHref = `/detail/${item.mediaType}/${item.id}`;
+            const watchHref = `/watch/${item.mediaType}/${item.id}`;
             const videos = item.mediaType === "movie" ? popVideos[item.id] : tvVideos[item.id];
             const trailer = videos?.find((v) => v.type === "Trailer" || v.type === "Teaser");
             const trailerKey = trailer?.key || null;
@@ -156,15 +170,18 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
                 <li
                   className="category-item"
                   onMouseEnter={() => {
+                    prefetchRoute(detailHref);
+                    prefetchRoute(watchHref);
                     // 태블릿/모바일 TOP10: 프리뷰 카드가 떠서 숫자/카드가 올라가 보이는 현상 방지
                     if (showRank && isCompactView) return;
                     handleMouseEnter(item);
                   }}
                   onMouseLeave={handleMouseLeave}
+                  onFocus={() => prefetchRoute(detailHref)}
                   onClick={() => {
                     if (isDragging.current) return;
                     if (isUnsubscribed) { openModal(); return; }
-                    router.push(`/detail/${item.mediaType}/${item.id}`);
+                    router.push(detailHref);
                   }}
                 >
                   <div className="img-box">
@@ -266,13 +283,24 @@ export default function ThemeRow({ title, items: rawItems, href, showRank = fals
                             </>
                           ) : (
                             <>
-                              <Link href={`/watch/${item.mediaType}/${item.id}`} className="btn-play" onClick={(e) => e.stopPropagation()}>
+                              <Link
+                                href={watchHref}
+                                className="btn-play"
+                                onPointerEnter={() => prefetchRoute(watchHref)}
+                                onFocus={() => prefetchRoute(watchHref)}
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <svg viewBox="0 0 24 24" width={15} height={15} aria-hidden="true" style={{ fill: "#fff" }}>
                                   <polygon points="5 3 19 12 5 21 5 3" />
                                 </svg>
                                 {t("common.play")}
                               </Link>
-                              <Link href={`/detail/${item.mediaType}/${item.id}`} className="btn-detail">
+                              <Link
+                                href={detailHref}
+                                className="btn-detail"
+                                onPointerEnter={() => prefetchRoute(detailHref)}
+                                onFocus={() => prefetchRoute(detailHref)}
+                              >
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                   <circle cx="12" cy="12" r="10" />
                                   <line x1="12" y1="16" x2="12" y2="12" />

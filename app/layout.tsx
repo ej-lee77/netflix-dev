@@ -3,12 +3,8 @@ import localFont from "next/font/local";
 import { Suspense } from "react";
 import "./globals.scss";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import LoginBanner from "@/components/LoginBanner";
 import AuthProvider from "@/components/AuthProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
-import ConnectAIButton from "@/components/connect/ConnectAIButton";
 import ScrollToTop from "@/components/common/ScrollToTop";
 import ConnectAIWrapper from "@/components/connect/ConnectAIWrapper";
 
@@ -42,6 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={netflixSans.variable}>
         {/* ... */}
         <AuthProvider>
+          <Suspense fallback={null}>
+            <ScrollToTop />
+          </Suspense>
           <ConditionalLayout>
             {children}
           </ConditionalLayout>

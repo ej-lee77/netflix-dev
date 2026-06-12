@@ -12,7 +12,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const onInitAuth = useAuthStore((state) => state.onInitAuth);
 
   useEffect(() => {
-    onInitAuth();
+    return onInitAuth();
   }, [onInitAuth]);
 
   return <>{children}</>;
