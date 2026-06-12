@@ -7,6 +7,7 @@ import { GOODS_CATEGORIES, pts } from "@/data/goods";
 import type { GoodsCategory } from "@/types/goods";
 import ShopTopBar from "./ShopTopBar";
 import GoodsCard from "./GoodsCard";
+import CategoryIcon from "./CategoryIcon";
 import "./scss/shop.scss";
 
 type SortKey = "recommend" | "pointLow" | "pointHigh";
@@ -33,17 +34,27 @@ export default function ShopListClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="굿즈샵" />
+        <ShopTopBar title="굿즈샵" hidePoints />
 
         <div className="shop-hero">
-          <div className="shop-hero__eyebrow">POINT EXCHANGE</div>
-          <h1 className="shop-hero__title">
-            모은 포인트로<br />
-            굿즈를 받아보세요
-          </h1>
-          <p className="shop-hero__sub">
-            뱃지로 모은 포인트로 교환 · 배송비만 결제하면 끝 (보유 {pts(available)})
-          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/shop/kpop-still-01.jpg" alt="" className="shop-hero__bg" aria-hidden />
+          <div className="shop-hero__inner">
+            <div className="shop-hero__text">
+              <div className="shop-hero__eyebrow">POINT EXCHANGE</div>
+              <h1 className="shop-hero__title">
+                <span className="shop-hero__title--accent">모은 포인트</span>로<br />
+                굿즈를 받아보세요
+              </h1>
+              <p className="shop-hero__sub">
+                뱃지로 모은 포인트로 교환 · 배송비만 결제하면 끝
+              </p>
+            </div>
+            <div className="shop-hero__point-box">
+              <span className="shop-hero__point-label">보유 포인트</span>
+              <span className="shop-hero__point-value">{pts(available)}</span>
+            </div>
+          </div>
         </div>
 
         <div className="shop-toolbar">
@@ -60,7 +71,7 @@ export default function ShopListClient() {
                 className={`shop-chip${cat === c.key ? " active" : ""}`}
                 onClick={() => setCat(c.key)}
               >
-                {c.emoji} {c.label}
+                <CategoryIcon name={c.iconKey} size={14} /> {c.label}
               </button>
             ))}
           </div>
