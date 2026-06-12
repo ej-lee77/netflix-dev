@@ -92,6 +92,7 @@
   }
 }
 
+
 /* ===== 반응형 ===== */
 @include g.respond(tablet) {
   .netflix-original-section {
@@ -101,9 +102,8 @@
 }
 @include g.respond(mobile) {
   .netflix-original-section {
-    // 로고를 위로, 슬라이더를 아래로 세로 배치
-    .original-wrap { grid-template-columns: 1fr; gap: 12px; padding-left: 68px; padding-right: 12px; }
+    .original-wrap { grid-template-columns: 64px 1fr; gap: 10px; padding-left: 16px; padding-right: 12px; align-items: center; }
     .original-logo { justify-content: flex-start; }
-    .original-logo img { max-width: 96px; }
+    .original-logo img { max-width: 64px; }
   }
 }

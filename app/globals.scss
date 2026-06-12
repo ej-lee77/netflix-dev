@@ -320,6 +320,130 @@ main {
   padding-top: $header-height;
 }
 
+main.fullscreen-page {
+  height: 100dvh;
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.watch-chat-toggle:hover,
+.watch-chat-toggle:focus-visible {
+  opacity: 1 !important;
+  background: rgba(229, 9, 20, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.72) !important;
+  transform: translateY(-50%) translateX(-2px) !important;
+  outline: none;
+}
+
+@media (max-width: 1024px) {
+  .watch-client {
+    padding-inline: 14px !important;
+  }
+
+  .watch-chat-panel[data-open="true"] {
+    flex-basis: clamp(280px, 32vw, 330px) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .watch-client {
+    position: relative;
+    padding: max(14px, env(safe-area-inset-top)) 10px
+      max(8px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .watch-topbar {
+    gap: 8px !important;
+  }
+
+  .watch-topbar__title {
+    display: none;
+  }
+
+  .watch-body {
+    position: relative;
+    gap: 0 !important;
+  }
+
+  .watch-player-column {
+    width: 100%;
+  }
+
+  .watch-chat-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    width: min(88vw, 340px);
+    height: 100% !important;
+    flex: none !important;
+    border-radius: 10px;
+    box-shadow: -20px 0 50px rgba(0, 0, 0, 0.55);
+  }
+
+  .watch-chat-panel > div {
+    background: #111 !important;
+  }
+
+  .watch-chat-panel[data-open="false"] {
+    width: 0;
+    pointer-events: none;
+  }
+
+  .watch-chat-toggle {
+    width: 34px !important;
+    height: 64px !important;
+    z-index: 50 !important;
+    opacity: 0.9 !important;
+  }
+
+  .watch-body:has(.watch-chat-panel[data-open="true"]) .watch-chat-toggle {
+    right: calc(min(88vw, 340px) - 34px) !important;
+  }
+
+  .watch-info-bar {
+    min-height: 54px !important;
+    gap: 8px !important;
+  }
+
+  .watch-info-bar__thumbnail {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .watch-topbar button {
+    padding: 7px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .watch-info-bar {
+    align-items: flex-end !important;
+  }
+
+  .watch-info-bar > div:first-child {
+    max-width: 48%;
+  }
+
+  .watch-info-bar > div:last-child {
+    gap: 5px !important;
+  }
+
+  .watch-info-bar button {
+    padding: 7px 9px !important;
+    font-size: 11px !important;
+  }
+
+  .watch-party-host {
+    padding: 8px !important;
+  }
+
+  .watch-party-host .rep-badge__name {
+    display: none;
+  }
+}
+
 .flex-item {
   display: flex;
   justify-content: space-between;

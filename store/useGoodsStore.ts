@@ -103,7 +103,12 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
     const cart = [...get().cart];
     const idx = cart.findIndex((c) => sameLine(c, productId, option));
     if (idx >= 0) cart[idx] = { ...cart[idx], qty: cart[idx].qty + qty };
-    else cart.push({ productId, qty, option });
+    else {
+      // 옵션이 없는 상품은 option 필드를 아예 넣지 않는다.
+      // (Firestore는 undefined 필드 값을 허용하지 않아 setDoc이 실패함)
+      const line: CartItem = option ? { productId, qty, option } : { productId, qty };
+      cart.push(line);
+    }
     set({ cart });
     await persistCart(cart);
     return true;
@@ -137,15 +142,17 @@ export const useGoodsStore = create<GoodsState>((set, get) => ({
 
     const items: OrderItem[] = cart.map((c) => {
       const p = products.find((pp) => pp.id === c.productId);
-      return {
+      const item: OrderItem = {
         productId: c.productId,
         name: p?.name ?? "상품",
         points: p?.points ?? 0,
         qty: c.qty,
-        option: c.option,
         category: p?.category ?? "lifestyle",
         shippingFee: p?.shippingFee ?? 0,
       };
+      // 옵션이 있을 때만 필드 추가 (undefined 저장 방지)
+      if (c.option) item.option = c.option;
+      return item;
     });
 
     const pointsUsed = items.reduce((s, it) => s + it.points * it.qty, 0);
