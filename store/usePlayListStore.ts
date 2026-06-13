@@ -108,17 +108,19 @@ const COUNTRY_CODE_TO_BADGE_ID: Record<string, string> = {
 // 장르 ID(숫자) -> badgeId 매핑 생성
 export const GENRE_ID_TO_BADGE_ID: Record<string, string> = {};
 
-filters.genre.forEach((g) => {
-  // query와 tvQuery에 있는 숫자들을 모두 수집
-  const ids = [
-    ...(g.query?.with_genres?.split(",") || []),
-    ...(g.tvQuery?.with_genres?.split(",") || []),
-  ];
-  
-  ids.forEach((id) => {
-    GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
-  });
-});
+if (filters && filters.genre) {
+    filters.genre.forEach((g) => {
+    // query와 tvQuery에 있는 숫자들을 모두 수집
+    const ids = [
+        ...(g.query?.with_genres?.split(",") || []),
+        ...(g.tvQuery?.with_genres?.split(",") || []),
+    ];
+    
+    ids.forEach((id) => {
+        GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
+    });
+    });
+}
 // console.log(GENRE_ID_TO_BADGE_ID)
 
 export const getNewlyEarnedBadges = (

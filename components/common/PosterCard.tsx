@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import "./posterCard.scss";
+import WishlistButton from "./WishlistButton";
+import ShareButton from "./ShareButton";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션",
@@ -61,6 +63,17 @@ export default function PosterCard({
     .map((genreId) => GENRE_MAP[genreId])
     .filter(Boolean)
     .join(" · ");
+  const item = {
+    id,   
+    mediaType,
+    title,
+    posterPath,
+    voteAverage,
+    year,
+    backdropPath,
+    overview,
+    genreIds
+  };
 
   return (
     <Link
@@ -134,6 +147,8 @@ export default function PosterCard({
               </svg>
               상세정보
             </span>
+            <WishlistButton item={item} mediaType={mediaType} stopPropagation className="card-wish" />
+            <ShareButton mediaType={mediaType} id={id} stopPropagation className="card-wish" />
           </div>
         </div>
       </div>

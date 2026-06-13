@@ -54,6 +54,23 @@ async function fetchPosterByKey(key: string): Promise<string> {
   }
 }
 
+const GENRE_COLORS: { [key: string]: string } = {
+  // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
+  "SF": "#6366f1",       // 인디고
+  "액션": "#3b82f6",     // 블루
+  "스릴러": "#ef4444",   // 레드
+  "판타지": "#a855f7",   // 퍼플
+  "드라마": "#10b981",   // 그린
+  "공포": "#b94010",   // 그린
+  "미스터리": "#10b93a",   // 그린
+  "전쟁": "#e5f50b",   // 그린
+  "코미디": "#f59e0b",   // 앰버
+  "로맨스": "#ec4899",   // 핑크
+  "애니메이션": "#ec487f",   // 핑크
+  "다큐멘터리": "#64748b", // 슬레이트
+  "기타": "#94a3b8"      // 기본 회색
+};
+
 export default function UserDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -254,7 +271,7 @@ export default function UserDetailPage() {
           name: gi?.label || "기타",
           count,
           percentage: Math.round((count / total) * 100),
-          color: "#6d28d9",
+          color: GENRE_COLORS[gi?.label || "기타"],
         };
       })
       .sort((a, b) => b.count - a.count);
@@ -489,8 +506,25 @@ export default function UserDetailPage() {
                   </div>
 
                   <div className="mood-summary-box">
-                    <AppIcon name="bulb" size={15} /> 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와{" "}
-                    <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠를 즐기는 편이에요!
+                    {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
+                      <div>
+                        <AppIcon name="bulb" size={15} />  
+                        <div>
+                          주로
+                          {genreMoodStats.topGenre?.name !== "없음" && (
+                            <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
+                          )}
+                          
+                          {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
+                          {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
+                          
+                          {genreMoodStats.topMood?.tag !== "없음" && (
+                            <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
+                          )}
+                          의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                        </div>
+                      </div>
+                    )} 
                   </div>
                 </div>
               </>

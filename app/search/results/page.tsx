@@ -18,6 +18,8 @@ import { filterByExcludedGenres, useExcludedGenres } from "@/data/excludedGenres
 import { useMaturityFiltered } from "@/data/maturityFilter";
 import { filterHidden } from "@/data/hiddenContent";
 import "../search.scss";
+import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -598,7 +600,7 @@ function SearchResultsContent() {
   };
 
   return (
-    <main className="search-results-page">
+    <div className="search-results-page">
       <section className="search-results-hero">
         <div className="inner">
           <p>검색 결과</p>
@@ -776,6 +778,8 @@ function SearchResultsContent() {
                             </svg>
                             상세정보
                           </span>
+                          <WishlistButton item={item} mediaType={item.media_type} stopPropagation className="card-wish" />
+                          <ShareButton mediaType={item.media_type} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>
@@ -811,6 +815,6 @@ function SearchResultsContent() {
           </>
         )}
       </section>
-    </main>
+    </div>
   );
 }
