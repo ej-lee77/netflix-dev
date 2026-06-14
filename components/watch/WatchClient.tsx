@@ -33,6 +33,15 @@ interface WatchClientProps {
   mediaId: number;
 }
 
+interface PartySelectableMedia {
+  id: number;
+  media_type: "movie" | "tv";
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+}
+
 export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -95,6 +104,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const [isChatOpen, setIsChatOpen] = useState(() => !!partyIdParam);
   const [isPlayerHovered, setIsPlayerHovered] = useState(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
+  const [selectedPartyMedia, setSelectedPartyMedia] =
+    useState<PartySelectableMedia | null>(null);
 
   // 에피소드 팝업창 열림/닫힘 상태 관리
   const [isEpPopupOpen, setIsEpPopupOpen] = useState(false);
@@ -190,6 +201,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const wished = isWished(itemKey);
 
   const isPartyMode = !!partyIdParam;
+  const canStartSelectedParty =
+    !isPartyMode && canUseConnect && selectedPartyMedia !== null;
   const isHost =
     !!party && isWatchPartyHost(party, userId, profileId);
 
@@ -387,11 +400,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         <WatchPartyModal
           mode={isPartyMode ? "invite" : "create"}
           media={{
-            type,
-            mediaId,
-            title,
-            posterPath: mediaItem?.poster_path,
-            backdropPath: mediaItem?.backdrop_path,
+            type: selectedPartyMedia?.media_type ?? type,
+            mediaId: selectedPartyMedia?.id ?? mediaId,
+            title:
+              selectedPartyMedia?.title ||
+              selectedPartyMedia?.name ||
+              title,
+            posterPath:
+              selectedPartyMedia?.poster_path ?? mediaItem?.poster_path,
+            backdropPath:
+              selectedPartyMedia?.backdrop_path ?? mediaItem?.backdrop_path,
           }}
           party={party}
           onClose={() => setIsPartyModalOpen(false)}
@@ -464,13 +482,24 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         ) : canUseConnect ? (
           <button
             type="button"
+            disabled={!canStartSelectedParty}
             onClick={() => setIsPartyModalOpen(true)}
             style={btn({
-              background: "rgba(229,9,20,0.14)",
-              border: "1px solid rgba(229,9,20,0.5)",
-              color: "#ff6b73",
+              background: canStartSelectedParty
+                ? "rgba(229,9,20,0.14)"
+                : "rgba(255,255,255,0.04)",
+              border: canStartSelectedParty
+                ? "1px solid rgba(229,9,20,0.5)"
+                : "1px solid rgba(255,255,255,0.1)",
+              color: canStartSelectedParty ? "#ff6b73" : "#666",
               fontWeight: 600,
+              cursor: canStartSelectedParty ? "pointer" : "not-allowed",
             })}
+            title={
+              canStartSelectedParty
+                ? `${selectedPartyMedia.title || selectedPartyMedia.name} 같이보기 만들기`
+                : "오른쪽 추천 작품에서 같이 볼 콘텐츠를 선택해 주세요."
+            }
           >
             같이 보기 시작
           </button>
@@ -1171,20 +1200,35 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   <button
                     key={`${item.media_type}-${item.id}`}
                     type="button"
-                    onClick={() =>
-                      router.push(`/watch/${item.media_type}/${item.id}`)
+                    aria-pressed={
+                      selectedPartyMedia?.id === item.id &&
+                      selectedPartyMedia?.media_type === item.media_type
                     }
+                    onClick={() => setSelectedPartyMedia(item)}
                     style={{
                       display: "flex",
                       flexDirection: "column",
                       textAlign: "left",
-                      background: "transparent",
-                      border: "1px solid #222",
+                      background:
+                        selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type
+                          ? "rgba(229,9,20,0.1)"
+                          : "transparent",
+                      border:
+                        selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type
+                          ? "1px solid rgba(229,9,20,0.75)"
+                          : "1px solid #222",
                       borderRadius: 10,
                       padding: 0,
                       cursor: "pointer",
                       color: "#eee",
                       overflow: "hidden",
+                      boxShadow:
+                        selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type
+                          ? "0 0 0 1px rgba(229,9,20,0.18)"
+                          : "none",
                     }}
                   >
                     <span
@@ -1245,8 +1289,25 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                             {item.adult ? "청불" : "15+"}
                           </span>
                         </span>
-                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>›</span>
+                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>
+                          {selectedPartyMedia?.id === item.id &&
+                          selectedPartyMedia?.media_type === item.media_type
+                            ? "✓"
+                            : "›"}
+                        </span>
                       </span>
+                      {selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type && (
+                          <span
+                            style={{
+                              color: "#ff737b",
+                              fontSize: 11,
+                              fontWeight: 700,
+                            }}
+                          >
+                            같이보기 작품으로 선택됨
+                          </span>
+                        )}
                     </span>
                   </button>
                 ))}

@@ -14,6 +14,7 @@ import SectionTitle from "@/components/common/SectionTitle";
 import RepBadge from "@/components/common/RepBadge";
 import WatchPartyModal from "@/components/watch/WatchPartyModal";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 import "swiper/css";
 import "swiper/css/navigation";
 import "./scss/connectWatchParties.scss";
@@ -28,27 +29,19 @@ export default function ConnectWatchParties() {
   const swiperShellRef = useRef<HTMLDivElement>(null);
   const swiperRef = useRef<SwiperType | null>(null);
   const [lockedParty, setLockedParty] = useState<PartyDoc | null>(null);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [canSlide, setCanSlide] = useState(false);
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
   const { openParties, subscribeOpenParties, unsubscribeOpenParties } =
     useWatchPartyStore();
+  const openSubscribeModal = useSubscribeModalStore(
+    (state) => state.openModal,
+  );
 
   useEffect(() => {
     subscribeOpenParties();
     return () => unsubscribeOpenParties();
   }, [subscribeOpenParties, unsubscribeOpenParties]);
-
-  useEffect(() => {
-    if (!isLoginModalOpen) return;
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsLoginModalOpen(false);
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isLoginModalOpen]);
 
   const updateNavigation = useCallback((swiper: SwiperType) => {
     const slidesWidth = Array.from(swiper.slides).reduce(
@@ -92,7 +85,7 @@ export default function ConnectWatchParties() {
 
   const handlePartyEntry = (party: (typeof openParties)[number]) => {
     if (!user) {
-      setIsLoginModalOpen(true);
+      openSubscribeModal();
       return;
     }
 
@@ -315,50 +308,6 @@ export default function ConnectWatchParties() {
           initialParty={lockedParty}
           onClose={() => setLockedParty(null)}
         />
-      )}
-      {isLoginModalOpen && (
-        <div
-          className="cwp-login-modal-backdrop"
-          onClick={() => setIsLoginModalOpen(false)}
-        >
-          <div
-            className="cwp-login-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cwp-login-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="cwp-login-modal__close"
-              aria-label="닫기"
-              onClick={() => setIsLoginModalOpen(false)}
-            >
-              ✕
-            </button>
-            <span className="cwp-login-modal__mark" aria-hidden="true">
-              N
-            </span>
-            <h2 id="cwp-login-modal-title">로그인이 필요합니다</h2>
-            <p>넷플릭스를 시작하고 함께 파티를 즐겨보세요!</p>
-            <div className="cwp-login-modal__actions">
-              <button
-                type="button"
-                className="cwp-login-modal__login"
-                onClick={() => router.push("/login")}
-              >
-                로그인하기
-              </button>
-              <button
-                type="button"
-                className="cwp-login-modal__cancel"
-                onClick={() => setIsLoginModalOpen(false)}
-              >
-                나중에
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </>
   );
