@@ -44,12 +44,19 @@ export default function ConnectWatchParties() {
   }, [subscribeOpenParties, unsubscribeOpenParties]);
 
   const updateNavigation = useCallback((swiper: SwiperType) => {
-    const slidesWidth = Array.from(swiper.slides).reduce(
+    // 1. swiper 객체와 slides 존재 여부 먼저 확인
+    if (!swiper || !swiper.slides) return;
+
+    // 2. slides가 undefined일 경우를 대비해 빈 배열로 fallback 처리
+    const slides = Array.from(swiper.slides ?? []);
+
+    const slidesWidth = slides.reduce(
       (total, slide, index) =>
         total + slide.getBoundingClientRect().width + (index > 0 ? CARD_GAP : 0),
       0,
     );
-    const viewportWidth = swiper.el.getBoundingClientRect().width;
+
+    const viewportWidth = swiper.el?.getBoundingClientRect().width ?? 0;
     const hasOverflow = slidesWidth > viewportWidth + 1;
 
     setCanSlide(hasOverflow);
