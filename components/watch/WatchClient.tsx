@@ -19,6 +19,7 @@ import VideoPlayer, {
 } from "@/components/common/VideoPlayer";
 import RepBadge from "@/components/common/RepBadge";
 import WatchPartyModal from "@/components/watch/WatchPartyModal";
+import { useConfirmModal } from "../common/ConfirmModal";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 function imageUrl(path?: string | null, size = "w342") {
@@ -32,6 +33,17 @@ interface WatchClientProps {
   type: "movie" | "tv";
   mediaId: number;
 }
+
+interface PartySelectableMedia {
+  id: number;
+  media_type: "movie" | "tv";
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+}
+
+const getToday = () => new Date().toISOString().slice(0, 10);
 
 export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const router = useRouter();
@@ -55,10 +67,12 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     onFetchEpisodes,
     recommended,
     onFetchRecommended,
+    certifications,
+    onFetchCertification,
   } = useMovieStore();
   const { isWished, onAddWish, onRemoveWish, onLoadWishlist } =
     useWishlistStore();
-  const { onAddPlayList, onUpdateProgress } = usePlayListStore();
+  const { onAddPlayList, onUpdateProgress, onRemoveMyList, onAddMyList, onLoadMyList, myList } = usePlayListStore();
   const { user, currentProfile } = useAuthStore();
   const canUseConnect = useCommunityEnabled();
   const {
@@ -95,15 +109,19 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const [isChatOpen, setIsChatOpen] = useState(() => !!partyIdParam);
   const [isPlayerHovered, setIsPlayerHovered] = useState(false);
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
+  const [selectedPartyMedia, setSelectedPartyMedia] =
+    useState<PartySelectableMedia | null>(null);
 
   // 에피소드 팝업창 열림/닫힘 상태 관리
   const [isEpPopupOpen, setIsEpPopupOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const episodeToggleRef = useRef<HTMLButtonElement>(null);
 
+  const { confirm, modal: confirmModal } = useConfirmModal();
+
   useEffect(() => {
-    onLoadWishlist();
-  }, [onLoadWishlist]);
+    onLoadMyList();
+  }, [onLoadMyList]);
 
   // 외부 클릭 시 에피소드 팝업 닫기
   useEffect(() => {
@@ -126,6 +144,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     recordedRef.current = false;
     lastProgressRef.current = -1;
     onFetchMediaDetail(mediaId, type);
+    onFetchCertification(mediaId, type);
     if (isTv) {
       onFetchTvVideos(mediaId);
       onFetchEpisodes(mediaId, seasonParam);
@@ -141,7 +160,18 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
     onFetchTvVideos,
     onFetchVideo,
     onFetchEpisodes,
+    onFetchCertification
   ]);
+
+  // 반응형: 뷰포트 폭에 따라 인라인 레이아웃 분기
+  const [vw, setVw] = useState(1920);
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const isMobile = vw <= 600;
 
   // 상세에서 ?ep= 로 진입하면 해당 회차를 선택
   useEffect(() => {
@@ -187,11 +217,35 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const related = (recommended as any[])
     .filter((r) => r.id !== mediaId)
     .slice(0, 6);
-  const wished = isWished(itemKey);
+  const wished = myList.includes(String(itemKey));;
 
   const isPartyMode = !!partyIdParam;
+  const canStartSelectedParty =
+    !isPartyMode && canUseConnect && selectedPartyMedia !== null;
   const isHost =
     !!party && isWatchPartyHost(party, userId, profileId);
+
+  const [showAdultModal, setShowAdultModal] = useState(false);
+  const rawCert = certifications[itemKey] ?? "";
+  const ageBadge = ((): "ALL" | "12+" | "15+" | "19+" => {
+    if (rawCert === "12") return "12+";
+    if (rawCert === "15") return "15+";
+    if (rawCert === "19" || rawCert === "Restricted Screening") return "19+";
+    return "ALL";
+  })();
+  const isAdultContent = ageBadge === "19+" || mediaItem?.adult === true;
+  const canAccessAdultContent =
+    currentProfile?.settings?.maturityRating === "19+" &&
+    currentProfile?.settings?.verifiedAdult === true;
+  const isAdultBlocked = isAdultContent && !canAccessAdultContent;
+
+  useEffect(() => {
+    if (!isAdultBlocked) {
+      setShowAdultModal(false);
+      return;
+    }
+    setShowAdultModal(true);
+  }, [isAdultBlocked]);
 
   useEffect(() => {
     if (partyIdParam && party && !isHost) {
@@ -250,16 +304,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
       : { ...mediaItem, title: mediaItem.title || title };
 
     if (wished) {
-      await onRemoveWish(wishlistItem);
-      const removed = !useWishlistStore.getState().isWished(itemKey);
+      await onRemoveMyList(mediaId, type);
+      const removed = myList.includes(String(itemKey));
       showToast(
         removed
           ? "위시리스트에서 삭제했어요."
           : "위시리스트 삭제에 실패했어요.",
       );
     } else {
-      await onAddWish(wishlistItem);
-      const added = useWishlistStore.getState().isWished(itemKey);
+      await onAddMyList(wishlistItem);
+      const added = !myList.includes(String(itemKey));
       showToast(
         added ? "내 위시리스트에 추가했어요." : "위시리스트 추가에 실패했어요.",
       );
@@ -284,9 +338,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
   const handleDeleteParty = async () => {
     if (!partyIdParam || !currentProfile) return;
-    const confirmed = window.confirm(
-      "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
-    );
+
+    const confirmed = await confirm({
+      title: "파티 종료",
+      message: "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
+      confirmLabel: "종료",
+    });
+    // if (!confirmed) return;
+    // const confirmed = window.confirm(
+    //   "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
+    // );
     if (!confirmed) return;
 
     const deleted = await deleteParty(partyIdParam, {
@@ -368,6 +429,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   });
 
   return (
+    <>
+    {confirmModal}
     <div
       className="watch-client"
       style={{
@@ -387,11 +450,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         <WatchPartyModal
           mode={isPartyMode ? "invite" : "create"}
           media={{
-            type,
-            mediaId,
-            title,
-            posterPath: mediaItem?.poster_path,
-            backdropPath: mediaItem?.backdrop_path,
+            type: selectedPartyMedia?.media_type ?? type,
+            mediaId: selectedPartyMedia?.id ?? mediaId,
+            title:
+              selectedPartyMedia?.title ||
+              selectedPartyMedia?.name ||
+              title,
+            posterPath:
+              selectedPartyMedia?.poster_path ?? mediaItem?.poster_path,
+            backdropPath:
+              selectedPartyMedia?.backdrop_path ?? mediaItem?.backdrop_path,
           }}
           party={party}
           onClose={() => setIsPartyModalOpen(false)}
@@ -464,13 +532,24 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         ) : canUseConnect ? (
           <button
             type="button"
+            disabled={!canStartSelectedParty}
             onClick={() => setIsPartyModalOpen(true)}
             style={btn({
-              background: "rgba(229,9,20,0.14)",
-              border: "1px solid rgba(229,9,20,0.5)",
-              color: "#ff6b73",
+              background: canStartSelectedParty
+                ? "rgba(229,9,20,0.14)"
+                : "rgba(255,255,255,0.04)",
+              border: canStartSelectedParty
+                ? "1px solid rgba(229,9,20,0.5)"
+                : "1px solid rgba(255,255,255,0.1)",
+              color: canStartSelectedParty ? "#ff6b73" : "#666",
               fontWeight: 600,
+              cursor: canStartSelectedParty ? "pointer" : "not-allowed",
             })}
+            title={
+              canStartSelectedParty
+                ? `${selectedPartyMedia.title || selectedPartyMedia.name} 같이보기 만들기`
+                : "오른쪽 추천 작품에서 같이 볼 콘텐츠를 선택해 주세요."
+            }
           >
             같이 보기 시작
           </button>
@@ -556,6 +635,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                         }
                       : null
                   }
+                  isMute={isAdultBlocked}
                 />
               ) : (
                 <div
@@ -1171,20 +1251,35 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                   <button
                     key={`${item.media_type}-${item.id}`}
                     type="button"
-                    onClick={() =>
-                      router.push(`/watch/${item.media_type}/${item.id}`)
+                    aria-pressed={
+                      selectedPartyMedia?.id === item.id &&
+                      selectedPartyMedia?.media_type === item.media_type
                     }
+                    onClick={() => setSelectedPartyMedia(item)}
                     style={{
                       display: "flex",
                       flexDirection: "column",
                       textAlign: "left",
-                      background: "transparent",
-                      border: "1px solid #222",
+                      background:
+                        selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type
+                          ? "rgba(229,9,20,0.1)"
+                          : "transparent",
+                      border:
+                        selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type
+                          ? "1px solid rgba(229,9,20,0.75)"
+                          : "1px solid #222",
                       borderRadius: 10,
                       padding: 0,
                       cursor: "pointer",
                       color: "#eee",
                       overflow: "hidden",
+                      boxShadow:
+                        selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type
+                          ? "0 0 0 1px rgba(229,9,20,0.18)"
+                          : "none",
                     }}
                   >
                     <span
@@ -1245,8 +1340,25 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                             {item.adult ? "청불" : "15+"}
                           </span>
                         </span>
-                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>›</span>
+                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>
+                          {selectedPartyMedia?.id === item.id &&
+                          selectedPartyMedia?.media_type === item.media_type
+                            ? "✓"
+                            : "›"}
+                        </span>
                       </span>
+                      {selectedPartyMedia?.id === item.id &&
+                        selectedPartyMedia?.media_type === item.media_type && (
+                          <span
+                            style={{
+                              color: "#ff737b",
+                              fontSize: 11,
+                              fontWeight: 700,
+                            }}
+                          >
+                            같이보기 작품으로 선택됨
+                          </span>
+                        )}
                     </span>
                   </button>
                 ))}
@@ -1255,6 +1367,153 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
           )}
         </aside>
       </div>
+      {showAdultModal && isAdultBlocked && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="adult-verification-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 400000,
+            background: "#000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              width: "min(100%, 420px)",
+              border: "1px solid rgba(255,255,255,0.16)",
+              borderRadius: 8,
+              background: "#141414",
+              padding: isMobile ? 22 : 28,
+              color: "#fff",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.55)",
+            }}
+          >
+            <h2
+              id="adult-verification-title"
+              style={{
+                margin: "0 0 10px",
+                fontSize: isMobile ? 22 : 26,
+                lineHeight: 1.2,
+              }}
+            >
+              성인 인증이 필요합니다
+            </h2>
+            <p
+              style={{
+                margin: "0 0 22px",
+                color: "rgba(255,255,255,0.72)",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              이 콘텐츠는 만 19세 이상만 시청할 수 있습니다. 생년월일
+              확인 후 현재 프로필에서 19세 콘텐츠를 볼 수 있습니다.
+            </p>
+            <label
+              htmlFor="adult-birth-date"
+              style={{
+                display: "none",
+                marginBottom: 8,
+                color: "rgba(255,255,255,0.86)",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              생년월일
+            </label>
+            <input
+              id="adult-birth-date"
+              type="date"
+              value=""
+              max={getToday()}
+              readOnly
+              required
+              style={{
+                display: "none",
+                width: "100%",
+                height: 46,
+                boxSizing: "border-box",
+                border: "1px solid rgba(255,255,255,0.28)",
+                borderRadius: 4,
+                background: "#0f0f0f",
+                color: "#fff",
+                padding: "0 12px",
+                fontSize: 15,
+                colorScheme: "dark",
+              }}
+            />
+            {false && (
+              <p
+                role="alert"
+                style={{
+                  margin: "10px 0 0",
+                  color: "#ff7b7b",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                {""}
+              </p>
+            )}
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 24,
+                flexDirection: isMobile ? "column" : "row",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    currentProfile
+                      ? `/profiles/settings?profileId=${currentProfile.id}`
+                      : "/profiles",
+                  )
+                }
+                style={{
+                  flex: 1,
+                  height: 44,
+                  border: "none",
+                  borderRadius: 4,
+                  background: "#e50914",
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                인증하고 보기
+              </button>
+              <button
+                type="button"
+                onClick={() => router.replace("/")}
+                style={{
+                  flex: 1,
+                  height: 44,
+                  border: "1px solid rgba(255,255,255,0.28)",
+                  borderRadius: 4,
+                  background: "transparent",
+                  color: "#fff",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                나가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </>
   );
 }

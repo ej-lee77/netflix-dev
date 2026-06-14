@@ -149,8 +149,8 @@ export default function Header() {
 
   const handleLogout = async () => {
     setIsProfileMenuOpen(false);
-    await onLogout();
     router.push("/");
+    await onLogout();
   };
 
   useEffect(() => {
