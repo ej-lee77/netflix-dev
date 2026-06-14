@@ -51,6 +51,7 @@ interface VideoPlayerProps {
   onLocalControl?: (state: { positionPct: number; isPlaying: boolean }) => void;
   /** 같이보기: 호스트가 보낸 재생 상태. ts가 바뀌면 그 위치/상태로 즉시 따라감 (참여자용) */
   remoteControl?: { positionPct: number; isPlaying: boolean; ts: number } | null;
+  isMute?: boolean;
 }
 
 function formatTime(sec: number) {
@@ -71,6 +72,7 @@ export default function VideoPlayer({
   embedded = false,
   onLocalControl,
   remoteControl,
+  isMute
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -288,6 +290,7 @@ export default function VideoPlayer({
           // 폴백용 유튜브 내장 자막 (로컬 커스텀 자막이 있으면 unload 됨)
           cc_load_policy: 1,
           cc_lang_pref: "ko",
+          mute: isMute ? 1 : 0
         },
         events: {
           onReady: (e: any) => {
