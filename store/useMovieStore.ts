@@ -1,7 +1,7 @@
 import { getTmdbLang } from "@/lib/i18n";
 import { getNetflixOriginals } from "@/lib/netflix";
 import { create } from "zustand";
-import type { HighlightItem, MovieState, RecommendedItem } from "@/types/movie";
+import type { CastMember, DirectorMember, HighlightItem, MovieState, RecommendedItem } from "@/types/movie";
 import { filterHidden, isHidden } from "@/data/hiddenContent";
 
 //TMBD키
@@ -355,13 +355,31 @@ export const useMovieStore = create<MovieState>((set, get) => ({
         const key = `${mediaType}-${id}`;
         const { casts } = get();
         if (casts[key]) return;
+        
         const res = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/credits?api_key=${TMDB_KEY}&language=${getTmdbLang()}`);
         const data = await res.json();
+        
+        // --- Cast 중복 제거 로직 ---
+        // CastMember[] 타입이라고 가정합니다.
+        const uniqueCasts: CastMember[] = Array.from(
+            new Map<number, CastMember>(
+                (data.cast || []).map((m: any) => [m.id, m as CastMember])
+            ).values()
+        );
+
+        // --- Director 중복 제거 로직 ---
         const directorJobs = ["Director", "Novel", "Screenplay", "Story", "Writer", "Creator"];
-        const crew = (data.crew || []).filter((m: any) => directorJobs.includes(m.job));
+        const uniqueDirectors: DirectorMember[] = Array.from(
+            new Map<number, DirectorMember>(
+                (data.crew || [])
+                    .filter((m: any) => directorJobs.includes(m.job))
+                    .map((m: any) => [m.id, m as DirectorMember])
+            ).values()
+        );
+
         set((state) => ({
-            casts: { ...state.casts, [key]: data.cast || [] },
-            directors: { ...state.directors, [key]: crew },
+            casts: { ...state.casts, [key]: uniqueCasts },
+            directors: { ...state.directors, [key]: uniqueDirectors },
         }));
     },
     //전 세계 인기 인물 (배우/감독)

@@ -41,6 +41,7 @@ export default function TasteAnalysisModal({ user, onClose }: Props) {
 
   const genres = Object.entries(stats)
     .map(([id, count]) => ({
+      id, // id를 유지합니다.
       label: GENRE_MAP[id]?.label ?? "기타",
       color: GENRE_MAP[id]?.color ?? "#94a3b8",
       count,
@@ -76,7 +77,8 @@ export default function TasteAnalysisModal({ user, onClose }: Props) {
             <p className="tam-empty">분석 데이터가 없습니다.</p>
           ) : (
             genres.map((g) => (
-              <div key={g.label} className="tam-bar-row">
+              // key를 label이 아닌 고유한 id로 설정
+              <div key={g.id} className="tam-bar-row">
                 <span className="tam-bar-label">{g.label}</span>
                 <div className="tam-bar-track">
                   <div

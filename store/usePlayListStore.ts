@@ -106,69 +106,76 @@ const COUNTRY_CODE_TO_BADGE_ID: Record<string, string> = {
 };
 
 // 장르 ID(숫자) -> badgeId 매핑 생성
-export const GENRE_ID_TO_BADGE_ID: Record<string, string> = {};
-
-filters.genre.forEach((g) => {
-  // query와 tvQuery에 있는 숫자들을 모두 수집
-  const ids = [
-    ...(g.query?.with_genres?.split(",") || []),
-    ...(g.tvQuery?.with_genres?.split(",") || []),
-  ];
-  
-  ids.forEach((id) => {
-    GENRE_ID_TO_BADGE_ID[id.trim()] = `genre_${g.id}`;
-  });
-});
-// console.log(GENRE_ID_TO_BADGE_ID)
+export const GENRE_ID_TO_BADGE_ID: Record<string, string[]> = {};
 
 export const getNewlyEarnedBadges = (
-  currentBadges: BadgeList,
-  genreStats: Record<string, number>,
-  countryStats: Record<string, number> // 추가
+    currentBadges: BadgeList,
+    genreStats: Record<string, number>,
+    countryStats: Record<string, number>
 ): BadgeList => {
-  const updatedEarnedBadges = [...currentBadges.earnedBadges];
-  let newEquipped = currentBadges.equippedBadges;
+    const updatedEarnedBadges = [...currentBadges.earnedBadges];
+    let newEquipped = currentBadges.equippedBadges;
 
-  const processBadge = (badgeId: string, count: number, total: number) => {
-    const existingBadgeIndex = updatedEarnedBadges.findIndex((b) => b.id === badgeId);
-    if (existingBadgeIndex !== -1) {
-      updatedEarnedBadges[existingBadgeIndex].progress = count;
-      updatedEarnedBadges[existingBadgeIndex].isComplete = count >= total;
-    } else if (count >= total) {
-      updatedEarnedBadges.push({ id: badgeId, progress: count, isComplete: true });
-      if (!newEquipped) newEquipped = badgeId;
+    const processBadge = (badgeId: string, count: number, total: number) => {
+        const existing = updatedEarnedBadges.find((b) => b.id === badgeId);
+        if (existing) {
+        existing.progress = count;
+        existing.isComplete = count >= total;
+        } else if (count >= total) {
+        updatedEarnedBadges.push({ id: badgeId, progress: count, isComplete: true });
+        if (!newEquipped) newEquipped = badgeId;
+        }
+    };
+
+    // 1. 장르 뱃지: genreStats의 모든 키를 순회하며 매핑 확인
+    Object.entries(genreStats).forEach(([id, count]) => {
+
+    // 초기화 로직 수정
+    if (filters && filters.genre) {
+        filters.genre.forEach((g) => {
+            const ids = [
+                ...(g.query?.with_genres?.split(",") || []),
+                ...(g.tvQuery?.with_genres?.split(",") || []),
+            ];
+            
+            ids.forEach((id) => {
+                const trimmedId = id.trim();
+                if (trimmedId) {
+                    // 배열이 없으면 초기화 후 push
+                    if (!GENRE_ID_TO_BADGE_ID[trimmedId]) {
+                        GENRE_ID_TO_BADGE_ID[trimmedId] = [];
+                    }
+                    GENRE_ID_TO_BADGE_ID[trimmedId].push(`genre_${g.id}`);
+                }
+            });
+        });
     }
-  };
+    // 배열로 받아옴
+    const badgeIds = GENRE_ID_TO_BADGE_ID[id] || [];
 
-  const uniqueCountriesCount = Object.keys(countryStats).length;
-    if (uniqueCountriesCount >= 3) { // 예: 3개국 이상 시청 시
-        processBadge("culture_global", uniqueCountriesCount, 3);
+    badgeIds.forEach((badgeId) => {
+        const config = BADGE_LIST.find(b => b.id === badgeId);
+        if (config) {
+        processBadge(badgeId, count, config.total);
+        }
+    });
+    });
+
+    // 1. 일반 뱃지 처리 (첫 스트리밍)
+    if (!updatedEarnedBadges.some(b => b.id === "first_streaming")) {
+        processBadge("first_streaming", 1, 1);
     }
 
-  // 1. 일반 뱃지 처리 (첫 스트리밍)
-  if (!updatedEarnedBadges.some(b => b.id === "first_streaming")) {
-    processBadge("first_streaming", 1, 1);
-  }
+    // 2. 국가 뱃지: countryStats의 모든 키를 순회
+    Object.entries(countryStats).forEach(([code, count]) => {
+        const badgeId = COUNTRY_CODE_TO_BADGE_ID[code];
+        if (badgeId) {
+        const config = BADGE_LIST.find(b => b.id === badgeId);
+        if (config) processBadge(badgeId, count, config.total);
+        }
+    });
 
-  // 2. 장르 & 국가 뱃지 처리
-  BADGE_LIST.forEach((badge) => {
-    // 장르 뱃지 로직
-    if (badge.id.startsWith("genre_")) {
-      const genreId = Object.keys(GENRE_ID_TO_BADGE_ID).find(
-        (key) => GENRE_ID_TO_BADGE_ID[key] === badge.id
-      );
-      if (genreId) processBadge(badge.id, genreStats[genreId] || 0, badge.total);
-    } 
-    // 국가 뱃지 로직
-    else if (badge.id.startsWith("culture_") && badge.id !== "culture_global") {
-      const countryCode = Object.keys(COUNTRY_CODE_TO_BADGE_ID).find(
-        (key) => COUNTRY_CODE_TO_BADGE_ID[key] === badge.id
-      );
-      if (countryCode) processBadge(badge.id, countryStats[countryCode] || 0, badge.total);
-    }
-  });
-
-  return { earnedBadges: updatedEarnedBadges, equippedBadges: newEquipped };
+    return { earnedBadges: updatedEarnedBadges, equippedBadges: newEquipped };
 };
 
 export const getPlaylistCreatedBadge = (
@@ -243,12 +250,17 @@ export const usePlayListStore = create<PlayListState>((set, get) => ({
                 histMovies: [] 
             };
 
-            // 통계 업데이트 (장르 및 국가)
-            const newGenreStats = countStats(movies.genreStats || {}, item.genres?.map((g: any) => g.id.toString()) || []);
-            const newCountryStats = countStats(movies.countryStats || {}, item.origin_country || []);
+            // 1. 통계 데이터 정규화 (string으로 통일)
+            const genreIds = item.genres?.map((g: any) => String(g.id).trim()) || [];
+            const countryCodes = item.origin_country || [];
 
+            // 2. 통계 업데이트 (새로운 객체 생성 보장)
+            const newGenreStats = countStats({ ...movies.genreStats }, genreIds);
+            const newCountryStats = countStats({ ...movies.countryStats }, countryCodes);
+
+            // 3. 뱃지 로직 실행 (최신 stats 전달)
             const updatedBadgeList = getNewlyEarnedBadges(
-                targetProfile.badges || { earnedBadges: [], equippedBadges: "" }, 
+                targetProfile.badges || { earnedBadges: [], equippedBadges: "" },
                 newGenreStats,
                 newCountryStats
             );
