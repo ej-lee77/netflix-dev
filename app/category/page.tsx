@@ -358,6 +358,37 @@ function CategoryPageContent() {
     [selectedOptions],
   );
 
+  const filterIds = useMemo(() => ({
+    genre: () => new Set(filters.genre.map((o) => o.id)),
+    country: () => new Set(filters.country.map((o) => o.id)),
+  }), [filters]);
+
+  useEffect(() => {
+    const nextType = searchParams.get("type") ?? searchParams.get("tab");
+    const nextGenres = searchParams.get("genres");
+    const nextCountries = searchParams.get("countries");
+
+    // 상태 업데이트
+    setMainTab(isMainTab(nextType) ? nextType : "movie");
+
+    const newSelected = {
+      ...defaultSelection,
+      genre: parseParamList(nextGenres).filter((id) => filterIds.genre().has(id)),
+      country: parseParamList(nextCountries).filter((id) => filterIds.country().has(id)),
+    };
+
+    setSelected(newSelected);
+
+    setSelectedOrder([
+      ...newSelected.genre.map((id) => ({ group: "genre" as const, id })),
+      ...newSelected.country.map((id) => ({ group: "country" as const, id })),
+    ]);
+    
+    // 만약 검색 시 페이지를 1로 초기화해야 한다면 여기서 추가
+    setNextPage(1); 
+    setItems([]);
+  }, [searchParams, filterIds]);
+
   const toggleOption = (tabId: FilterTab, optionId: string) => {
     setSelected((prev) => {
       // 국가는 단일 선택(중복 불가) — 라디오처럼 동작

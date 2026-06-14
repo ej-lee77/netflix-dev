@@ -1109,6 +1109,14 @@ function ActivityContent() {
 
     return (
       <article className="custom-playlist-card" key={playlist.listId}>
+        {/* <button
+          type="button"
+          className="playlist-delete-btn"
+          onClick={() => handleDeletePlaylist(playlist.listId)}
+          aria-label={`${playlist.name} 플레이리스트 삭제`}
+        >
+          -
+        </button> */}
         {selectedKeys.length > 0 ? (
           hasNewItems ? (
             <button type="button" className="playlist-add-btn" 
