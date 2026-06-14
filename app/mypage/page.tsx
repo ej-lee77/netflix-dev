@@ -844,7 +844,7 @@ export default function MyPage() {
                     주로 이런 감성의 작품들을 즐겨 보셨어요.
                   </p>
                   <div className="mood-tag-cloud">
-                    {genreMoodStats.moods?.slice(0, 8).map((m, index) => (
+                    {genreMoodStats.moods?.slice(0, 6).map((m, index) => (
                       <span key={index} className={`mood-tag-item `}>
                         <img src={m.img} alt={m.tag} />
                         {m.tag}
