@@ -108,52 +108,51 @@ const COUNTRY_CODE_TO_BADGE_ID: Record<string, string> = {
 // 장르 ID(숫자) -> badgeId 매핑 생성
 export const GENRE_ID_TO_BADGE_ID: Record<string, string[]> = {};
 
-// 초기화 로직 수정
-if (filters && filters.genre) {
-    filters.genre.forEach((g) => {
-        const ids = [
-            ...(g.query?.with_genres?.split(",") || []),
-            ...(g.tvQuery?.with_genres?.split(",") || []),
-        ];
-        
-        ids.forEach((id) => {
-            const trimmedId = id.trim();
-            if (trimmedId) {
-                // 배열이 없으면 초기화 후 push
-                if (!GENRE_ID_TO_BADGE_ID[trimmedId]) {
-                    GENRE_ID_TO_BADGE_ID[trimmedId] = [];
-                }
-                GENRE_ID_TO_BADGE_ID[trimmedId].push(`genre_${g.id}`);
-            }
-        });
-    });
-}
-// console.log(GENRE_ID_TO_BADGE_ID)
-
 export const getNewlyEarnedBadges = (
-  currentBadges: BadgeList,
-  genreStats: Record<string, number>,
-  countryStats: Record<string, number>
+    currentBadges: BadgeList,
+    genreStats: Record<string, number>,
+    countryStats: Record<string, number>
 ): BadgeList => {
-  const updatedEarnedBadges = [...currentBadges.earnedBadges];
-  let newEquipped = currentBadges.equippedBadges;
+    const updatedEarnedBadges = [...currentBadges.earnedBadges];
+    let newEquipped = currentBadges.equippedBadges;
 
-  const processBadge = (badgeId: string, count: number, total: number) => {
-    const existing = updatedEarnedBadges.find((b) => b.id === badgeId);
-    if (existing) {
-      existing.progress = count;
-      existing.isComplete = count >= total;
-    } else if (count >= total) {
-      updatedEarnedBadges.push({ id: badgeId, progress: count, isComplete: true });
-      if (!newEquipped) newEquipped = badgeId;
-    }
-  };
+    const processBadge = (badgeId: string, count: number, total: number) => {
+        const existing = updatedEarnedBadges.find((b) => b.id === badgeId);
+        if (existing) {
+        existing.progress = count;
+        existing.isComplete = count >= total;
+        } else if (count >= total) {
+        updatedEarnedBadges.push({ id: badgeId, progress: count, isComplete: true });
+        if (!newEquipped) newEquipped = badgeId;
+        }
+    };
 
-  // 1. 장르 뱃지: genreStats의 모든 키를 순회하며 매핑 확인
+    // 1. 장르 뱃지: genreStats의 모든 키를 순회하며 매핑 확인
     Object.entries(genreStats).forEach(([id, count]) => {
+
+    // 초기화 로직 수정
+    if (filters && filters.genre) {
+        filters.genre.forEach((g) => {
+            const ids = [
+                ...(g.query?.with_genres?.split(",") || []),
+                ...(g.tvQuery?.with_genres?.split(",") || []),
+            ];
+            
+            ids.forEach((id) => {
+                const trimmedId = id.trim();
+                if (trimmedId) {
+                    // 배열이 없으면 초기화 후 push
+                    if (!GENRE_ID_TO_BADGE_ID[trimmedId]) {
+                        GENRE_ID_TO_BADGE_ID[trimmedId] = [];
+                    }
+                    GENRE_ID_TO_BADGE_ID[trimmedId].push(`genre_${g.id}`);
+                }
+            });
+        });
+    }
     // 배열로 받아옴
     const badgeIds = GENRE_ID_TO_BADGE_ID[id] || [];
-    
+
     badgeIds.forEach((badgeId) => {
         const config = BADGE_LIST.find(b => b.id === badgeId);
         if (config) {
@@ -162,16 +161,21 @@ export const getNewlyEarnedBadges = (
     });
     });
 
-  // 2. 국가 뱃지: countryStats의 모든 키를 순회
-  Object.entries(countryStats).forEach(([code, count]) => {
-    const badgeId = COUNTRY_CODE_TO_BADGE_ID[code];
-    if (badgeId) {
-      const config = BADGE_LIST.find(b => b.id === badgeId);
-      if (config) processBadge(badgeId, count, config.total);
+    // 1. 일반 뱃지 처리 (첫 스트리밍)
+    if (!updatedEarnedBadges.some(b => b.id === "first_streaming")) {
+        processBadge("first_streaming", 1, 1);
     }
-  });
 
-  return { earnedBadges: updatedEarnedBadges, equippedBadges: newEquipped };
+    // 2. 국가 뱃지: countryStats의 모든 키를 순회
+    Object.entries(countryStats).forEach(([code, count]) => {
+        const badgeId = COUNTRY_CODE_TO_BADGE_ID[code];
+        if (badgeId) {
+        const config = BADGE_LIST.find(b => b.id === badgeId);
+        if (config) processBadge(badgeId, count, config.total);
+        }
+    });
+
+    return { earnedBadges: updatedEarnedBadges, equippedBadges: newEquipped };
 };
 
 export const getPlaylistCreatedBadge = (
