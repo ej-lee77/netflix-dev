@@ -7,39 +7,76 @@ import { useMovieStore } from "@/store/useMovieStore";
 import "../scss/alarm.scss";
 import BackButton from "@/components/common/BackButton";
 import AppIcon from "@/components/common/AppIcon";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useWatchPartyStore } from "@/store/useWatchPartyStore";
 
-type NotifType = "episode" | "friend" | "upcoming" | "reaction";
+type NotifType = "episode" | "friend" | "upcoming" | "reaction" | "party";
 type FilterType = "all" | NotifType;
 
 interface Notif {
-  id: number;
+  id: number | string;
   type: NotifType;
   title: string;
   description: string;
   mediaId?: number;
   mediaType?: "movie" | "tv";
+  partyId?: string;
   thumb?: string | null;
   time: string;
   unread: boolean;
   cta?: string;
 }
 
+function getRelativeTime(createdAt: number) {
+  const elapsedMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - createdAt) / 60000),
+  );
+  if (elapsedMinutes < 1) return "방금 전";
+  if (elapsedMinutes < 60) return `${elapsedMinutes}분 전`;
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  return `${elapsedHours}시간 전`;
+}
+
 // 🌟 URL 파라미터를 읽고 제어하는 핵심 알림 컴포넌트
 function AlarmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { upcomings, popMovies, tvs, onFetchUpcoming, onFetchPopular, onFetchTvs } = useMovieStore();
-  
+  const { user, currentProfile } = useAuthStore();
+  const {
+    upcomings,
+    popMovies,
+    tvs,
+    onFetchUpcoming,
+    onFetchPopular,
+    onFetchTvs,
+  } = useMovieStore();
+  const { invitedParties, subscribeInvitedParties, unsubscribeInvitedParties } =
+    useWatchPartyStore();
+
   // 기본 필터 State
   const [filter, setFilter] = useState<FilterType>("all");
-  const [excludedGenres, setExcludedGenres] = useState<string[]>(["공포", "좀비", "고어"]);
+  const [excludedGenres, setExcludedGenres] = useState<string[]>([
+    "공포",
+    "좀비",
+    "고어",
+  ]);
   const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [readPartyIds, setReadPartyIds] = useState<string[]>([]);
 
   // 🌟 [추가] URL Param (?tab=...) 변화 감지 및 탭 동기화
   useEffect(() => {
     const tabParam = searchParams.get("tab") as FilterType;
-    const validTabs: FilterType[] = ["all", "episode", "friend", "upcoming", "reaction"];
-    
+    const validTabs: FilterType[] = [
+      "all",
+      "episode",
+      "friend",
+      "upcoming",
+      "reaction",
+      "party",
+    ];
+
     if (tabParam && validTabs.includes(tabParam)) {
       setFilter(tabParam);
     } else {
@@ -63,7 +100,25 @@ function AlarmContent() {
   }, []);
 
   useEffect(() => {
-    if (upcomings.length === 0 || popMovies.length === 0 || tvs.length === 0) return;
+    const userId = user?.userId;
+    const profileId = currentProfile?.id ?? user?.profile?.[0]?.id;
+    if (!userId || profileId == null) {
+      unsubscribeInvitedParties();
+      return;
+    }
+
+    subscribeInvitedParties(userId, profileId);
+    return () => unsubscribeInvitedParties();
+  }, [
+    currentProfile?.id,
+    subscribeInvitedParties,
+    unsubscribeInvitedParties,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (upcomings.length === 0 || popMovies.length === 0 || tvs.length === 0)
+      return;
 
     const sampleNotifs: Notif[] = [
       {
@@ -146,18 +201,36 @@ function AlarmContent() {
     setExcludedGenres(excludedGenres.filter((x) => x !== g));
   };
 
+  const partyNotifs: Notif[] = invitedParties.map((party) => ({
+    id: `party-${party.partyId}`,
+    type: "party",
+    title: `${party.hostNickname}님이 같이보기에 초대했어요`,
+    description: `${party.partyName || party.title} · ${party.title}`,
+    mediaId: party.mediaId,
+    mediaType: party.type,
+    partyId: party.partyId,
+    thumb: party.backdropPath || party.posterPath,
+    time: getRelativeTime(party.createdAt),
+    unread: !readPartyIds.includes(party.partyId),
+    cta: "참여하기",
+  }));
+  const allNotifs = [...partyNotifs, ...notifs];
+
   const handleReadAll = () => {
     setNotifs(notifs.map((n) => ({ ...n, unread: false })));
+    setReadPartyIds(invitedParties.map((party) => party.partyId));
   };
 
-  const filtered = filter === "all" ? notifs : notifs.filter((n) => n.type === filter);
-  const unreadCount = notifs.filter((n) => n.unread).length;
+  const filtered =
+    filter === "all" ? allNotifs : allNotifs.filter((n) => n.type === filter);
+  const unreadCount = allNotifs.filter((n) => n.unread).length;
 
   const counts = {
-    episode: notifs.filter((n) => n.type === "episode").length,
-    friend: notifs.filter((n) => n.type === "friend").length,
-    upcoming: notifs.filter((n) => n.type === "upcoming").length,
-    reaction: notifs.filter((n) => n.type === "reaction").length,
+    episode: allNotifs.filter((n) => n.type === "episode").length,
+    friend: allNotifs.filter((n) => n.type === "friend").length,
+    upcoming: allNotifs.filter((n) => n.type === "upcoming").length,
+    reaction: allNotifs.filter((n) => n.type === "reaction").length,
+    party: partyNotifs.length,
   };
 
   const todayNotifs = filtered.slice(0, 4);
@@ -174,20 +247,57 @@ function AlarmContent() {
 
         {/* 탭 메뉴 - 클릭 시 handleTabChange 구동 */}
         <div className="notif-tabs">
-          <button className={filter === "all" ? "active" : ""} onClick={() => handleTabChange("all")}>
-            전체 {notifs.length > 0 && <span className="badge">{notifs.length}</span>}
+          <button
+            className={filter === "all" ? "active" : ""}
+            onClick={() => handleTabChange("all")}
+          >
+            전체{" "}
+            {allNotifs.length > 0 && (
+              <span className="badge">{allNotifs.length}</span>
+            )}
           </button>
-          <button className={filter === "episode" ? "active" : ""} onClick={() => handleTabChange("episode")}>
-            새 에피소드 {counts.episode > 0 && <span className="badge">{counts.episode}</span>}
+          <button
+            className={filter === "party" ? "active" : ""}
+            onClick={() => handleTabChange("party")}
+          >
+            초대받은 같이보기{" "}
+            {counts.party > 0 && <span className="badge">{counts.party}</span>}
           </button>
-          <button className={filter === "friend" ? "active" : ""} onClick={() => handleTabChange("friend")}>
-            팔로워 활동 {counts.friend > 0 && <span className="badge">{counts.friend}</span>}
+          <button
+            className={filter === "episode" ? "active" : ""}
+            onClick={() => handleTabChange("episode")}
+          >
+            새 에피소드{" "}
+            {counts.episode > 0 && (
+              <span className="badge">{counts.episode}</span>
+            )}
           </button>
-          <button className={filter === "upcoming" ? "active" : ""} onClick={() => handleTabChange("upcoming")}>
-            공개 예정 {counts.upcoming > 0 && <span className="badge">{counts.upcoming}</span>}
+          <button
+            className={filter === "friend" ? "active" : ""}
+            onClick={() => handleTabChange("friend")}
+          >
+            팔로워 활동{" "}
+            {counts.friend > 0 && (
+              <span className="badge">{counts.friend}</span>
+            )}
           </button>
-          <button className={filter === "reaction" ? "active" : ""} onClick={() => handleTabChange("reaction")}>
-            리뷰 반응 {counts.reaction > 0 && <span className="badge">{counts.reaction}</span>}
+          <button
+            className={filter === "upcoming" ? "active" : ""}
+            onClick={() => handleTabChange("upcoming")}
+          >
+            공개 예정{" "}
+            {counts.upcoming > 0 && (
+              <span className="badge">{counts.upcoming}</span>
+            )}
+          </button>
+          <button
+            className={filter === "reaction" ? "active" : ""}
+            onClick={() => handleTabChange("reaction")}
+          >
+            리뷰 반응{" "}
+            {counts.reaction > 0 && (
+              <span className="badge">{counts.reaction}</span>
+            )}
           </button>
         </div>
 
@@ -238,20 +348,19 @@ function AlarmContent() {
           </>
         )}
 
-        {filtered.length === 0 && (
-          <div className="empty">알림이 없습니다</div>
-        )}
+        {filtered.length === 0 && <div className="empty">알림이 없습니다</div>}
       </div>
     </div>
   );
 }
 
 function NotifItem({ notif }: { notif: Notif }) {
-  const iconMap : any = {
+  const iconMap: any = {
     episode: "episode",
     friend: "friend",
     upcoming: "upcoming",
     reaction: "reaction",
+    party: "popcorn",
   };
 
   const content = (
@@ -276,17 +385,35 @@ function NotifItem({ notif }: { notif: Notif }) {
     </>
   );
 
-  if (notif.mediaId && notif.mediaType) {
+  if (notif.partyId && notif.mediaId && notif.mediaType) {
     return (
       <li className={`notif-item ${notif.unread ? "unread" : ""}`}>
-        <Link href={`/detail/${notif.mediaType}/${notif.mediaId}`} className="notif-link">
+        <Link
+          href={`/watch/${notif.mediaType}/${notif.mediaId}?party=${notif.partyId}`}
+          className="notif-link"
+        >
           {content}
         </Link>
       </li>
     );
   }
 
-  return <li className={`notif-item ${notif.unread ? "unread" : ""}`}>{content}</li>;
+  if (notif.mediaId && notif.mediaType) {
+    return (
+      <li className={`notif-item ${notif.unread ? "unread" : ""}`}>
+        <Link
+          href={`/detail/${notif.mediaType}/${notif.mediaId}`}
+          className="notif-link"
+        >
+          {content}
+        </Link>
+      </li>
+    );
+  }
+
+  return (
+    <li className={`notif-item ${notif.unread ? "unread" : ""}`}>{content}</li>
+  );
 }
 
 // 🌟 [Next.js 필수 규격] 클라이언트 사이드 서치파람 추적을 위한 Suspense 래핑 내보내기

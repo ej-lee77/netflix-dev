@@ -4,7 +4,12 @@
   z-index: 10050;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  overflow: hidden;
 }
 
 .watch-party-modal__backdrop {
@@ -20,7 +25,8 @@
   display: flex;
   flex-direction: column;
   width: min(620px, 100%);
-  max-height: min(820px, calc(100dvh - 40px));
+  max-height: calc(100dvh - 40px);
+  min-height: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
@@ -29,6 +35,15 @@
     #171717;
   color: #fff;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+}
+
+.watch-party-modal__panel--create,
+.watch-party-modal__panel--invite {
+  height: min(820px, calc(100dvh - 40px));
+}
+
+.watch-party-modal__panel--join {
+  width: min(500px, 100%);
 }
 
 .watch-party-modal__header {
@@ -61,6 +76,9 @@
   gap: 22px;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
   padding: 26px 28px 28px;
 }
 
@@ -288,10 +306,12 @@
 
 .watch-party-modal__footer {
   display: grid;
+  flex: 0 0 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   padding: 18px 28px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(23, 23, 23, 0.98);
 
   button {
     height: 48px;
@@ -313,11 +333,136 @@
 }
 
 @media (max-width: 600px) {
-  .watch-party-modal { align-items: end; padding: 0; }
-  .watch-party-modal__panel { max-height: 92dvh; border-radius: 18px 18px 0 0; }
-  .watch-party-modal__scroll,
-  .watch-party-modal__footer { padding-right: 18px; padding-left: 18px; }
-  .watch-party-modal__close { top: 18px; right: 18px; }
+  .watch-party-modal {
+    align-items: end;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      0
+      0;
+  }
+
+  .watch-party-modal--join {
+    place-items: center;
+    padding:
+      max(16px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+  }
+
+  .watch-party-modal__panel {
+    width: 100%;
+    max-height: calc(100dvh - max(8px, env(safe-area-inset-top)));
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .watch-party-modal__panel--create,
+  .watch-party-modal__panel--invite {
+    height: calc(100dvh - max(8px, env(safe-area-inset-top)));
+  }
+
+  .watch-party-modal__panel--join {
+    width: min(500px, 100%);
+    height: auto;
+    max-height: calc(
+      100dvh - max(16px, env(safe-area-inset-top)) -
+        max(16px, env(safe-area-inset-bottom))
+    );
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+  }
+
+  .watch-party-modal__scroll {
+    gap: 18px;
+    padding: 22px 18px 20px;
+  }
+
+  .watch-party-modal__footer {
+    padding:
+      12px
+      18px
+      max(14px, env(safe-area-inset-bottom));
+  }
+
+  .watch-party-modal__footer button {
+    height: 44px;
+  }
+
+  .watch-party-modal__header {
+    padding-right: 42px;
+    padding-bottom: 16px;
+
+    h2 {
+      font-size: 21px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+
+  .watch-party-modal__close {
+    top: 16px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    font-size: 22px;
+  }
+
+  .watch-party-modal input {
+    height: 44px;
+  }
+
   .watch-party-modal__access,
   .watch-party-modal__friends ul { grid-template-columns: 1fr; }
+
+  .watch-party-modal__access button {
+    min-height: 76px;
+    padding: 13px 14px;
+  }
+
+  .watch-party-modal__friends li button {
+    padding: 8px;
+  }
+}
+
+@media (max-height: 620px) {
+  .watch-party-modal--create,
+  .watch-party-modal--invite {
+    padding-top: max(4px, env(safe-area-inset-top));
+  }
+
+  .watch-party-modal__panel--create,
+  .watch-party-modal__panel--invite {
+    height: calc(100dvh - max(4px, env(safe-area-inset-top)));
+    max-height: calc(100dvh - max(4px, env(safe-area-inset-top)));
+  }
+
+  .watch-party-modal__scroll {
+    gap: 14px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .watch-party-modal__header {
+    padding-bottom: 12px;
+
+    h2 {
+      margin: 4px 0;
+      font-size: 19px;
+    }
+  }
+
+  .watch-party-modal__access button {
+    min-height: 68px;
+    padding: 11px 13px;
+  }
+
+  .watch-party-modal__footer {
+    padding-top: 10px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
 }

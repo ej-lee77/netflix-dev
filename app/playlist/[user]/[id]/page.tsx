@@ -12,6 +12,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import RepBadge from "@/components/common/RepBadge";
 import "../../../scss/playlistDetail.scss";
+import { showToast } from "@/store/useToastStore";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
 
@@ -99,9 +100,17 @@ export default function PlaylistPage() {
   const likeCount = currentPlaylist.likesCount ?? likedBy.length;
   const ownerInitial = owner.name ? owner.name.slice(0, 1) : "?";
 
-  const handleShare = () => {
+  const handleShare = (e: React.MouseEvent) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href).catch(() => {});
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const anchor = { x: rect.left + rect.width / 2, y: rect.top };
+
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showToast("링크가 복사되었습니다.", {
+          icon: "/images/icon/link.svg",
+          anchor,
+        });
+      });
     }
   };
 

@@ -7,6 +7,7 @@ import { auth } from "@/firebase/firebase";
 import { getItemKey, getMediaType, usePlayListStore } from "@/store/usePlayListStore";
 import { showToast } from "@/store/useToastStore";
 import "./wishlistButton.scss";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
 // 위시리스트가 한 페이지 세션에서 한 번만 로드되도록 하는 가드
 let wishlistLoadedOnce = false;
@@ -47,6 +48,7 @@ export default function WishlistButton({
     usePlayListStore();
   const { user } = useAuthStore();
   const router = useRouter();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   // 홈 등에서는 위시리스트를 따로 로드하지 않으므로, 최초 1회 로드해 하트 상태를 맞춤
   useEffect(() => {
@@ -70,7 +72,8 @@ export default function WishlistButton({
     // 로그인 전이면 찜 대신 로그인 페이지로 이동
     const uid = user?.userId ?? auth.currentUser?.uid ?? null;
     if (!uid) {
-      router.push("/login");
+      openModal();
+      // router.push("/login");
       return;
     }
 

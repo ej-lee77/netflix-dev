@@ -40,11 +40,8 @@ export default function WatchPartyModal({
 }: WatchPartyModalProps) {
   const router = useRouter();
   const { user, currentProfile } = useAuthStore();
-  const {
-    followingUsers,
-    isLoadingFollowing,
-    fetchFollowingUsers,
-  } = useFollowStore();
+  const { followingUsers, isLoadingFollowing, fetchFollowingUsers } =
+    useFollowStore();
   const {
     invitedParties,
     createParty,
@@ -76,12 +73,7 @@ export default function WatchPartyModal({
     if (userId && currentProfile) {
       void loadInvitedParties(userId, currentProfile.id);
     }
-  }, [
-    currentProfile,
-    fetchFollowingUsers,
-    loadInvitedParties,
-    userId,
-  ]);
+  }, [currentProfile, fetchFollowingUsers, loadInvitedParties, userId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -103,10 +95,8 @@ export default function WatchPartyModal({
 
     const legacyInvitedUserIds = new Set(party.invitedUserIds ?? []);
     const legacySelectedIds = followingUsers
-        .filter((friend) => legacyInvitedUserIds.has(friend.userId))
-        .map((friend) =>
-          getWatchPartyActorId(friend.userId, friend.profileId),
-        );
+      .filter((friend) => legacyInvitedUserIds.has(friend.userId))
+      .map((friend) => getWatchPartyActorId(friend.userId, friend.profileId));
     setSelectedIds(legacySelectedIds);
     setExistingInvitedIds(legacySelectedIds);
     inviteSelectionHydratedRef.current = true;
@@ -115,9 +105,7 @@ export default function WatchPartyModal({
   const selectedUsers = useMemo(
     () =>
       followingUsers.filter((item) =>
-        selectedIds.includes(
-          getWatchPartyActorId(item.userId, item.profileId),
-        ),
+        selectedIds.includes(getWatchPartyActorId(item.userId, item.profileId)),
       ),
     [followingUsers, selectedIds],
   );
@@ -131,7 +119,9 @@ export default function WatchPartyModal({
       showToast("초대받은 사용자만 입장할 수 있는 파티예요.");
       return;
     }
-    router.push(`/watch/${target.type}/${target.mediaId}?party=${target.partyId}`);
+    router.push(
+      `/watch/${target.type}/${target.mediaId}?party=${target.partyId}`,
+    );
     onClose();
   };
 
@@ -220,17 +210,13 @@ export default function WatchPartyModal({
       setIsSubmitting(false);
       return;
     }
-    const succeeded = await updateInvitedProfiles(
-      party.partyId,
-      selectedIds,
-      {
-        userId,
-        profileId: currentProfile.id,
-        nickname: currentProfile.nickname,
-        imgUrl: currentProfile.imgUrl,
-        badge: currentProfile.badges?.equippedBadges,
-      },
-    );
+    const succeeded = await updateInvitedProfiles(party.partyId, selectedIds, {
+      userId,
+      profileId: currentProfile.id,
+      nickname: currentProfile.nickname,
+      imgUrl: currentProfile.imgUrl,
+      badge: currentProfile.badges?.equippedBadges,
+    });
     setIsSubmitting(false);
     showToast(
       succeeded
@@ -243,14 +229,20 @@ export default function WatchPartyModal({
   };
 
   return (
-    <div className="watch-party-modal" role="dialog" aria-modal="true">
+    <div
+      className={`watch-party-modal watch-party-modal--${mode}`}
+      role="dialog"
+      aria-modal="true"
+    >
       <button
         type="button"
         className="watch-party-modal__backdrop"
         onClick={onClose}
         aria-label="모달 닫기"
       />
-      <section className="watch-party-modal__panel">
+      <section
+        className={`watch-party-modal__panel watch-party-modal__panel--${mode}`}
+      >
         <button
           type="button"
           className="watch-party-modal__close"
@@ -282,7 +274,9 @@ export default function WatchPartyModal({
           {mode === "create" && (
             <>
               <label className="watch-party-modal__field">
-                <span>파티 이름 <b>{partyName.length}/24</b></span>
+                <span>
+                  파티 이름 <b>{partyName.length}/24</b>
+                </span>
                 <input
                   value={partyName}
                   maxLength={24}
@@ -322,9 +316,13 @@ export default function WatchPartyModal({
                 <b>{selectedIds.length}명 선택</b>
               </div>
               {isLoadingFollowing ? (
-                <p className="watch-party-modal__empty">팔로잉 목록을 불러오는 중...</p>
+                <p className="watch-party-modal__empty">
+                  팔로잉 목록을 불러오는 중...
+                </p>
               ) : followingUsers.length === 0 ? (
-                <p className="watch-party-modal__empty">초대할 수 있는 팔로잉이 아직 없어요.</p>
+                <p className="watch-party-modal__empty">
+                  초대할 수 있는 팔로잉이 아직 없어요.
+                </p>
               ) : (
                 <ul>
                   {followingUsers.map((friend) => {
@@ -369,7 +367,9 @@ export default function WatchPartyModal({
                             <strong>{friend.nickname}</strong>
                             <RepBadge badge={friend.badge} size="sm" />
                           </span>
-                          <i>{alreadyInvited ? "초대됨" : selected ? "✓" : "+"}</i>
+                          <i>
+                            {alreadyInvited ? "초대됨" : selected ? "✓" : "+"}
+                          </i>
                         </button>
                       </li>
                     );
@@ -378,7 +378,8 @@ export default function WatchPartyModal({
               )}
               {selectedUsers.length > 0 && (
                 <p className="watch-party-modal__selection">
-                  {selectedUsers.map((item) => item.nickname).join(", ")} 님을 초대합니다.
+                  {selectedUsers.map((item) => item.nickname).join(", ")} 님을
+                  초대합니다.
                 </p>
               )}
             </div>
@@ -417,9 +418,7 @@ export default function WatchPartyModal({
                   inputMode="numeric"
                   maxLength={4}
                   onChange={(event) => {
-                    setPartyPassword(
-                      event.target.value.replace(/\D/g, ""),
-                    );
+                    setPartyPassword(event.target.value.replace(/\D/g, ""));
                     if (joinError) setJoinError("");
                   }}
                   onKeyDown={(event) => {
@@ -429,9 +428,6 @@ export default function WatchPartyModal({
                   autoComplete="off"
                   aria-invalid={joinError ? "true" : undefined}
                 />
-                <button type="button" onClick={handleLookup} disabled={isSubmitting}>
-                  {isSubmitting ? "확인 중..." : "입장하기"}
-                </button>
               </div>
               {joinError && (
                 <p className="watch-party-modal__join-error" role="alert">
@@ -470,7 +466,9 @@ export default function WatchPartyModal({
                     <button type="button" onClick={() => enterParty(target)}>
                       <span>
                         <b>{target.partyName || target.title}</b>
-                        <small>{target.hostNickname} · {target.title}</small>
+                        <small>
+                          {target.hostNickname} · {target.title}
+                        </small>
                       </span>
                       <em>입장</em>
                     </button>
@@ -483,21 +481,33 @@ export default function WatchPartyModal({
 
         <footer className="watch-party-modal__footer">
           {mode === "invite" ? (
-            <button type="button" onClick={handleInvite} disabled={isSubmitting}>
+            <button
+              type="button"
+              onClick={handleInvite}
+              disabled={isSubmitting}
+            >
               {isSubmitting
                 ? "저장 중..."
                 : `초대 상태 저장${selectedIds.length ? ` (${selectedIds.length})` : ""}`}
             </button>
           ) : mode === "join" ? (
-            <button type="button" className="is-secondary" onClick={onClose}>
-              확인
+            <button
+              type="button"
+              onClick={handleLookup}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "확인 중..." : "확인"}
             </button>
           ) : (
             <>
               <button type="button" className="is-secondary" onClick={onClose}>
                 취소
               </button>
-              <button type="button" onClick={handleCreate} disabled={isSubmitting}>
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "파티 만드는 중..." : "파티 만들기"}
               </button>
             </>

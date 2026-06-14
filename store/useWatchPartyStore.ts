@@ -104,6 +104,8 @@ interface WatchPartyState {
     requester: PartyUser,
   ) => Promise<boolean>;
   loadInvitedParties: (userId: string, profileId?: number) => Promise<void>;
+  subscribeInvitedParties: (userId: string, profileId?: number) => void;
+  unsubscribeInvitedParties: () => void;
   sendMessage: (text: string, user: PartyUser) => Promise<void>;
   updatePlayback: (data: { positionPct: number; isPlaying: boolean; userId?: string }) => Promise<void>;
   updatePlaybackNow: (data: { positionPct: number; isPlaying: boolean; userId?: string }) => Promise<void>;
@@ -115,6 +117,8 @@ interface WatchPartyState {
 let unsubParty: Unsubscribe | null = null;
 let unsubMessages: Unsubscribe | null = null;
 let unsubOpen: Unsubscribe | null = null;
+let unsubInvited: Unsubscribe | null = null;
+let invitedSubscriptionKey: string | null = null;
 let lastPlaybackPush = 0;
 let lastNowPush = 0;
 
@@ -456,6 +460,66 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
       console.error("[watchParty] invited parties load failed:", e);
       set({ invitedParties: [] });
     }
+  },
+
+  subscribeInvitedParties: (userId, profileId) => {
+    if (unsubInvited) {
+      unsubInvited();
+      unsubInvited = null;
+    }
+    if (!userId) {
+      invitedSubscriptionKey = null;
+      set({ invitedParties: [] });
+      return;
+    }
+
+    const subscriptionKey = getWatchPartyActorId(userId, profileId);
+    invitedSubscriptionKey = subscriptionKey;
+    unsubInvited = onSnapshot(
+      query(
+        collection(db, "watchParties"),
+        orderBy("createdAt", "desc"),
+        limit(50),
+      ),
+      async (snap) => {
+        if (invitedSubscriptionKey !== subscriptionKey) return;
+
+        const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+        const invited = snap.docs
+          .map((item) => item.data() as PartyDoc)
+          .filter(
+            (party) =>
+              (party.createdAt ?? 0) >= cutoff &&
+              party.accessMode === "invite" &&
+              (party.invitedProfileIds
+                ? party.invitedProfileIds.includes(subscriptionKey)
+                : party.hostProfileId == null &&
+                  (party.invitedUserIds ?? []).includes(userId)),
+          );
+        const enrichedParties = await Promise.all(invited.map(enrichPartyHost));
+        if (invitedSubscriptionKey !== subscriptionKey) return;
+
+        set({
+          invitedParties: enrichedParties,
+        });
+      },
+      (error) => {
+        console.error(
+          "[watchParty] invited parties subscription failed:",
+          error,
+        );
+        set({ invitedParties: [] });
+      },
+    );
+  },
+
+  unsubscribeInvitedParties: () => {
+    invitedSubscriptionKey = null;
+    if (unsubInvited) {
+      unsubInvited();
+      unsubInvited = null;
+    }
+    set({ invitedParties: [] });
   },
 
   sendMessage: async (text, user) => {
