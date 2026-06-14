@@ -54,6 +54,23 @@ async function fetchPosterByKey(key: string): Promise<string> {
   }
 }
 
+const GENRE_COLORS: { [key: string]: string } = {
+  // DS: 강조색은 빨강 계열만 사용 (장르별 임의 색상 금지)
+  "SF": "#6366f1",       // 인디고
+  "액션": "#3b82f6",     // 블루
+  "스릴러": "#ef4444",   // 레드
+  "판타지": "#a855f7",   // 퍼플
+  "드라마": "#10b981",   // 그린
+  "공포": "#b94010",   // 그린
+  "미스터리": "#10b93a",   // 그린
+  "전쟁": "#e5f50b",   // 그린
+  "코미디": "#f59e0b",   // 앰버
+  "로맨스": "#ec4899",   // 핑크
+  "애니메이션": "#ec487f",   // 핑크
+  "다큐멘터리": "#64748b", // 슬레이트
+  "기타": "#94a3b8"      // 기본 회색
+};
+
 export default function UserDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -240,46 +257,148 @@ export default function UserDetailPage() {
     [target],
   );
 
-  // 시청 취향 분석 (genreStats → 장르 TOP3 + 무드) — mypage 와 동일 로직
+  const ID_MAP = useMemo(() => {
+    const genreToTargets: Record<
+      string,
+      { label: string; type: "genre" | "mood" }[]
+    > = {};
+    const moodToInfo: Record<string, { label: string; id: string }> = {};
+
+    // 1. 장르 처리
+    filters.genre.forEach((g) => {
+      const ids = [
+        ...(g.query?.with_genres?.split(",") || []),
+        ...(g.tvQuery?.with_genres?.split(",") || []),
+      ];
+      ids.forEach((id) => {
+        const cleanId = id.trim();
+        if (!genreToTargets[cleanId]) genreToTargets[cleanId] = [];
+        genreToTargets[cleanId].push({ label: g.label, type: "genre" });
+      });
+    });
+
+    // 2. 무드 처리
+    filters.mood.forEach((m) => {
+      moodToInfo[m.id] = { label: m.label, id: m.id }; // 무드 ID와 레이블 저장
+
+      const ids = [
+        ...(m.query?.with_genres?.split(",") || []),
+        ...(m.tvQuery?.with_genres?.split(",") || []),
+      ];
+      ids.forEach((id) => {
+        const cleanId = id.trim();
+        if (!genreToTargets[cleanId]) genreToTargets[cleanId] = [];
+        genreToTargets[cleanId].push({ label: m.label, type: "mood" });
+      });
+    });
+
+    return { genreToTargets, moodToInfo };
+  }, []);
+
   const genreMoodStats = useMemo(() => {
     const s = (target?.movies?.genreStats || {}) as Record<string, number>;
-    const total = Object.values(s).reduce((a, b) => a + b, 0);
-    if (total === 0) return { isEmpty: true as const };
+    const totalCount = Object.values(s).reduce((a, b) => a + b, 0);
 
-    const genres = Object.entries(s)
-      .filter(([id]) => filters.genre.some((g) => g.query.with_genres?.includes(id)))
-      .map(([id, count]) => {
-        const gi = filters.genre.find((g) => g.query.with_genres?.includes(id));
-        return {
-          name: gi?.label || "기타",
-          count,
-          percentage: Math.round((count / total) * 100),
-          color: "#6d28d9",
-        };
-      })
+    if (totalCount === 0) return { isEmpty: true };
+
+    const genreResults: Record<string, number> = {};
+    const moodResults: Record<string, { count: number; id: string }> = {};
+
+    Object.entries(s).forEach(([id, count]) => {
+      // 1. 무드 ID 직접 매핑
+      if (ID_MAP.moodToInfo[id]) {
+        const { label, id: moodId } = ID_MAP.moodToInfo[id];
+        if (!moodResults[label]) moodResults[label] = { count: 0, id: moodId };
+        moodResults[label].count += count;
+      }
+
+      // 2. 장르 ID를 통한 매핑
+      const targets = ID_MAP.genreToTargets[id] || [];
+      targets.forEach((t) => {
+        if (t.type === "genre") {
+          genreResults[t.label] = (genreResults[t.label] || 0) + count;
+        } else if (t.type === "mood") {
+          // 장르 ID를 통해 무드 레이블을 찾고, 그에 해당하는 ID도 찾음
+          const moodInfo = filters.mood.find((m) => m.label === t.label);
+          if (moodInfo) {
+            if (!moodResults[t.label])
+              moodResults[t.label] = { count: 0, id: moodInfo.id };
+            moodResults[t.label].count += count;
+          }
+        }
+      });
+    });
+
+    // 배열 변환 로직
+    const genres = Object.entries(genreResults)
+      .map(([name, count]) => ({
+        name,
+        count,
+        percentage: Math.round((count / totalCount) * 100),
+        color: GENRE_COLORS[name] || "#ccc",
+      }))
       .sort((a, b) => b.count - a.count);
 
-    const moods = Object.entries(s)
-      .filter(([id]) => filters.mood.some((m) => m.id === id))
-      .map(([id, count]) => {
-        const mi = filters.mood.find((m) => m.id === id);
-        return {
-          tag: mi?.label || "일반",
-          count,
-          type: "neutral",
-          img: `/images/header/menu/mood-${id}.svg`,
-        };
-      })
+    // 배열 변환 (이제 mood 객체 안에 id가 포함되어 있음)
+    const moods = Object.entries(moodResults)
+      .map(([tag, data]) => ({
+        tag,
+        count: data.count,
+        id: data.id, // 추가됨
+        img: `/images/header/menu/mood-${data.id}.svg`, // 여기에서 id 사용
+      }))
       .sort((a, b) => b.count - a.count);
 
     return {
-      isEmpty: false as const,
+      isEmpty: false, // 이 부분을 추가했습니다
       genres,
       moods,
       topGenre: genres[0] || { name: "없음" },
       topMood: moods[0] || { tag: "없음" },
     };
-  }, [target]);
+  }, [target, ID_MAP]);
+
+  console.log(target)
+  console.log(genreMoodStats)
+  // const genreMoodStats = useMemo(() => {
+  //   const s = (target?.movies?.genreStats || {}) as Record<string, number>;
+  //   const total = Object.values(s).reduce((a, b) => a + b, 0);
+  //   if (total === 0) return { isEmpty: true as const };
+
+  //   const genres = Object.entries(s)
+  //     .filter(([id]) => filters.genre.some((g) => g.query.with_genres?.includes(id)))
+  //     .map(([id, count]) => {
+  //       const gi = filters.genre.find((g) => g.query.with_genres?.includes(id));
+  //       return {
+  //         name: gi?.label || "기타",
+  //         count,
+  //         percentage: Math.round((count / total) * 100),
+  //         color: GENRE_COLORS[gi?.label || "기타"],
+  //       };
+  //     })
+  //     .sort((a, b) => b.count - a.count);
+
+  //   const moods = Object.entries(s)
+  //     .filter(([id]) => filters.mood.some((m) => m.id === id))
+  //     .map(([id, count]) => {
+  //       const mi = filters.mood.find((m) => m.id === id);
+  //       return {
+  //         tag: mi?.label || "일반",
+  //         count,
+  //         type: "neutral",
+  //         img: `/images/header/menu/mood-${id}.svg`,
+  //       };
+  //     })
+  //     .sort((a, b) => b.count - a.count);
+
+  //   return {
+  //     isEmpty: false as const,
+  //     genres,
+  //     moods,
+  //     topGenre: genres[0] || { name: "없음" },
+  //     topMood: moods[0] || { tag: "없음" },
+  //   };
+  // }, [target]);
 
   const isFollowing = (currentProfile?.community?.following ?? []).includes(userId);
   const isMe = currentProfile != null && userId === (useAuthStore.getState().user?.userId ?? "");
@@ -480,8 +599,8 @@ export default function UserDetailPage() {
                   <h3>선호하는 무드</h3>
                   <p className="mood-desc">주로 이런 감성의 작품들을 즐겨 봤어요.</p>
                   <div className="mood-tag-cloud">
-                    {genreMoodStats.moods?.map((m, index) => (
-                      <span key={index} className={`mood-tag-item ${m.type}`}>
+                    {genreMoodStats.moods?.slice(0, 6).map((m, index) => (
+                      <span key={index} className={`mood-tag-item`}>
                         <img src={m.img} alt={m.tag} />
                         {m.tag}
                       </span>
@@ -489,8 +608,25 @@ export default function UserDetailPage() {
                   </div>
 
                   <div className="mood-summary-box">
-                    <AppIcon name="bulb" size={15} /> 주로 <strong>{genreMoodStats.topGenre?.name}</strong> 장르와{" "}
-                    <strong>{genreMoodStats.topMood?.tag}</strong> 분위기의 컨텐츠를 즐기는 편이에요!
+                    {(genreMoodStats.topGenre?.name !== "없음" || genreMoodStats.topMood?.tag !== "없음") && (
+                      <div>
+                        <AppIcon name="bulb" size={15} />  
+                        <div>
+                          주로
+                          {genreMoodStats.topGenre?.name !== "없음" && (
+                            <> <strong>{genreMoodStats.topGenre?.name}</strong> 장르</>
+                          )}
+                          
+                          {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
+                          {genreMoodStats.topGenre?.name !== "없음" && genreMoodStats.topMood?.tag !== "없음" && "와 "}
+                          
+                          {genreMoodStats.topMood?.tag !== "없음" && (
+                            <> <strong>{genreMoodStats.topMood?.tag}</strong> 분위기</>
+                          )}
+                          의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                        </div>
+                      </div>
+                    )} 
                   </div>
                 </div>
               </>

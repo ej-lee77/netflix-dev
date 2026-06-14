@@ -12,6 +12,10 @@ import { ratingCeiling, certToLevel, genreLevel } from "@/data/maturityFilter";
 import { useMovieStore } from "@/store/useMovieStore";
 import { isHidden } from "@/data/hiddenContent";
 import "./scss/hero.scss";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { useSubscriptionGuard } from "@/lib/subscription";
+import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import Link from "next/link";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -347,6 +351,7 @@ async function fetchHeroLogo(item: HeroItem): Promise<string> {
 export default function Hero() {
   const t = useT();
   const lang = useLangStore((s) => s.lang);
+  const prefetchRoute = useRoutePrefetch();
   const router = useRouter();
   const { currentProfile } = useAuthStore();
   const excludedGenres = useExcludedGenres();
@@ -364,6 +369,8 @@ export default function Hero() {
   const currentVideoKeyRef = useRef("");
   const itemsRef = useRef<HeroItem[]>([]);
   const heroIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const { isUnsubscribed } = useSubscriptionGuard();
+  const openModal = useSubscribeModalStore((state) => state.openModal);
 
   // YT iframe API 핸드셰이크: 이걸 보내야 iframe이 상태 이벤트(postMessage)를 보내줌
   const subscribeHeroIframe = () => {
@@ -924,20 +931,26 @@ export default function Hero() {
         <p className="hero-desc">{activeItem.overview}</p>
         {!isCompactHero && (
           <div className="hero-btns">
-            <button
+            <Link
+              href = {`/watch/${activeMediaType}/${activeItem.id}`}
               className="btn-play"
-              type="button"
-              onClick={() => router.push(`/watch/${activeMediaType}/${activeItem.id}`)}
+              // onClick={() => router.push(`/watch/${activeMediaType}/${activeItem.id}`)}
+              onPointerEnter={() => prefetchRoute(`/watch/${activeMediaType}/${activeItem.id}`)}
+              onFocus={() => prefetchRoute(`/watch/${activeMediaType}/${activeItem.id}`)}
+              onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
               {t("common.play")}
-            </button>
-            <button
+            </Link>
+            <Link
+              href = {`/detail/${activeMediaType}/${activeItem.id}`}
               className="btn-info"
-              type="button"
-              onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}`)}
+              // onClick={() => router.push(`/detail/${activeMediaType}/${activeItem.id}`)}
+              onPointerEnter={() => prefetchRoute(`/detail/${activeMediaType}/${activeItem.id}`)}
+              onFocus={() => prefetchRoute(`/detail/${activeMediaType}/${activeItem.id}`)}
+              onClick={(e) => { if (isUnsubscribed) { e.preventDefault(); openModal(); } }}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
@@ -945,7 +958,7 @@ export default function Hero() {
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
               {t("common.detail")}
-            </button>
+            </Link>
             <WishlistButton item={activeItem} mediaType={activeMediaType} className="hero-wish" />
             <ShareButton mediaType={activeMediaType} id={activeItem.id} className="hero-wish" />
           </div>

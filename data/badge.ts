@@ -120,7 +120,7 @@ export const BADGE_LIST: Badge[] = [
     total: 1
   },
   {
-    id: "genre_sf",
+    id: "genre_scifi",
     imgUrl: "/images/badge/genre_sf.png",
     name: "SF 탐험가",
     title: "우주와 미래를 탐험 중",
