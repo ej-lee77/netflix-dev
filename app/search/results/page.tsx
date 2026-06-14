@@ -20,6 +20,7 @@ import { filterHidden } from "@/data/hiddenContent";
 import "../search.scss";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -429,6 +430,7 @@ function SearchResultsContent() {
   const [sortOpen, setSortOpen] = useState(false);
   const [nextPage, setNextPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const prefetchRoute = useRoutePrefetch();
 
   const selectedOptions = getSelectedSearchOptions(selectedGenres, selectedMoods);
   const hasQuery =
@@ -700,33 +702,33 @@ function SearchResultsContent() {
               </div>
             </div>
             <div className="poster-grid">
-              {visibleItems.map((item) => {
+              {visibleItems.map((item, d) => {
                 const releaseYear = (
                   item.release_date || item.first_air_date
                 )?.slice(0, 4);
                 const imagePath = item.backdrop_path || item.poster_path;
 
                 return (
-                  <Link
-                    key={`${item.media_type}-${item.id}`}
-                    href={`/detail/${item.media_type}/${item.id}`}
-                    className="poster-card"
-                  >
-                    <div className="poster">
-                      {item.poster_path ? (
-                        <Image
-                          src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                          alt={item.title}
-                          width={228}
-                          height={342}
-                        />
-                      ) : (
-                        <div className="no-image">이미지 없음</div>
-                      )}
-                      <span className="rating">
-                        ★ {item.vote_average.toFixed(1)}
-                      </span>
-                    </div>
+                  <div className="poster-card" key={`${d}-${item.media_type}-${item.id}`}>
+                    <Link
+                      href={`/detail/${item.media_type}/${item.id}`}
+                    >
+                      <div className="poster">
+                        {item.poster_path ? (
+                          <Image
+                            src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                            alt={item.title}
+                            width={228}
+                            height={342}
+                          />
+                        ) : (
+                          <div className="no-image">이미지 없음</div>
+                        )}
+                        <span className="rating">
+                          ★ {item.vote_average.toFixed(1)}
+                        </span>
+                      </div>
+                    </Link>
                     <div className="search-hover-card">
                       <div className="search-hover-card__media">
                         {imagePath ? (
@@ -764,26 +766,37 @@ function SearchResultsContent() {
                           </p>
                         )}
                         <div className="search-hover-card__actions">
-                          <span className="btn-play" aria-hidden="true">
+                          <Link
+                            href={`/watch/${item.media_type}/${item.id}`}
+                            className="btn-play"
+                            onPointerEnter={() => prefetchRoute(`/watch/${item.media_type}/${item.id}`)}
+                            onFocus={() => prefetchRoute(`/watch/${item.media_type}/${item.id}`)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <svg viewBox="0 0 24 24">
                               <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
                             재생
-                          </span>
-                          <span className="btn-detail" aria-hidden="true">
+                          </Link>
+                          <Link
+                            href={`/detail/${item.media_type}/${item.id}`}
+                            className="btn-detail"
+                            onPointerEnter={() => prefetchRoute(`/detail/${item.media_type}/${item.id}`)}
+                            onFocus={() => prefetchRoute(`/detail/${item.media_type}/${item.id}`)}
+                          >
                             <svg viewBox="0 0 24 24">
                               <circle cx="12" cy="12" r="10" />
                               <line x1="12" y1="16" x2="12" y2="12" />
                               <line x1="12" y1="8" x2="12.01" y2="8" />
                             </svg>
                             상세정보
-                          </span>
+                          </Link>
                           <WishlistButton item={item} mediaType={item.media_type} stopPropagation className="card-wish" />
                           <ShareButton mediaType={item.media_type} id={item.id} stopPropagation className="card-wish" />
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>

@@ -19,6 +19,7 @@ import VideoPlayer, {
 } from "@/components/common/VideoPlayer";
 import RepBadge from "@/components/common/RepBadge";
 import WatchPartyModal from "@/components/watch/WatchPartyModal";
+import { useConfirmModal } from "../common/ConfirmModal";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 function imageUrl(path?: string | null, size = "w342") {
@@ -115,6 +116,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const [isEpPopupOpen, setIsEpPopupOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const episodeToggleRef = useRef<HTMLButtonElement>(null);
+
+  const { confirm, modal: confirmModal } = useConfirmModal();
 
   useEffect(() => {
     onLoadWishlist();
@@ -335,9 +338,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
   const handleDeleteParty = async () => {
     if (!partyIdParam || !currentProfile) return;
-    const confirmed = window.confirm(
-      "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
-    );
+
+    const confirmed = await confirm({
+      title: "파티 종료",
+      message: "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
+      confirmLabel: "종료",
+    });
+    // if (!confirmed) return;
+    // const confirmed = window.confirm(
+    //   "파티를 종료하면 커넥트에서 바로 사라지고 다시 입장할 수 없습니다. 종료할까요?",
+    // );
     if (!confirmed) return;
 
     const deleted = await deleteParty(partyIdParam, {
@@ -419,6 +429,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   });
 
   return (
+    <>
+    {confirmModal}
     <div
       className="watch-client"
       style={{
@@ -1502,5 +1514,6 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         </div>
       )}
     </div>
+    </>
   );
 }

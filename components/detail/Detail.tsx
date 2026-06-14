@@ -2811,7 +2811,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ background: "#141414", minHeight: "100vh", marginTop: -56 }}>
+    <div style={{ background: "#141414", minHeight: "100vh", marginTop: -81 }}>
       {confirmModal}
       {showWatchPartyModal && mediaItem && (
         <WatchPartyModal
