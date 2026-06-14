@@ -72,7 +72,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   } = useMovieStore();
   const { isWished, onAddWish, onRemoveWish, onLoadWishlist } =
     useWishlistStore();
-  const { onAddPlayList, onUpdateProgress } = usePlayListStore();
+  const { onAddPlayList, onUpdateProgress, onRemoveMyList, onAddMyList, onLoadMyList, myList } = usePlayListStore();
   const { user, currentProfile } = useAuthStore();
   const canUseConnect = useCommunityEnabled();
   const {
@@ -120,8 +120,8 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const { confirm, modal: confirmModal } = useConfirmModal();
 
   useEffect(() => {
-    onLoadWishlist();
-  }, [onLoadWishlist]);
+    onLoadMyList();
+  }, [onLoadMyList]);
 
   // 외부 클릭 시 에피소드 팝업 닫기
   useEffect(() => {
@@ -217,7 +217,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
   const related = (recommended as any[])
     .filter((r) => r.id !== mediaId)
     .slice(0, 6);
-  const wished = isWished(itemKey);
+  const wished = myList.includes(String(itemKey));;
 
   const isPartyMode = !!partyIdParam;
   const canStartSelectedParty =
@@ -304,16 +304,16 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
       : { ...mediaItem, title: mediaItem.title || title };
 
     if (wished) {
-      await onRemoveWish(wishlistItem);
-      const removed = !useWishlistStore.getState().isWished(itemKey);
+      await onRemoveMyList(mediaId, type);
+      const removed = myList.includes(String(itemKey));
       showToast(
         removed
           ? "위시리스트에서 삭제했어요."
           : "위시리스트 삭제에 실패했어요.",
       );
     } else {
-      await onAddWish(wishlistItem);
-      const added = useWishlistStore.getState().isWished(itemKey);
+      await onAddMyList(wishlistItem);
+      const added = !myList.includes(String(itemKey));
       showToast(
         added ? "내 위시리스트에 추가했어요." : "위시리스트 추가에 실패했어요.",
       );
