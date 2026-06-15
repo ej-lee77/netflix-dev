@@ -314,12 +314,6 @@ const renderRatingStars = (rating: number) => (
 const getStarFill = (rating: number, star: number) =>
   Math.max(0, Math.min(1, rating - (star - 1))) * 100;
 
-const getNextStarRating = (currentRating: number, star: number) => {
-  const halfRating = star - 0.5;
-
-  return currentRating === halfRating ? star : halfRating;
-};
-
 const getCommentContent = (content: unknown) => {
   if (typeof content === "string") return content;
   if (
@@ -393,6 +387,7 @@ export default function FeedPage() {
     null,
   );
   const [newRating, setNewRating] = useState(0);
+  const [newHoverRating, setNewHoverRating] = useState(0);
   const [newReviewText, setNewReviewText] = useState("");
   const [newHasSpoiler, setNewHasSpoiler] = useState(false);
   const [newIsPublic, setNewIsPublic] = useState(true);
@@ -429,6 +424,7 @@ export default function FeedPage() {
     setMediaSearchError("");
     setSelectedMedia(null);
     setNewRating(0);
+    setNewHoverRating(0);
     setNewReviewText("");
     setNewHasSpoiler(false);
     setNewIsPublic(true);
@@ -1129,29 +1125,47 @@ export default function FeedPage() {
                 <span>별점</span>
                 <div className="feed-rating-control">
                   <div className="feed-rating-value">
-                    <div className="feed-half-stars" aria-label="별점 선택">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          type="button"
-                          className="feed-half-star"
-                          key={star}
-                          onClick={() =>
-                            setNewRating((currentRating) =>
-                              getNextStarRating(currentRating, star),
-                            )
-                          }
-                          aria-label={`${star}점, 더블 클릭하면 ${star - 0.5}점`}
-                          style={
-                            {
-                              "--fill": `${getStarFill(newRating, star)}%`,
-                            } as React.CSSProperties
-                          }
-                        >
-                          <span aria-hidden="true">★</span>
-                        </button>
-                      ))}
+                    <div
+                      className="feed-half-stars"
+                      aria-label="별점 선택"
+                      onMouseLeave={() => setNewHoverRating(0)}
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const activeRating = newHoverRating || newRating;
+                        return (
+                          <span
+                            className="feed-half-star"
+                            key={star}
+                            style={
+                              {
+                                "--fill": `${getStarFill(activeRating, star)}%`,
+                              } as React.CSSProperties
+                            }
+                          >
+                            <span aria-hidden="true">★</span>
+                            <button
+                              type="button"
+                              className="feed-half-star__hit feed-half-star__hit--left"
+                              onMouseEnter={() => setNewHoverRating(star - 0.5)}
+                              onFocus={() => setNewHoverRating(star - 0.5)}
+                              onBlur={() => setNewHoverRating(0)}
+                              onClick={() => setNewRating(star - 0.5)}
+                              aria-label={`${star - 0.5}점`}
+                            />
+                            <button
+                              type="button"
+                              className="feed-half-star__hit feed-half-star__hit--right"
+                              onMouseEnter={() => setNewHoverRating(star)}
+                              onFocus={() => setNewHoverRating(star)}
+                              onBlur={() => setNewHoverRating(0)}
+                              onClick={() => setNewRating(star)}
+                              aria-label={`${star}점`}
+                            />
+                          </span>
+                        );
+                      })}
                     </div>
-                    <em>{newRating.toFixed(1)} / 5.0</em>
+                    <em>{(newHoverRating || newRating).toFixed(1)} / 5.0</em>
                   </div>
                 </div>
               </div>
@@ -1458,7 +1472,7 @@ export default function FeedPage() {
                       <AppIcon name="film" size={20} />
                       <span>내 피드</span>
                     </Link>
-                    <Link href="/settings?tab=profile">
+                    <Link href="/mypage">
                       <AppIcon name="gear" size={20} />
                       <span>프로필</span>
                     </Link>

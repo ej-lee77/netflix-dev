@@ -28,15 +28,12 @@ export default function CancelPage() {
     setError("");
 
     try {
+      const snap = await getDoc(doc(db, "users", uid));
+      const currentPlanType = snap.exists() ? (snap.data().planType ?? "") : "";
+
       await updateDoc(doc(db, "users", uid), {
         planType: "",
-        payment: {
-          pay: "",
-          bank: "",
-          num: "",
-          payDate: "",
-          nextDate: "",
-        },
+        "payment.lastPlanType": currentPlanType,
         updatedAt: serverTimestamp(),
       });
       setStep(2);
