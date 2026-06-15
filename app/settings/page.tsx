@@ -493,6 +493,25 @@ function SettingsContent() {
                       <Link href="/payment" className="acset-btn">관리</Link>
                     </Row>
                   </>
+                ) : payInfo?.nextDate ? (
+                  // 해지했지만 아직 만료 전일 때
+                  <div style={{ padding: "32px 0", textAlign: "center" }}>
+                    <p style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>
+                      해지 예약됨
+                    </p>
+                    <p className="acset-row-desc" style={{ marginBottom: "24px" }}>
+                      {payInfo.nextDate}에 멤버십이 만료돼요. 그 전까지는
+                      {payInfo.lastPlanType ? ` ${(() => {
+                        if (payInfo.lastPlanType === "basic") return "베이직";
+                        if (payInfo.lastPlanType === "standard") return "스탠다드";
+                        if (payInfo.lastPlanType === "premium") return "프리미엄";
+                        return "";
+                      })()} 플랜을` : ""} 자유롭게 이용하세요.
+                    </p>
+                    <Link href="/plan" className="acset-btn red">
+                      다시 구독하기
+                    </Link>
+                  </div>
                 ) : (
                   // 구독 중이 아닐 때
                   <div style={{ padding: "32px 0", textAlign: "center" }}>
