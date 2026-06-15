@@ -107,7 +107,7 @@ export const getReviewCreatedBadge = (currentBadges: BadgeList): BadgeList => {
 };
 
 
-export const useCommunityStore = create<CommunityStore>((set) => ({
+export const useCommunityStore = create<CommunityStore>((set, get) => ({
   reviews: [],
 
   fetchUserReviews: async () => {
@@ -418,14 +418,39 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
     const { user, currentProfile } = useAuthStore.getState();
     if (!user?.userId || !currentProfile) return;
 
+    const targetReview = get().reviews.find((review) => review.reviewId === reviewId);
+    if (!targetReview) return;
+
+    // 더미 리뷰는 Firestore 문서에 없으므로 현재 목록에서 카운트만 갱신한다.
+    if (reviewId.startsWith("dummy-")) {
+      set((state) => ({
+        reviews: state.reviews.map((review) =>
+          review.reviewId === reviewId
+            ? {
+                ...review,
+                likesCount: Math.max(
+                  0,
+                  (review.likesCount || 0) + (isLiked ? -1 : 1),
+                ),
+              }
+            : review,
+        ),
+      }));
+      return;
+    }
+
     const videoDocRef = doc(db, "videoReviews", videoId);
-    const userDocRef = doc(db, "userReviews", user?.userId);
+    const authorReviewDocRef = targetReview.userId
+      ? doc(db, "userReviews", targetReview.userId)
+      : null;
 
     try {
-      await runTransaction(db, async (transaction: Transaction) => {
+      const newLikesCount = await runTransaction(db, async (transaction: Transaction) => {
         // 1. 문서 가져오기
         const videoDoc = await transaction.get(videoDocRef);
-        const userDoc = await transaction.get(userDocRef);
+        const authorReviewDoc = authorReviewDocRef
+          ? await transaction.get(authorReviewDocRef)
+          : null;
 
         if (!videoDoc.exists()) throw "Video review document does not exist!";
         
@@ -441,19 +466,27 @@ export const useCommunityStore = create<CommunityStore>((set) => ({
         transaction.update(videoDocRef, { reviews: currentReviews });
 
         // 4. userReviews 데이터 업데이트 (작성자의 문서도 동일하게 반영)
-        if (userDoc.exists()) {
-          const userReviews = [...((userDoc.data().reviews || []) as ReviewDocument[])];
+        if (authorReviewDocRef && authorReviewDoc?.exists()) {
+          const userReviews = [...((authorReviewDoc.data().reviews || []) as ReviewDocument[])];
           const urIndex = userReviews.findIndex((r) => r.reviewId === reviewId);
           
           if (urIndex !== -1) {
             userReviews[urIndex] = { ...userReviews[urIndex], likesCount: newLikesCount };
-            transaction.update(userDocRef, { reviews: userReviews });
+            transaction.update(authorReviewDocRef, { reviews: userReviews });
           }
         }
 
-        // 5. [중요] 상태 업데이트는 트랜잭션 외부에서 수행
-        set({ reviews: currentReviews });
+        return newLikesCount;
       });
+
+      // 목록 전체를 Firestore 배열로 교체하지 않고 현재 표시 순서를 유지한다.
+      set((state) => ({
+        reviews: state.reviews.map((review) =>
+          review.reviewId === reviewId
+            ? { ...review, likesCount: newLikesCount }
+            : review,
+        ),
+      }));
     } catch (error) {
       console.error("좋아요 카운트 업데이트 트랜잭션 실패:", error);
     }
