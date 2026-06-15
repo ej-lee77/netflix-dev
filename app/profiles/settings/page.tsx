@@ -1298,7 +1298,9 @@ function ProfileSettingsContent() {
                     <div className="subtitle-preview">
                       <img src="/images/profile/setting/miri.png" alt="" />
                       <p className={previewClass}>
-                        화면에 자막이 이런 모양으로 표시됩니다.
+                        <span className="subtitle-preview-text">
+                          화면에 자막이 이런 모양으로 표시됩니다.
+                        </span>
                       </p>
                     </div>
                   </div>
