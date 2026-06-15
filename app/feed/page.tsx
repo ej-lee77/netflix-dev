@@ -1446,9 +1446,9 @@ export default function FeedPage() {
                     <b>{averageRating.toFixed(1)}</b>
                     <span>평균 별점</span>
                   </div>
-                  <Link href="/mypage/community?tab=reviews">
+                  <Link href="/mypage/community?tab=my-feeds">
                     <b>{profileReviewCount}</b>
-                    <span>리뷰</span>
+                    <span>피드</span>
                   </Link>
                   <Link href="/goods">
                     <b>{completedBadgeCount}</b>

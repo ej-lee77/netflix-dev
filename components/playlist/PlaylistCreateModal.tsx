@@ -195,7 +195,7 @@ export default function PlaylistCreateModal({
           </div>
 
           <div className={styles.section}>
-            <strong>피드 공개 여부</strong>
+            <strong>커뮤니티 공개 여부</strong>
             <button
               type="button"
               className={`${styles.visibilityButton} ${
@@ -204,7 +204,7 @@ export default function PlaylistCreateModal({
               onClick={() => setIsPublic((current) => !current)}
               aria-pressed={isPublic}
             >
-              피드 공개
+              커뮤니티 공개
             </button>
           </div>
 
