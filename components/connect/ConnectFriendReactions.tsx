@@ -7,7 +7,7 @@ import { FreeMode, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 import { useFeedStore } from "@/store/useFeedStore";
-import { getPosterUrl, getRelativeTime } from "@/types/feedData";
+import { getPosterUrl } from "@/types/feedData";
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 
@@ -36,7 +36,19 @@ export default function ConnectFriendReactions() {
   }, [feeds.length, onHydrateFeeds]);
 
   const visibleFeeds = feeds
-    .filter((f) => f.isPublic && !f.isSpoiler && f.content)
+    .filter(
+      (feed) =>
+        feed.postType === "media" &&
+        feed.isPublic &&
+        !feed.isSpoiler &&
+        Boolean(
+          feed.content &&
+            feed.mediaId &&
+            feed.mediaType &&
+            feed.mediaTitle &&
+            feed.mediaPoster,
+        ),
+    )
     .slice(0, 10);
 
   if (visibleFeeds.length === 0) return null;
