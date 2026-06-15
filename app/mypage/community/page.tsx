@@ -359,14 +359,18 @@ function CommunityContent() {
 
   const handleEdit = (review: FeedView) => {
     setEditingFeed(review);
-    setEditSelectedMedia({
-      id: review.mediaId,
-      mediaType: review.mediaType,
-      title: review.mediaTitle,
-      posterPath: review.mediaPoster,
-      meta: review.mediaMeta,
-    });
-    setEditReviewSearch(review.mediaTitle);
+    setEditSelectedMedia(
+      review.mediaId && review.mediaType && review.mediaTitle
+        ? {
+            id: review.mediaId,
+            mediaType: review.mediaType,
+            title: review.mediaTitle,
+            posterPath: review.mediaPoster,
+            meta: review.mediaMeta,
+          }
+        : null,
+    );
+    setEditReviewSearch(review.mediaTitle || "");
     setEditSelectedReviewTags([]);
     setEditSearchMediaOptions([]);
     setEditIsSearchingMedia(false);
@@ -398,16 +402,18 @@ function CommunityContent() {
     event.preventDefault();
     if (
       !editingFeed ||
-      !editSelectedMedia ||
-      editRating <= 0 ||
+      (editingFeed.postType !== "general" &&
+        (!editSelectedMedia || editRating <= 0)) ||
       !editContent.trim()
     )
       return;
 
     await onUpdateFeed({
       ...editingFeed,
-      videoId: `${editSelectedMedia.mediaType}-${editSelectedMedia.id}`,
-      rating: editRating,
+      videoId: editSelectedMedia
+        ? `${editSelectedMedia.mediaType}-${editSelectedMedia.id}`
+        : undefined,
+      rating: editingFeed.postType === "general" ? 0 : editRating,
       content: editContent.trim(),
       isSpoiler: editHasSpoiler,
       isPublic: editIsPublic,
@@ -616,7 +622,7 @@ function CommunityContent() {
               <div className="feed-modal-head">
                 <div>
                   <h3 id="community-feed-edit-title">게시물 수정</h3>
-                  <p>{editingFeed.mediaTitle}</p>
+                  <p>{editingFeed.mediaTitle || "일반 게시물"}</p>
                 </div>
                 <button
                   type="button"
