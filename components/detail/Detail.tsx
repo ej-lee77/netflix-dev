@@ -37,6 +37,7 @@ import AppIcon from "../common/AppIcon";
 import WatchPartyModal from "@/components/watch/WatchPartyModal";
 import PlaylistCreateModal from "@/components/playlist/PlaylistCreateModal";
 import { formatFivePointRating } from "@/lib/rating";
+import BackButton from "../common/BackButton";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -793,6 +794,14 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     }
   };
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
   const handlePlay = async () => {
     if (isAdultBlocked) {
       setShowAdultModal(true);
@@ -1512,12 +1521,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   height: 34,
                   borderRadius: 4,
                   fontSize: 14,
-                  cursor: "pointer",
                   background: "none",
                   border: "1px solid #3a3a48",
                   color: "#888",
                   fontWeight: 400,
-                  opacity: page === episodePage ? 1 : 0.4,
+                  opacity: page === episodePage ? 0.4 : 1,
+                  cursor: page === episodePage ? "default" : "pointer",
                 }}
               >
                 {page}
@@ -2910,7 +2919,53 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
 
         {/* Hero spacer */}
         <div style={{ height: "50vh" }} />
-
+        {/* <BackButton fallback="/" /> */}
+        <div style={{
+              position: "relative",
+              zIndex: 10,
+              padding: `0 ${hPad}px 0 ${isMobile ? hPad : 87}px`
+            }}>
+          <button
+            type="button"
+            className={`app-back-btn`.trim()}
+            onClick={handleBack}
+            aria-label="뒤로가기"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            <span>뒤로</span>
+            <style jsx>{`
+              .app-back-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin: 16px 0;
+                padding: 8px 14px 8px 10px;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                border-radius: 8px;
+                color: #fff;
+                font-size: 14px;
+                line-height: 1;
+                cursor: pointer;
+                transition: background 0.15s ease, border-color 0.15s ease;
+              }
+              .app-back-btn:hover {
+                background: rgba(255, 255, 255, 0.16);
+                border-color: rgba(255, 255, 255, 0.3);
+              }
+              .app-back-btn svg {
+                display: block;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+              }
+            `}</style>
+          </button>
+        </div>
         {/* Info Section */}
         <div style={{ position: "relative", display: "flex", gap: 24, padding: `0 ${hPad}px ${isMobile ? 8 : 40}px ${isMobile ? hPad : 87}px`, zIndex: 10 }}>
           {/* Poster */}
