@@ -16,6 +16,7 @@ import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 import Link from "next/link";
+import { formatFivePointRating } from "@/lib/rating";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -28,6 +29,8 @@ type HeroItem = {
   media_type?: MediaType;
   title?: string;
   name?: string;
+  original_title?: string;
+  original_name?: string;
   overview: string;
   backdrop_path: string | null;
   poster_path: string | null;
@@ -148,6 +151,14 @@ function getYear(item: HeroItem) {
   return (item.release_date || item.first_air_date || "").slice(0, 4);
 }
 
+function isExcludedHeroItem(item: HeroItem) {
+  const titles = [item.title, item.name, item.original_title, item.original_name]
+    .filter((title): title is string => Boolean(title))
+    .map((title) => title.trim().toLowerCase());
+
+  return getYear(item) === "2026" && titles.some((title) => title === "hope" || title === "호프");
+}
+
 function getGenres(item: HeroItem, lang: "ko" | "en" = "ko") {
   const map = lang === "en" ? genreMapEn : genreMap;
   return item.genre_ids
@@ -222,6 +233,7 @@ async function fetchHeroItems() {
 
   const validItem = (item: HeroItem) =>
     !blockedIds.has(item.id) &&
+    !isExcludedHeroItem(item) &&
     !isHidden(item.id, item.media_type) &&
     item.overview &&
     item.backdrop_path &&
@@ -646,7 +658,7 @@ export default function Hero() {
     return {
       genres: getGenres(activeItem, lang),
       rating: activeItem.vote_average
-        ? activeItem.vote_average.toFixed(1)
+        ? formatFivePointRating(activeItem.vote_average)
         : "0.0",
       stars: getStars(activeItem.vote_average || 0),
       year: getYear(activeItem),
