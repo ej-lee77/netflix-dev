@@ -21,6 +21,8 @@ import {
 
 export type PartyAccessMode = "open" | "invite";
 
+const OPEN_PARTY_VISIBLE_MS = 3 * 60 * 1000;
+
 export interface PartyDoc {
   partyId: string;
   hostId: string;
@@ -118,6 +120,7 @@ let unsubParty: Unsubscribe | null = null;
 let unsubMessages: Unsubscribe | null = null;
 let unsubOpen: Unsubscribe | null = null;
 let unsubInvited: Unsubscribe | null = null;
+let openPartyExpiryInterval: ReturnType<typeof setInterval> | null = null;
 let invitedSubscriptionKey: string | null = null;
 let lastPlaybackPush = 0;
 let lastNowPush = 0;
@@ -585,10 +588,14 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
       unsubOpen();
       unsubOpen = null;
     }
+    if (openPartyExpiryInterval) {
+      clearInterval(openPartyExpiryInterval);
+      openPartyExpiryInterval = null;
+    }
     unsubOpen = onSnapshot(
       query(collection(db, "watchParties"), orderBy("createdAt", "desc"), limit(20)),
       async (snap) => {
-        const cutoff = Date.now() - 6 * 60 * 60 * 1000;
+        const cutoff = Date.now() - OPEN_PARTY_VISIBLE_MS;
         const recentParties = snap.docs
           .map((d) => d.data() as PartyDoc)
           .filter((party) => (party.createdAt ?? 0) >= cutoff);
@@ -597,12 +604,26 @@ export const useWatchPartyStore = create<WatchPartyState>((set, get) => ({
       },
       (e) => console.error("[watchParty] openParties 구독 실패:", e),
     );
+    openPartyExpiryInterval = setInterval(() => {
+      const cutoff = Date.now() - OPEN_PARTY_VISIBLE_MS;
+      const visibleParties = get().openParties.filter(
+        (party) => (party.createdAt ?? 0) >= cutoff,
+      );
+
+      if (visibleParties.length !== get().openParties.length) {
+        set({ openParties: visibleParties });
+      }
+    }, 1000);
   },
 
   unsubscribeOpenParties: () => {
     if (unsubOpen) {
       unsubOpen();
       unsubOpen = null;
+    }
+    if (openPartyExpiryInterval) {
+      clearInterval(openPartyExpiryInterval);
+      openPartyExpiryInterval = null;
     }
     set({ openParties: [] });
   },
