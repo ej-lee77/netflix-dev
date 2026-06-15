@@ -13,14 +13,24 @@ import RankingSection, { type RankingItem } from "@/components/main/RankingSecti
 import ThemeRow, { type ThemeItem } from "@/components/main/ThemeRow";
 import ThemeRowSkeleton from "@/components/main/ThemeRowSkeleton";
 import { useMovieStore } from "@/store/useMovieStore";
+import { useLangStore, type Lang } from "@/store/useLangStore";
 import type { Movie } from "@/types/movie";
 import TopButton from "@/components/common/TopButton";
 
 const hasKorean = (text: string) => /[가-힣]/.test(text);
 
-function toThemeItems(movies: Movie[], mediaType: "movie" | "tv"): ThemeItem[] {
+function hasLocalizedTitle(movie: Movie, lang: Lang) {
+  const title = movie.title ?? movie.name ?? "";
+  return lang === "en" ? Boolean(title.trim()) : hasKorean(title);
+}
+
+function toThemeItems(
+  movies: Movie[],
+  mediaType: "movie" | "tv",
+  lang: Lang,
+): ThemeItem[] {
   return movies
-    .filter((m) => m.poster_path && m.backdrop_path && hasKorean(m.title ?? m.name ?? ""))
+    .filter((m) => m.poster_path && m.backdrop_path && hasLocalizedTitle(m, lang))
     .map((m) => ({
       id: m.id,
       title: m.title ?? m.name ?? "",
@@ -34,9 +44,9 @@ function toThemeItems(movies: Movie[], mediaType: "movie" | "tv"): ThemeItem[] {
     }));
 }
 
-function toRankingItems(movies: Movie[]): RankingItem[] {
+function toRankingItems(movies: Movie[], lang: Lang): RankingItem[] {
   return movies
-    .filter((m) => m.poster_path && m.backdrop_path && hasKorean(m.title))
+    .filter((m) => m.poster_path && m.backdrop_path && hasLocalizedTitle(m, lang))
     .slice(0, 10)
     .map((m) => ({
       id: m.id,
@@ -50,6 +60,7 @@ function toRankingItems(movies: Movie[]): RankingItem[] {
 }
 
 export default function ConnectPage() {
+  const lang = useLangStore((state) => state.lang);
   const {
     trendingMovies, onFetchTrending,
     popMovies, onFetchPopular,
@@ -65,14 +76,20 @@ export default function ConnectPage() {
   }, [communityEnabled, router]);
 
   useEffect(() => {
-    if (!trendingMovies.length) onFetchTrending();
-    if (!popMovies.length) onFetchPopular();
-    if (!newMovies.length) onFetchNewest();
-  }, []);
+    void onFetchTrending();
+    void onFetchPopular();
+    void onFetchNewest();
+  }, [lang, onFetchNewest, onFetchPopular, onFetchTrending]);
 
-  const rankingItems = useMemo(() => toRankingItems(popMovies), [popMovies]);
-  const trendingItems = useMemo(() => toThemeItems(trendingMovies, "movie"), [trendingMovies]);
-  const newItems = useMemo(() => toThemeItems(newMovies, "movie"), [newMovies]);
+  const rankingItems = useMemo(() => toRankingItems(popMovies, lang), [lang, popMovies]);
+  const trendingItems = useMemo(
+    () => toThemeItems(trendingMovies, "movie", lang),
+    [lang, trendingMovies],
+  );
+  const newItems = useMemo(
+    () => toThemeItems(newMovies, "movie", lang),
+    [lang, newMovies],
+  );
 
   if (!communityEnabled) return null;
 

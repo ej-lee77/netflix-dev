@@ -21,6 +21,7 @@ import "../search.scss";
 import WishlistButton from "@/components/common/WishlistButton";
 import ShareButton from "@/components/common/ShareButton";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { formatFivePointRating } from "@/lib/rating";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -725,7 +726,7 @@ function SearchResultsContent() {
                           <div className="no-image">이미지 없음</div>
                         )}
                         <span className="rating">
-                          ★ {item.vote_average.toFixed(1)}
+                          ★ {formatFivePointRating(item.vote_average)}
                         </span>
                       </div>
                     </Link>
@@ -751,7 +752,7 @@ function SearchResultsContent() {
                             <>
                               <span className="meta-star">★</span>
                               <span className="meta-score">
-                                {item.vote_average.toFixed(1)}
+                                {formatFivePointRating(item.vote_average)}
                               </span>
                               {releaseYear && (
                                 <span className="meta-sep">|</span>
