@@ -1512,12 +1512,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   height: 34,
                   borderRadius: 4,
                   fontSize: 14,
-                  cursor: "pointer",
                   background: "none",
                   border: "1px solid #3a3a48",
                   color: "#888",
                   fontWeight: 400,
-                  opacity: page === episodePage ? 1 : 0.4,
+                  opacity: page === episodePage ? 0.4 : 1,
+                  cursor: page === episodePage ? "default" : "pointer",
                 }}
               >
                 {page}
