@@ -12,14 +12,14 @@
 
   /* Hero */
   .mood-hero {
-    padding: 80px 0 60px;
-    background: linear-gradient(
-      135deg,
-      rgba(168, 85, 247, 0.15),
-      rgba(229, 9, 20, 0.1),
-      rgba(245, 158, 11, 0.1)
-    );
-    margin-top: -56px;
+    /* 데스크탑: 헤더 뒤까지 올라와 상단에 딱 붙음 (모바일은 아래 반응형에서 해제) */
+    padding: (g.$header-height + 32px) 0 60px;
+    margin-top: -(g.$header-height);
+    /* 첫 번째 배너처럼 쨍한 보라/마젠타 그라데이션 강조 */
+    background:
+      radial-gradient(circle at 78% 16%, rgba(224, 64, 251, 0.45), transparent 52%),
+      radial-gradient(circle at 10% 84%, rgba(123, 47, 247, 0.42), transparent 56%),
+      linear-gradient(135deg, #16062f 0%, #2a0a4a 48%, #1a0726 100%);
     margin-bottom: 48px;
     position: relative;
     overflow: hidden;
@@ -28,11 +28,9 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(
-        circle at 80% 50%,
-        rgba(168, 85, 247, 0.2),
-        transparent 60%
-      );
+      background:
+        radial-gradient(circle at 97% 48%, rgba(229, 9, 20, 0.24), transparent 46%),
+        radial-gradient(circle at 48% 120%, rgba(232, 121, 249, 0.22), transparent 60%);
     }
 
     .inner {
@@ -240,7 +238,9 @@
     }
 
     .mood-hero {
-      padding: 44px 0 40px;
+      /* 태블릿: 페이지 상단 패딩(16px)까지 상쇄해 상단 밀착 유지 */
+      margin-top: -(g.$header-height + 16px);
+      padding: (g.$header-height + 24px) 0 40px;
       margin-bottom: 36px;
 
       h1 {
@@ -263,6 +263,8 @@
     }
 
     .mood-hero {
+      /* 모바일: 헤더만큼 내려와 헤더 아래에서 시작 */
+      margin-top: 0;
       padding: 28px 0 28px;
       margin-bottom: 28px;
 

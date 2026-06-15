@@ -9,6 +9,7 @@ import { auth } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useFeedStore } from "@/store/useFeedStore";
 import {
+  FEED_CATEGORY_LABELS,
   getInitial,
   getPosterUrl,
   getRelativeTime,
@@ -86,6 +87,7 @@ export default function FeedDetailPage() {
     [params.id, feeds],
   );
   const mediaMeta = review ? parseFeedMediaMeta(review.mediaMeta) : null;
+  const isGeneralPost = review?.postType === "general";
 
   useEffect(() => {
     void onHydrateFeeds();
@@ -226,34 +228,47 @@ export default function FeedDetailPage() {
                   )}
                 </div>
               </div>
+              {isGeneralPost && review.category && (
+                <span className="feed-category-tag">
+                  {FEED_CATEGORY_LABELS[review.category]}
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="post-body review-body">
-            <Link
-              href={`/detail/${review.mediaType}/${review.mediaId}`}
-              className="thumb"
-            >
-              {review.mediaPoster && (
-                <img
-                  src={getPosterUrl(review.mediaPoster)}
-                  alt={review.mediaTitle}
-                />
-              )}
-            </Link>
-            <div className="review-info">
-              <div className="review-media-copy">
-                <h4>{review.mediaTitle}</h4>
-                <p className="meta meta-primary">{mediaMeta?.primary}</p>
-                {mediaMeta?.average && (
-                  <p className="meta meta-average">{mediaMeta.average}</p>
+          <div
+            className={`post-body review-body${isGeneralPost ? " general-post-body" : ""}`}
+          >
+            {review.mediaType && review.mediaId && (
+              <Link
+                href={`/detail/${review.mediaType}/${review.mediaId}`}
+                className="thumb"
+              >
+                {review.mediaPoster && (
+                  <img
+                    src={getPosterUrl(review.mediaPoster)}
+                    alt={review.mediaTitle || ""}
+                  />
                 )}
-                <div className="stars">
-                  <span className="stars-label">내 별점</span>
-                  {renderRatingStars(review.rating)}
-                  <em>{review.rating.toFixed(1)} / 5.0</em>
+              </Link>
+            )}
+            <div className="review-info">
+              {review.mediaTitle && (
+                <div className="review-media-copy">
+                  <h4>{review.mediaTitle}</h4>
+                  <p className="meta meta-primary">{mediaMeta?.primary}</p>
+                  {mediaMeta?.average && (
+                    <p className="meta meta-average">{mediaMeta.average}</p>
+                  )}
+                  {!isGeneralPost && (
+                    <div className="stars">
+                      <span className="stars-label">내 별점</span>
+                      {renderRatingStars(review.rating)}
+                      <em>{review.rating.toFixed(1)} / 5.0</em>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
               <p className="review-text">{review.content}</p>
             </div>
           </div>

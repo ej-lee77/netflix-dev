@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import AppIcon from "@/components/common/AppIcon";
+import { useT } from "@/lib/i18n";
 import Link from "next/link";
 import Image from "next/image";
 import { customMenus } from "@/data/mainMenu";
@@ -20,6 +21,8 @@ const moodMeta: Record<string, { desc: string; color: string; emoji: string }> =
 };
 
 export default function MoodMainPage() {
+  const t = useT();
+
   // customMenus에서 무드만 필터링
   const moods = customMenus.filter((m) => m.path.startsWith("/mood/"));
 
@@ -28,13 +31,13 @@ export default function MoodMainPage() {
       {/* 히어로 */}
       <div className="mood-hero">
         <div className="inner">
-          <div className="hero-eyebrow">MOOD CURATION</div>
+          <div className="hero-eyebrow">{t("mood.curation.eyebrow")}</div>
           <h1>
-            지금 기분에 딱 맞는<br />
+            {t("mood.curation.titleLine1")}<br />
             {" "}
-            <span className="accent">분위기로 골라보기</span>
+            <span className="accent">{t("mood.curation.titleAccent")}</span>
           </h1>
-          <p>오늘의 무드를 선택하면, 그에 어울리는 작품들을 큐레이션해드려요</p>
+          <p>{t("mood.curation.desc")}</p>
         </div>
       </div>
 
