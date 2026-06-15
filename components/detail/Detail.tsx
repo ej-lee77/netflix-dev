@@ -2921,7 +2921,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
         <div style={{ height: "50vh" }} />
         {/* <BackButton fallback="/" /> */}
         <div style={{
-              padding: `0 ${hPad}px ${isMobile ? 8 : 40}px ${isMobile ? hPad : 87}px`
+              position: "relative",
+              zIndex: 10,
+              padding: `0 ${hPad}px 0 ${isMobile ? hPad : 87}px`
             }}>
           <button
             type="button"
