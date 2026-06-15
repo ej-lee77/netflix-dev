@@ -10,8 +10,11 @@ import { type FeedView, useFeedStore } from "@/store/useFeedStore";
 import { showToast } from "@/store/useToastStore";
 import {
   FeedMediaOption,
+  type FeedCategory,
+  type FeedPostType,
   FeedReview,
   FeedTab,
+  FEED_CATEGORY_LABELS,
   REPORT_REASONS,
   getInitial,
   getRelativeTime,
@@ -25,6 +28,24 @@ import "@/components/common/wishlistButton.scss";
 import "../scss/feed.scss";
 
 const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+type FeedContentFilter = "all" | "general" | "media" | FeedCategory;
+
+const feedCategoryOptions: { value: FeedCategory; label: string }[] = [
+  { value: "discussion", label: "토론" },
+  { value: "question", label: "질문" },
+  { value: "daily", label: "일상" },
+  { value: "watch-party", label: "같이보기" },
+];
+
+const feedContentFilters: { value: FeedContentFilter; label: string }[] = [
+  { value: "all", label: "전체" },
+  { value: "general", label: "일반" },
+  { value: "media", label: "작품" },
+  { value: "discussion", label: "토론" },
+  { value: "question", label: "질문" },
+  { value: "daily", label: "일상" },
+  { value: "watch-party", label: "같이보기" },
+];
 const GENRE_LABELS: Record<string, string> = {
   "12": "모험",
   "14": "판타지",
@@ -357,6 +378,8 @@ export default function FeedPage() {
     onUpdateFeed,
   } = useFeedStore();
   const [activeTab, setActiveTab] = useState<FeedTab>("all");
+  const [contentFilter, setContentFilter] =
+    useState<FeedContentFilter>("all");
   const [visibleSpoilerReviewIds, setVisibleSpoilerReviewIds] = useState<
     string[]
   >([]);
@@ -368,6 +391,9 @@ export default function FeedPage() {
   const [copiedReviewId, setCopiedReviewId] = useState<string | null>(null);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [newPostType, setNewPostType] = useState<FeedPostType>("general");
+  const [newCategory, setNewCategory] =
+    useState<FeedCategory>("discussion");
   const [commentTargetReviewId, setCommentTargetReviewId] = useState<
     string | null
   >(null);
@@ -417,6 +443,8 @@ export default function FeedPage() {
   const closeWriteModal = useCallback(() => {
     setWriteModalOpen(false);
     setEditingReviewId(null);
+    setNewPostType("general");
+    setNewCategory("discussion");
     setReviewSearch("");
     setSelectedReviewTags([]);
     setSearchMediaOptions([]);
@@ -666,8 +694,14 @@ export default function FeedPage() {
     }
   };
 
-  const filteredReviews =
+  const relationshipFilteredReviews =
     activeTab === "all" ? feeds : feeds.filter((review) => review.isFollowing);
+  const filteredReviews = relationshipFilteredReviews.filter((review) => {
+    if (contentFilter === "all") return true;
+    if (contentFilter === "general") return !review.videoId;
+    if (contentFilter === "media") return Boolean(review.videoId);
+    return review.category === contentFilter;
+  });
 
   const selectedCommentReview =
     feeds.find((review) => review.feedId === commentTargetReviewId) ?? null;
@@ -789,14 +823,24 @@ export default function FeedPage() {
 
   const handleOpenEditReview = (review: FeedView) => {
     setEditingReviewId(review.feedId);
-    setSelectedMedia({
-      id: review.mediaId,
-      mediaType: review.mediaType,
-      title: review.mediaTitle,
-      posterPath: review.mediaPoster,
-      meta: review.mediaMeta,
-    });
-    setReviewSearch(review.mediaTitle);
+    setNewPostType(review.postType === "general" ? "general" : "media");
+    setNewCategory(
+      review.category === "recommendation"
+        ? "discussion"
+        : review.category || "discussion",
+    );
+    setSelectedMedia(
+      review.mediaId && review.mediaType && review.mediaTitle
+        ? {
+            id: review.mediaId,
+            mediaType: review.mediaType,
+            title: review.mediaTitle,
+            posterPath: review.mediaPoster,
+            meta: review.mediaMeta,
+          }
+        : null,
+    );
+    setReviewSearch(review.mediaTitle || "");
     setSelectedReviewTags([]);
     setNewRating(review.rating);
     setNewReviewText(review.content);
@@ -876,7 +920,9 @@ export default function FeedPage() {
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
-    if (!selectedMedia || newRating === 0 || !newReviewText.trim()) return;
+    const isMediaPost = newPostType === "media";
+    if (!newReviewText.trim()) return;
+    if (isMediaPost && (!selectedMedia || newRating === 0)) return;
     if (!requireFeedAuth()) return;
     if (!currentUserId || !currentProfile) return;
 
@@ -887,10 +933,14 @@ export default function FeedPage() {
     if (editingReview) {
       await onUpdateFeed({
         ...editingReview,
-        videoId: `${selectedMedia.mediaType}-${selectedMedia.id}`,
-        rating: newRating,
+        postType: newPostType,
+        category: isMediaPost ? undefined : newCategory,
+        videoId: selectedMedia
+          ? `${selectedMedia.mediaType}-${selectedMedia.id}`
+          : undefined,
+        rating: isMediaPost ? newRating : 0,
         content: newReviewText.trim(),
-        isSpoiler: newHasSpoiler,
+        isSpoiler: isMediaPost ? newHasSpoiler : false,
         isPublic: newIsPublic,
       });
       await onHydrateFeeds();
@@ -903,13 +953,17 @@ export default function FeedPage() {
       feedId: "",
       userId: currentUserId,
       profileId: currentProfile.id,
-      videoId: `${selectedMedia.mediaType}-${selectedMedia.id}`,
+      postType: newPostType,
+      category: isMediaPost ? undefined : newCategory,
+      videoId: selectedMedia
+        ? `${selectedMedia.mediaType}-${selectedMedia.id}`
+        : undefined,
       content: newReviewText.trim(),
       likesCount: 0,
       reportsCount: 0,
       createdAt: new Date().toISOString(),
-      rating: newRating,
-      isSpoiler: newHasSpoiler,
+      rating: isMediaPost ? newRating : 0,
+      isSpoiler: isMediaPost ? newHasSpoiler : false,
       isPublic: newIsPublic,
       likedUserIds: [],
     };
@@ -944,7 +998,11 @@ export default function FeedPage() {
                 <h3 id="feed-write-title">
                   {editingReviewId ? "게시물 수정" : "게시물 작성"}
                 </h3>
-                <p>작품을 선택하고 커뮤니티에 공개할 게시물을 남겨보세요.</p>
+                <p>
+                  {newPostType === "media"
+                    ? "작품을 선택하고 감상을 남겨보세요."
+                    : "말머리를 고르고 자유롭게 이야기를 나눠보세요."}
+                </p>
               </div>
               <button
                 type="button"
@@ -957,8 +1015,56 @@ export default function FeedPage() {
             </div>
 
             <div className="feed-write-fields">
+              <div
+                className="feed-write-type-tabs"
+                role="tablist"
+                aria-label="게시물 유형"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={newPostType === "general"}
+                  className={newPostType === "general" ? "active" : ""}
+                  onClick={() => setNewPostType("general")}
+                >
+                  일반 게시물
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={newPostType === "media"}
+                  className={newPostType === "media" ? "active" : ""}
+                  onClick={() => setNewPostType("media")}
+                >
+                  작품 게시물
+                </button>
+              </div>
+
+              {newPostType === "general" && (
+                <div className="feed-category-field">
+                  <span>말머리</span>
+                  <div className="feed-category-options">
+                    {feedCategoryOptions.map(({ value, label }) => (
+                      <button
+                        type="button"
+                        key={value}
+                        className={newCategory === value ? "active" : ""}
+                        aria-pressed={newCategory === value}
+                        onClick={() => setNewCategory(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <label className="feed-search-field">
-                <span>작품 검색</span>
+                <span>
+                  {newPostType === "general"
+                    ? "작품 태그 추가 (선택)"
+                    : "작품 검색"}
+                </span>
                 <div className="feed-search-input">
                   {selectedReviewTags.map((selectedReviewTag) => (
                     <span
@@ -1059,7 +1165,8 @@ export default function FeedPage() {
                 </div>
               )}
 
-              {(!reviewSearch.trim() || selectedReviewTags.length > 0) && (
+              {newPostType === "media" &&
+                (!reviewSearch.trim() || selectedReviewTags.length > 0) && (
                 <div className="feed-review-finder">
                   <section>
                     <div className="feed-review-finder__header">
@@ -1121,7 +1228,8 @@ export default function FeedPage() {
                 </div>
               )}
 
-              <div className="feed-rating-field">
+              {newPostType === "media" && (
+                <div className="feed-rating-field">
                 <span>별점</span>
                 <div className="feed-rating-control">
                   <div className="feed-rating-value">
@@ -1168,7 +1276,8 @@ export default function FeedPage() {
                     <em>{(newHoverRating || newRating).toFixed(1)} / 5.0</em>
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
 
               <label className="feed-review-field">
                 <span>내용</span>
@@ -1180,14 +1289,16 @@ export default function FeedPage() {
               </label>
 
               <div className="feed-write-toggles">
-                <button
-                  type="button"
-                  className={newHasSpoiler ? "active" : ""}
-                  onClick={() => setNewHasSpoiler((value) => !value)}
-                  aria-pressed={newHasSpoiler}
-                >
-                  스포일러
-                </button>
+                {newPostType === "media" && (
+                  <button
+                    type="button"
+                    className={newHasSpoiler ? "active" : ""}
+                    onClick={() => setNewHasSpoiler((value) => !value)}
+                    aria-pressed={newHasSpoiler}
+                  >
+                    스포일러
+                  </button>
+                )}
                 <button
                   type="button"
                   className={newIsPublic ? "active" : ""}
@@ -1212,7 +1323,9 @@ export default function FeedPage() {
                 type="submit"
                 className="feed-submit-btn"
                 disabled={
-                  !selectedMedia || newRating === 0 || !newReviewText.trim()
+                  !newReviewText.trim() ||
+                  (newPostType === "media" &&
+                    (!selectedMedia || newRating === 0))
                 }
               >
                 {editingReviewId ? "수정" : "등록"}
@@ -1251,8 +1364,9 @@ export default function FeedPage() {
             <div>
               <h3 id="feed-comment-title">댓글</h3>
               <p>
-                &quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴
-                의견
+                {selectedCommentReview.mediaTitle
+                  ? `“${selectedCommentReview.mediaTitle}” 게시물에 남긴 의견`
+                  : "게시물에 남긴 의견"}
               </p>
             </div>
             <button
@@ -1501,7 +1615,7 @@ export default function FeedPage() {
           </aside>
           {currentUserId && (
             <div className="feed-main">
-              <div
+            <div
                 className="feed-tabs"
                 role="tablist"
                 aria-label="피드 게시물 필터"
@@ -1525,6 +1639,19 @@ export default function FeedPage() {
                 팔로우 게시물
               </button>
             </div>
+            <div className="feed-filter-chips" aria-label="게시물 종류 필터">
+              {feedContentFilters.map((filter) => (
+                <button
+                  type="button"
+                  key={filter.value}
+                  className={contentFilter === filter.value ? "active" : ""}
+                  aria-pressed={contentFilter === filter.value}
+                  onClick={() => setContentFilter(filter.value)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
             {filteredReviews.length === 0 ? (
               <div className="feed-empty-state">게시물이 없습니다</div>
             ) : (
@@ -1535,6 +1662,7 @@ export default function FeedPage() {
                   review.isSpoiler &&
                   !visibleSpoilerReviewIds.includes(review.feedId);
                 const mediaMeta = parseFeedMediaMeta(review.mediaMeta);
+                const isGeneralPost = review.postType === "general";
 
                 return (
                   <article
@@ -1544,7 +1672,7 @@ export default function FeedPage() {
                     <Link
                       href={`/feed/${review.feedId}`}
                       className="feed-card-link"
-                      aria-label={`${review.mediaTitle} 피드 상세 보기`}
+                      aria-label={`${review.mediaTitle || FEED_CATEGORY_LABELS[review.category || "daily"]} 피드 상세 보기`}
                     />
                     <div className="post-head">
                       <Link
@@ -1576,10 +1704,17 @@ export default function FeedPage() {
                         </div>
                       </div>
                       <div className="review-tags">
-                        <div className="desktop-card-rating">
-                          {renderRatingStars(review.rating)}
-                          <em>{review.rating.toFixed(1)}</em>
-                        </div>
+                        {isGeneralPost && review.category && (
+                          <span className="feed-category-tag">
+                            {FEED_CATEGORY_LABELS[review.category]}
+                          </span>
+                        )}
+                        {!isGeneralPost && (
+                          <div className="desktop-card-rating">
+                            {renderRatingStars(review.rating)}
+                            <em>{review.rating.toFixed(1)}</em>
+                          </div>
+                        )}
                         {review.isSpoiler && (
                           <span className="spoiler-tag">스포일러</span>
                         )}
@@ -1644,37 +1779,45 @@ export default function FeedPage() {
                       </div>
                     </div>
 
-                    <div className="post-body review-body">
-                      <Link
-                        href={`/detail/${review.mediaType}/${review.mediaId}`}
-                        className="thumb feed-card-layer"
-                      >
-                        {review.mediaPoster && (
-                          <img
-                            src={getPosterUrl(review.mediaPoster)}
-                            alt={review.mediaTitle}
-                          />
-                        )}
-                      </Link>
+                    <div
+                      className={`post-body review-body${isGeneralPost ? " general-post-body" : ""}`}
+                    >
+                      {review.mediaType && review.mediaId && (
+                        <Link
+                          href={`/detail/${review.mediaType}/${review.mediaId}`}
+                          className="thumb feed-card-layer"
+                        >
+                          {review.mediaPoster && (
+                            <img
+                              src={getPosterUrl(review.mediaPoster)}
+                              alt={review.mediaTitle || ""}
+                            />
+                          )}
+                        </Link>
+                      )}
                       <div className="review-info">
-                        <div className="feed-detail-link">
-                          <div className="feed-review-media-copy">
-                            <h4>{review.mediaTitle}</h4>
-                            <p className="meta meta-primary">
-                              {mediaMeta.primary}
-                            </p>
-                            {mediaMeta.average && (
-                              <p className="meta meta-average">
-                                {mediaMeta.average}
+                        {review.mediaTitle && (
+                          <div className="feed-detail-link">
+                            <div className="feed-review-media-copy">
+                              <h4>{review.mediaTitle}</h4>
+                              <p className="meta meta-primary">
+                                {mediaMeta.primary}
                               </p>
+                              {mediaMeta.average && (
+                                <p className="meta meta-average">
+                                  {mediaMeta.average}
+                                </p>
+                              )}
+                            </div>
+                            {!isGeneralPost && (
+                              <div className="stars mobile-card-rating">
+                                <span className="stars-label">내 별점</span>
+                                {renderRatingStars(review.rating)}
+                                <em>{review.rating.toFixed(1)} / 5.0</em>
+                              </div>
                             )}
                           </div>
-                          <div className="stars mobile-card-rating">
-                            <span className="stars-label">내 별점</span>
-                            {renderRatingStars(review.rating)}
-                            <em>{review.rating.toFixed(1)} / 5.0</em>
-                          </div>
-                        </div>
+                        )}
                         <div
                           className={
                             shouldBlurSpoiler
