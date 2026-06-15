@@ -7,11 +7,13 @@ import "./scss/moodBanner.scss";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useT } from "@/lib/i18n";
 
 export default function MoodBanner() {
   const sectionRef = useRef<HTMLElement>(null);
   const { isUnsubscribed } = useSubscriptionGuard();
   const openModal = useSubscribeModalStore((state) => state.openModal);
+  const t = useT();
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -56,12 +58,14 @@ export default function MoodBanner() {
 
         <div className="mood-banner__inner">
           <div className="mood-banner__content">
-            <p className="mood-banner__eyebrow">오늘 어떤 기분이에요?</p>
+            <p className="mood-banner__eyebrow">{t("mood.banner.eyebrow")}</p>
             <h2 className="mood-banner__title">
-              지금 기분에 딱 맞는 <em>분위기</em> 골라보기
+              {t("mood.banner.titlePre")}
+              <em>{t("mood.banner.titleAccent")}</em>
+              {t("mood.banner.titlePost")}
             </h2>
             <p className="mood-banner__desc">
-              내 감정을 선택하면 딱 맞는 콘텐츠를 추천해드려요
+              {t("mood.banner.desc")}
             </p>
           </div>
 
