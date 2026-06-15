@@ -35,6 +35,8 @@ import {
 } from "@/lib/upcomingNotifications";
 import AppIcon from "../common/AppIcon";
 import WatchPartyModal from "@/components/watch/WatchPartyModal";
+import PlaylistCreateModal from "@/components/playlist/PlaylistCreateModal";
+import { formatFivePointRating } from "@/lib/rating";
 
 interface DetailClientProps {
   type: "movie" | "tv";
@@ -208,12 +210,97 @@ const GENRE_MAP: Record<number, string> = {
 
 // 별점을 계산해서 렌더링하는 컴포넌트 내부 함수
 const renderStars = (rating: number) => {
-  const roundedRating = Math.round(rating); // 반올림하여 정수 별 개수 계산
-  const fullStars = "★".repeat(roundedRating);
-  const emptyStars = "☆".repeat(5 - roundedRating);
-
-  return fullStars + emptyStars;
+  return [1, 2, 3, 4, 5].map((star) => {
+    const fill = Math.max(0, Math.min(1, rating - (star - 1))) * 100;
+    return (
+      <span
+        key={star}
+        aria-hidden="true"
+        style={{
+          color: "transparent",
+          background: `linear-gradient(90deg, #e50914 ${fill}%, #4a4a4a ${fill}%)`,
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+        }}
+      >
+        ★
+      </span>
+    );
+  });
 };
+
+interface HalfStarRatingInputProps {
+  value: number;
+  hoverValue: number;
+  onChange: (rating: number) => void;
+  onHoverChange: (rating: number) => void;
+  size?: number;
+}
+
+function HalfStarRatingInput({
+  value,
+  hoverValue,
+  onChange,
+  onHoverChange,
+  size = 24,
+}: HalfStarRatingInputProps) {
+  const activeRating = hoverValue || value;
+
+  return (
+    <div
+      className="detail-half-rating"
+      onMouseLeave={() => onHoverChange(0)}
+      aria-label={`별점 선택, 현재 ${value.toFixed(1)}점`}
+    >
+      <div className="detail-half-rating__stars">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const fill =
+            Math.max(0, Math.min(1, activeRating - (star - 1))) * 100;
+          return (
+            <span
+              className="detail-half-rating__star"
+              key={star}
+              style={
+                {
+                  "--detail-star-size": `${size}px`,
+                  "--detail-star-fill": `${fill}%`,
+                } as CSSProperties
+              }
+            >
+              <span
+                className="detail-half-rating__icon"
+                aria-hidden="true"
+              >
+                ★
+              </span>
+              <button
+                type="button"
+                className="detail-half-rating__hit detail-half-rating__hit--left"
+                onMouseEnter={() => onHoverChange(star - 0.5)}
+                onFocus={() => onHoverChange(star - 0.5)}
+                onBlur={() => onHoverChange(0)}
+                onClick={() => onChange(star - 0.5)}
+                aria-label={`${star - 0.5}점`}
+              />
+              <button
+                type="button"
+                className="detail-half-rating__hit detail-half-rating__hit--right"
+                onMouseEnter={() => onHoverChange(star)}
+                onFocus={() => onHoverChange(star)}
+                onBlur={() => onHoverChange(0)}
+                onClick={() => onChange(star)}
+                aria-label={`${star}점`}
+              />
+            </span>
+          );
+        })}
+      </div>
+      <span className="detail-half-rating__value" aria-live="polite">
+        {activeRating.toFixed(1)}
+      </span>
+    </div>
+  );
+}
 
 export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const { confirm, modal: confirmModal } = useConfirmModal();
@@ -317,6 +404,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const [hoveredEpisodeId, setHoveredEpisodeId] = useState<number | null>(null);
   const [isAddingPlayList, setIsAddingPlayList] = useState(false);
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
+  const [showPlaylistCreator, setShowPlaylistCreator] = useState(false);
   const [seasonDropdownOpen, setSeasonDropdownOpen] = useState(false);
   // 케데헌 이스터에그: 탭 라인 위 루미 클릭 → 게임 모달
   const [showGameModal, setShowGameModal] = useState(false);
@@ -779,6 +867,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
     try {
       if (isWished(itemKey)) {
         await onRemoveWish(mediaItem);
+        showToast("위시리스트에서 삭제되었습니다.");
       } else {
         await onAddWish(mediaItem);
       }
@@ -790,6 +879,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const handleSubmitReview = async () => {
     const content = reviewText.trim();
     if (!content) return;
+    if (ratedStar === 0) {
+      showToast("별점을 선택해 주세요.");
+      return;
+    }
 
     // 1. 파이어베이스에 리뷰 저장 (스토어 액션 호출)
     // 스토어 내부에서 profileId, createdAt, likesCount 등이 자동 처리됩니다.
@@ -797,7 +890,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
       content: content,
       videoId: itemKey, // mediaId를 videoId 자리에 전달
       isSpoiler: reviewHasSpoiler,
-      rating: ratedStar || 5, // 별점 추가
+      rating: ratedStar,
     });
 
     // 2. UI 상태 초기화
@@ -832,11 +925,15 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
   const handleSubmitEditReview = async (reviewId: string, videoId: string) => {
     const content = editReviewText.trim();
     if (!content) return;
+    if (editRatedStar === 0) {
+      showToast("별점을 선택해 주세요.");
+      return;
+    }
 
     await updateReview(reviewId, videoId, {
       content,
       isSpoiler: editReviewHasSpoiler,
-      rating: editRatedStar || 5,
+      rating: editRatedStar,
     });
     handleCancelEditReview();
   };
@@ -1546,27 +1643,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           }}
         >
           <span style={{ fontSize: 16, color: "#888" }}>별점을 매겨주세요</span>
-          <div style={{ display: "flex", gap: 2 }}>
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                key={s}
-                onMouseEnter={() => setHoverStar(s)}
-                onMouseLeave={() => setHoverStar(0)}
-                onClick={() => setRatedStar(s)}
-                style={{
-                  fontSize: 24,
-                  color: s <= (hoverStar || ratedStar) ? "#e50914" : "#333",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "color 0.1s",
-                  lineHeight: 1,
-                }}
-              >
-                ★
-              </button>
-            ))}
-          </div>
+          <HalfStarRatingInput
+            value={ratedStar}
+            hoverValue={hoverStar}
+            onChange={setRatedStar}
+            onHoverChange={setHoverStar}
+          />
         </div>
         <div
           style={{
@@ -1639,29 +1721,12 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           >
             내 리뷰 작성
           </h2>
-          <div style={{ display: "flex", gap: 2 }}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                type="button"
-                key={star}
-                className="detail-icon-hover"
-                onMouseEnter={() => setHoverStar(star)}
-                onMouseLeave={() => setHoverStar(0)}
-                onClick={() => setRatedStar(star)}
-                style={{
-                  fontSize: 24,
-                  color:
-                    star <= (hoverStar || ratedStar) ? "#e50914" : "#3a3a48",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  lineHeight: 1,
-                }}
-              >
-                ★
-              </button>
-            ))}
-          </div>
+          <HalfStarRatingInput
+            value={ratedStar}
+            hoverValue={hoverStar}
+            onChange={setRatedStar}
+            onHoverChange={setHoverStar}
+          />
         </div>
         <textarea
           className="detail-review-textarea"
@@ -1989,29 +2054,13 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                           gap: 2,
                         }}
                       >
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onMouseEnter={() => setEditHoverStar(star)}
-                            onMouseLeave={() => setEditHoverStar(0)}
-                            onClick={() => setEditRatedStar(star)}
-                            style={{
-                              border: "none",
-                              background: "transparent",
-                              color:
-                                star <= (editHoverStar || editRatedStar)
-                                  ? "#e50914"
-                                  : "#4a4a4a",
-                              cursor: "pointer",
-                              fontSize: 20,
-                              lineHeight: 1,
-                              padding: "0 1px",
-                            }}
-                          >
-                            {"\u2605"}
-                          </button>
-                        ))}
+                        <HalfStarRatingInput
+                          value={editRatedStar}
+                          hoverValue={editHoverStar}
+                          onChange={setEditRatedStar}
+                          onHoverChange={setEditHoverStar}
+                          size={20}
+                        />
                       </div>
                       <button
                         type="button"
@@ -2524,7 +2573,7 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                             fontWeight: 700,
                           }}
                         >
-                          {item.vote_average.toFixed(1)}
+                          {formatFivePointRating(item.vote_average)}
                         </span>
                         <span style={{ fontSize: 12, color: "#555" }}>|</span>
                       </>
@@ -3139,7 +3188,9 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                   ★
                 </span>
                 <span style={{ fontWeight: 500, fontSize: 16, color: "#fff" }}>
-                  {mediaItem?.vote_average?.toFixed(1) ?? "-"}
+                  {mediaItem?.vote_average
+                    ? formatFivePointRating(mediaItem.vote_average)
+                    : "-"}
                 </span>
                 {mediaItem?.vote_count && (
                   <span style={{ fontSize: 14, color: "#888" }}>
@@ -3559,20 +3610,42 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#fff" }}>
                 플레이리스트에 추가
               </h3>
-              <button
-                onClick={() => setShowPlaylistPicker(false)}
-                aria-label="닫기"
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#888",
-                  fontSize: 20,
-                  cursor: "pointer",
-                  lineHeight: 1,
-                }}
-              >
-                ✕
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPlaylistPicker(false);
+                    setShowPlaylistCreator(true);
+                  }}
+                  style={{
+                    height: 34,
+                    padding: "0 12px",
+                    borderRadius: 6,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  + 새 플레이리스트
+                </button>
+                <button
+                  onClick={() => setShowPlaylistPicker(false)}
+                  aria-label="닫기"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#888",
+                    fontSize: 20,
+                    cursor: "pointer",
+                    lineHeight: 1,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             <div
               style={{
@@ -3588,7 +3661,10 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
                     아직 만든 플레이리스트가 없습니다.
                   </p>
                   <button
-                    onClick={() => router.push("/mypage/playlist")}
+                    onClick={() => {
+                      setShowPlaylistPicker(false);
+                      setShowPlaylistCreator(true);
+                    }}
                     style={{
                       height: 36,
                       padding: "0 16px",
@@ -3844,6 +3920,18 @@ export default function DetailClient({ type, mediaId }: DetailClientProps) {
           </div>
         </div>
       )}
+      <PlaylistCreateModal
+        open={showPlaylistCreator}
+        videoIds={[itemKey]}
+        previewItems={[
+          {
+            id: itemKey,
+            posterPath: mediaItem?.poster_path,
+            title,
+          },
+        ]}
+        onClose={() => setShowPlaylistCreator(false)}
+      />
 
       {/* 케데헌 이스터에그: RUN WITH RUMI 게임 모달 */}
       {showGameModal && <GameModal onClose={() => setShowGameModal(false)} />}

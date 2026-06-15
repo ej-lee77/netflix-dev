@@ -85,6 +85,78 @@
   filter: brightness(1.2);
 }
 
+:global(.detail-half-rating) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+:global(.detail-half-rating__stars) {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+:global(.detail-half-rating__star) {
+  position: relative;
+  display: inline-flex;
+  width: var(--detail-star-size);
+  height: var(--detail-star-size);
+  flex: 0 0 var(--detail-star-size);
+}
+
+:global(.detail-half-rating__icon) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    #e50914 var(--detail-star-fill),
+    #3a3a48 var(--detail-star-fill)
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  font-size: var(--detail-star-size);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+:global(.detail-half-rating__hit) {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 50%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+  }
+}
+
+:global(.detail-half-rating__hit--left) {
+  left: 0;
+}
+
+:global(.detail-half-rating__hit--right) {
+  right: 0;
+}
+
+:global(.detail-half-rating__value) {
+  min-width: 24px;
+  color: #d8d8d8;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
 /* 케데헌 이스터에그: 탭 라인 위를 달리는 루미 (클릭 → 게임 실행) */
 :global(.kpop-rumi-runner) {
   --rw: 46px; /* 프레임 너비 */

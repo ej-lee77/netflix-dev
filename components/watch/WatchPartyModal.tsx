@@ -84,6 +84,19 @@ export default function WatchPartyModal({
   }, [onClose]);
 
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (
       inviteSelectionHydratedRef.current ||
       mode !== "invite" ||
@@ -246,7 +259,10 @@ export default function WatchPartyModal({
         <button
           type="button"
           className="watch-party-modal__close"
-          onClick={onClose}
+          onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }}
           aria-label="닫기"
         >
           ×
