@@ -288,6 +288,14 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
   const goDetail = () => router.push(`/detail/${type}/${mediaId}`);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.replace(`/detail/${type}/${mediaId}`);
+    }
+  };
+
   const handleWish = async () => {
     if (!mediaItem) return;
     if (!user) {
@@ -305,18 +313,14 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
     if (wished) {
       await onRemoveMyList(mediaId, type);
-      const removed = myList.includes(String(itemKey));
-      showToast(
-        removed
-          ? "위시리스트에서 삭제했어요."
-          : "위시리스트 삭제에 실패했어요.",
-      );
+      showToast("위시리스트에서 삭제되었습니다.", {
+        icon: "/images/header/menu/wishlist.svg",
+      });
     } else {
       await onAddMyList(wishlistItem);
-      const added = !myList.includes(String(itemKey));
-      showToast(
-        added ? "내 위시리스트에 추가했어요." : "위시리스트 추가에 실패했어요.",
-      );
+      showToast("위시리스트에 추가되었습니다.", {
+        icon: "/images/header/menu/wishlist.svg",
+      });
     }
   };
 
@@ -333,7 +337,11 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
 
   const handleLeaveParty = () => {
     leave();
-    router.push(`/watch/${type}/${mediaId}`);
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.replace(`/detail/${type}/${mediaId}`);
+    }
   };
 
   const handleDeleteParty = async () => {
@@ -507,7 +515,7 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
         ) : (
           <button
             type="button"
-            onClick={goDetail}
+            onClick={handleBack}
             style={btn({ background: "rgba(255,255,255,0.06)" })}
           >
             ← 뒤로
