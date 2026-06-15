@@ -5,6 +5,7 @@ import FeedReviewCard from "@/components/feed/FeedReviewCard";
 import { type FeedView } from "@/store/useFeedStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import MobileFilterAccordion from "@/components/mypage/MobileFilterAccordion";
+import type { FeedCategory } from "@/types/feedData";
 
 interface MyPageFeedProps {
   feeds: FeedView[];
@@ -15,6 +16,7 @@ interface MyPageFeedProps {
 }
 type ScopeFilterType = "mine" | "liked" | "following";
 type SortType = "recent" | "likes" | "comments";
+type ContentFilterType = "all" | "general" | "media" | FeedCategory;
 
 const sortFeeds = (feeds: FeedView[], sortType: MyPageFeedProps["sortType"]) =>
   [...feeds].sort((a, b) => {
@@ -53,8 +55,28 @@ const scopeFilters: { key: ScopeFilterType; label: string }[] = [
   { key: "following", label: "팔로우 글" },
 ];
 
+const contentFilters: { key: ContentFilterType; label: string }[] = [
+  { key: "all", label: "전체" },
+  { key: "general", label: "일반" },
+  { key: "media", label: "작품" },
+  { key: "discussion", label: "토론" },
+  { key: "question", label: "질문" },
+  { key: "daily", label: "일상" },
+  { key: "watch-party", label: "같이보기" },
+];
+
 const getUserId = (user: ReturnType<typeof useAuthStore.getState>["user"]) =>
   user?.userId || (user as { uid?: string } | null)?.uid || "";
+
+const matchesContentFilter = (
+  feed: FeedView,
+  contentFilter: ContentFilterType,
+) => {
+  if (contentFilter === "all") return true;
+  if (contentFilter === "general") return feed.postType === "general";
+  if (contentFilter === "media") return feed.postType !== "general";
+  return feed.postType === "general" && feed.category === contentFilter;
+};
 
 export default function MyPageFeed({
   feeds,
@@ -64,6 +86,8 @@ export default function MyPageFeed({
   const { user, currentProfile } = useAuthStore();
   const currentUserId = getUserId(user);
   const [scopeFilter, setScopeFilter] = useState<ScopeFilterType>("mine");
+  const [contentFilter, setContentFilter] =
+    useState<ContentFilterType>("all");
   const [sortType, setSortType] = useState<SortType>("recent");
   const [sortOpen, setSortOpen] = useState(false);
   const currentSortLabel = sortOptions.find((o) => o.key === sortType)?.label;
@@ -91,7 +115,17 @@ export default function MyPageFeed({
     following: feedBuckets.following.length,
   };
 
-  const filteredFeeds = feedBuckets[scopeFilter];
+  const scopedFeeds = feedBuckets[scopeFilter];
+  const contentCounts = Object.fromEntries(
+    contentFilters.map((filter) => [
+      filter.key,
+      scopedFeeds.filter((feed) => matchesContentFilter(feed, filter.key))
+        .length,
+    ]),
+  ) as Record<ContentFilterType, number>;
+  const filteredFeeds = scopedFeeds.filter((feed) =>
+    matchesContentFilter(feed, contentFilter),
+  );
   const sortedFeeds = sortFeeds(filteredFeeds, sortType);
 
   return (
@@ -173,9 +207,34 @@ export default function MyPageFeed({
         )}
       </div>
     </div>
+    <div
+      className="feed-content-filter"
+      role="group"
+      aria-label="피드 게시물 종류"
+    >
+      <span className="feed-content-filter__label">게시물 종류</span>
+      <div className="feed-content-filter__chips">
+        {contentFilters.map((filter) => (
+          <button
+            type="button"
+            key={filter.key}
+            className={contentFilter === filter.key ? "is-active" : ""}
+            aria-pressed={contentFilter === filter.key}
+            onClick={() => setContentFilter(filter.key)}
+          >
+            {filter.label}
+            <span>{contentCounts[filter.key]}</span>
+          </button>
+        ))}
+      </div>
+    </div>
     {sortedFeeds.length === 0 ? (
       <div className="community-empty">
-        <p className="empty-text">{getEmptyMessage(scopeFilter)}</p>
+        <p className="empty-text">
+          {contentFilter === "all"
+            ? getEmptyMessage(scopeFilter)
+            : "선택한 종류의 피드가 없습니다."}
+        </p>
       </div>
     ):(
     <div className="mypage-feed-list">
