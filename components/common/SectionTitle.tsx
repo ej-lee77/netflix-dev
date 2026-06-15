@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./sectionTitle.scss";
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useSectionText, useT } from "@/lib/i18n";
 
 type SectionTitleProps = {
     title: string;
@@ -22,6 +23,8 @@ export default function SectionTitle({
 }: SectionTitleProps) {
     const { isUnsubscribed } = useSubscriptionGuard();
     const openModal = useSubscribeModalStore((state) => state.openModal);
+    const translateSectionText = useSectionText();
+    const t = useT();
 
     const handleClick = (e: React.MouseEvent) => {
         if (isUnsubscribed) {
@@ -34,20 +37,20 @@ export default function SectionTitle({
         <div className="section-header">
             <div className="section-title-wrap">
                 <h2 className="section-title">
-                    {title}
+                    {translateSectionText(title)}
                 </h2>
 
                 {subTitle && (
                     <p className="section-sub">
-                        {subTitle}
+                        {translateSectionText(subTitle)}
                     </p>
                 )}
             </div>
 
             {showMore && (
                 href
-                    ? <Link href={href} className="see-all" onClick={handleClick}>전체보기 ›</Link>
-                    : <button className="see-all" onClick={isUnsubscribed ? openModal : onMoreClick}>전체보기 ›</button>
+                    ? <Link href={href} className="see-all" onClick={handleClick}>{t("common.viewAll")} ›</Link>
+                    : <button className="see-all" onClick={isUnsubscribed ? openModal : onMoreClick}>{t("common.viewAll")} ›</button>
             )}
         </div>
     );

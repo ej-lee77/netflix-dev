@@ -33,6 +33,18 @@ export default function Footer() {
   const t = useT();
   const contactHref = user ? "/contact?tab=inquiry" : "/login";
 
+  const handleLanguageChange = (label: string) => {
+    const nextLang = labelToLang(label);
+    setLangOpen(false);
+
+    if (nextLang === lang) return;
+
+    setLang(nextLang);
+    window.history.scrollRestoration = "manual";
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    window.requestAnimationFrame(() => window.location.reload());
+  };
+
   return (
     <footer>
       <div className="footer-inner">
@@ -110,11 +122,9 @@ export default function Footer() {
                 {LANGUAGES.map((label) => (
                   <li key={label}>
                     <button
+                      type="button"
                       className={LANG_LABELS[lang] === label ? "active" : ""}
-                      onClick={() => {
-                        setLang(labelToLang(label));
-                        setLangOpen(false);
-                      }}
+                      onClick={() => handleLanguageChange(label)}
                     >
                       {label}
                     </button>
