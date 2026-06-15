@@ -476,13 +476,13 @@ export default function VideoPlayer({
     };
 
     const window_: CSSProperties = {
-      background:
+      "--subtitle-window-bg":
         subWindow === "none"
           ? "transparent"
           : subWindow === "black"
             ? "rgba(8,8,8,0.55)"
             : "rgba(255,255,255,0.45)",
-    };
+    } as CSSProperties;
 
     return { text, window: window_ };
   }, [effectiveSubs]);
