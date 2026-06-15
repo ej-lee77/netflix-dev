@@ -8,6 +8,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMenuLabel } from "@/lib/i18n";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { useCommunityEnabled } from "@/data/maturityFilter";
 
 const CATEGORY_MENU = {
   title: "카테고리",
@@ -54,6 +55,7 @@ export default function HeaderMenu() {
   const tm = useMenuLabel();
   const prefetchRoute = useRoutePrefetch();
   const currentProfile = useAuthStore((state) => state.currentProfile);
+  const isCommunityEnabled = useCommunityEnabled();
   const [storageRevision, setStorageRevision] = useState(0);
   const [liveMenuPaths, setLiveMenuPaths] = useState<string[] | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -81,7 +83,7 @@ export default function HeaderMenu() {
     setLiveMenuPaths(null);
   }, [currentProfile?.id]);
 
-  const dynamicMenus = useMemo(() => {
+  const baseDynamicMenus = useMemo(() => {
     // 1. 마운트 전(서버)에는 무조건 기본 메뉴 반환 (Hydration 불일치 방지)
     if (!isMounted) {
       return DEFAULT_HEADER_MENU_PATHS.map((path) =>
@@ -122,6 +124,13 @@ export default function HeaderMenu() {
       allSelectablePool.find((m) => m.path === path),
     ).filter((menu): menu is (typeof allSelectablePool)[number] => !!menu);
   }, [isMounted, currentProfile, liveMenuPaths, storageRevision]); // 의존성 추가
+
+  // 마이페이지에서 커뮤니티 숨김 모드가 켜져 있으면(=isCommunityEnabled false)
+  // 헤더메뉴에 추가된 피드 탭(/feed)을 숨김
+  const dynamicMenus = useMemo(() => {
+    if (isCommunityEnabled) return baseDynamicMenus;
+    return baseDynamicMenus.filter((menu) => menu.path !== "/feed");
+  }, [baseDynamicMenus, isCommunityEnabled]);
 
   useEffect(() => {
     const handleCustomMenuStorageUpdate = (event: Event) => {
@@ -177,7 +186,7 @@ export default function HeaderMenu() {
 
   const isCategoryActive = categoryParent
     ? isMenuActive(categoryParent.path) ||
-      categoryPanelMenus.some((menu) => isMenuActive(menu.path))
+    categoryPanelMenus.some((menu) => isMenuActive(menu.path))
     : false;
 
   return (
@@ -227,9 +236,8 @@ export default function HeaderMenu() {
               return (
                 <div
                   key={menu.path}
-                  className={`sb-icon sb-category-group ${
-                    isCategoryActive ? "active" : ""
-                  }`}
+                  className={`sb-icon sb-category-group ${isCategoryActive ? "active" : ""
+                    }`}
                 >
                   <Link
                     href={menu.path}

@@ -26,6 +26,7 @@ import { useMaturityFiltered } from "@/data/maturityFilter";
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { formatFivePointRating } from "@/lib/rating";
 
 export interface RankingItem {
   id: number;
@@ -310,7 +311,7 @@ export default function RankingSection({ title, items: externalItems, href }: Ra
                     </strong>
 
                     <span className="ranking-detail-score">
-                      <em>{movie.vote_average.toFixed(1)}</em>
+                      <em>{formatFivePointRating(movie.vote_average)}</em>
 
                       <span>{getStars(movie.vote_average)}</span>
                     </span>

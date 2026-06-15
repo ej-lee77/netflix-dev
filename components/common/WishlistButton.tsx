@@ -80,6 +80,10 @@ export default function WishlistButton({
     const normalized = normalizeForType(item, mediaType);
     if (wished) {
       await onRemoveMyList(item.id, effectiveType);
+      showToast("위시리스트에서 삭제되었습니다.", {
+        icon: "/images/header/menu/wishlist.svg",
+        anchor: { x: rect.left + rect.width / 2, y: rect.top },
+      });
     } else {
       await onAddMyList(normalized);
       showToast("위시리스트에 추가되었습니다.", {

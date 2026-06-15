@@ -508,6 +508,7 @@ export default function MyPage() {
 
   const [planType, setPlanType] = useState<string>("");
   const [nextDate, setNextDate] = useState<string>("");
+  const [lastPlanType, setLastPlanType] = useState<string>("");
 
   useEffect(() => {
     const uid = user?.userId ?? auth.currentUser?.uid;
@@ -518,16 +519,19 @@ export default function MyPage() {
       const data = snap.data();
       setPlanType(data.planType ?? ""); // 플랜 종류 (basic/standard/premium)
       setNextDate(data.payment?.nextDate ?? ""); // 다음 결제일
+      setLastPlanType(data.payment?.lastPlanType ?? ""); // 해지 전 마지막 플랜
     });
   }, [user?.userId]); // user가 바뀔 때마다 재실행
 
   // planType 영문 → 한글 변환
-  const planLabel = (() => {
-    if (planType === "basic") return "베이직";
-    if (planType === "standard") return "스탠다드";
-    if (planType === "premium") return "프리미엄";
-    return null; // planType 없으면 뱃지 자체를 숨김
-  })();
+  const planTypeLabel = (type: string) => {
+    if (type === "basic") return "베이직";
+    if (type === "standard") return "스탠다드";
+    if (type === "premium") return "프리미엄";
+    return "";
+  };
+
+  const planLabel = planTypeLabel(planType) || null; // planType 없으면 뱃지 자체를 숨김
 
   const iconMap: any = {
     episode: "episode",
@@ -603,6 +607,12 @@ export default function MyPage() {
                 <span className="plan-badge">
                   ★ {planLabel}
                   {nextDate ? ` · 다음 결제 ${nextDate}` : ""}
+                </span>
+              ) : nextDate ? (
+                // 해지했지만 아직 만료 전일 때
+                <span className="plan-badge plan-badge-expiring">
+                  {planTypeLabel(lastPlanType) && `${planTypeLabel(lastPlanType)} · `}
+                  {nextDate} 만료
                 </span>
               ) : (
                 // 구독 중이 아닐 때
@@ -712,8 +722,8 @@ export default function MyPage() {
                         style={
                           thumbnail
                             ? {
-                                backgroundImage: `url(${TMDB_IMG}/w500${thumbnail})`,
-                              }
+                              backgroundImage: `url(${TMDB_IMG}/w500${thumbnail})`,
+                            }
                             : undefined
                         }
                       >
@@ -855,36 +865,36 @@ export default function MyPage() {
                   <div className="mood-summary-box">
                     {(genreMoodStats.topGenre?.name !== "없음" ||
                       genreMoodStats.topMood?.tag !== "없음") && (
-                      <div>
-                        <AppIcon name="bulb" size={15} />
                         <div>
-                          주로
-                          {genreMoodStats.topGenre?.name !== "없음" && (
-                            <>
-                              {" "}
-                              <strong>
-                                {genreMoodStats.topGenre?.name}
-                              </strong>{" "}
-                              장르
-                            </>
-                          )}
-                          {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
-                          {genreMoodStats.topGenre?.name !== "없음" &&
-                            genreMoodStats.topMood?.tag !== "없음" &&
-                            "와 "}
-                          {genreMoodStats.topMood?.tag !== "없음" && (
-                            <>
-                              {" "}
-                              <strong>
-                                {genreMoodStats.topMood?.tag}
-                              </strong>{" "}
-                              분위기
-                            </>
-                          )}
-                          의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                          <AppIcon name="bulb" size={15} />
+                          <div>
+                            주로
+                            {genreMoodStats.topGenre?.name !== "없음" && (
+                              <>
+                                {" "}
+                                <strong>
+                                  {genreMoodStats.topGenre?.name}
+                                </strong>{" "}
+                                장르
+                              </>
+                            )}
+                            {/* 두 데이터가 모두 유효할 때만 '와'를 삽입 */}
+                            {genreMoodStats.topGenre?.name !== "없음" &&
+                              genreMoodStats.topMood?.tag !== "없음" &&
+                              "와 "}
+                            {genreMoodStats.topMood?.tag !== "없음" && (
+                              <>
+                                {" "}
+                                <strong>
+                                  {genreMoodStats.topMood?.tag}
+                                </strong>{" "}
+                                분위기
+                              </>
+                            )}
+                            의 컨텐츠에 깊은 몰입감을 느끼시는 편이네요!
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
               </>
