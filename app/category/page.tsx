@@ -305,6 +305,12 @@ function CategoryPageContent() {
   );
 
   const [mainTab, setMainTab] = useState<MainTab>(initialMainTab);
+
+  // 같은 /category 페이지 내에서 헤더메뉴 등으로 tab 쿼리만 바뀌는 경우
+  // (예: 애니메이션 탭 -> 시리즈 탭) mainTab state를 동기화
+  useEffect(() => {
+    setMainTab(initialMainTab);
+  }, [initialMainTab]);
   const [filterTab, setFilterTab] = useState<VisibleFilterTab>(
     initialSelected.country.length > 0 ? "country" : "genreMood",
   );
