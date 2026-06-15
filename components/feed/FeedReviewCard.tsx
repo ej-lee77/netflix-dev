@@ -9,6 +9,7 @@ import {
   type FeedView,
 } from "@/store/useFeedStore";
 import {
+  FEED_CATEGORY_LABELS,
   getInitial,
   getPosterUrl,
   getRelativeTime,
@@ -56,6 +57,7 @@ export default function FeedReviewCard({
 }: FeedReviewCardProps) {
   const router = useRouter();
   const mediaMeta = parseFeedMediaMeta(review.mediaMeta);
+  const isGeneralPost = review.postType === "general";
   const {
     user,
     currentProfile,
@@ -295,8 +297,9 @@ export default function FeedReviewCard({
               <div>
                 <h3 id="feed-comment-title">댓글</h3>
                 <p>
-                  &quot; {selectedCommentReview.mediaTitle} &quot; 게시물에 남긴
-                  의견
+                  {selectedCommentReview.mediaTitle
+                    ? `“${selectedCommentReview.mediaTitle}” 게시물에 남긴 의견`
+                    : "게시물에 남긴 의견"}
                 </p>
               </div>
               <button
@@ -427,7 +430,7 @@ export default function FeedReviewCard({
       <Link
         href={`/feed/${review.feedId}`}
         className="feed-card-link"
-        aria-label={`${review.mediaTitle} 피드 상세 보기`}
+        aria-label={`${review.mediaTitle || FEED_CATEGORY_LABELS[review.category || "daily"]} 피드 상세 보기`}
       />
 
       <div className="post-head">
@@ -453,10 +456,17 @@ export default function FeedReviewCard({
           </div>
         </div>
         <div className="review-tags">
-          <div className="desktop-card-rating">
-            {renderRatingStars(review.rating)}
-            <em>{review.rating.toFixed(1)}</em>
-          </div>
+          {isGeneralPost && review.category && (
+            <span className="feed-category-tag">
+              {FEED_CATEGORY_LABELS[review.category]}
+            </span>
+          )}
+          {!isGeneralPost && (
+            <div className="desktop-card-rating">
+              {renderRatingStars(review.rating)}
+              <em>{review.rating.toFixed(1)}</em>
+            </div>
+          )}
           {!isReviewOwner && (
             <div className="report-menu">
               <button
@@ -504,33 +514,41 @@ export default function FeedReviewCard({
         </div>
       </div>
 
-      <div className="post-body review-body">
-        <Link
-          href={`/detail/${review.mediaType}/${review.mediaId}`}
-          className="thumb feed-card-layer"
-        >
-          {review.mediaPoster && (
-            <img
-              src={getPosterUrl(review.mediaPoster)}
-              alt={review.mediaTitle}
-            />
-          )}
-        </Link>
+      <div
+        className={`post-body review-body${isGeneralPost ? " general-post-body" : ""}`}
+      >
+        {review.mediaType && review.mediaId && (
+          <Link
+            href={`/detail/${review.mediaType}/${review.mediaId}`}
+            className="thumb feed-card-layer"
+          >
+            {review.mediaPoster && (
+              <img
+                src={getPosterUrl(review.mediaPoster)}
+                alt={review.mediaTitle || ""}
+              />
+            )}
+          </Link>
+        )}
         <div className="review-info">
-          <div className="feed-detail-link">
-            <div className="feed-review-media-copy">
-              <h4>{review.mediaTitle}</h4>
-              <p className="meta meta-primary">{mediaMeta.primary}</p>
-              {mediaMeta.average && (
-                <p className="meta meta-average">{mediaMeta.average}</p>
+          {review.mediaTitle && (
+            <div className="feed-detail-link">
+              <div className="feed-review-media-copy">
+                <h4>{review.mediaTitle}</h4>
+                <p className="meta meta-primary">{mediaMeta.primary}</p>
+                {mediaMeta.average && (
+                  <p className="meta meta-average">{mediaMeta.average}</p>
+                )}
+              </div>
+              {!isGeneralPost && (
+                <div className="stars mobile-card-rating">
+                  <span className="stars-label">내 별점</span>
+                  {renderRatingStars(review.rating)}
+                  <em>{review.rating.toFixed(1)} / 5.0</em>
+                </div>
               )}
             </div>
-            <div className="stars mobile-card-rating">
-              <span className="stars-label">내 별점</span>
-              {renderRatingStars(review.rating)}
-              <em>{review.rating.toFixed(1)} / 5.0</em>
-            </div>
-          </div>
+          )}
           <div className="review-text-wrap">
             <p className="review-text">{review.content}</p>
           </div>

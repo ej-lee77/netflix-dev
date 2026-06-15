@@ -12,6 +12,8 @@
   /* 히어로 영역 */
   .category-hero {
     position: relative;
+    /* 데스크탑: 헤더 뒤까지 올라와 상단에 딱 붙음 (모바일은 아래에서 해제) */
+    margin-top: -(g.$header-height);
     height: 480px;
     margin-bottom: 40px;
     overflow: hidden;
@@ -123,6 +125,16 @@
       max-width: 600px;
       margin-bottom: 32px;
       line-height: 1.5;
+    }
+
+    /* 태블릿: 페이지 상단 패딩(16px)까지 상쇄해 상단 밀착 유지 */
+    @media (min-width: 601px) and (max-width: 1024px) {
+      margin-top: -(g.$header-height + 16px);
+    }
+
+    /* 모바일: 헤더만큼 내려와 헤더 아래에서 시작 */
+    @include g.respond(mobile) {
+      margin-top: 0;
     }
   }
 
