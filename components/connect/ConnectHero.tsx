@@ -11,6 +11,9 @@ import "./scss/connectHero.scss";
 
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
+import { useT } from "@/lib/i18n";
+import { useLangStore, type Lang } from "@/store/useLangStore";
+import { formatFivePointRating } from "@/lib/rating";
 
 const KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const IMG = "https://image.tmdb.org/t/p";
@@ -20,6 +23,13 @@ const GENRE_MAP: Record<number, string> = {
   80: "범죄", 99: "다큐", 18: "드라마", 10751: "가족",
   14: "판타지", 27: "공포", 9648: "미스터리", 10749: "로맨스",
   878: "SF", 53: "스릴러", 10759: "액션", 10765: "SF·판타지",
+};
+
+const GENRE_MAP_EN: Record<number, string> = {
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy",
+  80: "Crime", 99: "Documentary", 18: "Drama", 10751: "Family",
+  14: "Fantasy", 27: "Horror", 9648: "Mystery", 10749: "Romance",
+  878: "Sci-Fi", 53: "Thriller", 10759: "Action", 10765: "Sci-Fi & Fantasy",
 };
 
 function withParticle(title: string) {
@@ -39,7 +49,7 @@ type HeroItem = {
   logoIsVector: boolean;
   genre: string;
   ageRating: string;
-  rating: number;
+  rating: string;
   directorName: string;
   recTitle: string;
   videoKey: string | null;
@@ -54,14 +64,16 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-async function fetchHeroItems(): Promise<HeroItem[]> {
+async function fetchHeroItems(lang: Lang): Promise<HeroItem[]> {
   const NETFLIX_PROVIDER = 8;
   const EXCLUDED_TITLES = ["케이프 피어", "Cape Fear"];
+  const tmdbLang = lang === "en" ? "en-US" : "ko-KR";
+  const genreMap = lang === "en" ? GENRE_MAP_EN : GENRE_MAP;
 
   // 넷플릭스 제공 콘텐츠만 discover API로 직접 조회
   const [movieRes, tvRes] = await Promise.all([
-    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${KEY}&language=ko-KR&with_watch_providers=${NETFLIX_PROVIDER}&watch_region=KR&sort_by=popularity.desc`),
-    fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${KEY}&language=ko-KR&with_watch_providers=${NETFLIX_PROVIDER}&watch_region=KR&sort_by=popularity.desc`),
+    fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${KEY}&language=${tmdbLang}&with_watch_providers=${NETFLIX_PROVIDER}&watch_region=KR&sort_by=popularity.desc`),
+    fetch(`https://api.themoviedb.org/3/discover/tv?api_key=${KEY}&language=${tmdbLang}&with_watch_providers=${NETFLIX_PROVIDER}&watch_region=KR&sort_by=popularity.desc`),
   ]);
   const [movieData, tvData] = await Promise.all([movieRes.json(), tvRes.json()]);
 
@@ -84,7 +96,7 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
       const [detailRes, videoRes] = await Promise.all([
         fetch(
           `https://api.themoviedb.org/3/${mt}/${item.id}` +
-          `?api_key=${KEY}&language=ko-KR` +
+          `?api_key=${KEY}&language=${tmdbLang}` +
           `&append_to_response=images,${certParam},credits` +
           `&include_image_language=ko,en,null`
         ),
@@ -94,16 +106,18 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
       ]);
       const [d, vd] = await Promise.all([detailRes.json(), videoRes.json()]);
 
-      // 로고: 한국어 > 영어 > 첫 번째
+      // 로고: 현재 언어 > 보조 언어 > 첫 번째
       const logos: any[] = d.images?.logos ?? [];
+      const preferredLogoLang = lang === "en" ? "en" : "ko";
+      const fallbackLogoLang = lang === "en" ? "ko" : "en";
       const logo =
-        logos.find((l: any) => l.iso_639_1 === "ko") ||
-        logos.find((l: any) => l.iso_639_1 === "en") ||
+        logos.find((l: any) => l.iso_639_1 === preferredLogoLang) ||
+        logos.find((l: any) => l.iso_639_1 === fallbackLogoLang) ||
         logos[0] ||
         null;
 
       // 연령 등급
-      let ageRating = "전체";
+      let ageRating = lang === "en" ? "All" : "전체";
       if (mt === "movie") {
         const kr = d.release_dates?.results?.find((r: any) => r.iso_3166_1 === "KR");
         const cert = kr?.release_dates?.[0]?.certification;
@@ -136,13 +150,13 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
       return {
         id: item.id,
         mediaType: mt,
-        title: (item.title ?? item.name) as string,
+        title: (d.title ?? d.name ?? item.title ?? item.name) as string,
         backdropPath: item.backdrop_path as string,
         logoPath: logo?.file_path ?? null,
         logoIsVector: logo?.file_type === ".svg",
-        genre: GENRE_MAP[item.genre_ids?.[0]] ?? "드라마",
+        genre: genreMap[item.genre_ids?.[0]] ?? (lang === "en" ? "Drama" : "드라마"),
         ageRating,
-        rating: Math.round(item.vote_average * 10) / 10,
+        rating: formatFivePointRating(item.vote_average),
         directorName,
         recTitle: "",
         videoKey: video?.key ?? null,
@@ -162,6 +176,8 @@ async function fetchHeroItems(): Promise<HeroItem[]> {
 }
 
 export default function ConnectHero() {
+  const t = useT();
+  const lang = useLangStore((state) => state.lang);
   const router = useRouter();
 
   const { isUnsubscribed } = useSubscriptionGuard();
@@ -248,8 +264,10 @@ export default function ConnectHero() {
   }, []);
 
   useEffect(() => {
-    fetchHeroItems().then(setItems).catch(console.error);
-  }, []);
+    setItems([]);
+    setFailedLogos(new Set());
+    fetchHeroItems(lang).then(setItems).catch(console.error);
+  }, [lang]);
 
   // 슬라이드 변경 시 영상 리셋 → 2초 후 재생
   useEffect(() => {
@@ -371,7 +389,7 @@ export default function ConnectHero() {
 
             <div className="connect-hero__badge">
               <span className="connect-hero__badge-heart">♥</span>
-              취향 맞춤작
+              {lang === "en" ? "Recommended for You" : "취향 맞춤작"}
             </div>
 
             <div className="connect-hero__content">
@@ -390,15 +408,19 @@ export default function ConnectHero() {
               )}
 
               <p className="connect-hero__rec-reason">
-                {withParticle(item.recTitle)} 함께 감상된 콘텐츠
+                {lang === "en"
+                  ? `Viewers of "${item.recTitle}" also watched this`
+                  : `${withParticle(item.recTitle)} 함께 감상된 콘텐츠`}
               </p>
               {item.directorName && (
                 <p className="connect-hero__rec-director">
-                  당신이 좋아할 [{item.directorName}] 감독
+                  {lang === "en"
+                    ? `From director ${item.directorName}, picked for you`
+                    : `당신이 좋아할 [${item.directorName}] 감독`}
                 </p>
               )}
               <p className="connect-hero__meta">
-                평균 {item.rating}
+                {lang === "en" ? "Average" : "평균"} {item.rating}
                 <span className="connect-hero__dot">•</span>
                 {item.genre}
                 <span className="connect-hero__dot">•</span>
@@ -413,7 +435,7 @@ export default function ConnectHero() {
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <polygon points="5 3 19 12 5 21 5 3" />
                   </svg>
-                  재생하기
+                  {t("common.play")}
                 </button>
                 <button
                   className="connect-hero__btn-info"
@@ -425,7 +447,7 @@ export default function ConnectHero() {
                     <line x1="12" y1="16" x2="12" y2="12" />
                     <line x1="12" y1="8" x2="12.01" y2="8" />
                   </svg>
-                  상세정보
+                  {t("common.detail")}
                 </button>
               </div>
             </div>
