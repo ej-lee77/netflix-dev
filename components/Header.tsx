@@ -90,6 +90,9 @@ export default function Header() {
 
   const profiles = user?.profile || [];
   const activeProfile = currentProfile;
+  const switchableProfiles = profiles.filter(
+    (profile) => String(profile.id) !== String(currentProfile?.id),
+  );
   const isProfileRoute = Boolean(pathname?.startsWith("/profiles"));
   const shouldSelectProfile = Boolean(
     user &&
@@ -358,31 +361,29 @@ export default function Header() {
                   <div
                     className={`profile-dropdown${isProfileMenuOpen ? " open" : ""}`}
                   >
-                    <ul className="profile-switch-list">
-                      {/* 🌟 이제 profiles가 빈 배열 또는 온전한 프로필 리스트이므로 에러가 나지 않습니다. */}
-                      {profiles.map((profile) => (
-                        <li key={profile.id}>
-                          <button
-                            type="button"
-                            onClick={() => handleProfileChange(profile)}
-                          >
-                            <Image
-                              src={
-                                profile.imgUrl ??
-                                "/images/profile/image/default_icons/17.png"
-                              }
-                              alt={
-                                profile.nickname ?? profile.nickname ?? "프로필"
-                              }
-                              width={42}
-                              height={42}
-                            />
-                            {/* 데이터 스키마에 따라 nickname 혹은 name을 띄워줍니다. */}
-                            <span>{profile.nickname || profile.nickname}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                    {switchableProfiles.length > 0 && (
+                      <ul className="profile-switch-list">
+                        {switchableProfiles.map((profile) => (
+                          <li key={profile.id}>
+                            <button
+                              type="button"
+                              onClick={() => handleProfileChange(profile)}
+                            >
+                              <Image
+                                src={
+                                  profile.imgUrl ??
+                                  "/images/profile/image/default_icons/17.png"
+                                }
+                                alt={profile.nickname ?? "프로필"}
+                                width={42}
+                                height={42}
+                              />
+                              <span>{profile.nickname}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
 
                     <ul className="profile-link-list">
                       <li>

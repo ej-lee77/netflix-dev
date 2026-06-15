@@ -19,6 +19,7 @@ import { filterByMaturity, useMaturityFilterSnapshot } from "@/data/maturityFilt
 import { useSubscriptionGuard } from "@/lib/subscription";
 import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { formatFivePointRating } from "@/lib/rating";
 
 const GENRE_MAP: Record<number, string> = {
   28: '액션', 12: '모험', 16: '애니메이션', 35: '코미디', 80: '범죄',
@@ -204,7 +205,7 @@ export default function RecommendList() {
 
                 <div className="slide-meta">
                   <StarRating score={item.vote_average} />
-                  <span className="meta-score">{item.vote_average.toFixed(1)}</span>
+                  <span className="meta-score">{formatFivePointRating(item.vote_average)}</span>
                   <span className="meta-sep">|</span>
                   {item.release_date && (
                     <span className="meta-year">{item.release_date.slice(0, 4)}</span>

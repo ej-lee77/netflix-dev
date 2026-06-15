@@ -1860,12 +1860,10 @@
     width: 28px;
     height: 28px;
     padding: 0;
-    border: 0;
     background: transparent;
     color: #555;
     font-size: 28px;
     line-height: 1;
-    cursor: pointer;
 
     > span {
       display: block;
@@ -1883,11 +1881,31 @@
     &:hover > span {
       filter: brightness(1.15);
     }
+  }
+
+  .feed-half-star__hit {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 50%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
 
     &:focus-visible {
       outline: 1px solid rgba(255, 255, 255, 0.35);
       outline-offset: 2px;
     }
+  }
+
+  .feed-half-star__hit--left {
+    left: 0;
+  }
+
+  .feed-half-star__hit--right {
+    right: 0;
   }
 
   .feed-write-toggles {

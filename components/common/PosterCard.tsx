@@ -5,6 +5,7 @@ import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import "./posterCard.scss";
 import WishlistButton from "./WishlistButton";
 import ShareButton from "./ShareButton";
+import { formatFivePointRating, toFivePointRating } from "@/lib/rating";
 
 const GENRE_MAP: Record<number, string> = {
   28: "액션",
@@ -56,7 +57,7 @@ export default function PosterCard({
 }: PosterCardProps) {
   const prefetchRoute = useRoutePrefetch();
   const detailHref = `/detail/${mediaType}/${id}`;
-  const score = typeof voteAverage === "number" ? voteAverage : 0;
+  const score = toFivePointRating(voteAverage);
   const imagePath = backdropPath || posterPath;
   const genreText = genreIds
     .slice(0, 2)
@@ -92,7 +93,7 @@ export default function PosterCard({
         ) : (
           <div className="no-image">이미지 없음</div>
         )}
-        {score > 0 && <span className="rating">★ {score.toFixed(1)}</span>}
+        {score > 0 && <span className="rating">★ {formatFivePointRating(voteAverage)}</span>}
       </div>
 
       <div className="search-hover-card">
@@ -117,7 +118,7 @@ export default function PosterCard({
             {score > 0 && (
               <>
                 <span className="meta-star">★</span>
-                <span className="meta-score">{score.toFixed(1)}</span>
+                <span className="meta-score">{formatFivePointRating(voteAverage)}</span>
                 {(year || genreText) && <span className="meta-sep">|</span>}
               </>
             )}
