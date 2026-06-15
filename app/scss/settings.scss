@@ -45,6 +45,7 @@
 
   // 스크롤바 숨김
   scrollbar-width: none;
+
   &::-webkit-scrollbar {
     display: none;
   }
@@ -137,6 +138,21 @@
 .acset-row-value {
   font-size: g.$text-14;
   color: g.$main-menu-color;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acset-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: g.$text-12;
+  font-weight: 600;
+  color: g.$main-menu-color;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .acset-error {
@@ -618,14 +634,21 @@
 
 /* ===== 반응형: 사이드메뉴(nav) 좌측 여백 확보 ===== */
 @include g.respond(laptop) {
-  .acset-page { padding-left: 80px; }
+  .acset-page {
+    padding-left: 80px;
+  }
 }
+
 @include g.respond(tablet) {
   .acset-page {
     padding-left: 24px;
     padding-right: 24px;
   }
 }
+
 @include g.respond(mobile) {
-  .acset-page { padding-left: 56px; padding-right: 16px; }
+  .acset-page {
+    padding-left: 56px;
+    padding-right: 16px;
+  }
 }
