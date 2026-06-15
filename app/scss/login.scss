@@ -121,6 +121,7 @@
   padding: 48px;
   position: relative;
   z-index: 5;
+  margin-top: -81px;
 
   @media (max-width: 768px) {
     flex: 1;
@@ -182,7 +183,7 @@
   font-weight: 500;
   color: #a0a0a0;
 
-  span{
+  span {
     color: #555555;
     margin-left: 10px;
     font-weight: 400;
@@ -526,10 +527,16 @@
     transform: rotate(360deg);
   }
 }
+
 /* ===== 반응형: ≤768에서 포스터가 숨겨져 폼이 풀폭이 될 때 nav 가림 방지 ===== */
 @media (max-width: 768px) {
-  .login-page { padding-left: 64px; }
+  .login-page {
+    padding-left: 64px;
+  }
 }
+
 @media (max-width: 600px) {
-  .login-page { padding-left: 56px; }
+  .login-page {
+    padding-left: 56px;
+  }
 }
