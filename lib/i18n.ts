@@ -18,6 +18,7 @@ export const dictionary = {
     "common.login": "로그인",
     "common.logout": "로그아웃",
     "common.loading": "불러오는 중...",
+    "common.viewAll": "전체보기",
 
     // 헤더
     "header.cinema": "시네마 모드",
@@ -61,6 +62,7 @@ export const dictionary = {
     "common.login": "Sign In",
     "common.logout": "Sign Out",
     "common.loading": "Loading...",
+    "common.viewAll": "View All",
 
     // header
     "header.cinema": "Cinema Mode",
@@ -118,6 +120,68 @@ export function getTmdbLang(): string {
   return useLangStore.getState().lang === "en" ? "en-US" : "ko-KR";
 }
 
+const SECTION_TEXT_EN: Record<string, string> = {
+  "시청중": "Continue Watching",
+  "넷플릭스 화제작": "Trending on Netflix",
+  "넷플릭스 시리즈": "Netflix Series",
+  "카테고리": "Categories",
+  "공개예정 미리보기": "Coming Soon Preview",
+  "새로운 작품들을 시청해보세요": "Discover new titles coming soon",
+  "넷플릭스 추천작": "Netflix Recommendations",
+  "한국 액션 & 어드벤처 시리즈": "Korean Action & Adventure Series",
+  "아시아 시리즈": "Asian Series",
+  "일본 애니 시리즈": "Japanese Anime Series",
+  "미국 TV 프로그램": "US TV Shows",
+  "액션 영화": "Action Movies",
+  "스릴러 시리즈": "Thriller Series",
+  "한국 로맨스 시리즈": "Korean Romance Series",
+  "모험 애니메이션": "Adventure Animation",
+  "해외 다큐멘터리": "International Documentaries",
+  "판타지 영화": "Fantasy Movies",
+  "오늘 가장 많이보는 시리즈": "Most-Watched Series Today",
+  "커넥트 멤버들의 TOP 10": "Connect Members' TOP 10",
+  "추천하는 플레이리스트": "Recommended Playlists",
+  "지금 뜨는 코멘트": "Trending Comments",
+  "팔로우하는 유저": "People You Follow",
+  "취향 저격 작품": "Picks for You",
+  "팔로우 취향 저격 작품": "Picks Based on Who You Follow",
+  "나와 취향이 비슷한 유저": "People With Similar Taste",
+  "취향 매칭률이 높은 유저를 팔로우해보세요":
+    "Follow people who share your taste",
+  "지금 커넥트에서 핫한 작품": "Trending Now on Connect",
+  "지금 열린 같이보기 파티": "Open Watch Parties",
+};
+
+const SECTION_GENRE_EN: Record<string, string> = {
+  "액션": "Action",
+  "애니메이션": "Animation",
+  "코미디": "Comedy",
+  "다큐멘터리": "Documentary",
+  "드라마": "Drama",
+  "판타지": "Fantasy",
+  "공포": "Horror",
+  "미스터리": "Mystery",
+  "로맨스": "Romance",
+  "SF": "Sci-Fi",
+  "스릴러": "Thriller",
+  "전쟁": "War",
+};
+
+export function useSectionText() {
+  const lang = useLangStore((s) => s.lang);
+
+  return (text: string): string => {
+    if (lang !== "en") return text;
+
+    const favoriteGenre = text.match(/^내가 선호하는 (.+)$/)?.[1];
+    if (favoriteGenre) {
+      return `${SECTION_GENRE_EN[favoriteGenre] ?? favoriteGenre} for You`;
+    }
+
+    return SECTION_TEXT_EN[text] ?? text;
+  };
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // 사이드 메뉴 라벨 번역 (data/mainMenu.ts 의 한국어 title 을 그대로 키로 사용)
 // 데이터 구조를 안 바꾸고, 렌더 시점에 한국어 → 영어로 치환
@@ -131,6 +195,9 @@ const MENU_LABELS_EN: Record<string, string> = {
   "영화": "Movies",
   "시리즈": "Series",
   "애니메이션": "Animation",
+  "카테고리": "Categories",
+  "굿즈샵": "Shop",
+  "피드": "Feed",
   "커스텀": "Custom",
   "설정": "Settings",
   // 장르

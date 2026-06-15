@@ -9,6 +9,7 @@ import {
   type TrendingMediaItem,
 } from "@/lib/trendingContent";
 import "./trendingVideoSection.scss";
+import { formatFivePointRating } from "@/lib/rating";
 
 type TrendingVideoSectionProps = {
   items: TrendingMediaItem[];
@@ -178,7 +179,7 @@ export default function TrendingVideoSection({
               <span className="trending-video-card__body">
                 <strong>{item.title}</strong>
                 <span>
-                  ★ {item.vote_average.toFixed(1)}
+                  ★ {formatFivePointRating(item.vote_average)}
                   {year && ` · ${year}`}
                 </span>
               </span>

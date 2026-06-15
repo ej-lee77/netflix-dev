@@ -69,6 +69,9 @@ export default function MobileDrawer({
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
   const profiles = user?.profile ?? [];
+  const switchableProfiles = profiles.filter(
+    (profile) => String(profile.id) !== String(currentProfile?.id),
+  );
   const homeMenu = mainMenus.find((menu) => menu.path === "/");
   const queryString = searchParams.toString();
   const currentUrl = queryString ? `${pathname}?${queryString}` : pathname;
@@ -466,13 +469,13 @@ export default function MobileDrawer({
           >
             <div className="profile-modal__handle" />
 
-            {profiles.length > 0 && (
+            {switchableProfiles.length > 0 && (
               <ul className="profile-modal__switch-list">
-                {profiles.map((profile) => (
+                {switchableProfiles.map((profile) => (
                   <li key={profile.id}>
                     <button
                       type="button"
-                      className={`profile-modal__switch-btn${profile.id === currentProfile?.id ? " active" : ""}`}
+                      className="profile-modal__switch-btn"
                       onClick={() => handleProfileSelect(profile)}
                     >
                       <Image
@@ -486,21 +489,6 @@ export default function MobileDrawer({
                         className="profile-modal__switch-img"
                       />
                       <span>{profile.nickname}</span>
-                      {profile.id === currentProfile?.id && (
-                        <svg
-                          className="profile-modal__check"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      )}
                     </button>
                   </li>
                 ))}
