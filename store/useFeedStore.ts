@@ -1,6 +1,7 @@
 import { auth, db } from "@/firebase/firebase";
 import {
   FeedReview,
+  type FeedCategory,
   INITIAL_REVIEW_COMMENTS,
   INITIAL_REVIEWS,
   SEED_AUTHOR_NAMES,
@@ -57,9 +58,9 @@ export interface FeedView extends FeedReview {
   authorEquippedBadge?: string; // 작성자의 대표 칭호(장착 뱃지) ID
   isMine: boolean;
   isFollowing: boolean;
-  mediaId: number;
-  mediaType: MediaType;
-  mediaTitle: string;
+  mediaId?: number;
+  mediaType?: MediaType;
+  mediaTitle?: string;
   mediaPoster?: string;
   mediaMeta: string;
   liked: boolean;
@@ -380,6 +381,10 @@ const normalizeFeed = (feedId: string, data: FirestoreRecord): FeedReview => ({
   feedId,
   userId: readString(data, "userId"),
   videoId: readString(data, "videoId"),
+  postType: readString(data, "postType") === "general" ? "general" : "media",
+  category: (readString(data, "category") || undefined) as
+    | FeedCategory
+    | undefined,
   content: readString(data, "content"),
   likesCount: readNumber(data, "likesCount"),
   reportsCount: readNumber(data, "reportsCount"),
@@ -420,7 +425,9 @@ const buildFeedView = async (
   currentUserId?: string,
   followingIds: string[] = [],
 ): Promise<FeedView> => {
-  const media = await getMediaDetail(review.videoId);
+  const media = review.videoId
+    ? await getMediaDetail(review.videoId)
+    : null;
   const likedUserIds = review.likedUserIds || [];
   const currentProfileId = useAuthStore.getState().currentProfile?.id;
   const currentActorId = currentUserId && currentProfileId ? `${currentUserId}:${currentProfileId}` : currentUserId;
@@ -443,11 +450,11 @@ const buildFeedView = async (
       (!review.profileId || review.profileId === currentProfileId)
     ),
     isFollowing: followingIds.includes(review.userId),
-    mediaId: media.id,
-    mediaType: media.mediaType,
-    mediaTitle: media.title,
-    mediaPoster: media.posterPath,
-    mediaMeta: media.meta,
+    mediaId: media?.id,
+    mediaType: media?.mediaType,
+    mediaTitle: media?.title,
+    mediaPoster: media?.posterPath,
+    mediaMeta: media?.meta || "",
     liked: Boolean(currentActorId && likedUserIds.includes(currentActorId)),
     likedUserIds,
     comments: commentsList.length,
@@ -608,7 +615,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       feedId, // 생성한 ID 포함
       userId,
       profileId: currentProfile.id,
-      videoId: review.videoId,
+      videoId: review.videoId || "",
+      postType: review.postType || "media",
+      ...(review.category ? { category: review.category } : {}),
       content: review.content,
       likesCount: 0,
       reportsCount: 0,
@@ -659,7 +668,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const authorUserFeedsRef = doc(db, "userFeeds", review.userId || userId);
     
     const updatedFields = {
-      videoId: review.videoId,
+      videoId: review.videoId || "",
+      postType: review.postType || "media",
+      category: review.category || null,
       content: review.content,
       rating: review.rating,
       isSpoiler: review.isSpoiler,

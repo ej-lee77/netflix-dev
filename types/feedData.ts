@@ -6,6 +6,22 @@ import { FeedComment } from "@/types/community";
 
 export type FeedTab = "all" | "following";
 export type MediaType = "movie" | "tv";
+export type FeedPostType = "general" | "media";
+export type FeedCategory =
+  | "recommendation"
+  | "discussion"
+  | "question"
+  | "daily"
+  | "watch-party";
+
+export const FEED_CATEGORY_LABELS: Record<FeedCategory, string> = {
+  // 기존에 저장된 작품추천 게시물 호환용
+  recommendation: "작품",
+  discussion: "토론",
+  question: "질문",
+  daily: "일상",
+  "watch-party": "같이보기",
+};
 
 // export interface FeedComment extends CommunityFeedComment {
 //   profileId?: number;
@@ -16,9 +32,12 @@ export type MediaType = "movie" | "tv";
 
 export interface FeedReview extends Omit<
   CommunityFeedDocument,
-  "comments" | "feedId"
+  "comments" | "feedId" | "videoId"
 > {
   feedId?: string;
+  postType?: FeedPostType;
+  category?: FeedCategory;
+  videoId?: string;
   profileId?: number;
   rating: number;
   isSpoiler: boolean;
