@@ -18,6 +18,7 @@ import { convertToMedia } from "../wishlist/page";
 import { PlaylistDocument } from "@/types/playList";
 import Image from "next/image";
 import MobileFilterAccordion from "@/components/mypage/MobileFilterAccordion";
+import PlaylistCreateModal from "@/components/playlist/PlaylistCreateModal";
 
 type ActivityTab = "watching" | "history" | "wishlist" | "reviews" | "playlists";
 type FilterType = "all" | "movie" | "tv" | "animation";
@@ -96,7 +97,6 @@ function ActivityContent() {
     onRemovePlayList,
     onRemoveMyList,
     onRemovePlayHist,
-    createMyCustomPlaylist,
     fetchMyCustomPlaylists,
     updateCustomPlaylist,
     deleteCustomPlaylist
@@ -116,10 +116,6 @@ function ActivityContent() {
   const [playlistSort, setPlaylistSort] = useState<WishSortType>("recent");
   const [playlistSortOpen, setPlaylistSortOpen] = useState(false);
   const [wishLoading, setWishLoading] = useState(true);
-  const [playlistTitle, setPlaylistTitle] = useState("");
-  const [playlistDescription, setPlaylistDescription] = useState("");
-  const [selectedMoodTags, setSelectedMoodTags] = useState<string[]>([]);
-  const [playlistIsPublic, setPlaylistIsPublic] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectionPage, setSelectionPage] = useState(1);
   const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
@@ -401,56 +397,9 @@ function ActivityContent() {
     ));
   };
 
-  const toggleMoodTag = (tag: string) => {
-    setSelectedMoodTags((prev) => (
-      prev.includes(tag)
-        ? prev.filter((item) => item !== tag)
-        : [...prev, tag]
-    ));
-  };
-
-  const handleCreatePlaylist = async () => {
-    const title = playlistTitle.trim();
-    const description = playlistDescription.trim();
-    
-    // 입력값 유효성 검사
-    if (!title || selectedKeys.length === 0) {
-        showToast("제목과 최소 하나 이상의 영상을 선택해주세요.");
-        return;
-    }
-
-    try {
-        // 스토어의 addPlaylist 메서드 호출 (파이어베이스 저장 + 상태 갱신)
-        await createMyCustomPlaylist({
-            name: title,
-            content: description,
-            videoIds: selectedKeys,
-            isShare: playlistIsPublic,
-            tags: selectedMoodTags,
-        });
-
-        // 성공 시 폼 초기화 및 닫기
-        setPlaylistTitle("");
-        setPlaylistDescription("");
-        setSelectedMoodTags([]);
-        setPlaylistIsPublic(false);
-        setSelectedKeys([]);
-        setSelectionPage(1);
-        setCreatePlaylistOpen(false);
-        showToast("플레이리스트가 생성되었습니다.");
-    } catch (error) {
-        console.error("생성 중 에러 발생:", error);
-        showToast("플레이리스트 저장에 실패했습니다. 다시 시도해주세요.");
-    }
-  };
-
   const openCreatePlaylistModal = () => {
     if (selectedKeys.length === 0) return;
     setCreatePlaylistOpen(true);
-  };
-
-  const closeCreatePlaylistModal = () => {
-    setCreatePlaylistOpen(false);
   };
 
   const handleDeletePlaylist = async (playlistId: string) => {
@@ -722,130 +671,6 @@ function ActivityContent() {
                 disabled={!modifyTitle.trim() || modifyItemKeys.length === 0}
               >
                 저장
-              </button>
-            </div>
-          </form>
-        </section>
-      </div>
-    );
-  };
-
-  const renderCreatePlaylistModal = () => {
-    if (!createPlaylistOpen) return null;
-
-    return (
-      <div
-        className="modify-playlist-backdrop"
-        role="presentation"
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) {
-            closeCreatePlaylistModal();
-          }
-        }}
-      >
-        <section
-          className="modify-playlist-modal create-playlist-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-playlist-title"
-        >
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              handleCreatePlaylist();
-            }}
-          >
-            <div className="modify-playlist-head">
-              <div>
-                <div className="title-area">
-                  <img src="/images/playlist/playlist-icon.svg" alt="." />
-                  <h3 id="create-playlist-title">플레이리스트 만들기</h3>
-                </div>
-
-                <p>{selectedItems.length}개 작품으로 새 플레이리스트를 만들어요</p>
-              </div>
-              <button
-                type="button"
-                className="modify-close-btn"
-                onClick={closeCreatePlaylistModal}
-                aria-label="만들기 창 닫기"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="create-selected-strip" aria-label="선택된 콘텐츠">
-              {detailedSelectedItems.slice(0, 6).map((item) => (
-                <span key={item.id}> {/* 여기서 item은 이제 객체입니다 */}
-                  {item.poster_path && (
-                    <img src={getPosterUrl(item.poster_path)} alt={item.title} />
-                  )}
-                </span>
-              ))}
-              {selectedItems.length > 6 && <em>+{selectedItems.length - 6}</em>}
-            </div>
-
-            <div className="modify-field-stack">
-              <label>
-                <span>제목</span>
-                <input
-                  type="text"
-                  value={playlistTitle}
-                  onChange={(event) => setPlaylistTitle(event.target.value)}
-                  placeholder="플레이리스트 이름"
-                />
-              </label>
-
-              <label>
-                <span>설명</span>
-                <textarea
-                  value={playlistDescription}
-                  onChange={(event) => setPlaylistDescription(event.target.value)}
-                  placeholder="플레이리스트 설명"
-                />
-              </label>
-            </div>
-
-            <div className="modify-section">
-              <strong>무드 태그</strong>
-              <div className="modify-mood-tags">
-                {PLAYLIST_MOOD_TAGS.map((mood) => (
-                  <button
-                    type="button"
-                    key={mood.path}
-                    className={selectedMoodTags.includes(mood.title) ? "active" : ""}
-                    onClick={() => toggleMoodTag(mood.title)}
-                  >
-                    <img src={mood.imgUrl} alt="" />
-                    {mood.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="modify-section">
-              <strong>피드 공개 여부</strong>
-              <button
-                type="button"
-                className={playlistIsPublic ? "modify-visibility-toggle active" : "modify-visibility-toggle"}
-                onClick={() => setPlaylistIsPublic((value) => !value)}
-                aria-pressed={playlistIsPublic}
-              >
-                {/* {playlistIsPublic ? "피드 공개" : "비공개"} */}
-                피드 공개
-              </button>
-            </div>
-
-            <div className="modify-actions">
-              <button type="button" className="modify-cancel-btn" onClick={closeCreatePlaylistModal}>
-                취소
-              </button>
-              <button
-                type="submit"
-                className="modify-save-btn"
-                disabled={!playlistTitle.trim() || selectedKeys.length === 0}
-              >
-                만들기
               </button>
             </div>
           </form>
@@ -1457,7 +1282,20 @@ function ActivityContent() {
         {activeTab === "history" && renderHistory()}
         {/* {activeTab === "wishlist" && renderWishlist()} */}
         {activeTab === "playlists" && renderPlaylists()}
-        {renderCreatePlaylistModal()}
+        <PlaylistCreateModal
+          open={createPlaylistOpen}
+          videoIds={selectedKeys}
+          previewItems={detailedSelectedItems.map((item) => ({
+            id: getItemKey(item),
+            posterPath: item.poster_path,
+            title: item.title,
+          }))}
+          onClose={() => setCreatePlaylistOpen(false)}
+          onCreated={() => {
+            setSelectedKeys([]);
+            setSelectionPage(1);
+          }}
+        />
         {renderModifyCard()}
       </div>
     </div>
