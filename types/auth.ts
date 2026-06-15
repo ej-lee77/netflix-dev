@@ -143,6 +143,7 @@ export interface PayInfo {
   num: string; //카드번호, 계좌번호, 핸드폰번호
   payDate: string; //카드 유효기간이랑 cvc 같이 저장 -로 연결
   nextDate: string; //다음 결제일
+  lastPlanType?: string; //해지 전 마지막 플랜 (basic/standard/premium)
 }
 
 export interface UserDocument {
