@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
                 <strong className="verify-email">{email}</strong> 으로 비밀번호 재설정 메일을 발송했습니다.
               </p>
 
-              <div className="verify-info-box">
+              {/* <div className="verify-info-box">
                 <p className="verify-info-text">
                   메일의 링크에서 새 비밀번호를 설정하면<br />
                   자동으로 로그인 화면으로 이동합니다.
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              <p className="verify-spam-hint">메일이 오지 않으면 스팸 폴더를 확인해주세요.</p>
+              <p className="verify-spam-hint">메일이 오지 않으면 스팸 폴더를 확인해주세요.</p> */}
             </div>
           ) : (
             <>
@@ -154,7 +154,13 @@ export default function ForgotPasswordPage() {
           )}
 
           <div className="form-options" style={{ justifyContent: "center", marginTop: "20px" }}>
-            <Link href="/login" className="forgot-link">로그인으로 돌아가기</Link>
+            <Link
+              href="/login"
+              className="login-btn"
+              style={{ display: "block", textAlign: "center", textDecoration: "none", lineHeight: "27px" }}
+            >
+              로그인으로 돌아가기
+            </Link>
           </div>
         </div>
       </section>
