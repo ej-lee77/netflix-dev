@@ -87,9 +87,9 @@ function AlarmContent() {
   // 🌟 [추가] 탭 클릭 시 URL의 Query String도 매끄럽게 교체해주는 핸들러
   const handleTabChange = (targetTab: FilterType) => {
     if (targetTab === "all") {
-      router.push("/alarm"); // 전체 탭은 깔끔하게 파라미터 제거
+      router.replace("/alarm"); // 탭 전환은 뒤로가기 히스토리에 쌓지 않음
     } else {
-      router.push(`/alarm?tab=${targetTab}`);
+      router.replace(`/alarm?tab=${targetTab}`);
     }
   };
 

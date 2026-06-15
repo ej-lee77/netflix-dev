@@ -50,6 +50,17 @@ export const dictionary = {
     "home.top10": "오늘의 넷플릭스 TOP 10",
     "home.koreanSeries": "한국 시리즈 TOP 10",
     "home.koreanVariety": "오늘의 대한민국 TOP 10 예능",
+
+    // 무드 배너(홈) / 무드 큐레이션 히어로
+    "mood.banner.eyebrow": "오늘 어떤 기분이에요?",
+    "mood.banner.titlePre": "지금 기분에 딱 맞는 ",
+    "mood.banner.titleAccent": "분위기",
+    "mood.banner.titlePost": " 골라보기",
+    "mood.banner.desc": "내 감정을 선택하면 딱 맞는 콘텐츠를 추천해드려요",
+    "mood.curation.eyebrow": "MOOD CURATION",
+    "mood.curation.titleLine1": "지금 기분에 딱 맞는",
+    "mood.curation.titleAccent": "분위기로 골라보기",
+    "mood.curation.desc": "오늘의 무드를 선택하면, 그에 어울리는 작품들을 큐레이션해드려요",
   },
   en: {
     // common / buttons
@@ -94,6 +105,17 @@ export const dictionary = {
     "home.top10": "Today's Netflix TOP 10",
     "home.koreanSeries": "Korean Series TOP 10",
     "home.koreanVariety": "Korea's TOP 10 Variety Shows Today",
+
+    // mood banner (home) / mood curation hero
+    "mood.banner.eyebrow": "How are you feeling today?",
+    "mood.banner.titlePre": "Find the perfect ",
+    "mood.banner.titleAccent": "mood",
+    "mood.banner.titlePost": " for right now",
+    "mood.banner.desc": "Pick how you feel and we'll recommend content that fits",
+    "mood.curation.eyebrow": "MOOD CURATION",
+    "mood.curation.titleLine1": "Find your perfect",
+    "mood.curation.titleAccent": "mood for right now",
+    "mood.curation.desc": "Choose today's mood and we'll curate works that match it",
   },
 } as const;
 
