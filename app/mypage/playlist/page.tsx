@@ -620,14 +620,14 @@ function ActivityContent() {
               </div>
 
               <div className="modify-section">
-                <strong>피드 공개 여부</strong>
+                <strong>커뮤니티 공개 여부</strong>
                 <button
                   type="button"
                   className={modifyIsPublic ? "modify-visibility-toggle active" : "modify-visibility-toggle"}
                   onClick={() => setModifyIsPublic((value) => !value)}
                   aria-pressed={modifyIsPublic}
                 >
-                  피드 공개
+                  커뮤니티 공개
                 </button>
               </div>
 
@@ -997,7 +997,7 @@ function ActivityContent() {
           <div className="playlist-extra-area">
             <p>{playlistItems.length}개 작품</p>
             <span className={playlist.isShare ? "playlist-visibility public" : "playlist-visibility"}>
-              {playlist.isShare ? "피드 공개" : "비공개"}
+              {playlist.isShare ? "커뮤니티 공개" : "비공개"}
             </span>
           </div>
         </Link>
