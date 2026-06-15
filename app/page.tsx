@@ -76,14 +76,14 @@ const THEME_CONFIGS: { title: string; apiUrl: string; mediaType: "movie" | "tv";
     href: "/category?type=tv&genres=thriller",
   },
   {
-    title: "한국 로맨스 시리즈",
-    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ko&with_genres=10749&sort_by=popularity.desc",
+    title: "한국 판타지 시리즈",
+    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ko&with_genres=10765&sort_by=popularity.desc",
     mediaType: "tv",
-    href: "/category?type=tv&countries=kr&genres=romance",
+    href: "/category?type=tv&countries=kr&genres=fantasy",
   },
   {
     title: "모험 애니메이션",
-    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=878%2C10759&sort_by=popularity.desc",
+    apiUrl: "https://api.themoviedb.org/3/discover/tv?language=ko-KR&with_original_language=ja&with_genres=16%10765&sort_by=popularity.desc",
     mediaType: "tv",
     pageCount: 3,
     href: "/category?type=animation&genres=scifi",
@@ -170,6 +170,14 @@ async function fetchThemeItems(apiUrl: string, mediaType: "movie" | "tv", pageCo
     genre_ids: item.genre_ids ?? [],
     mediaType,
   }));
+
+  rawItems.sort((a, b) => {
+    const dateA = a.release_date ? new Date(a.release_date).getTime() : 0;
+    const dateB = b.release_date ? new Date(b.release_date).getTime() : 0;
+    
+    // 최근 날짜가 더 큰 숫자(밀리초)를 가지므로 b - a 순으로 정렬
+    return dateB - dateA;
+  });
 
   // 모든 아이템의 연령 정보를 병렬로 fetch
   return rawItems;
