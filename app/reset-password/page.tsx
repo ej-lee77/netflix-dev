@@ -25,11 +25,22 @@ function ResetPasswordContent() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 비밀번호 변경 완료를 원래 탭(forgot-password)에 알리고 이 창은 닫는다
+  const notifyDoneAndClose = () => {
+    try {
+      window.localStorage.setItem("password-reset-done", String(Date.now()));
+    } catch {
+      // localStorage 접근 불가 시 무시
+    }
+    setStatus("done");
+    window.close();
+  };
+
   useEffect(() => {
     if (!oobCode) {
       // Firebase 기본 페이지의 "계속" 버튼이 continueUrl로 파라미터 없이
       // 넘어온 경우 → 비밀번호 변경이 이미 완료된 것으로 간주
-      router.replace("/login");
+      notifyDoneAndClose();
       return;
     }
 
@@ -54,9 +65,9 @@ function ResetPasswordContent() {
       .catch(() => {
         // Firebase 기본 비밀번호 재설정 페이지에서 이미 oobCode가 소모된
         // 상태로 "계속" 버튼을 통해 넘어온 경우 → 변경이 이미 완료된 것으로 간주
-        router.replace("/login");
+        notifyDoneAndClose();
       });
-  }, [oobCode, mode, router]);
+  }, [oobCode, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,15 +213,19 @@ function ResetPasswordContent() {
             <>
               <h2 className="login-title">비밀번호 변경<br />완료</h2>
               <p className="login-subtitle">
-                비밀번호가 안전하게 변경되었어요. 새 비밀번호로 다시
-                로그인해 주세요.
+                비밀번호가 안전하게 변경되었어요. 이 창은 닫으셔도 되고,
+                기존에 열려있던 화면에서 자동으로 로그인 화면으로
+                이동합니다.
               </p>
               <button
                 type="button"
                 className="login-btn"
-                onClick={() => router.push("/login")}
+                onClick={() => {
+                  window.close();
+                  router.push("/login");
+                }}
               >
-                로그인 화면으로 돌아가기
+                창 닫기 / 로그인으로 이동
               </button>
             </>
           )}

@@ -61,6 +61,11 @@ export default function ForgotPasswordPage() {
         url: `${window.location.origin}/reset-password`,
         handleCodeInApp: true,
       });
+      try {
+        window.localStorage.removeItem("password-reset-done");
+      } catch {
+        // localStorage 접근 불가 시 무시
+      }
       setIsSent(true);
     } catch (err: unknown) {
       const errorCode =
