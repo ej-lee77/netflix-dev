@@ -99,41 +99,11 @@ export default function TrendingVideoSection({
         {items.map((item) => {
           const itemKey = getItemKey(item);
           const year = getTrendingYear(item);
-
-          if (disableVideo) {
-            return (
-              <Link
-                href={`/detail/${item.media_type}/${item.id}`}
-                className="trending-poster-card"
-                key={itemKey}
-                onClick={onSelect}
-              >
-                {item.poster_path ? (
-                  <Image
-                    src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                    alt={item.title}
-                    fill
-                    sizes="(max-width: 600px) 33vw, 200px"
-                    style={{ objectFit: "cover" }}
-                  />
-                ) : (
-                  <span className="trending-poster-card__empty">🎬</span>
-                )}
-                <span className="trending-poster-card__badge">
-                  {item.media_type === "tv" ? "시리즈" : "영화"}
-                </span>
-                <span className="trending-poster-card__info">
-                  <strong>{item.title}</strong>
-                  {year && <span>{year}</span>}
-                </span>
-              </Link>
-            );
-          }
-
           const trailerKey = trailerKeys[itemKey];
           const hasLoadedTrailer = itemKey in trailerKeys;
-          const isTrailerActive = activeItemKey === itemKey && Boolean(trailerKey);
-          const isPreviewActive = activeItemKey === itemKey;
+          const isTrailerActive =
+            !disableVideo && activeItemKey === itemKey && Boolean(trailerKey);
+          const isPreviewActive = !disableVideo && activeItemKey === itemKey;
           const stillPath = item.backdrop_path || item.poster_path;
           const stillSize = item.backdrop_path ? "w780" : "w342";
 
@@ -167,9 +137,11 @@ export default function TrendingVideoSection({
                 ) : (
                   <em>이미지 없음</em>
                 )}
-                <span className="trending-video-card__play" aria-hidden="true">
-                  ▶
-                </span>
+                {!disableVideo && (
+                  <span className="trending-video-card__play" aria-hidden="true">
+                    ▶
+                  </span>
+                )}
                 {isPreviewActive && !isTrailerActive && (
                   <span className="trending-video-card__status">
                     {hasLoadedTrailer ? "트레일러 준비중" : "트레일러 불러오는 중"}
