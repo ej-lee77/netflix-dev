@@ -14,6 +14,8 @@ import { useSubscribeModalStore } from "@/store/useSubscribeModalStore";
 import { useT } from "@/lib/i18n";
 import { useLangStore, type Lang } from "@/store/useLangStore";
 import { formatFivePointRating } from "@/lib/rating";
+import WishlistButton from "@/components/common/WishlistButton";
+import ShareButton from "@/components/common/ShareButton";
 
 const KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const IMG = "https://image.tmdb.org/t/p";
@@ -45,11 +47,14 @@ type HeroItem = {
   mediaType: "movie" | "tv";
   title: string;
   backdropPath: string;
+  posterPath: string | null;
   logoPath: string | null;
   logoIsVector: boolean;
   genre: string;
+  genreIds: number[];
   ageRating: string;
   rating: string;
+  voteAverage: number;
   directorName: string;
   recTitle: string;
   videoKey: string | null;
@@ -152,11 +157,16 @@ async function fetchHeroItems(lang: Lang): Promise<HeroItem[]> {
         mediaType: mt,
         title: (d.title ?? d.name ?? item.title ?? item.name) as string,
         backdropPath: item.backdrop_path as string,
+        posterPath: (d.poster_path ?? item.poster_path ?? null) as string | null,
         logoPath: logo?.file_path ?? null,
         logoIsVector: logo?.file_type === ".svg",
         genre: genreMap[item.genre_ids?.[0]] ?? (lang === "en" ? "Drama" : "드라마"),
+        genreIds:
+          item.genre_ids ??
+          (d.genres ?? []).map((genre: { id: number }) => genre.id),
         ageRating,
         rating: formatFivePointRating(item.vote_average),
+        voteAverage: item.vote_average ?? d.vote_average ?? 0,
         directorName,
         recTitle: "",
         videoKey: video?.key ?? null,
@@ -449,6 +459,27 @@ export default function ConnectHero() {
                   </svg>
                   {t("common.detail")}
                 </button>
+                <WishlistButton
+                  item={{
+                    id: item.id,
+                    title: item.mediaType === "movie" ? item.title : undefined,
+                    name: item.mediaType === "tv" ? item.title : undefined,
+                    poster_path: item.posterPath,
+                    backdrop_path: item.backdropPath,
+                    vote_average: item.voteAverage,
+                    genre_ids: item.genreIds,
+                    media_type: item.mediaType,
+                  }}
+                  mediaType={item.mediaType}
+                  className="hero-wish"
+                  stopPropagation
+                />
+                <ShareButton
+                  mediaType={item.mediaType}
+                  id={item.id}
+                  className="hero-wish"
+                  stopPropagation
+                />
               </div>
             </div>
 
