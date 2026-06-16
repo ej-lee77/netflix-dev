@@ -358,8 +358,8 @@ export default function UserDetailPage() {
     };
   }, [target, ID_MAP]);
 
-  console.log(target)
-  console.log(genreMoodStats)
+  // console.log(target)
+  // console.log(genreMoodStats)
   // const genreMoodStats = useMemo(() => {
   //   const s = (target?.movies?.genreStats || {}) as Record<string, number>;
   //   const total = Object.values(s).reduce((a, b) => a + b, 0);

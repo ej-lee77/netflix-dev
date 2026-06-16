@@ -13,6 +13,7 @@ import { db } from "@/firebase/firebase";
 import RepBadge from "@/components/common/RepBadge";
 import "../../../scss/playlistDetail.scss";
 import { showToast } from "@/store/useToastStore";
+import BackButton from "@/components/common/BackButton";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
 
@@ -154,6 +155,7 @@ export default function PlaylistPage() {
 
       {/* 플레이리스트 정보 */}
       <div className="pl-body">
+        <BackButton fallback="/connect" />
         <h1 className="pl-title">{currentPlaylist.name}</h1>
         {currentPlaylist.content && <p className="pl-desc">{currentPlaylist.content}</p>}
 
