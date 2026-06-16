@@ -405,7 +405,7 @@ export default function HeaderSearchOverlay({
             title={previewSectionTitle}
             variant="overlay"
             onSelect={onClose}
-            disableVideo={isMobile}
+            disableVideo
           />
         </div>
       </div>
