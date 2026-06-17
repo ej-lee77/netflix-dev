@@ -17,6 +17,29 @@ import "swiper/css/navigation";
 import "./scss/connectSection.scss";
 import "./scss/connectFriendReactions.scss";
 
+const renderRatingStars = (rating: number) => {
+  const normalizedRating = Math.max(0, Math.min(5, rating));
+
+  return (
+    <span className="cfr-stars" aria-label={`${normalizedRating.toFixed(1)}점`}>
+      {Array.from({ length: 5 }, (_, i) => {
+        const fillPercent = Math.max(0, Math.min(1, normalizedRating - i)) * 100;
+
+        return (
+          <span
+            key={i}
+            className="star"
+            style={{ "--cfr-star-fill": `${fillPercent}%` } as React.CSSProperties}
+            aria-hidden="true"
+          >
+            ★
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
 export default function ConnectFriendReactions() {
   const swiperRef = useRef<SwiperType | null>(null);
   const [swiperKey, setSwiperKey] = useState(0);
@@ -80,9 +103,7 @@ export default function ConnectFriendReactions() {
               861: { spaceBetween: 24 },
             }}
           >
-            {visibleFeeds.map((item) => {
-              const filledStars = Math.round(item.rating / 2);
-              return (
+            {visibleFeeds.map((item) => (
                 <SwiperSlide className="connect-friend-reactions__slide" key={item.feedId}>
                   <Link
                     href={`/feed/${item.feedId}`}
@@ -102,11 +123,7 @@ export default function ConnectFriendReactions() {
                           )}
                           <span className="cfr-nickname">{item.author}</span>
                         </div>
-                        <span className="cfr-stars" aria-label={`${filledStars}점`}>
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <span key={i} className={i < filledStars ? "star filled" : "star empty"}>★</span>
-                          ))}
-                        </span>
+                        {renderRatingStars(item.rating)}
                       </div>
 
                       {/* 중단: 포스터 + 제목 + 리뷰 */}
@@ -139,8 +156,7 @@ export default function ConnectFriendReactions() {
                     </article>
                   </Link>
                 </SwiperSlide>
-              );
-            })}
+              ))}
           </Swiper>
         </div>
       </div>
