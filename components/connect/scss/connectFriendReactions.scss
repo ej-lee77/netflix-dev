@@ -159,10 +159,19 @@
   flex-shrink: 0;
 
   .star {
+    position: relative;
     font-size: 14px;
     line-height: 1;
-    &.filled { color: #f5a623; }
-    &.empty  { color: rgba(255, 255, 255, 0.2); }
+    color: rgba(255, 255, 255, 0.2);
+
+    &::before {
+      content: "★";
+      position: absolute;
+      inset: 0;
+      width: var(--cfr-star-fill, 0%);
+      overflow: hidden;
+      color: #f5a623;
+    }
   }
 }
 
