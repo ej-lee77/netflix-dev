@@ -257,6 +257,19 @@ export const BADGE_LIST: Badge[] = [
   }
 ];
 
+const BADGE_ALIASES: Record<string, string> = {
+  genre_sf: "genre_scifi",
+};
+
+export function resolveBadge(badge?: string | null): Badge | undefined {
+  if (!badge) return undefined;
+
+  const normalizedBadge = BADGE_ALIASES[badge] ?? badge;
+  return BADGE_LIST.find(
+    (item) => item.id === normalizedBadge || item.name === normalizedBadge,
+  );
+}
+
 type BadgeMap = { [key: string]: string };
 
 // 2. 변환 로직

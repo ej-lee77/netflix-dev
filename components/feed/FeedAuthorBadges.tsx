@@ -1,18 +1,16 @@
 import Image from "next/image";
-import { BADGE_LIST } from "@/data/badge";
+import { resolveBadge } from "@/data/badge";
 
 interface FeedAuthorBadgesProps {
   badgeIds?: string[];
 }
-
-const badgeMap = new Map(BADGE_LIST.map((badge) => [badge.id, badge]));
 
 export default function FeedAuthorBadges({
   badgeIds = [],
 }: FeedAuthorBadgesProps) {
   const badges = badgeIds
     .slice(0, 1)
-    .map((badgeId) => badgeMap.get(badgeId))
+    .map((badgeId) => resolveBadge(badgeId))
     .filter((badge) => badge !== undefined);
 
   if (badges.length === 0) return null;
