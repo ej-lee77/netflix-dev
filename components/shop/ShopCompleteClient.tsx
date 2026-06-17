@@ -15,7 +15,7 @@ export default function ShopCompleteClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="교환 완료" />
+        <ShopTopBar title="포인트 사용 완료" />
 
         <div className="shop-complete">
           <div className="shop-complete__circle" aria-hidden>
@@ -23,9 +23,9 @@ export default function ShopCompleteClient() {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 className="shop-complete__title">교환이 완료되었어요!</h2>
+          <h2 className="shop-complete__title">포인트 사용이 완료되었어요!</h2>
           <p className="shop-complete__sub">
-            포인트로 굿즈를 교환하고 배송비 결제가 완료됐어요.<br />
+            포인트로 굿즈를 신청하고 배송비 결제가 완료됐어요.<br />
             배송 준비가 시작되면 알려드릴게요.
           </p>
           {(used > 0 || ship > 0) && (
@@ -40,7 +40,7 @@ export default function ShopCompleteClient() {
               쇼핑 계속하기
             </button>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop/orders")}>
-              교환내역 보기
+              포인트 사용내역 보기
             </button>
           </div>
         </div>

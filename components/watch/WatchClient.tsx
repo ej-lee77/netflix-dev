@@ -1255,41 +1255,48 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                     추천 작품을 불러오는 중…
                   </div>
                 )}
-                {related.map((item) => (
-                  <button
+                {related.map((item) => {
+                  const isPartyPick =
+                    selectedPartyMedia?.id === item.id &&
+                    selectedPartyMedia?.media_type === item.media_type;
+                  return (
+                  <div
                     key={`${item.media_type}-${item.id}`}
-                    type="button"
-                    aria-pressed={
-                      selectedPartyMedia?.id === item.id &&
-                      selectedPartyMedia?.media_type === item.media_type
-                    }
-                    onClick={() => setSelectedPartyMedia(item)}
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      textAlign: "left",
-                      background:
-                        selectedPartyMedia?.id === item.id &&
-                        selectedPartyMedia?.media_type === item.media_type
-                          ? "rgba(229,9,20,0.1)"
-                          : "transparent",
-                      border:
-                        selectedPartyMedia?.id === item.id &&
-                        selectedPartyMedia?.media_type === item.media_type
-                          ? "1px solid rgba(229,9,20,0.75)"
-                          : "1px solid #222",
+                      background: isPartyPick
+                        ? "rgba(229,9,20,0.1)"
+                        : "transparent",
+                      border: isPartyPick
+                        ? "1px solid rgba(229,9,20,0.75)"
+                        : "1px solid #222",
                       borderRadius: 10,
-                      padding: 0,
-                      cursor: "pointer",
                       color: "#eee",
                       overflow: "hidden",
-                      boxShadow:
-                        selectedPartyMedia?.id === item.id &&
-                        selectedPartyMedia?.media_type === item.media_type
-                          ? "0 0 0 1px rgba(229,9,20,0.18)"
-                          : "none",
+                      boxShadow: isPartyPick
+                        ? "0 0 0 1px rgba(229,9,20,0.18)"
+                        : "none",
                     }}
                   >
+                    {/* 카드 본문 클릭 = 해당 작품 바로 재생 */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(`/watch/${item.media_type}/${item.id}`)
+                      }
+                      title={`${item.title || item.name} 재생`}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        textAlign: "left",
+                        background: "transparent",
+                        border: 0,
+                        padding: 0,
+                        cursor: "pointer",
+                        color: "inherit",
+                      }}
+                    >
                     <span
                       style={{
                         display: "block",
@@ -1348,28 +1355,52 @@ export default function WatchClient({ type, mediaId }: WatchClientProps) {
                             {item.adult ? "청불" : "15+"}
                           </span>
                         </span>
-                        <span style={{ color: "#888", fontSize: 22, flexShrink: 0, lineHeight: 1 }}>
-                          {selectedPartyMedia?.id === item.id &&
-                          selectedPartyMedia?.media_type === item.media_type
-                            ? "✓"
-                            : "›"}
+                        <span style={{ color: "#888", fontSize: 18, flexShrink: 0, lineHeight: 1 }}>
+                          ▶
                         </span>
                       </span>
-                      {selectedPartyMedia?.id === item.id &&
-                        selectedPartyMedia?.media_type === item.media_type && (
-                          <span
-                            style={{
-                              color: "#ff737b",
-                              fontSize: 11,
-                              fontWeight: 700,
-                            }}
-                          >
-                            같이보기 작품으로 선택됨
-                          </span>
-                        )}
                     </span>
-                  </button>
-                ))}
+                    </button>
+
+                    {/* 같이보기는 보조 액션으로 분리 (커넥트 모드에서만 노출) */}
+                    {canUseConnect && (
+                      <button
+                        type="button"
+                        aria-pressed={isPartyPick}
+                        onClick={() =>
+                          setSelectedPartyMedia(isPartyPick ? null : item)
+                        }
+                        title={
+                          isPartyPick
+                            ? "같이보기 작품 선택 해제"
+                            : `${item.title || item.name} 같이보기에 추가`
+                        }
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          margin: "0 10px 10px",
+                          padding: "7px 0",
+                          borderRadius: 8,
+                          border: isPartyPick
+                            ? "1px solid rgba(229,9,20,0.6)"
+                            : "1px solid #333",
+                          background: isPartyPick
+                            ? "rgba(229,9,20,0.16)"
+                            : "rgba(255,255,255,0.04)",
+                          color: isPartyPick ? "#ff7c83" : "#bbb",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {isPartyPick ? "✓ 같이보기 선택됨" : "+ 같이보기"}
+                      </button>
+                    )}
+                  </div>
+                  );
+                })}
               </div>
             </div>
           )}

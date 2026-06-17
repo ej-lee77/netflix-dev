@@ -231,7 +231,7 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
               보유 {pts(available)}
               {!soldOut && (
                 <span className={canAfford ? "ok" : "no"}>
-                  {canAfford ? " · 교환 가능" : " · 포인트 부족"}
+                  {canAfford ? " · 사용 가능" : " · 포인트 부족"}
                 </span>
               )}
             </div>
@@ -249,7 +249,7 @@ export default function ShopDetailClient({ productId }: { productId: string }) {
                 onClick={() => handleAdd(true)}
                 disabled={soldOut || busy}
               >
-                {soldOut ? "품절" : "바로 교환"}
+                {soldOut ? "품절" : "바로 사용"}
               </button>
             </div>
           </div>

@@ -35,7 +35,7 @@ export default function ShopTopBar({ title, hidePoints, showShopHome }: { title:
           </span>
         )}
         <Link href="/shop/orders" className="shop-topbar__link">
-          교환내역
+          사용내역
         </Link>
         <Link href="/shop/cart" className="shop-topbar__link shop-cart-btn">
           장바구니

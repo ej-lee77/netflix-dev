@@ -123,7 +123,7 @@ export default function ShopCartClient() {
             </div>
 
             <aside className="shop-summary">
-              <h3 className="shop-summary__title">교환 요약</h3>
+              <h3 className="shop-summary__title">포인트 사용 요약</h3>
               <div className="shop-sum-row">
                 <span>필요 포인트</span>
                 <span>{pts(pointsTotal)}</span>
@@ -141,11 +141,11 @@ export default function ShopCartClient() {
                 onClick={() => router.push("/shop/checkout")}
                 disabled={!enough}
               >
-                {enough ? "교환하기" : "포인트가 부족해요"}
+                {enough ? "포인트 사용하기" : "포인트가 부족해요"}
               </button>
               {!enough && (
                 <div className="shop-summary__hint">
-                  {pts(pointsTotal - available)} 더 모으면 교환할 수 있어요
+                  {pts(pointsTotal - available)} 더 모으면 사용할 수 있어요
                 </div>
               )}
             </aside>

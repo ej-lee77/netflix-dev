@@ -20,7 +20,7 @@ export function categoryMeta(category: GoodsCategory) {
 }
 
 
-// ── 굿즈 상품 카탈로그 (포인트 교환 + 배송비) ─────────
+// ── 굿즈 상품 카탈로그 (포인트 사용 + 배송비) ─────────
 // 추후 Firestore 전환 시: fetchProducts() 본문만 컬렉션 조회로 교체.
 const GOODS_PRODUCTS: GoodsProduct[] = [
   {

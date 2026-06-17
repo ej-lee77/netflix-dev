@@ -54,7 +54,7 @@ export default function ShopListClient() {
                 굿즈를 받아보세요
               </h1>
               <p className="shop-hero__sub">
-                뱃지로 모은 포인트로 교환 · 배송비만 결제하면 끝
+                뱃지로 모은 포인트로 굿즈 받기 · 배송비만 결제하면 끝
               </p>
             </div>
             <div className="shop-hero__point-box">

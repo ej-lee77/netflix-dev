@@ -61,12 +61,12 @@ export default function ShopCheckoutClient() {
   const applyAddress = ({ zipcode, address }: { zipcode: string; address: string }) =>
     setForm((f) => ({ ...f, zipcode, address }));
 
-  // StepPayment(가입 결제 UI)에서 결제수단을 고르고 "결제하고 교환"을 누르면 호출됨.
+  // StepPayment(가입 결제 UI)에서 결제수단을 고르고 "결제하고 사용"을 누르면 호출됨.
   // 구독 결제수단을 덮어쓰지 않고, 선택한 결제수단 라벨로 굿즈 주문만 생성한다.
   const handleShopPay = async (_payInfo: PayInfo, payLabel: string) => {
     if (busy) return;
     if (lines.length === 0) {
-      showToast("교환할 상품이 없어요");
+      showToast("사용할 굿즈가 없어요");
       return;
     }
     if (!enough) {
@@ -81,7 +81,7 @@ export default function ShopCheckoutClient() {
     const res = await createOrder(form, payLabel);
     setBusy(false);
     if (!res || !res.ok) {
-      showToast(res && res.reason === "insufficient" ? "보유 포인트가 부족해요" : "교환에 실패했어요");
+      showToast(res && res.reason === "insufficient" ? "보유 포인트가 부족해요" : "포인트 사용에 실패했어요");
       return;
     }
     router.push(`/shop/complete?order=${res.orderId}&used=${res.pointsUsed}&ship=${res.shippingFee}`);
@@ -91,7 +91,7 @@ export default function ShopCheckoutClient() {
     return (
       <div className="shop-page">
         <div className="shop-shell">
-          <ShopTopBar title="교환/결제" />
+          <ShopTopBar title="포인트 사용/결제" />
           <div className="shop-loading">불러오는 중…</div>
         </div>
       </div>
@@ -102,10 +102,10 @@ export default function ShopCheckoutClient() {
     return (
       <div className="shop-page">
         <div className="shop-shell">
-          <ShopTopBar title="교환/결제" />
+          <ShopTopBar title="포인트 사용/결제" />
           <div className="shop-empty">
             <div className="shop-empty__emoji"><ShopIcon name="cart" size={48} /></div>
-            <div className="shop-empty__msg">교환할 상품이 없어요.</div>
+            <div className="shop-empty__msg">사용할 굿즈가 없어요.</div>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
               굿즈 보러 가기
             </button>
@@ -118,7 +118,7 @@ export default function ShopCheckoutClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="교환/결제" />
+        <ShopTopBar title="포인트 사용/결제" />
 
         <div className="shop-layout">
           <div>
@@ -166,18 +166,18 @@ export default function ShopCheckoutClient() {
                 <span>{pts(available)}</span>
               </div>
               <div className="shop-sum-row" style={{ color: "#ffcf3f" }}>
-                <span>사용 포인트 (굿즈 교환)</span>
+                <span>사용 포인트 (굿즈)</span>
                 <span>-{pts(pointsTotal)}</span>
               </div>
               <div className="shop-sum-row">
-                <span>교환 후 잔액</span>
+                <span>사용 후 잔액</span>
                 <span className={enough ? "" : "point-short"}>{pts(Math.max(0, remaining))}</span>
               </div>
             </section>
 
-            {/* 교환 상품 */}
+            {/* 사용 굿즈 */}
             <section className="checkout-section">
-              <h3 className="checkout-section__title">교환 상품 ({lines.length})</h3>
+              <h3 className="checkout-section__title">사용 굿즈 ({lines.length})</h3>
               {lines.map(({ item, product }) => (
                 <div className="shop-sum-row" key={`${item.productId}-${item.option ?? ""}`}>
                   <span>
@@ -200,7 +200,7 @@ export default function ShopCheckoutClient() {
                   hideAgree
                   noticeText="굿즈값은 포인트로 충당되고, 실제 결제는 배송비만 진행돼요. (1회성 결제)"
                   currentPayInfo={null}
-                  submitLabel={busy ? "처리 중…" : `배송비 ${won(shippingTotal)} 결제하고 교환`}
+                  submitLabel={busy ? "처리 중…" : `배송비 ${won(shippingTotal)} 결제하고 사용`}
                   amountLabel="배송비"
                   plan={{
                     name: "배송비",
@@ -216,7 +216,7 @@ export default function ShopCheckoutClient() {
               ) : (
                 <div className="checkout-pay">
                   <span className="checkout-pay__icon"><ShopIcon name="warning" size={18} /></span>
-                  <span>보유 포인트가 부족해 교환할 수 없어요.</span>
+                  <span>보유 포인트가 부족해 사용할 수 없어요.</span>
                 </div>
               )}
             </section>
@@ -225,7 +225,7 @@ export default function ShopCheckoutClient() {
           <aside className="shop-summary">
             <h3 className="shop-summary__title">결제 요약</h3>
             <div className="shop-sum-row">
-              <span>굿즈 (포인트 교환)</span>
+              <span>굿즈 (포인트 사용)</span>
               <span>{pts(pointsTotal)}</span>
             </div>
             <div className="shop-sum-row">
@@ -237,7 +237,7 @@ export default function ShopCheckoutClient() {
               <b>{won(shippingTotal)}</b>
             </div>
             <p className="point-hint" style={{ marginTop: 12 }}>
-              결제 수단을 선택하고 결제하면 교환이 완료돼요.
+              결제 수단을 선택하고 결제하면 포인트 사용이 완료돼요.
             </p>
           </aside>
         </div>

@@ -3,7 +3,7 @@
 import { auth, googleProvider } from "@/firebase/firebase";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Movie } from "@/types/movie";
-import { signInWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -199,6 +199,11 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
     try {
+      // 자동 로그인 체크 → 브라우저를 닫아도 세션 유지(local), 미체크 → 탭/세션 한정(session)
+      await setPersistence(
+        auth,
+        rememberMe ? browserLocalPersistence : browserSessionPersistence,
+      );
       const result = await signInWithEmailAndPassword(auth, email, password);
       onLogin({
         uid: result.user.uid,
@@ -220,6 +225,10 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setError("");
     try {
+      await setPersistence(
+        auth,
+        rememberMe ? browserLocalPersistence : browserSessionPersistence,
+      );
       const result = await signInWithPopup(auth, googleProvider);
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
 

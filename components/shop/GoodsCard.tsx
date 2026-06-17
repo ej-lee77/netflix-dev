@@ -53,7 +53,7 @@ export default function GoodsCard({
         <div className="goods-card__name">{product.name}</div>
         <div className="goods-card__points-row">
           <span className="goods-card__points">{pts(product.points)}</span>
-          {!soldOut && affordable && <span className="goods-card__ok">교환 가능</span>}
+          {!soldOut && affordable && <span className="goods-card__ok">사용 가능</span>}
         </div>
         <div className="goods-card__ship">배송비 {won(product.shippingFee)}</div>
       </div>

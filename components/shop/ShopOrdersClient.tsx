@@ -82,14 +82,14 @@ export default function ShopOrdersClient() {
   return (
     <div className="shop-page">
       <div className="shop-shell">
-        <ShopTopBar title="교환내역" showShopHome />
+        <ShopTopBar title="포인트 사용내역" showShopHome />
 
         {!ordersLoaded ? (
           <div className="shop-loading">불러오는 중…</div>
         ) : orders.length === 0 ? (
           <div className="shop-empty">
             <div className="shop-empty__emoji"><ShopIcon name="box" size={48} /></div>
-            <div className="shop-empty__msg">아직 교환 내역이 없어요.</div>
+            <div className="shop-empty__msg">아직 포인트 사용 내역이 없어요.</div>
             <button className="shop-btn shop-btn--primary" onClick={() => router.push("/shop")}>
               굿즈 보러 가기
             </button>
